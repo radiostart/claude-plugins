@@ -756,7 +756,7 @@ def check_project(workspace: Path, project: str) -> list[Result]:
                     )
                 )
 
-        # Wrapper 이관 섹션 잔존 감지 (Batch 12 Phase 3b 이후)
+        # Wrapper 로 이관된 섹션이 프로젝트 planner.md 에 잔존하는지 감지
         planner_file = agents_dir / "planner.md"
         if planner_file.is_file():
             try:

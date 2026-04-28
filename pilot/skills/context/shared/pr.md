@@ -1,11 +1,11 @@
 # Pull Request 컨벤션 (플러그인 default)
 
-pilot 플러그인이 제공하는 **표준 PR 컨벤션 fallback**. 팀이 별도 override 를 두지 않으면 이 문서가 적용된다.
+pilot 플러그인이 제공하는 **표준 PR 컨벤션 fallback**. 워크스페이스가 별도 override 를 두지 않으면 이 문서가 적용된다.
 
 > **위치 정책**
 >
 > - 본 문서 (`skills/context/shared/pr.md`) = 플러그인 내장 default. 모든 워크스페이스 공통.
-> - 워크스페이스 override = `workspace/context/pr.md`. 존재 시 본 문서를 **완전 대체**. PR 템플릿은 **레포지터리 단위** 산출물 (`.github/PULL_REQUEST_TEMPLATE`) 이므로 같은 레포 = 같은 워크스페이스를 공유하는 모든 팀이 동일한 PR 컨벤션을 따른다. → 팀별 분기 없이 워크스페이스 공통에 둔다.
+> - 워크스페이스 override = `workspace/context/pr.md`. 존재 시 본 문서를 **완전 대체**.
 > - 키-값 설정 (base branch default 등) = `workspace/context/config.md` 표. 산문 규칙과 분리.
 >
 > **fallback 순서:** `workspace/context/pr.md` (워크스페이스 override) → 본 문서 (플러그인 default). PR 스킬은 `workspace/context/pr.md` 가 없으면 본 문서를 자동 적용 (별도 생성 없이 메모리 내 fallback).
@@ -33,8 +33,7 @@ PR 생성 시 base branch 결정 흐름:
 | 위치 | 키 | 용도 |
 |---|---|---|
 | `.agent-state.yml` | `pr_base_branch` (optional) | 사용자가 명시 입력한 base. 부재 시 default 사용 |
-| `workspace/context/config.md` | `pr_default_base` (optional) | 팀별 default base. `workspace/context/config.md` 보다 우선 |
-| `workspace/context/config.md` | `pr_default_base` | 전사 default base (예: `develop`, `main`). 미선언 시 하드 fallback `develop` |
+| `workspace/context/config.md` | `pr_default_base` | default base (예: `develop`, `main`). 미선언 시 하드 fallback `develop` |
 
 ### 사전 검증
 
@@ -67,7 +66,7 @@ PR 제목은 자유 형식. 이슈 트래커 티켓이 있으면 `[TICKET-XXX]` 
 
 ## 3. PR 본문 권장 구조
 
-팀별 템플릿이 있으면 (`.github/PULL_REQUEST_TEMPLATE`) 그것을 우선 사용. 없으면 아래 default:
+레포지터리 템플릿이 있으면 (`.github/PULL_REQUEST_TEMPLATE`) 그것을 우선 사용. 없으면 아래 default:
 
 ```markdown
 ## Summary

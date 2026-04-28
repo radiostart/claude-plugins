@@ -5,8 +5,8 @@ instincts:
     evidence: hooks/commit-format.sh
     applies_to: [commit, generator]
     rule: >
-      제목 첫 줄에 `{scope}: {설명}` 형식을 사용한다. scope 는 MANIFEST.md `## 팀 설정`
-      `commit_scopes` 값(없으면 기본값 feat,fix,refactor,skills,chore,docs,test,wip)
+      제목 첫 줄에 `{scope}: {설명}` 형식을 사용한다. scope 는 `workspace/context/config.md`
+      `## 설정` 의 `commit_scopes` 값(없으면 기본값 feat,fix,refactor,skills,chore,docs,test,wip)
       내에서만 선택. 목록 밖 scope 는 경고 대상. 제목 50 자 초과도 경고.
       `[TICKET-123] 설명` 또는 scope 없는 한국어 설명만도 허용. `--amend` 는 검증 제외.
 

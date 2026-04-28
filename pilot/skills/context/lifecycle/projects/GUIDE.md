@@ -48,7 +48,7 @@ projects/{PROJECT}/
 
 ### pre / post-analyze 게이트
 
-래퍼는 프로젝트의 **`.agent-state.yml` 의 `analyzed` 필드** 를 "analyze 가 이미 실행됐는가?" 의 시그널로 사용한다 (Batch 1 에서 문자열 detection literal 을 이 machine-readable 계약으로 교체).
+래퍼는 프로젝트의 **`.agent-state.yml` 의 `analyzed` 필드** 를 "analyze 가 이미 실행됐는가?" 의 시그널로 사용한다.
 
 | `analyzed` 값 | 래퍼 동작 |
 | ------------- | --------- |
@@ -64,7 +64,7 @@ projects/{PROJECT}/
 2. 신규 프로젝트는 `/pilot:project` 가 `analyzed: false` 로 초기화.
 3. `agents/*.md` 안의 섹션명 (`## 기능별 사전 확인 사항`, `## 핵심 서비스/모델` 등) 은 analyze 가 주입·갱신할 때 anchor 로 사용하므로 임의 변경 금지.
 
-### drift 감지 (Batch 5)
+### drift 감지
 
 `.agent-state.yml` 의 optional 필드 `analyzed_at` · `last_analyzed_features` 를 기반으로 `/pilot:doctor` 가 drift 를 감지하고 경고한다.
 

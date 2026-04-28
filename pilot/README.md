@@ -110,7 +110,7 @@ echo ".env" >> .gitignore
 
 shell profile `export` 도 가능. 둘 다 있으면 env var 우선. 토큰 발급: https://id.atlassian.com/manage-profile/security/api-tokens
 
-> **credential drift 주의** — `.env` 와 export 값이 다르면 `/pilot:doctor` 가 WARN 출력. interactive/non-interactive shell 간 토큰 불일치로 401 이 조용히 나는 패턴을 차단한다. Batch 13 신설.
+> **credential drift 주의** — `.env` 와 export 값이 다르면 `/pilot:doctor` 가 WARN 출력. interactive/non-interactive shell 간 토큰 불일치로 401 이 조용히 나는 패턴을 차단한다.
 
 ### 5. Python 의존성 (Confluence 사용 시)
 
@@ -657,7 +657,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {planner|generat
 
 | Hook | Matcher | 동작 |
 |---|---|---|
-| `commit-format.sh` | `PreToolUse: Bash` | 커밋 메시지 형식 검증 (scope: description, 한글, 50자 권장). 허용 scope 는 config.md `## 팀 설정` 의 `commit_scopes` 에서 로드 · 부재 시 기본 CSV fallback. |
+| `commit-format.sh` | `PreToolUse: Bash` | 커밋 메시지 형식 검증 (scope: description, 한글, 50자 권장). 허용 scope 는 `workspace/context/config.md` `## 설정` 의 `commit_scopes` 에서 로드 · 부재 시 기본 CSV fallback. |
 | `scope-guard.sh` | `PreToolUse: Edit\|Write` | `config.md § Ignore` SSOT. 해당 패턴 파일의 Edit/Write 차단. 담당 범위 조정은 config.md 만 수정하면 됨. |
 | `slack-notify.sh` | `PermissionRequest` + `Notification` | 권한 다이얼로그·알림 이벤트를 `tools/slack-notify.py` 로 릴레이 → 프로젝트별 `.slack.env` 로 발송. 백그라운드 POST 로 비차단. 설정 없는 프로젝트는 완전 no-op. |
 
@@ -674,7 +674,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {planner|generat
 
 ### 언제 `/pilot:doctor` 를 돌리나
 
-- 각 skill 완료 후 **자동 실행** (Batch 8). 별도 호출 불필요.
+- 각 skill 완료 후 **자동 실행**. 별도 호출 불필요.
 - 수동 진단: 오래된 프로젝트 재개 전, 팀원 간 인수인계 시, 이상 동작 의심 시.
 
 ### 언제 `--regen-agents` 를 돌리나
