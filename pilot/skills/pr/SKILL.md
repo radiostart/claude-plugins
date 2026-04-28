@@ -163,5 +163,4 @@ $ /pilot:pr
 
 - PR 컨벤션 (default): [`shared/pr.md`](../context/shared/pr.md)
 - state 스키마 (`pr_base_branch`): [`lifecycle/state-schema.md`](../context/lifecycle/state-schema.md)
-- 후속 — AI 리뷰 처리: `/pilot:ai-review`
 - 커밋 선행: `/pilot:commit`

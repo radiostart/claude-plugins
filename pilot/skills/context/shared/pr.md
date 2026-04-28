@@ -129,7 +129,6 @@ develop
 ## 참조
 
 - 커밋 메시지 컨벤션: [`shared/commit.md`](commit.md)
-- AI 리뷰 자동화: `/pilot:ai-review`
 - state 스키마 (`pr_base_branch` 위치): [`lifecycle/state-schema.md`](../lifecycle/state-schema.md)
 - 워크스페이스 override: `workspace/context/pr.md`
-- default base 키: `pr_default_base` (`config.md` 우선, fallback `workspace/context/config.md`)
+- default base 키: `pr_default_base` (`workspace/context/config.md`, fallback `develop`)

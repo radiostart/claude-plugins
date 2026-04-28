@@ -37,12 +37,3 @@ instincts:
       즉시 Edit 금지. 대상 파일 경로, before/after, 근거(코드 경로·티켓·재현)를 담아
       사용자에게 보고하고 승인 후에만 반영. 예외 — `_(추가 예정)_` 플레이스홀더를
       처음 채우는 경우에만 승인 없이 반영 가능 (출처 주석 필수).
-
-  - id: ai-review-reject
-    trigger: "ai-review 스킬이 PR 에서 변경 거부 필요 판단"
-    evidence: skills/ai-review/
-    applies_to: [ai-review]
-    rule: >
-      ai-review 는 활성 프로젝트 컨텍스트와 독립적으로 동작한다 (PR 기준으로만 판정).
-      활성 프로젝트의 에이전트 규칙을 강제 적용하지 않는다. 다단계 스킬이므로 P-1
-      (TodoWrite 선로딩) 만 필수이며 P0~P4 는 미적용.

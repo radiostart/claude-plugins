@@ -11,7 +11,7 @@
 1. [설치 및 초기 세팅](#설치-및-초기-세팅)
 2. [Quick Start](#quick-start)
 3. [핵심 개념](#핵심-개념)
-4. [스킬 커맨드 (14종)](#스킬-커맨드-14종)
+4. [스킬 커맨드 (13종)](#스킬-커맨드-13종)
 5. [에이전트 (3종)](#에이전트-3종)
 6. [전형적 워크플로우](#전형적-워크플로우)
 7. [도메인 컨텍스트](#도메인-컨텍스트)
@@ -279,7 +279,7 @@ agent 파일 안에서 analyze 가 주입·덮어쓸 섹션을 마크. 해당 �
 
 ---
 
-## 스킬 커맨드 (14종)
+## 스킬 커맨드 (13종)
 
 > **도메인 컨텍스트 로드는 보조 자료**로 분류됨. `/pilot:project`·`/pilot:issue` 가 진입 시 [`shared/preamble.md`](skills/context/shared/preamble.md) 의 P3 단계에서 자동 수행. 자료 인덱스는 [`skills/context/INDEX.md`](skills/context/INDEX.md) 참조.
 
@@ -384,12 +384,6 @@ workspace·project 정합성 검사. 각 skill 말미 자동 실행. 수동 실�
 - state 에 값 없음 → "타겟 브랜치? (Enter=<default>)" 질의. Enter (default 채택) 면 **state 미저장**, 명시 입력은 state 에 `pr_base_branch` 신규 기록.
 
 PR 생성 직전 `git ls-remote --exit-code origin <base>` 로 stale 검증, 없으면 재질의 (최대 3회). uncommitted 변경 있으면 `/pilot:commit` 안내 후 종료. 본문은 `skills/context/shared/pr.md` (또는 워크스페이스 override `workspace/context/pr.md`) 의 컨벤션을 따라 자동 작성. `.slack.env` 활성 시 PR URL 알림.
-
-PR 생성 후 AI 리뷰 처리는 `/pilot:ai-review` 로 이어진다.
-
-#### `/pilot:ai-review {PR번호 | PR URL}`
-
-PR AI 리뷰에서 필수 수정사항 추출 → fix 브랜치에서 자동 수정 + PR 생성.
 
 ### 알림 (선택)
 

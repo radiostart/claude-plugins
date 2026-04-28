@@ -51,12 +51,6 @@ docs/ 에 기획서가 없습니다. `/pilot:confl {url}` 로 먼저 기획서�
 예약어: example, workspace, STATE, context
 ```
 
-### `pr_number_required`
-
-```
-PR 번호 또는 URL 을 입력해주세요. 예: `/pilot:ai-review 1234`
-```
-
 ---
 
 ## 결과 메시지
@@ -111,12 +105,6 @@ Atlassian Rovo MCP 호출에 실패하여 로컬 docs/ 검색으로 폴백했습
 
 ```
 이 프로젝트는 이미 TDD 모드입니다. 누락된 항목만 보완합니다.
-```
-
-### `ai_review_no_fixes`
-
-```
-필수 수정사항이 없습니다. 현재 리뷰는 통과 가능한 상태입니다.
 ```
 
 ### `verification_report_example`
