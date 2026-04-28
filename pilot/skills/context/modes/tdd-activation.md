@@ -114,7 +114,7 @@
 
 `workspace/projects/{PROJECT}/.agent-state.yml` 을 Read 후:
 
-- `schema: v1` 아니거나 파일 없음 → 에러 출력: **"프로젝트 상태 파일 누락 또는 구버전. `/pilot:doctor --fix` 실행 후 재시도하세요."**
+- `schema` 가 지원 버전(`v1.1`, `v1.2`) 이 아니거나 파일 없음 → 에러 출력: **"프로젝트 상태 파일 누락 또는 구버전. `/pilot:doctor --fix` 실행 후 재시도하세요."**
 - `tdd: true` 이미 있으면 생략.
 - 없으면 `tdd: false` 를 `tdd: true` 로 Edit.
 

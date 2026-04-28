@@ -11,8 +11,8 @@ memory-hint — Claude Code auto-memory 에서 현재 작업과 관련된 메모
 
 출력 예:
   [memory-hint] 관련 메모 2 건:
-    - project_presend_admin_review.md (점수 3) — 미송선발송 관리자 화면 기획서 vs 구현 점검 결과
-    - feedback_policy_review_mode.md (점수 1) — 정책 이행 점검 시 소스 수정 금지
+    - project_payment_refund_review.md (점수 3) — 결제 환불 흐름 기획서 vs 구현 점검 결과
+    - policy_review_mode.md (점수 1) — 정책 이행 점검 시 소스 수정 금지
   다음 단계에서 Read 후 컨텍스트 반영 권장.
 
 출력 없음 = auto-memory 가 없거나 매칭 실패 (정상).

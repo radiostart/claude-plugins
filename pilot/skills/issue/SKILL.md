@@ -23,7 +23,7 @@ description: >-
 
 1. `$ARGUMENTS` 가 비어있으면 이슈명 없이 바로 처리 모드로 진입한다.
 2. `$ARGUMENTS` 가 있으면 `workspace/issues/{이슈명}/` 존재 여부를 Glob 으로 확인한다.
-   - 없으면 `skills/issues/GUIDE.md` 를 로드하여 새 이슈 폴더를 생성한다.
+   - 없으면 `${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/issues/GUIDE.md` 를 로드하여 새 이슈 폴더를 생성한다.
    - 있으면 `issue.md` 만 로드한다 (GUIDE.md 는 로드하지 않는다).
 3. [preamble.md](../context/shared/preamble.md) 의 **P2** 수행 — STATE.md 테이블 본문을 `| issue | {이슈명} | 진행중 |` **1행으로 교체**. 기존 다른 이름 행은 모두 삭제 (이력은 git log).
    - 이슈명이 없으면 `| issue | - | 진행중 |` 로 기록한다.

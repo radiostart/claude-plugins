@@ -8,7 +8,7 @@
     {
       "name": "pilot",
       "source": "./pilot",
-      "description": "Large codebase navigation plugin — domain-knowledge-driven agent workflow for complex projects"
+      "description": "Domain-knowledge-driven agent workflow plugin for complex projects (planner → generator → evaluator)"
     }
   ]
 }

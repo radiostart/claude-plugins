@@ -65,11 +65,11 @@ Atlassian Rovo MCP 의 시맨틱 검색을 1차 경로로 사용하고, 실패·
 
 수행할 작업:
 
-1. **MCP 가용성 확인**: `mcp__atlassian__searchConfluencePages` 도구가 등록되어 있는지 확인한다. 없으면 곧장 4번(로컬 폴백)으로 진행한다.
-2. **MCP 호출**: `mcp__atlassian__searchConfluencePages` 를 다음 인자로 호출한다.
-   - `query`: `{검색어}`
+1. **MCP 가용성 확인**: `mcp__claude_ai_Atlassian_Rovo__searchConfluenceUsingCql` 도구가 등록되어 있는지 확인한다. 없으면 곧장 4번(로컬 폴백)으로 진행한다.
+2. **MCP 호출**: `mcp__claude_ai_Atlassian_Rovo__searchConfluenceUsingCql` 를 다음 인자로 호출한다.
+   - `cql`: CQL 쿼리 (예: `text ~ "{검색어}"` · 스페이스 필터 시 ` AND space = "KEY"` 추가)
+   - `cloudId`: 사용 중인 Atlassian site cloudId (먼저 `mcp__claude_ai_Atlassian_Rovo__getAccessibleAtlassianResources` 로 확인)
    - `limit`: 5
-   - 가능하면 현재 프로젝트의 Confluence 스페이스 키로 필터링한다.
 3. **결과 출력**:
    - 각 항목에 **`[source: rovo-mcp]` 태그**, 제목, `page_id`, 짧은 스니펫을 표시한다.
    - 마지막에 [messages.md](../context/shared/messages.md) 의 `confl_search_source_rovo` 안내를 출력한다.

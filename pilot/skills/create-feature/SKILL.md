@@ -19,7 +19,7 @@ description: >-
 
 ```
 /pilot:create-feature 지연 주문 UI 에 정렬·필터 추가
-/pilot:create-feature 알림 발송 기능 — Sidekiq 큐 사용
+/pilot:create-feature 알림 발송 기능 — 비동기 큐 사용
 ```
 
 ---

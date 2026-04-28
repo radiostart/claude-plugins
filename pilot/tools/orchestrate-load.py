@@ -366,7 +366,7 @@ def build_load_plan(
     if mode == "characterize":
         files.append(f"{plugin_root()}/skills/context/modes/characterize.md")
         hints.append(
-            "mode: characterize — characterize.md 절차 준수 (app/ 수정 금지, spec/ 만 추가)"
+            "mode: characterize — characterize.md 절차 준수 ({source_root} 수정 금지, 테스트만 추가)"
         )
         if tdd:
             hints.append(

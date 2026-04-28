@@ -8,7 +8,7 @@ TDD 모드가 활성화된 프로젝트에서 기능을 구현할 때 아래 절
 > - `{test_command_fail_fast}` — 첫 실패 중단 모드 (없으면 `{test_command}` 사용)
 > - `{source_root}` / `{test_path_convention}` — 소스·테스트 경로 매핑. 프로젝트 관례는 `conventions_doc` 파일 참조.
 >
-> MANIFEST 미정의 시 Ruby 기본값 (`bundle exec rspec`) 으로 해석 (하위호환). 언어별 관행 (테스트 프레임워크 함수·Mock 패턴) 은 `conventions_doc` 가 가리키는 문서를 우선 따른다.
+> `workspace/context/config.md` 미정의 시 Evaluator/Generator 가 사용자에게 `{test_command}` 를 질의한다. 언어별 관행 (테스트 프레임워크 함수·Mock 패턴) 은 `conventions_doc` 가 가리키는 문서를 우선 따른다.
 
 ## 전제
 
@@ -18,7 +18,7 @@ TDD 모드가 활성화된 프로젝트에서 기능을 구현할 때 아래 절
 
 ## 실행 주기 (`tdd_batch`)
 
-`project.md`의 `tdd_batch` 값에 따라 Planner·Generator의 호출 범위가 결정된다.
+`.agent-state.yml` 의 `tdd_batch` 값에 따라 Planner·Generator 의 호출 범위가 결정된다.
 
 | 값 | Planner 범위 | Generator 범위 | 적합한 상황 |
 | --- | --- | --- | --- |
@@ -26,8 +26,9 @@ TDD 모드가 활성화된 프로젝트에서 기능을 구현할 때 아래 절
 | `feature` | feature 전체 spec 작성 | feature 전체 구현 | 일반적인 개발 **(기본값)** |
 | `all` | 미완료 feature 전체 spec 작성 | 전체 구현 | 단순 CRUD, 빠른 진행 |
 
-- `project.md`에 `tdd_batch` 항목이 없으면 **`feature`** 로 동작한다.
-- `all`은 미완료 feature가 4개 이하일 때만 적용한다. 5개 이상이면 `feature`로 폴백한다.
+- 필드 부재 시 **`feature`** 로 동작한다.
+- `all` 은 미완료 feature 가 4 개 이하일 때만 적용한다. 5 개 이상이면 `feature` 로 폴백한다.
+- 스키마 상세: [`state-schema.md`](../lifecycle/state-schema.md) § `tdd_batch`.
 
 ## 역할 분담
 
@@ -49,7 +50,7 @@ Planner가 기능을 분할하는 기준:
 
 ## Planner — Red Contract
 
-Planner 는 **RSpec 코드를 직접 쓰지 않는다**. 대신 아래 계약을 `features/NN-{slug}.plan.md` 에 남긴다. Generator 는 이 계약을 이행하여 Red 테스트를 작성한다.
+Planner 는 **테스트 코드를 직접 쓰지 않는다**. 대신 아래 계약을 `features/NN-{slug}.plan.md` 에 남긴다. Generator 는 이 계약을 이행하여 Red 테스트를 작성한다.
 
 ### 절차
 

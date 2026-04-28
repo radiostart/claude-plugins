@@ -1,4 +1,4 @@
-"""Workspace / team / project 정합성 검사 + auto-fix.
+"""Workspace / project 정합성 검사 + auto-fix.
 
 `doctor.py` (default 모드 + --fix) 의 본체. 검사 함수와 자동 수정 헬퍼를
 한 파일에 모은다. CLI 진입점은 `run_integrity_check`.

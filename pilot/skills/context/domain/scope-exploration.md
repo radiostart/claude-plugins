@@ -16,8 +16,9 @@ planner / generator / evaluator 래퍼가 코드베이스를 탐색할 때 따�
 
 scope 에 명시된 경로에서 대상을 찾지 못하면 전체 스캔 대신 **구체 패턴 기반 확장** 을 시도한다:
 
-- feature·이슈 키워드를 근거로 **구체 패턴** 을 구성한다.
+- feature·이슈 키워드를 근거로 **구체 패턴** 을 구성한다. `{source_root}` 와 언어 확장자는 `workspace/context/config.md` 에서 해석.
   - 예 (Rails): `app/models/*{keyword}*.rb`, `app/services/*{keyword}*.rb`, `app/controllers/**/*{keyword}*.rb`
+  - 예 (Kotlin): `src/main/kotlin/**/*{Keyword}*.kt`
 - 패턴으로도 찾지 못하면 사용자에게 **범위 확장 허가** 를 요청한다.
 - 여전히 무차별 `**/*.{ext}` 류 전체 스캔은 금지.
 

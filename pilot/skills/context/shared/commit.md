@@ -18,8 +18,8 @@
 ```
 스테이지되지 않은 파일이 있습니다:
 
-- app/services/order_service.rb
-- app/views/admin/orders/index.html.erb
+- {source_root}/services/order_service.{ext}
+- {source_root}/views/admin/orders/index.{ext}
 - workspace/projects/MyProject/agents/generator.md
 
 포함할 파일을 알려주세요. (전체 포함 / 일부 선택 / 제외)
@@ -80,6 +80,6 @@ order: 주문 접수 모달 상태별 UI 분기 구현
 
 ## 주의사항
 
-- `app/config/credentials.yml.enc`, `.env` 등 민감 파일은 절대 포함하지 않는다
+- credentials/secrets 파일 (`.env`, `*.key`, `*credentials*` 등) 은 절대 포함하지 않는다
 - workspace/ 변경과 코드 변경은 **가능하면 분리**하여 커밋한다
 - 푸시 전 브랜치 확인 (`git branch`) — `main`/`develop` 직접 푸시 금지

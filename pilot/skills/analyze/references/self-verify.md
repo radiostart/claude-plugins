@@ -53,8 +53,8 @@ TBD | TODO | (예상) | (추정) | 미정 | 확인 필요 | ??
   ```
   analyze-verify:
     7-1 커버리지 (FAIL): 누락 섹션 2개
-      - docs/xxx.md > "발주 취소" 섹션
-      - docs/xxx.md > "교환 접수" 섹션
+      - docs/xxx.md > "주문 취소" 섹션
+      - docs/xxx.md > "환불 처리" 섹션
       권장: /pilot:analyze --force 또는 키워드 재실행
     7-2 구조 (PASS)
     7-3 정합성 (PASS)

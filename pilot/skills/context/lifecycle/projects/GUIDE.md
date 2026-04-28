@@ -109,7 +109,7 @@ projects/{PROJECT}/
 | 도메인 비즈니스 규칙 (메모 문구 패턴·상태값 의미 등) | `workspace/context/rules/{domain}.md` |
 | 도메인 파일 경로·모델 구조 | `workspace/context/scope/{domain}.md` |
 | 상태 enum 정의 | `workspace/context/enums/...` |
-| Rails / 언어 공통 컨벤션 (`Time.current`·키워드 인자 등) | `${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md` |
+| 언어 공통 컨벤션 (수정 최소화·시그니처 보존·검증 루프) | `${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md` |
 | TDD 절차 (Red·Green·Refactor) | `${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md` |
 | 컨텍스트 로드·detection 로직 | 래퍼 + `orchestrate-load.py` |
 
@@ -160,9 +160,9 @@ projects/{PROJECT}/
 ```markdown
 ## 목표
 
-- [ ] 피킹리스트 출력 -> [상세](features/01-picking-list.md)
-- [ ] 아이두 중화권 배송 접수 -> [상세](features/02-ido-delivery-request.md)
-- [x] 출고 완료 취소 -> [상세](features/03-shipment-cancel.md)
+- [ ] 주문 생성 API -> [상세](features/01-order-create.md)
+- [ ] 결제 승인 흐름 -> [상세](features/02-payment-approval.md)
+- [x] 주문 취소 -> [상세](features/03-order-cancel.md)
 ```
 
 **규칙**

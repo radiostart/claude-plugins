@@ -29,7 +29,7 @@ Planner 가 포착 대상을 분할하는 기준:
 
 ## Planner — Characterization Contract
 
-Planner 는 **RSpec 코드를 직접 쓰지 않는다**. 대신 현재 동작의 **3 축** 을 `.plan.md` 에 남긴다.
+Planner 는 **테스트 코드를 직접 쓰지 않는다**. 대신 현재 동작의 **3 축** 을 `.plan.md` 에 남긴다.
 
 ### 3 축
 

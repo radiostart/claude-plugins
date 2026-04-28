@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-pilot doctor — workspace / team / project 정합성 검사.
+pilot doctor — workspace / project 정합성 검사.
 
 본 파일은 thin dispatcher. 실제 검사 로직은 `tools/doctor/` 패키지에 있다.
 

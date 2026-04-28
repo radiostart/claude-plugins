@@ -423,7 +423,7 @@ SLACK_EVENTS=complete,approval        # 생략 시 둘 다
 - 파일이 git tracked 상태로 발견되면 doctor 가 `[CRITICAL]` + exit 2 로 차단. `slack-notify.py` 도 POST 전 `git ls-files` 로 이중 확인.
 - webhook URL 은 메시지 본문에 출력되지 않음. `status` 출력도 "설정됨 / 비어있음" 만 표시.
 
-**디버그 로그** (opt-in): `export DP_SLACK_DEBUG=1` 후 Claude Code 재시작하면 `/tmp/pilot-slack-hook.log` 에 훅 호출 이력 기록.
+**디버그 로그** (opt-in): `export PILOT_SLACK_DEBUG=1` 후 Claude Code 재시작하면 `/tmp/pilot-slack-hook.log` 에 훅 호출 이력 기록.
 
 ---
 
@@ -497,7 +497,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {planner|generat
 | `활성 프로젝트 없음` | STATE.md 에 `진행중` 행 없음 | `/pilot:project {이름}` 로 활성화 |
 | `STATE.md 에 진행중 N 개 (...)` | 진행중 프로젝트 2 개 이상 | STATE.md 편집하여 1 개로 줄이거나 `--project {이름}` 명시 |
 | `.agent-state.yml 누락` | 프로젝트 state 파일 없음 | `/pilot:project {이름}` 재실행 또는 직접 작성 |
-| `.agent-state.yml schema=... 지원되지 않음` | 스키마 버전 불일치 (현재 지원: v1.1 / v1.2) | `/pilot:doctor --fix` 로 v1.2 까지 업그레이드 또는 플러그인 업그레이드 |
+| `.agent-state.yml schema=... 지원되지 않음` | 스키마 버전 불일치 (wrapper 실행 지원: v1.1·v1.2 · doctor 읽기 지원: v1·v1.1·v1.2) | `/pilot:doctor --fix` 로 v1.2 까지 업그레이드 또는 플러그인 업그레이드 |
 
 에러 원문에 복구 명령이 이미 포함되어 있음. 래퍼 중단 시 원문을 그대로 읽으면 다음 행동 명확. 소스: [`tools/orchestrate-load.py`](tools/orchestrate-load.py).
 

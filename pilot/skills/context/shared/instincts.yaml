@@ -1,6 +1,6 @@
 version: 1
 instincts:
-  - id: commit-format-dp
+  - id: commit-format
     trigger: "git commit 메시지 작성"
     evidence: hooks/commit-format.sh
     applies_to: [commit, generator]

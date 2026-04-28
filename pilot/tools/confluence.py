@@ -496,13 +496,13 @@ def split_sections(soup) -> list[dict]:
 # Fetch mode
 # ---------------------------------------------------------------------------
 
-def _update_docs_last_fetched_at(team: str, project: str) -> bool:
+def _update_docs_last_fetched_at(project: str) -> bool:
     """Update `docs_last_fetched_at` in project's .agent-state.yml.
 
     Returns True if file was updated, False if file missing or schema unknown.
     Silent on unknown schemas (migrate required first).
     """
-    state_path = WORKSPACE_ROOT / "workspace" / team / "projects" / project / ".agent-state.yml"
+    state_path = WORKSPACE_ROOT / "workspace" / "projects" / project / ".agent-state.yml"
     if not state_path.is_file():
         return False
 
@@ -621,7 +621,7 @@ def cmd_fetch(arg: str, force: bool = False):
         read_strategy = "대형 — H2 목차 확보 후 섹션 단위 targeted Read (limit 80)"
 
     # .agent-state.yml 의 docs_last_fetched_at 갱신 (drift 감지용)
-    state_updated = _update_docs_last_fetched_at(team, project)
+    state_updated = _update_docs_last_fetched_at(project)
 
     print(f"\n저장 완료: {out_path.relative_to(WORKSPACE_ROOT)}")
     print(f"크기: {size_kb:.1f}KB · {line_count} 라인 · 추정 {est_tokens:,} 토큰")

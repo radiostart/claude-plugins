@@ -6,7 +6,7 @@
 
 ## P-1. TodoWrite 선로딩 (다단계 스킬 진입 시)
 
-3 단계 이상 수행하는 스킬(`project`, `issue`, `analyze`, `feature`)은 **첫 tool call 로 `ToolSearch select:TodoWrite` 를 수행**한다. 직후 단계 목록을 세워 사용자에게 게시하고 진행하며 갱신한다.
+3 단계 이상 수행하는 스킬(`project`, `issue`, `analyze`, `create-feature`)은 **첫 tool call 로 `ToolSearch select:TodoWrite` 를 수행**한다. 직후 단계 목록을 세워 사용자에게 게시하고 진행하며 갱신한다.
 
 TodoWrite 는 deferred tool 이므로 ToolSearch 선로딩 없이 직접 호출하면 InputValidationError 가 발생한다. 중간에 시스템 리마인더를 받고서야 로드하는 상황을 방지한다.
 
@@ -80,7 +80,7 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 | `tdd`       |     |    | ✅ |    |    |
 | `doctor`    |     |    | ✅ |    |    |
 | `focus`     |     |    | ✅ |    |    |
-| `feature`   | ✅  | ✅ | ✅ |    |    |
+| `create-feature` | ✅ | ✅ | ✅ |    |    |
 | `commit`    |     |    |    |    |    |
 
 > `init` 은 workspace 가 없는 상태에서 실행되므로 P1 을 수행하지 않는다 (workspace/STATE.md 를 처음 생성하는 스킬).

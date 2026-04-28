@@ -48,7 +48,7 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 키워드가 주어지면 docs/ 전체 파일을 읽되, **키워드와 관련된 섹션만** 추출하여 features/ 파일을 생성한다.
 
 - 예: `/pilot:analyze 관리자 기능` → 관리자(어드민) 관련 기능만 분석
-- 예: `/pilot:analyze 소매 접수` → 소매 접수 관련 기능만 분석
+- 예: `/pilot:analyze 결제` → 결제 영역 기능만 분석
 - 키워드 매칭은 섹션 제목과 내용 모두에서 판단한다.
 - 관련 없는 섹션은 스킵한다.
 
@@ -201,9 +201,9 @@ features/ 생성 후 `project.md` 의 `## 목표` 와 `## 관련 파일` 을 자
 ```markdown
 ## 목표
 
-- [x] AdminMemo 모델 생성 및 관계 설정 -> [상세](features/01-admin-memo-model.md)
-- [ ] 메모 작성 API -> [상세](features/02-memo-create-api.md)
-- [ ] 메모 삭제 API -> [상세](features/03-memo-delete-api.md)
+- [x] Order 모델 생성 및 관계 설정 -> [상세](features/01-order-model.md)
+- [ ] 주문 생성 API -> [상세](features/02-order-create-api.md)
+- [ ] 주문 취소 API -> [상세](features/03-order-cancel-api.md)
 ```
 
 #### 5-2. `## 관련 파일` 갱신

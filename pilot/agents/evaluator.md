@@ -54,7 +54,7 @@ tools: Read, Glob, Grep, Edit, Bash
 5. 전 항목 통과 시 Edit 툴로 `workspace/projects/{PROJECT}/project.md`의 해당 목표를 `[x]`로 변경한다.
 6. **[전달사항]** 다음 feature에 영향을 줄 수 있는 사항이 있으면, `project.md`의 `## 에이전트 간 전달사항` 섹션에 항목을 추가한다. 해당 섹션이 없으면 생성한다.
    - 형식: `- [ ] {내용} (from #{완료 feature 번호})`
-   - 예: `- [ ] order_service에 validate 추가됨 → #11에서 참조 필요 (from #10)`
+   - 예: `- [ ] OrderService 에 validate 추가됨 → #11 에서 참조 필요 (from #10)`
    - 전달사항이 없으면 이 단계는 건너뛴다.
 7. **[필수] VERIFICATION REPORT 출력** — 메시지 끝에 아래 블록을 그대로 붙인다. 체크박스(step 4) 는 상세 기록, REPORT 는 요약이며 `status: READY` 는 전 gate pass + project.md `[x]` 완료와 동치.
 
@@ -66,7 +66,7 @@ tools: Read, Glob, Grep, Edit, Bash
    - gates:
      - requirements:     pass | fail — {근거 경로:라인 or feature 파일 섹션}
      - tdd_evidence:     pass | fail | skip — {.plan.md 스텝 범위, tdd:false & mode≠characterize 면 skip}
-     - capture_lockdown: pass | fail | skip — {mode:characterize 에서 git diff --stat app/ 결과, 그 외 skip}
+     - capture_lockdown: pass | fail | skip — {mode:characterize 에서 git diff --stat {source_root} 결과, 그 외 skip}
      - test_run:         pass | fail | skip — {명령 + exit code, tdd:false & mode≠characterize 면 skip}
      - scope:            pass | fail — {.focus.md 범위 내}
      - drift:            none | detected — {drift-protocol A/B, detected 시 보고 링크. 3건 이상이면 `(count: N) — 일괄 정리 권장` 첨부}
@@ -81,7 +81,7 @@ tools: Read, Glob, Grep, Edit, Bash
 
    **gate 매핑:**
    - `tdd_evidence` — `mode:characterize` 에서는 `[Captured]` 증거 4 라인 존재 여부. `tdd: true` 에서는 `[Red] + [Green]` 증거. 둘 다 아니면 skip.
-   - `capture_lockdown` — `mode:characterize` 전용. `git diff --stat app/` 이 empty 면 pass, 1 줄이라도 있으면 fail. 다른 모드에서는 skip.
+   - `capture_lockdown` — `mode:characterize` 전용. `git diff --stat {source_root}` 이 empty 면 pass, 1 줄이라도 있으면 fail. 다른 모드에서는 skip.
 
    **metrics.coverage** 는 참고 지표 (gate 아님). orchestrate-load 의 `config.coverage_command` 가 있으면 실행 후 `{before→after}` 수치 기록. 없거나 측정 실패면 `skip`. status 판정에 영향 없음 — 데이터 축적 후 gate 승격 여부 판단.
 

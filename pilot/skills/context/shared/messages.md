@@ -116,8 +116,8 @@ Atlassian Rovo MCP 호출에 실패하여 로컬 docs/ 검색으로 폴백했습
 - gates:
   - requirements: pass — features/10-order-cancel.md § 조건/트리거/기대결과
   - tdd_evidence:  pass — .plan.md 스텝 1~4 모두 [Red][Green] 기록
-  - test_run:      pass — bundle exec rspec spec/services/order_cancel_spec.rb (exit 0)
-  - scope:         pass — .focus.md 범위 내 (app/services/order_cancel_service.rb)
+  - test_run:      pass — {test_command} {test_path}/order_cancel_test (exit 0)
+  - scope:         pass — .focus.md 범위 내 ({source_root}/services/order_cancel_service)
   - drift:         none
 - issues_to_fix:
   - none
@@ -133,11 +133,11 @@ NOT_READY 예시:
 - gates:
   - requirements: fail — 환불 트리거 미구현 (features/10-order-cancel.md § 기대결과 3)
   - tdd_evidence:  fail — .plan.md 스텝 3 [Red] 누락
-  - test_run:      pass — bundle exec rspec spec/services/order_cancel_spec.rb (exit 0)
+  - test_run:      pass — {test_command} {test_path}/order_cancel_test (exit 0)
   - scope:         pass
   - drift:         none
 - issues_to_fix:
-  - [high] 환불 트리거 미구현 — app/services/order_cancel_service.rb:42
+  - [high] 환불 트리거 미구현 — {source_root}/services/order_cancel_service:42
   - [med]  스텝 3 [Red] 증거 누락 — .plan.md:15
 - next: null
 ```

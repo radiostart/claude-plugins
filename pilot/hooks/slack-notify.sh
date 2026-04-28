@@ -8,15 +8,15 @@
 # (파싱은 .py 가 담당 — 단일 SSOT). 어댑터 책임:
 #   - workspace 경로 결정 (PROJECT_DIR/workspace)
 #   - Slack POST 를 **백그라운드 실행** → 훅 지연이 사용자 승인 흐름을 막지 않음
-#   - `DP_SLACK_DEBUG=1` 일 때만 호출 이력을 /tmp/pilot-slack-hook.log 에 기록
+#   - `PILOT_SLACK_DEBUG=1` 일 때만 호출 이력을 /tmp/pilot-slack-hook.log 에 기록
 #   - 어떤 실패 경로에서도 exit 0 — harness 파이프라인을 차단하지 않는다.
 
 set -uo pipefail
 
-DP_SLACK_LOG="/tmp/pilot-slack-hook.log"
-_dp_log() {
-  [[ -n "${DP_SLACK_DEBUG:-}" ]] || return 0
-  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*" >> "$DP_SLACK_LOG" 2>/dev/null || true
+PILOT_SLACK_LOG="/tmp/pilot-slack-hook.log"
+_pilot_log() {
+  [[ -n "${PILOT_SLACK_DEBUG:-}" ]] || return 0
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*" >> "$PILOT_SLACK_LOG" 2>/dev/null || true
 }
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
@@ -27,7 +27,7 @@ fi
 
 NOTIFIER="$PLUGIN_ROOT/tools/slack-notify.py"
 if [[ ! -f "$NOTIFIER" ]]; then
-  _dp_log "SKIP notifier missing: $NOTIFIER"
+  _pilot_log "SKIP notifier missing: $NOTIFIER"
   exit 0
 fi
 
@@ -42,17 +42,17 @@ if [[ ! -d "$WORKSPACE" ]]; then
   fi
 fi
 if [[ ! -d "$WORKSPACE" ]]; then
-  _dp_log "SKIP no workspace: $WORKSPACE"
+  _pilot_log "SKIP no workspace: $WORKSPACE"
   exit 0
 fi
 
 # stdin 을 한 번 읽어 보존 — 백그라운드 프로세스에 그대로 파이프.
 STDIN_JSON=$(cat)
 
-_dp_log "RELAY project_dir=$PROJECT_DIR plugin_root=$PLUGIN_ROOT bytes=${#STDIN_JSON}"
+_pilot_log "RELAY project_dir=$PROJECT_DIR plugin_root=$PLUGIN_ROOT bytes=${#STDIN_JSON}"
 
-if [[ -n "${DP_SLACK_DEBUG:-}" ]]; then
-  REDIRECT_TARGET="$DP_SLACK_LOG"
+if [[ -n "${PILOT_SLACK_DEBUG:-}" ]]; then
+  REDIRECT_TARGET="$PILOT_SLACK_LOG"
 else
   REDIRECT_TARGET="/dev/null"
 fi
@@ -63,7 +63,7 @@ fi
     --from-hook \
     --workspace "$WORKSPACE" \
     >>"$REDIRECT_TARGET" 2>&1 \
-    || _dp_log "RELAY_FAIL"
+    || _pilot_log "RELAY_FAIL"
 ) &
 disown 2>/dev/null || true
 

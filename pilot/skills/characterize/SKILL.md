@@ -2,7 +2,7 @@
 name: characterize
 description: >-
   Characterization test 모드로 전환/복귀한다. 기존 레거시 코드의 현재 동작을
-  spec 으로 포착하기 위한 모드. 구현 변경 없음 (`app/` 잠금). 리팩터는 별도 사이클.
+  spec 으로 포착하기 위한 모드. 구현 변경 없음 (`{source_root}` 잠금). 리팩터는 별도 사이클.
 ---
 
 # /pilot:characterize
@@ -52,5 +52,5 @@ description: >-
 ## 주의
 
 - `tdd: true` 와 `mode: characterize` 가 **동시 설정** 된 경우 characterize 가 우선 적용된다 (Red 계약 대신 Characterization Contract).
-- Characterization 사이클 중 `app/` 수정은 Evaluator 가 반려한다. 리팩터가 필요하면 먼저 `/pilot:characterize off` 로 복귀.
+- Characterization 사이클 중 `{source_root}` 수정은 Evaluator 가 반려한다. 리팩터가 필요하면 먼저 `/pilot:characterize off` 로 복귀.
 - 정본 절차는 [`characterize.md`](../context/modes/characterize.md). 본 스킬은 **상태 전환 명령** 일 뿐 절차 정의가 아니다.

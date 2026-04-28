@@ -100,7 +100,7 @@ features/ 내용 + 5-2 에서 로드한 `scope/{domain}.md` 로 기술 레퍼런
 
 generator.md 고유:
 
-- 코드 스니펫은 **프로젝트 고유 패턴** (특수 콜백 체인·도메인 특화 쿼리 헬퍼) 일 때만 주입한다. 일반 Rails 관용구는 `coding.md` 로 위임.
+- 코드 스니펫은 **프로젝트 고유 패턴** (특수 콜백 체인·도메인 특화 쿼리 헬퍼) 일 때만 주입한다. 일반 언어·프레임워크 관용구는 `coding.md` 로 위임.
 - `## 주의사항`·`## 구현 패턴` 은 사용자 수동 편집 영역이므로 `[analyze-managed]` 없이 유지.
 
 ---
@@ -163,14 +163,14 @@ evaluator.md 고유:
 분석이 실제 features/ 를 생성했고 6-1 / 6-2 / 6-3 갱신이 완료된 경우에만 실행한다.
 
 1. `workspace/projects/{PROJECT}/.agent-state.yml` 을 Read 한다.
-2. 파일이 없거나 `schema` 가 지원 버전 (`v1`, `v1.1`) 이 아니면 에러 출력 후 중단:
+2. 파일이 없거나 `schema` 가 지원 버전 (`v1`, `v1.1`, `v1.2`) 이 아니면 에러 출력 후 중단:
    "프로젝트 상태 파일 누락 또는 구버전. `/pilot:doctor --fix` 실행 후 재시도하세요."
 3. 아래 필드를 Edit 한다:
    - `analyzed: true`
    - `analyzed_at: "{ISO 8601 UTC timestamp, e.g. 2026-04-18T10:30:00Z}"`
    - `last_analyzed_features: {현재 features/*.md (.plan.md 제외) 개수}`
    - `domain: {사용자가 확인한 도메인}` — 5 단계에서 질의·확인한 값. null 로 두지 않는다 (null 이면 다음 analyze 가 다시 도메인 질의를 해 사용자가 같은 답을 두 번 입력하게 된다).
-4. 그 외 필드 (`schema`, `tdd`, `docs_last_fetched_at`) 는 건드리지 않는다. `schema` 가 `v1` 이면 이번 기회에 `v1.1` 로 업그레이드 + `domain` 기록까지 한 번에 처리.
+4. 그 외 필드 (`schema`, `tdd`, `docs_last_fetched_at`) 는 건드리지 않는다. `schema` 가 `v1` 또는 `v1.1` 이면 이번 기회에 최신(`v1.2`) 으로 업그레이드 + `domain` 기록까지 한 번에 처리.
 
 이 단계를 통과해야 wrapper (`@planner`·`@generator`·`@evaluator`) 가 post-analyze 분기 (`scope` 원본 재로드 생략) 로 동작한다.
 

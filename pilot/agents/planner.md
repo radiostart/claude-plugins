@@ -44,7 +44,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
    - **`tdd: true` (mode 미설정)** — [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Planner — Red Contract. Red 계약 3 축 (spec 대상 경로 / 검증할 행동 / 기대 실패 유형).
    - **둘 다 아님** — 일반 구현 계획 (변경 파일 / 구현 순서 / 주의사항).
 
-   공통: **RSpec 코드는 작성하지 않는다** — 실제 spec 파일 작성은 Generator 담당.
+   공통: **테스트 코드는 작성하지 않는다** — 실제 spec/test 파일 작성은 Generator 담당.
 5. **[필수]** 계획 수립 과정에서 체크리스트(`[ ]`)를 작성했거나, 기존 체크리스트 항목을 완료한 경우 **반드시** Edit 툴로 해당 항목을 `[x]`로 업데이트한다. 체크 결과를 텍스트로만 보고하고 파일을 수정하지 않는 것은 금지한다.
 6. **[계획 저장]** `features/` 폴더가 있는 프로젝트에서, 계획이 확정되면 `features/NN-{slug}.plan.md`에 저장한다 (NN은 feature 번호, slug는 feature 파일명과 동일).
    - 포함 내용: 변경 대상 파일 목록, 구현 순서, 스텝별 설명, 주의사항
