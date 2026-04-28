@@ -1,0 +1,14 @@
+{
+  "name": "claude-plugins",
+  "owner": {
+    "name": "radiostart",
+    "url": "https://github.com/radiostart"
+  },
+  "plugins": [
+    {
+      "name": "pilot",
+      "source": "./pilot",
+      "description": "Large codebase navigation plugin — domain-knowledge-driven agent workflow for complex projects"
+    }
+  ]
+}

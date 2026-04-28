@@ -1,0 +1,48 @@
+version: 1
+instincts:
+  - id: commit-format-dp
+    trigger: "git commit 메시지 작성"
+    evidence: hooks/commit-format.sh
+    applies_to: [commit, generator]
+    rule: >
+      제목 첫 줄에 `{scope}: {설명}` 형식을 사용한다. scope 는 MANIFEST.md `## 팀 설정`
+      `commit_scopes` 값(없으면 기본값 feat,fix,refactor,skills,chore,docs,test,wip)
+      내에서만 선택. 목록 밖 scope 는 경고 대상. 제목 50 자 초과도 경고.
+      `[TICKET-123] 설명` 또는 scope 없는 한국어 설명만도 허용. `--amend` 는 검증 제외.
+
+  - id: scope-guard
+    trigger: "Edit|Write 도구 호출"
+    evidence: hooks/scope-guard.sh
+    applies_to: [generator]
+    rule: >
+      `workspace/context/config.md` `## Ignore` 섹션 패턴에 매칭되는
+      파일은 수정 차단 (exit 2). config.md 가 단일 소스. 해당 파일 수정이
+      필요하면 사용자 확인을 먼저 받는다.
+
+  - id: tdd-red-owner
+    trigger: "tdd: true 프로젝트의 구현 단계"
+    evidence: skills/context/modes/rgr.md, commit 1741b50
+    applies_to: [generator, evaluator]
+    rule: >
+      Red 작성 주체는 Generator (Planner 는 Red 계약만 남긴다). Generator 는 스텝마다
+      `.plan.md` 에 [Red] 실패 메시지·유형 + [Green] 통과 시각 + (선택) [Refactor]
+      증거를 Edit 으로 기록. Evaluator 는 모든 스텝의 [Red]+[Green] 증거 누락 여부와
+      "인프라 오류" 기록 스텝을 교차 검증해 필요 시 Generator 에 반려.
+
+  - id: drift-protocol-a
+    trigger: "workspace/context/ 파일이 실제 코드와 다름을 발견"
+    evidence: skills/context/lifecycle/drift-protocol.md
+    applies_to: [planner, generator, evaluator]
+    rule: >
+      즉시 Edit 금지. 대상 파일 경로, before/after, 근거(코드 경로·티켓·재현)를 담아
+      사용자에게 보고하고 승인 후에만 반영. 예외 — `_(추가 예정)_` 플레이스홀더를
+      처음 채우는 경우에만 승인 없이 반영 가능 (출처 주석 필수).
+
+  - id: ai-review-reject
+    trigger: "ai-review 스킬이 PR 에서 변경 거부 필요 판단"
+    evidence: skills/ai-review/
+    applies_to: [ai-review]
+    rule: >
+      ai-review 는 활성 프로젝트 컨텍스트와 독립적으로 동작한다 (PR 기준으로만 판정).
+      활성 프로젝트의 에이전트 규칙을 강제 적용하지 않는다. 다단계 스킬이므로 P-1
+      (TodoWrite 선로딩) 만 필수이며 P0~P4 는 미적용.

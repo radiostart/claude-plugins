@@ -1,0 +1,9 @@
+{
+  "name": "pilot",
+  "version": "0.1.0",
+  "description": "Large codebase navigation plugin — domain-knowledge-driven agent workflow for complex projects",
+  "author": {
+    "name": "Jay-P",
+    "email": "noreply@example.com"
+  }
+}

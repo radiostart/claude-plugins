@@ -1,0 +1,16 @@
+version: 1
+language: ko
+tone: "terse, evidence-first, no preamble"
+verbosity:
+  default: low
+  error: medium
+agents:
+  planner:
+    output: plan-table
+    min_evidence: repo-scan
+  generator:
+    output: tdd-evidence
+    min_evidence: red-green
+  evaluator:
+    output: verify-block
+    min_evidence: gate-results

@@ -1,0 +1,18 @@
+# IDE
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Env
+.env
+workspace/.env
+
+# Cowork scratch outputs (not tracked)
+.cowork/
+
+# macOS
+.DS_Store

@@ -1,0 +1,31 @@
+# analyze 주입 공통 원칙
+
+`/pilot:analyze` 6-2 (generator.md) · 6-3 (evaluator.md) 갱신 시 공통으로 지키는 주입 금지 원칙.
+
+---
+
+## SSOT 위임 (모든 role 공통)
+
+같은 내용을 여러 곳에 복사하지 않는다. 아래 SSOT 파일이 존재하는 영역은 **링크 참조만** 하고 본문을 주입하지 않는다.
+
+| 주제 | SSOT | 주입 시 금지 |
+| ---- | ---- | ------------ |
+| Rails / 언어 공통 패턴 (`.update!`, `.where`, 서비스 레이어 분리, `Time.current` 등) | [`coding.md`](../shared/coding.md) | 개별 규칙 복사. "coding.md 참조" 한 줄로 갈음 |
+| 도메인 비즈니스 규칙 (메모 문구·상태 의미·특정 제외 규칙) | `workspace/context/rules/{domain}.md` | 규칙 하드코드 |
+| 상태 enum 정의 | `workspace/context/enums/{domain}/{Model}.md` | enum 값 텍스트 복사 |
+
+## 유지해야 하는 커스텀 섹션
+
+`<!-- [analyze-managed] -->` 주석이 **없는** 섹션은 analyze 가 덮어쓰지 않는다. 다음 섹션들은 반드시 보존한다.
+
+- generator.md: `## 주의사항`, `## 구현 패턴` (사용자 수동 기입 영역)
+- evaluator.md: `## 전달사항 작성 가이드`, `## 일관성`, `## 테스트` 의 기본 항목
+
+## 반복 주입 방지
+
+- **feature 별 공통 템플릿** (예: "해피패스 커버") 은 기본 항목으로 **한 번만** 두고, feature 별 고유 체크만 추가한다.
+- "컨텍스트 로드" 섹션의 파일 경로는 **실제 로드 대상 파일 경로** 를 기입한다. "반드시 로드" 같은 지시문 주입 금지 — 래퍼가 자동 로드하는 참조 목록.
+
+## role 고유 추가 원칙
+
+공통 원칙 위에 각 role 이 가진 고유 금지 항목은 본 문서가 아닌 `skills/analyze/SKILL.md` 의 6-2·6-3 단계에서 기술한다.
