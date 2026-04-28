@@ -153,7 +153,7 @@ class ExtractPageId(unittest.TestCase):
         self.assertEqual(c.extract_page_id("5426020353"), "5426020353")
 
     def test_full_url(self):
-        url = "https://dealicious.atlassian.net/wiki/spaces/~xxx/pages/5426020353/title-slug"
+        url = "https://example.atlassian.net/wiki/spaces/~xxx/pages/5426020353/title-slug"
         self.assertEqual(c.extract_page_id(url), "5426020353")
 
     def test_invalid_input_raises(self):

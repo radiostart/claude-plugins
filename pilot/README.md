@@ -90,18 +90,19 @@ workspace/
 
 | 도메인 | scope | rules | 설명 |
 | ------ | ----- | ----- | ---- |
-| retail | `scope/retail.md` | `rules/retail.md` | 소매 주문·환불·송장 |
+| orders | `scope/orders.md` | `rules/orders.md` | 주문·결제·환불 |
 ```
 
 도메인 파일을 추가한 뒤 `/pilot:doctor` 로 정합성 확인.
 
 ### 4. 환경변수 (Confluence 사용 시)
 
-`/pilot:confl` 을 쓰려면 토큰 필요:
+`/pilot:confl` 을 쓰려면 호스트·토큰 필요:
 
 ```bash
 # 프로젝트 루트 또는 workspace/ 에 .env
 cat > .env <<'EOF'
+CONFLUENCE_HOST=https://yourorg.atlassian.net/wiki
 CONFLUENCE_EMAIL=user@example.com
 CONFLUENCE_TOKEN=your-api-token
 EOF
@@ -175,14 +176,14 @@ pip install requests beautifulsoup4
 
 | 도메인 | scope | rules | 설명 |
 | ------ | ----- | ----- | ---- |
-| retail | `scope/retail.md` | `rules/retail.md` | 소매 주문 |
+| orders | `scope/orders.md` | `rules/orders.md` | 주문 |
 ```
 
 > **`## 카테고리` 표는 적지 않아도 된다** — 플러그인이 `scope/{domain}.md` · `rules/{domain}.md` 경로를 자동으로 인식 (컨트랙트).
 >
 > **`## Ignore` · `## 언어·도구 기본값` · `## 설정` 은 `config.md` 에 둔다.** MANIFEST 에 적으면 파서가 인식하지 않는다.
 
-이후 `context/scope/retail.md` · `context/rules/retail.md` 를 작성. 첫 도메인 파일 1 쌍을 `_(추가 예정)_` 로 두고 시작해도 `/pilot:project` 는 동작한다 — 실제 코드 작업 전까지 채우면 충분.
+이후 `context/scope/orders.md` · `context/rules/orders.md` 를 작성. 첫 도메인 파일 1 쌍을 `_(추가 예정)_` 로 두고 시작해도 `/pilot:project` 는 동작한다 — 실제 코드 작업 전까지 채우면 충분.
 
 `/pilot:analyze` 가 docs/ → features/\*.md 벌크 생성. 구현은 사용자가 `@planner → @generator → @evaluator` 를 명시 호출. 각 phase 에서 중단·수정 가능한 투명한 흐름. ad-hoc 지시는 `/pilot:focus` 로 `.focus.md` 작성.
 
@@ -600,10 +601,10 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {planner|generat
 
 | 도메인 | scope            | rules            | 설명                 |
 | ------ | ---------------- | ---------------- | -------------------- |
-| retail | `scope/retail.md`| `rules/retail.md`| 소매 주문·환불·송장   |
+| orders | `scope/orders.md`| `rules/orders.md`| 주문·결제·환불        |
 ```
 
-**3 단계 — 실제 파일 배치.** MANIFEST 에서 선언한 경로 패턴대로 파일을 생성. 예: scope 카테고리 경로가 `scope/{domain}.md` 면 `workspace/context/scope/retail.md` 에 작성.
+**3 단계 — 실제 파일 배치.** MANIFEST 에서 선언한 경로 패턴대로 파일을 생성. 예: scope 카테고리 경로가 `scope/{domain}.md` 면 `workspace/context/scope/orders.md` 에 작성.
 
 **4 단계 — `_(추가 예정)_` 플레이스홀더.** 아직 채울 도메인 지식이 없으면 빈 파일을 `_(추가 예정)_` 한 줄로 둠. 작업 중 채워 넣는 흐름 지원 (지식 갱신 절차 참조).
 

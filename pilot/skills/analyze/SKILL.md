@@ -180,7 +180,7 @@ features/ 생성 후 `project.md` 의 `## 목표` 와 `## 관련 파일` 을 자
      ```
      이 프로젝트의 도메인을 확인해주세요.
      자동 판정 후보: {후보} (근거: {근거 한 줄})
-     선택지: retail / global / wholesale / return / inventory / dms
+     선택지: MANIFEST.md 의 도메인 분류에 정의된 값 또는 새 도메인명 입력
      ```
 
    - 사용자 응답을 `.agent-state.yml` 의 `domain` 필드에 Edit 로 기록.

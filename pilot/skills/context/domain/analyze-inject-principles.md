@@ -10,7 +10,7 @@
 
 | 주제 | SSOT | 주입 시 금지 |
 | ---- | ---- | ------------ |
-| Rails / 언어 공통 패턴 (`.update!`, `.where`, 서비스 레이어 분리, `Time.current` 등) | [`coding.md`](../shared/coding.md) | 개별 규칙 복사. "coding.md 참조" 한 줄로 갈음 |
+| 언어 공통 패턴 (수정 최소화·시그니처 보존·검증 루프 등) | [`coding.md`](../shared/coding.md) | 개별 규칙 복사. "coding.md 참조" 한 줄로 갈음 |
 | 도메인 비즈니스 규칙 (메모 문구·상태 의미·특정 제외 규칙) | `workspace/context/rules/{domain}.md` | 규칙 하드코드 |
 | 상태 enum 정의 | `workspace/context/enums/{domain}/{Model}.md` | enum 값 텍스트 복사 |
 

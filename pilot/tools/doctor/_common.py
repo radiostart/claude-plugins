@@ -17,7 +17,6 @@ from pathlib import Path
 
 SCHEMA_VERSION = "v1.2"
 SUPPORTED_SCHEMAS = ["v1", "v1.1", "v1.2"]
-KNOWN_DOMAINS = ("retail", "global", "wholesale", "return", "inventory", "dms")
 PLUGIN_ROOT_ENV = "CLAUDE_PLUGIN_ROOT"
 
 # ANSI color codes

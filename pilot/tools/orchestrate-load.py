@@ -14,7 +14,7 @@ pilot orchestrate-load — wrapper agents 용 컨텍스트 로드 의사결정.
     {
       "phase": "planner",
       "project": "MyProject",
-      "domain": "retail" | null,
+      "domain": "<domain-name>" | null,
       "analyzed": bool,
       "tdd": bool,
       "focus": string | null,

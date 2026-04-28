@@ -13,7 +13,6 @@ from pathlib import Path
 from doctor._common import (
     BOLD,
     GREEN,
-    KNOWN_DOMAINS,
     RED,
     RESET,
     Result,
@@ -569,7 +568,7 @@ def check_project(workspace: Path, project: str) -> list[Result]:
             Result(Result.PASS, f"{project} tdd", f"tdd={tdd_flag}, 일치")
         )
 
-    # domain 체크 (v1.1+ 필수 필드)
+    # domain 체크 (v1.1+ 필수 필드) — null 일 때만 WARN. 값은 자유 문자열.
     domain = state_data.get("domain")
     if schema in ("v1.1", "v1.2"):
         if domain is None:
@@ -579,15 +578,6 @@ def check_project(workspace: Path, project: str) -> list[Result]:
                     f"{project} domain",
                     "domain 미지정 (null)",
                     "`/pilot:analyze` 진입 시 사용자 확인 후 자동 기록됨",
-                )
-            )
-        elif isinstance(domain, str) and domain not in KNOWN_DOMAINS:
-            results.append(
-                Result(
-                    Result.WARN,
-                    f"{project} domain",
-                    f"알 수 없는 domain 값: {domain!r}",
-                    f"지원 값: {', '.join(KNOWN_DOMAINS)}",
                 )
             )
 

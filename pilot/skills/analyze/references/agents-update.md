@@ -62,8 +62,8 @@ features/ 내용 + 5-2 에서 로드한 `scope/{domain}.md` 로 기술 레퍼런
 이 프로젝트가 의존하는 도메인 지식 (래퍼가 자동 로드 — 수동 Read 불필요):
 
 - `workspace/context/MANIFEST.md`
-- `workspace/context/scope/retail.md`
-- `workspace/context/rules/retail.md`
+- `workspace/context/scope/orders.md`
+- `workspace/context/rules/orders.md`
 - `workspace/context/enums.md` — 관련 섹션: `Order`
 
 <!-- [analyze-managed] -->
@@ -71,8 +71,8 @@ features/ 내용 + 5-2 에서 로드한 `scope/{domain}.md` 로 기술 레퍼런
 
 | 대상 | 파일 | 용도 |
 | --- | --- | --- |
-| Order | app/models/order.rb | 주문 헤더 |
-| RefundService | app/services/refund_service.rb | 환불 처리 |
+| Order | {source_root}/models/order.{ext} | 주문 헤더 |
+| RefundService | {source_root}/services/refund_service.{ext} | 환불 처리 |
 
 <!-- [analyze-managed] -->
 ## 관계 구조

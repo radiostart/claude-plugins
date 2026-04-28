@@ -30,7 +30,6 @@ from datetime import date, datetime, timezone
 from bs4 import BeautifulSoup
 
 WORKSPACE_ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
-CONFLUENCE_HOST = "https://dealicious.atlassian.net/wiki"
 
 
 # ---------------------------------------------------------------------------
@@ -80,6 +79,10 @@ def _load_dotenv() -> None:
 
 _load_dotenv()
 
+# Atlassian Confluence 인스턴스 URL. `.env` 또는 shell profile 에 설정.
+# 예: CONFLUENCE_HOST=https://yourorg.atlassian.net/wiki
+CONFLUENCE_HOST = os.environ.get("CONFLUENCE_HOST", "").rstrip("/")
+
 # ---------------------------------------------------------------------------
 # State helpers
 # ---------------------------------------------------------------------------
@@ -107,19 +110,23 @@ def docs_dir(project: str) -> Path:
 def get_credentials():
     email = os.environ.get("CONFLUENCE_EMAIL", "")
     token = os.environ.get("CONFLUENCE_TOKEN", "")
-    if not email or not token:
-        missing = []
-        if not email:
-            missing.append("CONFLUENCE_EMAIL  (Atlassian 계정 이메일, 예: user@example.com)")
-        if not token:
-            missing.append("CONFLUENCE_TOKEN  (Atlassian API 토큰, https://id.atlassian.com/manage-profile/security/api-tokens 에서 생성)")
+    missing = []
+    if not CONFLUENCE_HOST:
+        missing.append("CONFLUENCE_HOST   (Atlassian 인스턴스 URL, 예: https://yourorg.atlassian.net/wiki)")
+    if not email:
+        missing.append("CONFLUENCE_EMAIL  (Atlassian 계정 이메일, 예: user@example.com)")
+    if not token:
+        missing.append("CONFLUENCE_TOKEN  (Atlassian API 토큰, https://id.atlassian.com/manage-profile/security/api-tokens 에서 생성)")
+    if missing:
         raise RuntimeError(
-            "CONFLUENCE_EMAIL / CONFLUENCE_TOKEN 이 설정되지 않았습니다.\n"
+            "Confluence 환경변수가 설정되지 않았습니다.\n"
             "아래 중 한 가지 방법으로 설정하세요:\n\n"
             "  1) 프로젝트 루트 `.env` 또는 `workspace/.env` 파일에 기록 (권장)\n"
+            "     CONFLUENCE_HOST=https://yourorg.atlassian.net/wiki\n"
             "     CONFLUENCE_EMAIL=user@example.com\n"
             "     CONFLUENCE_TOKEN=your-api-token\n\n"
             "  2) shell profile(~/.zshrc, ~/.bashrc 등)에 export\n"
+            "     export CONFLUENCE_HOST=\"https://yourorg.atlassian.net/wiki\"\n"
             "     export CONFLUENCE_EMAIL=\"user@example.com\"\n"
             "     export CONFLUENCE_TOKEN=\"your-api-token\"\n\n"
             "필요한 환경변수:\n" + "\n".join(f"  - {m}" for m in missing)

@@ -169,8 +169,8 @@ class DetermineDomain(unittest.TestCase):
         return Path(f.name)
 
     def test_domain_extracted(self):
-        p = self._write("## 제한사항\n\n- **domain**: retail\n")
-        self.assertEqual(m.determine_domain(p), "retail")
+        p = self._write("## 제한사항\n\n- **domain**: orders\n")
+        self.assertEqual(m.determine_domain(p), "orders")
 
     def test_domain_with_backticks(self):
         p = self._write("- domain: `admin`\n")

@@ -38,7 +38,6 @@ from doctor._common import RED, RESET  # noqa: E402
 from doctor._common import (  # noqa: E402, F401
     BOLD,
     GREEN,
-    KNOWN_DOMAINS,
     PLUGIN_ROOT_ENV,
     Result,
     SCHEMA_VERSION,

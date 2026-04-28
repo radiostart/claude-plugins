@@ -40,10 +40,11 @@ mkdir -p workspace/context
 
 ## 3. `.env` — Confluence 환경변수 (선택)
 
-`/pilot:confl`을 사용하려면 `CONFLUENCE_EMAIL` / `CONFLUENCE_TOKEN` 이 필요하다. 프로젝트 루트 `.env` 또는 `workspace/.env` 파일에 기록하면 shell 종류와 무관하게 `confluence.py`가 자동으로 로드한다.
+`/pilot:confl`을 사용하려면 `CONFLUENCE_HOST` / `CONFLUENCE_EMAIL` / `CONFLUENCE_TOKEN` 이 필요하다. 프로젝트 루트 `.env` 또는 `workspace/.env` 파일에 기록하면 shell 종류와 무관하게 `confluence.py`가 자동으로 로드한다.
 
 ```bash
 cat > .env <<'EOF'
+CONFLUENCE_HOST=https://yourorg.atlassian.net/wiki
 CONFLUENCE_EMAIL=user@example.com
 CONFLUENCE_TOKEN=your-api-token
 EOF
