@@ -99,7 +99,7 @@ _(상태값 변화가 있는 기능만 작성)_
 
 - **도메인 결정** (5 단계 prelude). `.agent-state.yml.domain` 이 null 이면 analyze 와 동일한 우선순위로 후보 제시 후 사용자 확인 → state 에 기록. non-null 이면 그대로 사용 (재질의 금지).
 - **5-1. `## 목표` 갱신** — features 전체로 체크리스트 정렬 갱신. 기존 `[x]` 체크는 보존, 신규 feature 항목이 NN 순서에 추가된다.
-- **5-2. `## 관련 파일` 갱신** — `scope/{domain}.md` 의 Routes/Models/Services 표를 추출해 `## 관련 파일` 표 자동 기입.
+- **5-2. `## 관련 파일` 갱신** — `config.md` 의 `## scope 카테고리` (없으면 SKILL.md default) 매핑에 따라 `scope/{domain}.md` 의 해당 H2 표를 추출해 `## 관련 파일` 표 자동 기입. config lookup·A2 runtime fallback 상세는 [analyze/SKILL.md](../analyze/SKILL.md) 5-2 참조.
 - **6-1 ~ 6-3. prompts/\* 갱신** — `[analyze-managed]` 섹션을 features 전체 + scope 매칭 결과로 regen. `[analyze-managed]` 밖 사용자 수동 편집 영역 (`## 주의사항`·`## 구현 패턴` 등) 과 evaluator 의 `[x]` 체크는 보존.
 - **6-4. `.agent-state.yml` 갱신** — `analyzed: true`, `analyzed_at`, `last_analyzed_features` 기록. domain 이 이번에 처음 결정됐다면 함께 기록.
 

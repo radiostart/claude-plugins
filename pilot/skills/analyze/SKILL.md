@@ -208,16 +208,33 @@ features/ 생성 후 `project.md` 의 `## 목표` 와 `## 관련 파일` 을 자
 
 #### 5-2. `## 관련 파일` 갱신
 
-로드한 `scope/{domain}.md` 의 `## Routes`, `## Models`, `## Services` 표를 추출해 project.md 의 `## 관련 파일` 표를 자동 기입한다.
+> **config lookup**: 본 단계 시작 전 `workspace/context/config.md` 의 `## scope 카테고리` 섹션을 Read. 표 행이 아래 default 매핑보다 우선. 빈 표·매칭 부재·잘못된 행은 default fallback (A2 runtime). 잘못된 행 발견 시 stderr 에 `[WARN] config.md ## scope 카테고리: {사유} — default 사용` 1 줄 (abort 안 함).
+>
+> **A2 runtime fallback 절차**: config 표의 각 행을 사용 전 검증 (컬럼 수·헤더 일치). 잘못된 행은 무시하고 default 를 사용. 오류 1 건당 stderr 에 `[WARN] config.md ## scope 카테고리 {행번호 또는 사유}: default 사용` 1 줄 출력. abort 하지 않는다 — 1 행 오류로 전체 워크플로를 중단하는 것보다 default fallback 이 안전하다. doctor 가 별도 실행될 때만 ERROR 로 보고 (integrity.py `check_workspace_config_sections`).
+
+로드한 `scope/{domain}.md` 의 매칭 H2 섹션 표를 추출해 project.md 의 `## 관련 파일` 표를 자동 기입한다. 어떤 scope 헤더를 어떤 H3 로 기입할지는 `config.md` 의 `## scope 카테고리` 표가 결정하고, 비어있으면 아래 default 를 사용한다.
+
+> default — `workspace/context/config.md` 의 `## scope 카테고리` 가 비어있을 때 사용. config 행이 있으면 그 행이 우선.
+
+| scope 헤더 | project.md 대상 H3 | 표 헤더 |
+| --- | --- | --- |
+| ## Routes | Endpoints | 엔드포인트, Method, 목적 |
+| ## Models | Models | Class, DB, 목적 |
+| ## Services | Services | Class, 파일, 목적 |
 
 **프로세스:**
 
 1. project.md 의 `## 관련 파일` 섹션을 찾는다 (없으면 `## 에이전트 호출 흐름` 뒤에 GUIDE.md 템플릿대로 생성한다).
-2. **Endpoints 표** — scope 의 `## Routes` 에서 행을 뽑아 `| 엔드포인트 | Method | 목적 |` 형식으로 기입한다.
+2. config (또는 default) 매핑의 각 행을 순서대로 처리한다:
+   - scope/{domain}.md 에서 `scope 헤더` 와 일치하는 H2 섹션을 찾는다.
+   - 섹션이 없으면 해당 표만 skip + `[INFO] MANIFEST 진입 파일에 {scope 헤더} 없음 — 5-2 에서 해당 표 skip` 1 줄. `analyzed: true` 게이트는 정상 켬.
+   - scope 파일 자체가 없으면 동일하게 skip (기존 5-2 거동과 일관).
+   - 섹션이 있으면 `project.md 대상 H3` 의 이름으로 H3 표를 `표 헤더` 형식에 맞춰 기입한다.
+3. **Endpoints 표** (default: `## Routes` → Endpoints, `| 엔드포인트 | Method | 목적 |`):
    - features/ 요구사항과 관련된 route 를 우선 선별한다 (경로·목적 키워드 매칭).
    - 매칭이 불명확하면 도메인 전체 Routes 를 포함한다 (best-effort).
-3. **Models 표** — scope 의 `## Models` 에서 `| Class | DB | 목적 |` 형식으로 기입한다.
-4. **Services 표** — scope 의 `## Services` 에서 `| Class | 파일 | 목적 |` 형식으로 기입한다.
+4. **Models 표** (default: `## Models` → Models, `| Class | DB | 목적 |`): scope 의 해당 섹션에서 추출.
+5. **Services 표** (default: `## Services` → Services, `| Class | 파일 | 목적 |`): scope 의 해당 섹션에서 추출.
 
 **갱신 규칙:**
 
@@ -225,7 +242,7 @@ features/ 생성 후 `project.md` 의 `## 목표` 와 `## 관련 파일` 을 자
 - scope 에 없지만 features/ 에 등장한 신규 대상은 추가하되 `목적` 열 끝에 `(from features/NN-{slug})` 주석을 붙인다.
 - 기존 사용자 수동 기입 행은 보존하되 중복만 제거한다.
 - 빈 행(`|  |  |  |`) 은 모두 삭제한다.
-- scope 파일에 해당 섹션이 비어있거나 없으면 해당 표는 건너뛰되, 표 헤더는 유지한다.
+- config 빈 표 (헤더만 있고 행 없음): SKILL.md default 사용 (= config 부재와 동일 처리).
 
 ### 6. prompts/ 자동 갱신
 
