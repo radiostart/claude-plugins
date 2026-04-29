@@ -33,6 +33,7 @@ BOLD = "\033[1m"
 
 class Result:
     PASS = "PASS"
+    INFO = "INFO"
     WARN = "WARN"
     ERROR = "ERROR"
 
@@ -46,7 +47,7 @@ class Result:
         self.fix = fix
 
     def render(self) -> str:
-        color = {"PASS": GREEN, "WARN": YELLOW, "ERROR": RED}[self.level]
+        color = {"PASS": GREEN, "INFO": RESET, "WARN": YELLOW, "ERROR": RED}.get(self.level, RESET)
         line = f"  [{color}{self.level}{RESET}] {self.label}: {self.message}"
         if self.hint:
             line += f"\n         → {self.hint}"

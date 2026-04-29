@@ -406,6 +406,8 @@ def check_workspace(workspace: Path) -> list[Result]:
     # config.md
     if config_md.is_file():
         results.append(Result(Result.PASS, "context/config.md", "존재"))
+        # 신규 섹션 정합성 검증 (## learn 언어 패턴, ## scope 카테고리)
+        results.extend(check_workspace_config_sections(config_md))
     else:
         results.append(
             Result(
@@ -776,12 +778,541 @@ def check_project(workspace: Path, project: str) -> list[Result]:
     return results
 
 
+# ---------------------------------------------------------------------------
+# config.md 신규 섹션 정합성 검증
+# ---------------------------------------------------------------------------
+
+def _parse_md_tables_in_section(text: str, section_header: str) -> list[list[list[str]]]:
+    """마크다운 텍스트에서 특정 H2 섹션 내 표 목록을 반환.
+
+    반환값: 표 리스트. 각 표 = 행 리스트. 각 행 = 셀 리스트 (헤더 행 포함).
+    구분선 행 (`| --- |` 형태) 은 제외.
+    """
+    # 섹션 추출 (다음 H2 또는 EOF 까지)
+    pattern = re.compile(
+        rf"^{re.escape(section_header)}\s*$(.*?)(?=^##\s|\Z)",
+        re.M | re.S,
+    )
+    m = pattern.search(text)
+    if not m:
+        return []
+    section_text = m.group(1)
+
+    tables: list[list[list[str]]] = []
+    current_table: list[list[str]] = []
+    in_table = False
+
+    for line in section_text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("|") and stripped.endswith("|"):
+            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            # 구분선 행 제외 (모든 셀이 --- 패턴)
+            if all(re.match(r"^[-:]+$", c) for c in cells):
+                continue
+            current_table.append(cells)
+            in_table = True
+        else:
+            if in_table and current_table:
+                tables.append(current_table)
+                current_table = []
+                in_table = False
+
+    if in_table and current_table:
+        tables.append(current_table)
+
+    return tables
+
+
+def check_workspace_config_sections(config_path: Path) -> list[Result]:
+    """workspace/context/config.md 의 신규 섹션 (## learn 언어 패턴, ## scope 카테고리) 정합성 검증.
+
+    부재 시 INFO 1 줄. 위반 시 ERROR. backward-compat 0 brittle.
+    """
+    results: list[Result] = []
+
+    if not config_path.is_file():
+        # config.md 자체 부재는 check_workspace 에서 처리 — 여기서는 skip
+        return results
+
+    try:
+        text = config_path.read_text(encoding="utf-8")
+    except Exception as e:
+        results.append(
+            Result(
+                Result.ERROR,
+                "context/config.md",
+                f"읽기 실패: {e}",
+                "파일 권한·인코딩 확인",
+            )
+        )
+        return results
+
+    # ------------------------------------------------------------------
+    # ## learn 언어 패턴 검증
+    # ------------------------------------------------------------------
+    LEARN_SECTION = "## learn 언어 패턴"
+    learn_tables = _parse_md_tables_in_section(text, LEARN_SECTION)
+
+    if not learn_tables:
+        results.append(
+            Result(
+                Result.INFO,
+                "context/config.md",
+                f"{LEARN_SECTION} 미정의 — 폴더 인접성 fallback 동작",
+            )
+        )
+    else:
+        # 표 1: 2 컬럼 (언어, 의존성 추출 패턴)
+        table1 = learn_tables[0]
+        LEARN_TABLE1_EXPECTED_COLS = 2
+        LEARN_TABLE1_EXPECTED_HEADERS = ["언어", "의존성 추출 패턴"]
+        if table1:
+            header_row = table1[0]
+            col_count = len(header_row)
+            if col_count != LEARN_TABLE1_EXPECTED_COLS:
+                results.append(
+                    Result(
+                        Result.ERROR,
+                        "context/config.md",
+                        (
+                            f"{LEARN_SECTION} 표 1: 컬럼 수 {col_count}개 "
+                            f"({LEARN_TABLE1_EXPECTED_COLS}개 필요) "
+                            f"— 기대 헤더: {', '.join(LEARN_TABLE1_EXPECTED_HEADERS)}"
+                        ),
+                        f"{LEARN_SECTION} 표 1 헤더를 '| 언어 | 의존성 추출 패턴 |' 형태로 수정",
+                    )
+                )
+            elif header_row != LEARN_TABLE1_EXPECTED_HEADERS:
+                results.append(
+                    Result(
+                        Result.ERROR,
+                        "context/config.md",
+                        (
+                            f"{LEARN_SECTION} 표 1: 헤더 불일치 "
+                            f"(받은: {', '.join(header_row)}) "
+                            f"— 기대: {', '.join(LEARN_TABLE1_EXPECTED_HEADERS)}"
+                        ),
+                        f"헤더를 정확히 '언어', '의존성 추출 패턴' 으로 수정",
+                    )
+                )
+            else:
+                # 행 수 0 허용 (D10 default 폐지) — 빈 표 = 헤더만 있는 표 (data_rows = 0)
+                data_rows1 = len(table1) - 1  # 헤더 제외
+                if data_rows1 == 0:
+                    results.append(
+                        Result(
+                            Result.INFO,
+                            "context/config.md",
+                            f"{LEARN_SECTION} 의 의존성 추적 표가 비어있음 — 폴더 인접성 fallback 동작",
+                        )
+                    )
+
+        # 표 2: long-form — 정확히 2 컬럼 (역할, 식별 패턴)
+        LEARN_TABLE2_EXPECTED_COLS = 2
+        LEARN_TABLE2_EXPECTED_HEADERS = ["역할", "식별 패턴"]
+        if len(learn_tables) >= 2:
+            table2 = learn_tables[1]
+            if table2:
+                header_row2 = table2[0]
+                col_count2 = len(header_row2)
+                if col_count2 != LEARN_TABLE2_EXPECTED_COLS:
+                    results.append(
+                        Result(
+                            Result.ERROR,
+                            "context/config.md",
+                            (
+                                f"{LEARN_SECTION} 표 2 (역할 분류): 표 컬럼 수 {col_count2}개 "
+                                f"({LEARN_TABLE2_EXPECTED_COLS}개 필요) "
+                                f"— 기대 헤더: {', '.join(LEARN_TABLE2_EXPECTED_HEADERS)}"
+                            ),
+                            f"표 2 헤더를 '| 역할 | 식별 패턴 |' 형태로 수정 (long-form)",
+                        )
+                    )
+                elif header_row2 != LEARN_TABLE2_EXPECTED_HEADERS:
+                    results.append(
+                        Result(
+                            Result.ERROR,
+                            "context/config.md",
+                            (
+                                f"{LEARN_SECTION} 표 2 (역할 분류): 헤더 불일치 "
+                                f"(받은: {', '.join(header_row2)}) "
+                                f"— 기대: {', '.join(LEARN_TABLE2_EXPECTED_HEADERS)}"
+                            ),
+                            "헤더를 정확히 '역할', '식별 패턴' 으로 수정",
+                        )
+                    )
+                else:
+                    # 행 수 0 허용 (D10 default 폐지)
+                    data_rows2 = len(table2) - 1
+                    if data_rows2 == 0:
+                        results.append(
+                            Result(
+                                Result.INFO,
+                                "context/config.md",
+                                f"{LEARN_SECTION} 의 역할 분류 표가 비어있음 — 폴더 인접성 fallback 동작",
+                            )
+                        )
+
+    # ------------------------------------------------------------------
+    # ## scope 카테고리 검증
+    # ------------------------------------------------------------------
+    SCOPE_SECTION = "## scope 카테고리"
+    scope_tables = _parse_md_tables_in_section(text, SCOPE_SECTION)
+
+    if not scope_tables:
+        results.append(
+            Result(
+                Result.INFO,
+                "context/config.md",
+                f"{SCOPE_SECTION} 미정의 — SKILL.md default 사용",
+            )
+        )
+    else:
+        scope_table = scope_tables[0]
+        SCOPE_EXPECTED_COLS = 3
+        SCOPE_EXPECTED_HEADERS = ["scope 헤더", "project.md 대상 H3", "표 헤더"]
+
+        if scope_table:
+            header_row = scope_table[0]
+            col_count = len(header_row)
+
+            # 컬럼 수 검증
+            if col_count != SCOPE_EXPECTED_COLS:
+                results.append(
+                    Result(
+                        Result.ERROR,
+                        "context/config.md",
+                        (
+                            f"{SCOPE_SECTION}: 표 컬럼 수 {col_count}개 "
+                            f"({SCOPE_EXPECTED_COLS}개 필요) "
+                            f"— 기대 헤더: {', '.join(SCOPE_EXPECTED_HEADERS)}"
+                        ),
+                        f"표 헤더를 '| scope 헤더 | project.md 대상 H3 | 표 헤더 |' 형태로 수정",
+                    )
+                )
+            else:
+                # 헤더 정확 일치 확인
+                if header_row != SCOPE_EXPECTED_HEADERS:
+                    results.append(
+                        Result(
+                            Result.ERROR,
+                            "context/config.md",
+                            (
+                                f"{SCOPE_SECTION}: 헤더 불일치 "
+                                f"(받은: {', '.join(header_row)}) "
+                                f"— 기대: {', '.join(SCOPE_EXPECTED_HEADERS)}"
+                            ),
+                            f"헤더를 정확히 '{', '.join(SCOPE_EXPECTED_HEADERS)}' 로 수정",
+                        )
+                    )
+
+                # 데이터 행 검증 (헤더 행 제외, 1-indexed 로 행 번호 표시)
+                ALLOWED_H3_PATTERN = re.compile(r"^[A-Za-z0-9가-힣 \-]+$")
+                for row_idx, row in enumerate(scope_table[1:], start=2):
+                    if len(row) < SCOPE_EXPECTED_COLS:
+                        continue  # 셀 수 부족 행은 스킵 (컬럼 수 오류와 중복 보고 방지)
+
+                    scope_header_val = row[0]
+                    h3_val = row[1]
+
+                    # scope 헤더 "## " prefix 강제
+                    if not scope_header_val.startswith("## "):
+                        results.append(
+                            Result(
+                                Result.ERROR,
+                                "context/config.md",
+                                (
+                                    f"{SCOPE_SECTION}:{row_idx}행: "
+                                    f"scope 헤더 값 \"{scope_header_val}\" "
+                                    f"— ## prefix 필요 (\"## \" 로 시작해야 함)"
+                                ),
+                                f"scope 헤더 값을 '## {scope_header_val}' 형태로 수정",
+                            )
+                        )
+
+                    # project.md 대상 H3 허용 문자 검증
+                    if not ALLOWED_H3_PATTERN.match(h3_val):
+                        # 차단 문자 식별
+                        bad_chars = sorted(set(
+                            ch for ch in h3_val
+                            if not re.match(r"[A-Za-z0-9가-힣 \-]", ch)
+                        ))
+                        bad_desc = "·".join(
+                            {"/" : "슬래시", ":" : "콜론", "#" : "해시", "|" : "파이프"}
+                            .get(ch, repr(ch))
+                            for ch in bad_chars
+                        )
+                        results.append(
+                            Result(
+                                Result.ERROR,
+                                "context/config.md",
+                                (
+                                    f"{SCOPE_SECTION}:{row_idx}행: "
+                                    f"project.md 대상 H3 값 \"{h3_val}\" "
+                                    f"에 차단 문자 {bad_desc} 포함 "
+                                    f"— 영숫자·공백·하이픈만 허용"
+                                ),
+                                "H3 값에서 슬래시·콜론·#·| 등 마크다운 메타 문자를 제거",
+                            )
+                        )
+
+    return results
+
+
 def determine_active_project(workspace: Path) -> str | None:
     state_md = workspace / "STATE.md"
     count, names = parse_state_md(state_md)
     if count == 1:
         return names[0]
     return None
+
+
+# ---------------------------------------------------------------------------
+# M1 자동 마이그레이션: v0.1.0 → v0.2.0
+# ---------------------------------------------------------------------------
+
+# v0.1.0 default 표 (backward-compat 주입용)
+_V010_DEFAULT_DEPENDENCY_ROWS = """\
+| Ruby | `require_relative` · 클래스 참조 (`OrderService`) → `app/**/order_service.rb` Glob |
+| Kotlin | `import com.example.X` · `@Autowired`·`val foo: FooService` |
+| TypeScript | `import { X } from "../foo"` · 상대 경로 추적 |
+| Python | `from foo import X` · `import foo.bar` |
+| Go | 동일 패키지 + `import "foo/bar"` |"""
+
+_V010_DEFAULT_ROLE_ROWS = """\
+| routes | `config/routes.rb` 도메인 라인·`@RestController` `@RequestMapping`·`*.routes.ts` `router.use` |
+| controllers | `*_controller.rb`·`< ApplicationController`·`@RestController` `@Controller`·`*.controller.ts` |
+| services | `*_service.rb`·`app/services/**`·`@Service`·`*.service.ts` |
+| models | `app/models/**`·`< ApplicationRecord`·`@Entity`·`*.model.ts` `*.entity.ts` |
+| helpers | `app/helpers/**`·util/lib 폴더·`*Util.kt` `*Helper.kt`·`*.util.ts` `*.helper.ts` |
+| other | 위 어느 것도 아님 |"""
+
+
+def _is_learn_section_empty(config_path: Path) -> bool:
+    """config.md 의 ## learn 언어 패턴 두 표 모두 행이 0 인지 확인."""
+    if not config_path.is_file():
+        return True
+    try:
+        text = config_path.read_text(encoding="utf-8")
+    except Exception:
+        return True
+    tables = _parse_md_tables_in_section(text, "## learn 언어 패턴")
+    if not tables:
+        return True
+    # 표 1 행 수 (헤더 제외)
+    table1_data = len(tables[0]) - 1 if tables else 0
+    # 표 2 행 수
+    table2_data = (len(tables[1]) - 1) if len(tables) >= 2 else 0
+    return table1_data == 0 and table2_data == 0
+
+
+def _has_partial_learn_definition(config_path: Path) -> bool:
+    """config.md 에 ## learn 언어 패턴 이 존재하지만 행 수 > 0 인지."""
+    if not config_path.is_file():
+        return False
+    try:
+        text = config_path.read_text(encoding="utf-8")
+    except Exception:
+        return False
+    tables = _parse_md_tables_in_section(text, "## learn 언어 패턴")
+    if not tables:
+        return False
+    table1_data = len(tables[0]) - 1 if tables else 0
+    table2_data = (len(tables[1]) - 1) if len(tables) >= 2 else 0
+    return (table1_data > 0) or (table2_data > 0)
+
+
+def _inject_v010_defaults_into_config(config_path: Path) -> tuple[bool, str]:
+    """config.md 의 ## learn 언어 패턴 두 표에 v0.1.0 default 행을 주입."""
+    try:
+        text = config_path.read_text(encoding="utf-8")
+    except Exception as e:
+        return False, f"read 실패: {e}"
+
+    # 표 1 헤더 다음 줄에 의존성 추적 행 주입
+    dep_header = "| 언어 | 의존성 추출 패턴 |"
+    role_header = "| 역할 | 식별 패턴 |"
+
+    # 헤더가 다양한 spacing 으로 작성될 수 있으므로 패턴 매칭
+    import re as _re
+
+    def _inject_after_header(content: str, header_pattern: str, rows: str) -> str:
+        """헤더 행 + 구분선 다음에 rows 를 주입 (이미 행이 있으면 skip)."""
+        lines = content.splitlines(keepends=True)
+        out = []
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            # 헤더 행 감지 (공백 무시)
+            stripped = line.strip()
+            cells = [c.strip() for c in stripped.strip("|").split("|")] if stripped.startswith("|") else []
+            if len(cells) == 2 and _re.match(header_pattern, stripped):
+                out.append(line)
+                i += 1
+                # 구분선
+                if i < len(lines) and lines[i].strip().startswith("|") and all(
+                    _re.match(r"^[-:]+$", c.strip()) for c in lines[i].strip().strip("|").split("|")
+                ):
+                    out.append(lines[i])
+                    i += 1
+                # 다음 행이 데이터가 아니면 주입 (빈 표)
+                if i >= len(lines) or not lines[i].strip().startswith("|"):
+                    for row in rows.splitlines():
+                        out.append(row + "\n")
+            else:
+                out.append(line)
+                i += 1
+        return "".join(out)
+
+    # 의존성 추적 표에 주입
+    text = _inject_after_header(
+        text,
+        r"^\|\s*언어\s*\|\s*의존성 추출 패턴\s*\|$",
+        _V010_DEFAULT_DEPENDENCY_ROWS,
+    )
+    # 역할 분류 표에 주입
+    text = _inject_after_header(
+        text,
+        r"^\|\s*역할\s*\|\s*식별 패턴\s*\|$",
+        _V010_DEFAULT_ROLE_ROWS,
+    )
+
+    try:
+        config_path.write_text(text, encoding="utf-8")
+    except Exception as e:
+        return False, f"write 실패: {e}"
+    return True, "v0.1.0 default 5 언어 표 주입 완료"
+
+
+def migrate_v0_1_to_v0_2(workspace: Path, project: str) -> list[Result]:
+    """M1 자동 마이그레이션: v0.1.0 → v0.2.0 거동.
+
+    감지 조건:
+    - .agent-state.yml.plugin_version 이 0.1.x 또는 부재
+    - 현재 plugin 이 0.2.0+
+    - workspace/context/config.md 의 ## learn 언어 패턴 두 표 모두 빈 행
+
+    `--fix` 가 호출되어야 실행. interactive 환경에서 사용자 확인 (a/b/c),
+    non-interactive 환경에서는 자동 미루기 (c 동등).
+    """
+    results: list[Result] = []
+
+    state_yml = workspace / "projects" / project / ".agent-state.yml"
+    config_path = workspace / "context" / "config.md"
+
+    state_data = parse_state_yml(state_yml) or {}
+    migration_flag = state_data.get("migration_v0_2_0")
+
+    # 이미 결정된 경우 skip
+    if migration_flag in ("accepted", "declined"):
+        return results
+
+    state_pv = state_data.get("plugin_version")
+    current_pv = read_current_plugin_version()
+
+    # 현재 plugin 버전 확인 — 0.2.0 미만이면 마이그레이션 대상 아님
+    if current_pv:
+        cv = _parse_semver(current_pv)
+        if cv and cv < (0, 2, 0):
+            return results
+
+    # plugin_version 이 0.2.0+ 이면 신규 사용자 — skip
+    if state_pv:
+        sv = _parse_semver(state_pv)
+        if sv and sv >= (0, 2, 0):
+            return results
+
+    # learn 섹션 확인
+    if _has_partial_learn_definition(config_path):
+        results.append(
+            Result(
+                Result.INFO,
+                f"{project} migration",
+                "config 의 ## learn 언어 패턴 이 부분 정의됨 — 마이그레이션 skip, 사용자 직접 갱신 권장",
+            )
+        )
+        return results
+
+    if not _is_learn_section_empty(config_path):
+        return results
+
+    # 마이그레이션 대상 확인됨 — fix callable 생성
+    def _do_migrate():
+        # interactive 여부 확인
+        import sys as _sys
+        is_interactive = _sys.stdin.isatty()
+
+        if not is_interactive:
+            print(
+                f"  [INFO] {project} migration: non-interactive 환경 — "
+                "마이그레이션 미루기 (doctor --fix 를 interactive 환경에서 실행하세요)"
+            )
+            return True, "non-interactive — 미루기 (다음 호출 시 다시 묻기)"
+
+        print(
+            f"\n  [UPGRADE] pilot 0.1.x → 0.2.0 — default 표가 SKILL.md 에서 폐지됐습니다.\n"
+            f"  backward-compat 을 위해 v0.1.0 default 표를 {config_path} 에 자동 주입할까요?\n\n"
+            f"    a) 주입 (권장) — v0.1.0 거동 그대로 유지\n"
+            f"    b) 거부 — config 빈 채로 폴더 인접성 fallback 으로 전환 (사용자 자유 정의)\n"
+            f"    c) 미루기 — 다음 doctor --fix 호출 시 다시 묻기\n"
+        )
+        try:
+            choice = input("  선택 [a/b/c]: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            choice = "c"
+
+        # .agent-state.yml 갱신 헬퍼
+        def _update_state(migration_val: str):
+            try:
+                lines = state_yml.read_text(encoding="utf-8").splitlines()
+            except Exception:
+                lines = []
+            new_lines = []
+            found_migration = False
+            found_pv = False
+            for line in lines:
+                if line.strip().startswith("migration_v0_2_0:"):
+                    new_lines.append(f"migration_v0_2_0: {migration_val}")
+                    found_migration = True
+                elif line.strip().startswith("plugin_version:"):
+                    new_lines.append("plugin_version: 0.2.0")
+                    found_pv = True
+                else:
+                    new_lines.append(line)
+            if not found_migration:
+                new_lines.append(f"migration_v0_2_0: {migration_val}")
+            if not found_pv:
+                new_lines.append("plugin_version: 0.2.0")
+            content = "\n".join(new_lines)
+            if not content.endswith("\n"):
+                content += "\n"
+            state_yml.write_text(content, encoding="utf-8")
+
+        if choice == "a":
+            ok, msg = _inject_v010_defaults_into_config(config_path)
+            if ok:
+                _update_state("accepted")
+                return True, f"v0.1.0 default 표 주입 완료 + plugin_version → 0.2.0"
+            return False, f"주입 실패: {msg}"
+        elif choice == "b":
+            _update_state("declined")
+            return True, "거부 — config 빈 채로 유지, plugin_version → 0.2.0"
+        else:
+            return True, "미루기 — 다음 doctor --fix 호출 시 다시 묻기"
+
+    results.append(
+        Result(
+            Result.WARN,
+            f"{project} migration",
+            (
+                f"pilot 0.1.x → 0.2.0 업그레이드 감지: ## learn 언어 패턴 이 비어있음. "
+                "`doctor --fix` 로 v0.1.0 default 표 주입 또는 거부 선택 가능"
+            ),
+            "doctor --fix 실행하여 마이그레이션 진행",
+            fix=_do_migrate,
+        )
+    )
+    return results
 
 
 # ---------------------------------------------------------------------------
@@ -820,6 +1351,12 @@ def run_integrity_check(workspace: Path, project: str | None, fix: bool) -> int:
     for r in proj_results:
         print(r.render())
     all_results.extend(proj_results)
+
+    # M1 마이그레이션 감지 (프로젝트 정보 필요)
+    migration_results = migrate_v0_1_to_v0_2(workspace, project)
+    for r in migration_results:
+        print(r.render())
+    all_results.extend(migration_results)
 
     if fix:
         run_auto_fixes(all_results)
