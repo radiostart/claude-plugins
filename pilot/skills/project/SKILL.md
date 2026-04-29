@@ -65,6 +65,26 @@ description: >-
   - 섹션명·순서는 `/pilot:analyze` 주입 대상과 동기화되어 있다. 임의 변경 금지.
   - `## 개요` / `## 제한사항` / `## 목표` / `관련 파일` 표는 이후 사용자가 수동으로 또는 `/pilot:analyze` 가 자동으로 채운다. 스캐폴딩 단계에서 추측·기입하지 않는다. (base 브랜치는 `/pilot:pr` 가 state/config 로 자체 관리하므로 project.md 에 기록하지 않는다.)
   - 구조·섹션 의미에 대한 상세는 [GUIDE.md](../context/lifecycle/projects/GUIDE.md) 를 참조하되 **가이드 본문을 생성물에 복사하지 않는다** (가이드는 구조 참고용, example 이 실제 스캐폴딩 소스).
+  - **신규 프로젝트의 `## 관련 파일` H3 동적 채움** — example 복사 직후 1 회만 수행. 재실행 시 기존 H3 보존.
+
+    > **config lookup**: `workspace/context/config.md` 의 `## scope 카테고리` 섹션을 Read. `project.md 대상 H3` 컬럼의 각 값에 대해 `workspace/projects/{PROJECT}/project.md` 의 `## 관련 파일` 안에 `### {대상 H3}` + 빈 표 (`표 헤더` 컬럼의 3 컬럼) 1 행 추가. config 비어있으면 SKILL.md default (아래 표) 사용. 잘못된 행은 stderr `[WARN] config.md ## scope 카테고리: {사유} — default 사용` 1 줄 후 default fallback (A2 runtime, abort 안 함).
+
+    > default — `workspace/context/config.md` 의 `## scope 카테고리` 가 비어있을 때 사용. config 행이 있으면 그 행이 우선.
+
+    | 대상 H3 | 표 헤더 |
+    | --- | --- |
+    | Models | Class, DB, 목적 |
+    | Endpoints | 엔드포인트, Method, 목적 |
+    | Services | Class, 파일, 목적 |
+
+    **SSOT 분리:**
+    - H3 헤더 = 본 단계가 1 회 생성. 재실행 시 기존 H3 보존 (덮어쓰기 금지).
+    - 표 본문 = `/pilot:analyze` 5-2 또는 `/pilot:create-feature` 가 매번 갱신.
+    - 사용자 수동 추가 H3 (config 외) = 본 단계와 analyze 5-2 양쪽 모두 보존.
+    - 사용자 H3 삭제 = 본 단계 재실행 시 복구하지 않음 (사용자 의도로 간주).
+
+    **예외:** example/project.md 자체에 `## 관련 파일` H2 가 부재면 H2 + H3 모두 새로 생성. (이 케이스는 사용자가 template 을 손댄 비정상 상황이지만 graceful 처리.)
+
   - **`.agent-state.yml` 초기화** — 프로젝트 루트에 아래 내용으로 생성한다 (스키마 상세: [state-schema.md](../context/lifecycle/state-schema.md)):
 
     ```yaml

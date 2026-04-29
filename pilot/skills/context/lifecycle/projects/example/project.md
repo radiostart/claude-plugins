@@ -47,22 +47,4 @@
 
 ## 관련 파일
 
-### Models
-
-| Class | DB  | 목적 |
-| ----- | --- | ---- |
-|       |     |      |
-
-### Endpoints
-
-| 엔드포인트 | Method | 목적 |
-| ---------- | ------ | ---- |
-|            |        |      |
-
-### Services
-
-| Class | 파일 | 목적 |
-| ----- | ---- | ---- |
-|       |      |      |
-
-> Models / Endpoints / Services 표는 `/pilot:analyze` 실행 시 `scope/{domain}.md` 에서 features 관련 행을 선별해 자동 기입한다.
+> H3 + 표는 `/pilot:project` 가 신규 폴더 생성 시 1 회 가공한다 (`workspace/context/config.md` 의 `## scope 카테고리` 의 `project.md 대상 H3` 컬럼 따라 H3 + 빈 표 생성). 표 본문은 `/pilot:analyze` 5-2 또는 `/pilot:create-feature` 가 매번 갱신한다. 사용자 수동 추가 H3 는 양쪽 모두 보존, 삭제는 복구하지 않는다.
