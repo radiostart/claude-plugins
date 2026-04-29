@@ -570,6 +570,51 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {planner|generat
 
 ---
 
+## config.md 언어 패턴 예시
+
+`workspace/context/config.md` 의 `## learn 언어 패턴` 과 `## scope 카테고리` 섹션은 사용자가 자기 프로젝트에 맞게 직접 정의한다. 플러그인은 특정 언어를 가정하지 않으므로 아래 예시를 복사·수정하여 사용한다.
+
+아래는 v0.1.0 기본 설정을 그대로 쓰고 싶은 사용자를 위한 참고 예시 (Ruby/Kotlin/TypeScript/Python/Go 5 개 언어):
+
+```markdown
+## learn 언어 패턴
+
+`/pilot:learn` 의 Phase 2 (Inventory) 가 진입 파일 확장자에서 언어를 추론한 뒤 본 섹션의 두 표를 lookup. 비어있으면 폴더 인접성 fallback. 사용자가 자기 프로젝트의 패턴을 정의.
+
+### 의존성 추적
+
+| 언어 | 의존성 추출 패턴 |
+| ---- | ---------------- |
+| Ruby | `require_relative` · 클래스 참조 (`OrderService`) → `app/**/order_service.rb` Glob |
+| Kotlin | `import com.example.X` · `@Autowired`·`val foo: FooService` |
+| TypeScript | `import { X } from "../foo"` · 상대 경로 추적 |
+| Python | `from foo import X` · `import foo.bar` |
+| Go | 동일 패키지 + `import "foo/bar"` |
+
+### 역할 분류
+
+| 역할 | 식별 패턴 |
+| --- | --------- |
+| routes | `config/routes.rb` 도메인 라인·`@RestController` `@RequestMapping`·`*.routes.ts` `router.use` |
+| controllers | `*_controller.rb`·`< ApplicationController`·`@RestController` `@Controller`·`*.controller.ts` |
+| services | `*_service.rb`·`app/services/**`·`@Service`·`*.service.ts` |
+| models | `app/models/**`·`< ApplicationRecord`·`@Entity`·`*.model.ts` `*.entity.ts` |
+| helpers | `app/helpers/**`·util/lib 폴더·`*Util.kt` `*Helper.kt`·`*.util.ts` `*.helper.ts` |
+| other | 위 어느 것도 아님 |
+
+## scope 카테고리
+
+| scope 헤더 | project.md 대상 H3 | 표 헤더 |
+| --- | --- | --- |
+| ## Routes | Endpoints | 엔드포인트, Method, 목적 |
+| ## Models | Models | Class, DB, 목적 |
+| ## Services | Services | Class, 파일, 목적 |
+```
+
+> v0.1.0 사용 중 v0.2.0 으로 업그레이드한 경우 `/pilot:doctor --fix` 를 실행하면 위 내용의 자동 주입 여부를 선택할 수 있다.
+
+---
+
 ## 도메인 컨텍스트
 
 ### SSOT 는 MANIFEST.md
