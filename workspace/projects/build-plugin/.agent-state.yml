@@ -1,0 +1,7 @@
+schema: v1.2
+analyzed: true
+analyzed_at: "2026-04-29T04:59:47Z"
+last_analyzed_features: 6
+tdd: false
+domain: pilot
+plugin_version: "0.1.0"
