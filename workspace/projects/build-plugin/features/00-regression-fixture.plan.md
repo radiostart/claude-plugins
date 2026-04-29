@@ -24,48 +24,48 @@
 
 ### 신설 — `_input/python-sample/` (더미 입력 코드베이스, 의존성 0)
 
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/` — 진입 폴더
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/main.py` — entry point (1 도메인 단일 import, 5~10 줄)
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/models/user.py` — 단순 dataclass 모델
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/models/order.py` — 단순 dataclass 모델
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/services/auth.py` — User import 의존
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/services/checkout.py` — Order + auth 의존
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/services/__init__.py` — 빈 패키지 마커 (Ignore 처리됨)
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/docs/sample-spec.md` — analyze 가 발견할 토이 spec 1 개 (1~2 H2)
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/.gitignore` — `__pycache__/` 등 표준 exclude
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/` — 진입 폴더
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/main.py` — entry point (1 도메인 단일 import, 5~10 줄)
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/models/user.py` — 단순 dataclass 모델
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/models/order.py` — 단순 dataclass 모델
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/services/auth.py` — User import 의존
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/services/checkout.py` — Order + auth 의존
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/services/__init__.py` — 빈 패키지 마커 (Ignore 처리됨)
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/docs/sample-spec.md` — analyze 가 발견할 토이 spec 1 개 (1~2 H2)
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/.gitignore` — `__pycache__/` 등 표준 exclude
 
 > **의존성 0 원칙**: 외부 라이브러리 import 금지. dataclass · typing 만 사용. `pip install` 없이 import 가능.
 
 ### 신설 — `learn/expected/` 캡처 (v0.2.0 마이그레이션 accepted 상태)
 
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/learn/expected/MANIFEST.md` — `/pilot:learn _input/python-sample/main.py` 산출 MANIFEST (도메인 분류 표 1 행)
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/learn/expected/python-sample/index.md` — 도메인 진입 파일
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/learn/expected/python-sample/inventory.md` — Phase 2 결과 (의존성 추적 + 역할 분류 표)
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/learn/expected/config.md` — 마이그레이션 accepted 후 v0.1.0 default 행 주입된 상태
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/learn/expected/MANIFEST.md` — `/pilot:learn _input/python-sample/main.py` 산출 MANIFEST (도메인 분류 표 1 행)
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/learn/expected/python-sample/index.md` — 도메인 진입 파일
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/learn/expected/python-sample/inventory.md` — Phase 2 결과 (의존성 추적 + 역할 분류 표)
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/learn/expected/config.md` — 마이그레이션 accepted 후 v0.1.0 default 행 주입된 상태
 
 > **D10 영향**: `learn/expected/config.md` 의 `## learn 언어 패턴` 두 표는 빈 헤더가 아니라 v0.1.0 default 5 언어 행이 마이그레이션 결과 주입된 상태로 캡처 (Open Q #2 결정).
 
 ### 신설 — `project/expected/` 캡처
 
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/project/expected/projects/python-sample/project.md` — `/pilot:project python-sample` 산출. `## 관련 파일` 의 H3 (Models · Services) 가 #03 에 의해 동적 생성된 상태. (Endpoints H3 는 docs 만 있고 라우트 패턴 없으므로 부재).
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/project/expected/projects/python-sample/prompts/planner.md` — analyze-managed 영역 비어있음 (analyze 미실행 상태)
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/project/expected/projects/python-sample/prompts/generator.md`
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/project/expected/projects/python-sample/prompts/evaluator.md`
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/project/expected/projects/python-sample/project.md` — `/pilot:project python-sample` 산출. `## 관련 파일` 의 H3 (Models · Services) 가 #03 에 의해 동적 생성된 상태. (Endpoints H3 는 docs 만 있고 라우트 패턴 없으므로 부재).
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/project/expected/projects/python-sample/prompts/planner.md` — analyze-managed 영역 비어있음 (analyze 미실행 상태)
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/project/expected/projects/python-sample/prompts/generator.md`
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/project/expected/projects/python-sample/prompts/evaluator.md`
 
 ### 신설 — `analyze/expected/` 캡처
 
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/analyze/expected/projects/python-sample/project.md` — analyze 5-2 적용 후. `## 관련 파일` Models · Services H3 표가 scope 카테고리 lookup 결과로 채워짐.
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/analyze/expected/scope/python-sample.md` — scope 분류 산출
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/analyze/expected/projects/python-sample/.agent-state.yml` — `analyzed: true`, `last_analyzed_features: 0`, `plugin_version: 0.2.0` (timestamp 는 placeholder 가 아니라 캡처 시점 그대로 — Open Q #3 결정)
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/analyze/expected/projects/python-sample/project.md` — analyze 5-2 적용 후. `## 관련 파일` Models · Services H3 표가 scope 카테고리 lookup 결과로 채워짐.
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/analyze/expected/scope/python-sample.md` — scope 분류 산출
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/analyze/expected/projects/python-sample/.agent-state.yml` — `analyzed: true`, `last_analyzed_features: 0`, `plugin_version: 0.2.0` (timestamp 는 placeholder 가 아니라 캡처 시점 그대로 — Open Q #3 결정)
 
 ### 신설 — `diff.sh` 본 구현 + `README.md`
 
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/diff.sh` — 단순 `--actual {dir}` 인자 비교 도구 (Open Q #3)
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/README.md` — 재생성 절차 1 페이지 (Open Q #2 의 v0.2.0 baseline 정의 명시)
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/diff.sh` — 단순 `--actual {dir}` 인자 비교 도구 (Open Q #3)
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/README.md` — 재생성 절차 1 페이지 (Open Q #2 의 v0.2.0 baseline 정의 명시)
 
 ### 갱신 — workspace/context 또는 .gitignore (Ignore 패턴)
 
-- [ ] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/.gitignore` 에 `*/__init__.py` 1 줄 추가 — diff.sh 가 fixture 재실행 시 빈 패키지 마커가 expected 와 비교되지 않도록. (또는 diff.sh 안에서 `--exclude=__init__.py` 플래그 명시. 본 plan 은 .gitignore 방식 채택 — git 추적도 동시에 배제하여 깔끔.)
+- [x] `pilot/tests/fixtures/v0.1.0-baseline/_input/python-sample/.gitignore` 에 `*/__init__.py` 1 줄 추가 — diff.sh 가 fixture 재실행 시 빈 패키지 마커가 expected 와 비교되지 않도록. (또는 diff.sh 안에서 `--exclude=__init__.py` 플래그 명시. 본 plan 은 .gitignore 방식 채택 — git 추적도 동시에 배제하여 깔끔.)
 
 > **Ignore 정책 위치 결정**: `_input/python-sample/.gitignore` 에 명시. `workspace/context/config.md` 의 Ignore 섹션은 도메인별 산출 학습용이라 fixture 입력에는 부적합.
 

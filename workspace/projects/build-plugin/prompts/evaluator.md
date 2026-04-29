@@ -13,7 +13,7 @@
 <!-- [analyze-managed] -->
 ## 기능 완성도
 
-- [ ] #00 `pilot/tests/fixtures/v0.1.0-baseline/` 디렉터리 + 1 언어 `_input/` + `learn/project/analyze/expected/` + `config/{pass-empty,pass-valid,error-*}` + `diff.sh`. v0.1.0 캡처 시 diff 0. (0a 완료 — `config/` 5 fixture + `diff.sh` 골격 + `README.md`. `_input/` `expected/` 는 0b 보류 — Open Q #1 결정 대기)
+- [x] #00 `pilot/tests/fixtures/v0.1.0-baseline/` 디렉터리 + 1 언어 `_input/` + `learn/project/analyze/expected/` + `config/{pass-empty,pass-valid,error-*}` + `diff.sh`. v0.1.0 캡처 시 diff 0. (0a + 0b 캡처 완료. `_input/python-sample/` 11 파일 + `learn/expected/` + `project/expected/projects/python-sample-demo/` + `analyze/expected/projects/python-sample-demo/` 일관. `python-sample` (도메인명) ↔ `python-sample-demo` (프로젝트명) 구분 적용. 회귀 자동 검증 자체 (`diff.sh --actual {regen}` 1 회 실행) 는 별도 항목 line 50·63 으로 분리 — runtime lookup 구현 후 1 회 수행)
 - [x] #01 learn Phase 2 가 config.md `## learn 언어 패턴` 의 두 표를 lookup (long-form). D10 default 폐지 — SKILL.md 본문에 default 표 0. config 비면 폴더 인접성 fallback. 사용자 override 시 즉시 반영. backward-compat 은 #05 마이그레이션으로 위임.
 - [x] #02 analyze 5-2 가 config.md `## scope 카테고리` 매핑을 lookup. config 비면 default (Routes/Models/Services) 사용. `/pilot:create-feature` 도 동일 lookup 자동 적용 (5-2 인용 호출).
 - [x] #03 `/pilot:project` 가 신규 폴더 생성 시 1 회 H3 동적 생성. 재실행 시 기존 H3 보존. config 비면 default H3 (Models/Endpoints/Services) 생성 (기존 거동).
@@ -47,7 +47,7 @@
 - [x] #05 부분 정의 사용자 (어느 한 표 행 > 0) → skip + INFO ("부분 정의됨 — 사용자 직접 갱신 권장")
 - [x] #05 신규 사용자 (`plugin_version: 0.2.0` 부터) → skip
 - [x] #05 `--fix` 미호출 (기본 doctor) 시 마이그레이션 prompt 발생 안 함 (`run_auto_fixes` 가 `--fix` 모드에서만 호출)
-- [ ] backward-compat 0 brittle: 회귀 골든 픽스처 `pilot/tests/fixtures/v0.1.0-baseline/` 로 config 비어있을 때 v0.1.0 = v1 동일 출력 검증 (0a: fixture 골격 완료. 검증 자체는 0b `_input/`+`expected/` 캡처 후)
+- [ ] backward-compat 0 brittle: 회귀 골든 픽스처 `pilot/tests/fixtures/v0.1.0-baseline/` 로 config 비어있을 때 v0.1.0 = v1 동일 출력 검증 (0a + 0b 캡처 완료. 실제 회귀 실행 = `bash diff.sh --actual {regen}` 미실행. 디렉터리 명 정합 후 1 회 수행 필요)
 
 ---
 
@@ -60,7 +60,7 @@
 
 ## 테스트
 
-- [ ] 회귀 픽스처 자동 검증 (`pilot/tests/fixtures/v0.1.0-baseline/`) — config 비어있을 때 v1 출력 = v0.1.0 출력 (0b 보류 — `_input/`+`expected/` 미완)
+- [ ] 회귀 픽스처 자동 검증 (`pilot/tests/fixtures/v0.1.0-baseline/`) — config 비어있을 때 v1 출력 = v0.1.0 출력 (0b `_input/`+`expected/` 캡처 완료. 실제 `diff.sh --actual {regen}` 실행 미수행 — 디렉터리 명 정합 후 1 회 수행 필요)
 - [ ] config 신규 섹션 정의 시 override 거동 (사용자 행이 default 위에 우선 적용) 검증 (#01·#02·#03 의 runtime lookup 미구현)
 - [x] `pilot/tests/tools/test_doctor_integrity.py` (#04) — 7/7 PASS (test_pass_empty_table 신규 포함)
 - [x] `pilot/tests/tools/test_doctor_migration.py` (#05) — 7/7 PASS (opt-in/out/postpone, 신규/부분/non-interactive/v010 detect)

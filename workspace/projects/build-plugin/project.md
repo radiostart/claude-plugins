@@ -16,7 +16,7 @@
 
 ## 목표
 
-- [ ] 회귀 골든 픽스처 (v0.1.0 baseline 캡처) -> [상세](features/00-regression-fixture.md)
+- [x] 회귀 골든 픽스처 (v0.1.0 baseline 캡처) -> [상세](features/00-regression-fixture.md)
 - [x] learn 언어 패턴 외부화 (D10 default 폐지) -> [상세](features/01-learn-language-pattern-externalize.md)
 - [x] analyze scope 카테고리 외부화 -> [상세](features/02-analyze-scope-category-externalize.md)
 - [x] project.md H3 동적 생성 + SSOT -> [상세](features/03-project-md-h3-dynamic.md)
@@ -92,3 +92,6 @@
 - [ ] #05 의 마이그레이션 prompt 동작 검증은 **interactive 환경에서 실제 실행** 필요. 현재 plugin v0.1.0 환경이라 doctor 가 마이그레이션 WARN 을 발화 안 함 (`if cv < (0,2,0): return` 조기 반환). version bump 후 실제 사용자 환경에서 재검증 권장 (from #05)
 - [ ] #05 의 `_inject_v010_defaults_into_config` 헬퍼는 헤더 정확 일치 (`| 언어 | 의존성 추출 패턴 |`·`| 역할 | 식별 패턴 |`) 가 사전조건. 사용자가 헤더를 임의 변경 (예: 영문화 `| Lang | Pattern |`) 한 경우 주입 실패 — 단 사전 doctor ERROR (헤더 불일치) 가 먼저 차단하므로 정상 흐름에서는 발생 안 함 (from #05)
 - [ ] #05 의 `migration_v0_2_0` 필드는 프로젝트별 (`.agent-state.yml`). 한 workspace 다중 프로젝트 시 각 프로젝트가 첫 doctor --fix 호출 시 중복 prompt 발생 (config 는 1 회 주입 후 빈 상태 아님 → 이후 프로젝트는 `_is_learn_section_empty=False` 로 자동 skip). 정상 거동이지만 v0.3.0 deprecation 시 재검토 (from #05)
+- [x] #00 의 0b 캡처 산출물 디렉터리 rename 완료 — `project/expected/projects/python-sample-demo/`·`analyze/expected/projects/python-sample-demo/` 양쪽 일관. README.md tree·재실행 절차 + `_input/python-sample/README.md` line 33 동기화. `python-sample` (도메인명) ↔ `python-sample-demo` (프로젝트명) 구분 명확. 회귀 자동 검증 (`diff.sh --actual {regen}` 1 회 실행) 은 #01·#02·#03 runtime lookup 구현 후 별도 수행 (from #00)
+- [ ] #00 의 0b 캡처는 plan 의 `_input/` 8 파일 외에 `routes.py`·`helpers.py`·`README.md` 3 파일을 추가했음. 이는 `main.py` 가 `from routes import register_routes` 를 import 하기 위해 필요했고, 결과적으로 `inventory.md` 의 의존성 추적 표가 7 행으로 풍부해짐. plan 의 "1 도메인 단일 import" 표현은 literal 하게는 위반이지만 fixture 의 표현력을 위해 합리적 확장. 후속 plan 작성 시 `_input/` 의 파일 수를 명시적으로 합의 (from #00)
+- [ ] #00 의 LLM 시뮬레이션 캡처 한계 — `analyze/expected/projects/python-sample/prompts/generator.md` 의 `[analyze-managed]` `## 핵심 변경 대상` 헤더는 SKILL.md spec 의 `## 핵심 서비스/모델` 과 wording 차이. README.md 의 "wording 차이 ≠ 회귀" 정책으로 허용. 실제 `/pilot:analyze` 1 회 실행 후 wording 재캡처 권장 (from #00)
