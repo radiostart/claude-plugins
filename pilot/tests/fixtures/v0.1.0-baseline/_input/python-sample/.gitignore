@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.env
+.venv/
+venv/
+# 빈 패키지 마커 — /pilot:learn 의존성 추적에서 노이즈 제거 (Open Q #5)
+*/__init__.py
