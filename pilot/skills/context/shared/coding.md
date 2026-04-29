@@ -8,7 +8,7 @@
 
 구현 판단 충돌 시 아래 순서로 해결한다.
 
-1. **프로젝트 구현 지침** — `projects/{PROJECT}/agents/generator.md` 의 명시 규칙 (필수 콜백·특정 서비스 호출 패턴 등)
+1. **프로젝트 구현 지침** — `projects/{PROJECT}/prompts/generator.md` 의 명시 규칙 (필수 콜백·특정 서비스 호출 패턴 등)
 2. **팀 도메인 규칙** — `context/rules/{domain}.md` 의 비즈니스 규칙
 3. **언어·프레임워크 관행** — `conventions_doc` 가 가리키는 문서 (레이어 책임·매크로·네이밍)
 4. **기존 코드 패턴** — 참조만. 비표준 패턴은 답습하지 않는다

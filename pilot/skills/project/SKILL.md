@@ -60,7 +60,7 @@ description: >-
 
 `workspace/projects/{PROJECT}/` 폴더 존재 여부를 Glob 으로 확인한다.
 
-- **없으면**: [skills/context/lifecycle/projects/example/](../context/lifecycle/projects/example/) 의 파일 4종 (`project.md`, `agents/planner.md`, `agents/generator.md`, `agents/evaluator.md`) 을 **그대로 복사**한 뒤 `{프로젝트명}` 토큰만 실제 프로젝트명으로 치환한다. **그 외 본문은 일절 재작성·요약·환각·도메인 예시 삽입 금지.**
+- **없으면**: [skills/context/lifecycle/projects/example/](../context/lifecycle/projects/example/) 의 파일 4종 (`project.md`, `prompts/planner.md`, `prompts/generator.md`, `prompts/evaluator.md`) 을 **그대로 복사**한 뒤 `{프로젝트명}` 토큰만 실제 프로젝트명으로 치환한다. **그 외 본문은 일절 재작성·요약·환각·도메인 예시 삽입 금지.**
   - example 은 실구현 콘텐츠 없이 구조·세만틱 명시만 담긴 순수 템플릿이다. 본문의 `{…}` 플레이스홀더와 `_(analyze 실행 전 …)_` 같은 표식은 그대로 유지한다.
   - 섹션명·순서는 `/pilot:analyze` 주입 대상과 동기화되어 있다. 임의 변경 금지.
   - `## 개요` / `## 제한사항` / `## 목표` / `관련 파일` 표는 이후 사용자가 수동으로 또는 `/pilot:analyze` 가 자동으로 채운다. 스캐폴딩 단계에서 추측·기입하지 않는다. (base 브랜치는 `/pilot:pr` 가 state/config 로 자체 관리하므로 project.md 에 기록하지 않는다.)
@@ -78,7 +78,7 @@ description: >-
     `{PLUGIN_VERSION}` 은 Bash 로 `python3 -c "import json,os; print(json.load(open(os.environ['CLAUDE_PLUGIN_ROOT']+'/.claude-plugin/plugin.json'))['version'])"` 를 실행해 얻은 현재 플러그인 버전으로 치환한다. 환경변수 미설정 등으로 값을 얻지 못하면 해당 라인 자체를 생략한다 (`plugin_version` 은 optional — 다음 writer 이벤트에서 채워짐).
 
     `domain` 은 `/pilot:analyze` 진입 시 사용자 확인을 거쳐 값이 채워진다. 여기서 자동 추론·기입 금지.
-- **있으면**: `project.md` 및 `agents/` 문서를 로드한다.
+- **있으면**: `project.md` 및 `prompts/` 문서를 로드한다.
   - `.agent-state.yml` 이 없거나 `schema: v1` 이면 **사용자에게 `/pilot:doctor --fix` 실행을 안내** (v1 → v1.2 업그레이드 필요).
   - **drift 체크** (state 가 v1.1+ 이고 `analyzed: true`, `analyzed_at` 존재 시):
     - `docs_last_fetched_at > analyzed_at` → "기획서가 analyze 이후 변경됐습니다. 재분석할까요? (y/n)" 질의. `y` 면 6·7·8단계 수행, `n` 이면 스킵.
@@ -118,9 +118,9 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/confluence.py fetch "{CONFL_URL}"
 
 사용자 선택에 따라 [../analyze/SKILL.md](../analyze/SKILL.md) 의 "분석 프로세스" 1~5단계를 실행한다. 건너뛰거나 분석 실패 시 8단계를 건너뛰고 9단계로 진행한다.
 
-### 8. project.md 및 agents/ 갱신 (7단계에서 분석 수행 시만)
+### 8. project.md 및 prompts/ 갱신 (7단계에서 분석 수행 시만)
 
-[../analyze/SKILL.md](../analyze/SKILL.md) 의 "분석 프로세스" 6~7단계를 실행한다 (project.md 목표 동기화 + agents/ 갱신).
+[../analyze/SKILL.md](../analyze/SKILL.md) 의 "분석 프로세스" 6~7단계를 실행한다 (project.md 목표 동기화 + prompts/ 갱신).
 
 ### 9. 무결성 검증 (자동)
 
@@ -142,7 +142,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace
 **다음 단계 안내** — features/ 존재 여부로 분기:
 
 - **features/ 있음** (6~8단계 완료): 생성된 features 와 갱신된 파일을 요약하고 "`@planner` 를 호출해 구현을 시작하세요." 안내.
-- **features/ 없음**: 생성된 파일(`project.md`, `agents/`)을 요약하고 아래 순서 안내:
+- **features/ 없음**: 생성된 파일(`project.md`, `prompts/`)을 요약하고 아래 순서 안내:
   1. `project.md` 의 개요·목표·관련 파일을 채운다
   2. **기획서 기반 다건 생성** — `/pilot:confl {url}` → `/pilot:analyze`
   3. **프롬프트 기반 단건 생성** — `/pilot:create-feature "<한 줄 설명>"` (기획서 없을 때)

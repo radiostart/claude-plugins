@@ -1,14 +1,14 @@
 # `--regen-agents` 모드
 
-scope/{domain}.md 가 업데이트됐거나 features 가 여러 개 추가돼 `agents/*.md` 가 구식일 때 사용한다.
+scope/{domain}.md 가 업데이트됐거나 features 가 여러 개 추가돼 `prompts/*.md` 가 구식일 때 사용한다.
 
 **전제:** `features/*.md` 가 1 개 이상 존재해야 한다. 0 개면 "재생성할 대상 없음. 먼저 `/pilot:analyze` 로 docs 분석이 필요합니다." 안내 후 종료.
 
 **동작:** 메인 분석 프로세스의 1·2·3·4 단계 (docs 읽기·분할·저장) 를 건너뛰고 아래 순서로 실행한다:
 
-1. **백업 (필수)** — 아래 "백업 단계" 참조. 기존 agents/*.md 를 `.agents.bak/{timestamp}/` 로 복사.
+1. **백업 (필수)** — 아래 "백업 단계" 참조. 기존 prompts/*.md 를 `.prompts.bak/{timestamp}/` 로 복사.
 2. 5 단계 — `project.md` 관련 파일 표 재기입
-3. 6-1 / 6-2 / 6-3 — agents/*.md 재작성
+3. 6-1 / 6-2 / 6-3 — prompts/*.md 재작성
 4. 6-4 — `.agent-state.yml` 의 `analyzed_at`, `last_analyzed_features` 갱신
 5. **post-regen 검증 (필수)** — 아래 "중복 감지" 참조. doctor 돌려 중복 섹션 WARN 확인
 6. 7 단계 — 분석 품질 자가 검증 중 **7-2, 7-3 만** 수행 (7-1 커버리지·7-4 추측 혐의는 docs 재변환이 없으므로 제외)
@@ -26,7 +26,7 @@ regen 은 사용자 수동 편집을 의도치 않게 덮어쓸 위험이 있어
 TS=$(date -u +%Y-%m-%dT%H-%M-%S)
 PROJ=workspace/projects/{PROJECT}
 mkdir -p ${PROJ}/.agents.bak/${TS}
-cp -R ${PROJ}/agents/. ${PROJ}/.agents.bak/${TS}/
+cp -R ${PROJ}/prompts/. ${PROJ}/.prompts.bak/${TS}/
 ```
 
 실행 후 사용자에게 백업 경로 (`workspace/projects/{PROJECT}/.agents.bak/{timestamp}/`) 를 알린다. regen 결과가 예상과 다르면 이 경로에서 원본을 복원할 수 있다.

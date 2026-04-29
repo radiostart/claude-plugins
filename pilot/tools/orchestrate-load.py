@@ -313,26 +313,26 @@ def build_load_plan(
     if not project_md_exists:
         hints.append("project.md 없음 — 에이전트 가이드만으로 작업")
 
-    # 3) agents/{phase}.md (if exists)
-    agent_abs = workspace / "projects" / project / "agents" / f"{phase}.md"
-    agent_exists = add_if_exists(
-        agent_abs,
-        f"workspace/projects/{project}/agents/{phase}.md",
+    # 3) prompts/{phase}.md (if exists)
+    prompt_abs = workspace / "projects" / project / "prompts" / f"{phase}.md"
+    prompt_exists = add_if_exists(
+        prompt_abs,
+        f"workspace/projects/{project}/prompts/{phase}.md",
     )
-    if not agent_exists:
+    if not prompt_exists:
         hints.append(
-            f"agents/{phase}.md 없음 — project.md 만으로 작업"
+            f"prompts/{phase}.md 없음 — project.md 만으로 작업"
         )
 
-    # 4) scope/{domain}.md — pre-analyze 이거나 project agent 파일이 없을 때 fallback
-    if domain and (not analyzed or not agent_exists):
+    # 4) scope/{domain}.md — pre-analyze 이거나 project prompt 파일이 없을 때 fallback
+    if domain and (not analyzed or not prompt_exists):
         scope_abs = workspace / "context" / "scope" / f"{domain}.md"
         if add_if_exists(
             scope_abs, f"workspace/context/scope/{domain}.md"
         ):
             hints.append(
                 "pre-analyze: scope 원본 fallback 로드" if not analyzed
-                else f"agents/{phase}.md 부재 — scope 원본 fallback 로드"
+                else f"prompts/{phase}.md 부재 — scope 원본 fallback 로드"
             )
 
     # 5) rules/{domain}.md (domain 판정 시)

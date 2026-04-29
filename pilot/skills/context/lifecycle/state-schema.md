@@ -13,7 +13,7 @@
 
 ```yaml
 schema: v1.2
-analyzed: false                      # /pilot:analyze 실행되어 agents/*.md 가 분석본으로 채워졌는지
+analyzed: false                      # /pilot:analyze 실행되어 prompts/*.md 가 분석본으로 채워졌는지
 tdd: false                           # TDD 모드 활성 여부 (Red-Green-Refactor 흐름 강제)
 domain: null                         # 도메인명 (자유 문자열, 예: orders/payments/auth) — null 이면 analyze 전 질의 필요
 
@@ -52,12 +52,12 @@ tdd_batch: feature                   # step | feature | all — Planner·Generat
 
 ### `analyzed`
 
-- `true`: `/pilot:analyze` 가 실행되어 `agents/planner.md` · `agents/generator.md` · `agents/evaluator.md` 에 도메인 압축본이 주입된 상태.
+- `true`: `/pilot:analyze` 가 실행되어 `prompts/planner.md` · `prompts/generator.md` · `prompts/evaluator.md` 에 도메인 압축본이 주입된 상태.
 - `false`: pre-analyze 상태. 프로젝트 agent 파일은 example 템플릿 원본 (`{플레이스홀더}`) 에 가까움.
 
 Wrapper 동작 차이:
 
-- `analyzed: true` → scope/{domain}.md 원본 재로드 생략 (agents/*.md 에 압축 기입돼 있다고 신뢰)
+- `analyzed: true` → scope/{domain}.md 원본 재로드 생략 (prompts/*.md 에 압축 기입돼 있다고 신뢰)
 - `analyzed: false` → scope/{domain}.md 원본 fallback 로드
 
 ### `tdd`

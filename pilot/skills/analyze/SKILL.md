@@ -3,7 +3,7 @@ name: analyze
 description: >-
   이미 저장된 docs/ 기획서를 features/ 기능 명세로 분할·구조화할 때 사용한다.
   PM 작성 표 중심 기획서를 기능 단위 문서로 변환하고 project.md 의 목표 섹션
-  과 agents/ 파일(planner·generator·evaluator)을 자동 갱신한다. 기획서 fetch 는
+  과 prompts/ 파일(planner·generator·evaluator)을 자동 갱신한다. 기획서 fetch 는
   `/pilot:confl`, 프롬프트 기반 단일 기능 추가는 `/pilot:create-feature`
   를 사용한다.
 ---
@@ -37,7 +37,7 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 
 | 플래그 / 나머지 텍스트 | 모드 | 동작 |
 | ---------------------- | ---- | ---- |
-| `--regen-agents` (단독) | **재생성 전용** | docs/features 변화 여부와 무관하게 현재 features/ 기반으로 `agents/*.md` 만 재작성. 상세: [`references/regen-mode.md`](references/regen-mode.md) |
+| `--regen-agents` (단독) | **재생성 전용** | docs/features 변화 여부와 무관하게 현재 features/ 기반으로 `prompts/*.md` 만 재작성. 상세: [`references/regen-mode.md`](references/regen-mode.md) |
 | 없음 (빈 문자열) | 전체 분석 | docs/ 내 **모든** 원본 파일의 전체 내용 분석 |
 | 파일명 또는 page_id | 파일 지정 | 해당 파일만 분석 |
 | 그 외 텍스트 (키워드) | 필터 분석 | docs/ 전체 파일에서 **키워드 관련 기능만** 추출하여 분석 |
@@ -150,7 +150,7 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 **분석 시 주의사항:**
 
 - 원본의 표(table)는 의미를 해석하여 서술형으로 풀어쓰되, 상태 전환표처럼 표 형태가 더 명확한 경우는 표를 유지한다.
-- 원본에 없는 내용을 추측하여 추가하지 않는다 (한 번 추측이 들어가면 후속 6 단계의 agents/ 갱신·planner·generator 가 모두 잘못된 사실을 기반으로 동작한다).
+- 원본에 없는 내용을 추측하여 추가하지 않는다 (한 번 추측이 들어가면 후속 6 단계의 prompts/ 갱신·planner·generator 가 모두 잘못된 사실을 기반으로 동작한다).
 - Figma 링크 등 디자인 참조는 유지한다.
 - 하나의 H2 섹션이 여러 기능을 포함하면 기능별로 분리한다.
 
@@ -227,11 +227,11 @@ features/ 생성 후 `project.md` 의 `## 목표` 와 `## 관련 파일` 을 자
 - 빈 행(`|  |  |  |`) 은 모두 삭제한다.
 - scope 파일에 해당 섹션이 비어있거나 없으면 해당 표는 건너뛰되, 표 헤더는 유지한다.
 
-### 6. agents/ 자동 갱신
+### 6. prompts/ 자동 갱신
 
-features/ 분석 결과로 `agents/planner.md`, `agents/generator.md`, `agents/evaluator.md` 를 갱신하고 `.agent-state.yml` 의 `analyzed: true` 게이트를 켠다.
+features/ 분석 결과로 `prompts/planner.md`, `prompts/generator.md`, `prompts/evaluator.md` 를 갱신하고 `.agent-state.yml` 의 `analyzed: true` 게이트를 켠다.
 
-상세 절차 (6-1 ~ 6-5): [`references/agents-update.md`](references/agents-update.md).
+상세 절차 (6-1 ~ 6-5): [`references/prompts-update.md`](references/prompts-update.md).
 
 ### 7. 분석 품질 자가 검증
 
@@ -254,9 +254,9 @@ features/ 분석 결과로 `agents/planner.md`, `agents/generator.md`, `agents/e
 
 갱신된 파일:
   - project.md — 목표 {N}개 동기화 + 관련 파일(Models/Endpoints/Services) 자동 기입
-  - agents/planner.md — 기능별 사전 확인 사항 갱신
-  - agents/generator.md — 기술 레퍼런스 갱신
-  - agents/evaluator.md — 체크리스트 갱신
+  - prompts/planner.md — 기능별 사전 확인 사항 갱신
+  - prompts/generator.md — 기술 레퍼런스 갱신
+  - prompts/evaluator.md — 체크리스트 갱신
   - .agent-state.yml — analyzed: true
 
 검증: {7 단계 요약 한 줄 — "all checks passed" 또는 "WARN N건" 등}

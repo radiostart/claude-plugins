@@ -679,7 +679,7 @@ def check_project(workspace: Path, project: str) -> list[Result]:
                     Result.WARN,
                     f"{project} drift",
                     f"features {last_count} → {feature_count} (증가 {feature_count - last_count})",
-                    "`/pilot:analyze --regen-agents` 로 agents/*.md 재생성 권장",
+                    "`/pilot:analyze --regen-agents` 로 prompts/*.md 재생성 권장",
                 )
             )
 
@@ -731,23 +731,23 @@ def check_project(workspace: Path, project: str) -> list[Result]:
             pass
 
     # Duplicate section 감지 (regen-gone-wrong 신호)
-    agents_dir = proj_dir / "agents"
-    if agents_dir.is_dir():
-        for agent_name in ("planner.md", "generator.md", "evaluator.md"):
-            agent_file = agents_dir / agent_name
-            dups = detect_duplicate_h2_sections(agent_file)
+    prompts_dir = proj_dir / "prompts"
+    if prompts_dir.is_dir():
+        for prompt_name in ("planner.md", "generator.md", "evaluator.md"):
+            prompt_file = prompts_dir / prompt_name
+            dups = detect_duplicate_h2_sections(prompt_file)
             if dups:
                 results.append(
                     Result(
                         Result.WARN,
-                        f"{project}/agents/{agent_name}",
+                        f"{project}/prompts/{prompt_name}",
                         f"duplicate section: {', '.join(dups)}",
-                        "regen 으로 인한 중복 주입 가능성. `.agents.bak/` 과 비교 후 수동 머지",
+                        "regen 으로 인한 중복 주입 가능성. `.prompts.bak/` 과 비교 후 수동 머지",
                     )
                 )
 
         # Wrapper 로 이관된 섹션이 프로젝트 planner.md 에 잔존하는지 감지
-        planner_file = agents_dir / "planner.md"
+        planner_file = prompts_dir / "planner.md"
         if planner_file.is_file():
             try:
                 content = planner_file.read_text(encoding="utf-8")
@@ -755,7 +755,7 @@ def check_project(workspace: Path, project: str) -> list[Result]:
                     results.append(
                         Result(
                             Result.WARN,
-                            f"{project}/agents/planner.md",
+                            f"{project}/prompts/planner.md",
                             "`## 플래닝 프로세스` 섹션이 래퍼로 이관되었으나 프로젝트 파일에 잔존",
                             "`/pilot:analyze --regen-agents` / `doctor --fix` / 수동 삭제",
                             fix=_fix_remove_legacy_planning_section(planner_file),

@@ -1,7 +1,7 @@
 # {프로젝트명}
 
 > **Orchestrator** — 프로젝트 전체 흐름을 조율한다.
-> 구체적 구현 지식은 `agents/` 에이전트를 참조한다.
+> 구체적 구현 지식은 `prompts/` 의 에이전트 컨텍스트 파일을 참조한다.
 >
 > **이 파일은 스캐폴딩 템플릿이다.** `/pilot:project` 가 신규 프로젝트 생성 시 그대로 복사한다.
 > `{프로젝트명}` 토큰만 실제 프로젝트명으로 치환하고, 본문의 `{…}` 플레이스홀더는 사용자 또는 `/pilot:analyze` 가 채운다.
@@ -28,19 +28,19 @@
 ### 1. Planner — 구현 계획 수립
 
 - **진입 조건:** 새 기능 구현 시작 시 항상 실행
-- **로드:** `agents/planner.md`
+- **로드:** `prompts/planner.md`
 - **완료 기준:** 구현 단계별 계획이 명시적으로 확정됨 → Generator 진행
 
 ### 2. Generator — 코드 구현
 
 - **진입 조건:** Planner 계획 확정 후
-- **로드:** `agents/generator.md` + [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md)
+- **로드:** `prompts/generator.md` + [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md)
 - **완료 기준:** 구현 완료 후 [`evals/coding.json`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/evals/coding.json) 해당 케이스 체크 통과 → Evaluator 진행
 
 ### 3. Evaluator — 검토
 
 - **진입 조건:** Generator eval 체크 통과 후
-- **로드:** `agents/evaluator.md`
+- **로드:** `prompts/evaluator.md`
 - **완료 기준:** 체크리스트 전 항목 확인 → 목표의 해당 항목 `[x]` 처리
 
 > **TDD 모드** 활성화 시 (`/pilot:project {PROJECT} --tdd` 또는 `/pilot:tdd`) 이 섹션이 Red-Green-Refactor 흐름으로 자동 교체된다. 상세: [tdd-activation.md](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/tdd-activation.md).

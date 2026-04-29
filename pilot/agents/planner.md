@@ -38,7 +38,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
    - **무관해 보이는 항목**: 사용자에게 원문·판단 근거를 보고한 뒤 "이번 처리 / 다음 이월 / 불필요" 중 선택받는다. **자체 판단으로 건너뛰거나 `[x]` 처리 금지** — 체크 유실은 evaluator→planner 인수인계 단절로 이어진다.
    - 모든 미처리 항목 소화 전에는 3번으로 넘어가지 않는다.
 
-3. 컨텍스트 로드·코드베이스 분석 중 `workspace/` 하위 파일 (도메인 지식 `context/`, 프로젝트 산출물 `project.md`·`agents/*.md`) 에서 실제 코드와 다른 내용을 발견하면 [`drift-protocol.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/drift-protocol.md) 를 따른다. 누적 임계(3 건 이상) 처리는 protocol § 누적 임계 처리 — Planner 행 참조.
+3. 컨텍스트 로드·코드베이스 분석 중 `workspace/` 하위 파일 (도메인 지식 `context/`, 프로젝트 산출물 `project.md`·`prompts/*.md`) 에서 실제 코드와 다른 내용을 발견하면 [`drift-protocol.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/drift-protocol.md) 를 따른다. 누적 임계(3 건 이상) 처리는 protocol § 누적 임계 처리 — Planner 행 참조.
 4. 로드한 지침에 따라 구현 계획을 수립하고 사용자에게 확인을 받는다. 모드별 계약 포맷:
    - **`mode: characterize`** — [`characterize.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/characterize.md) § Planner — Characterization Contract. 3 축 (입력 / 현재 출력 / 관찰된 사이드 이펙트). "현재 출력" 은 Generator 실행 후 채움 — Planner 예측 기록 금지.
    - **`tdd: true` (mode 미설정)** — [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Planner — Red Contract. Red 계약 3 축 (spec 대상 경로 / 검증할 행동 / 기대 실패 유형).
@@ -80,13 +80,13 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 
 ## 플래닝 프로세스 (공통 가이드)
 
-프로젝트별 `agents/planner.md` 가 제공하는 `## 기능별 사전 확인 사항` 과 함께 참조한다. 본 절차는 모든 프로젝트에 공통이므로 프로젝트 파일에 반복하지 않는다.
+프로젝트별 `prompts/planner.md` 가 제공하는 `## 기능별 사전 확인 사항` 과 함께 참조한다. 본 절차는 모든 프로젝트에 공통이므로 프로젝트 파일에 반복하지 않는다.
 
 ### 1. 요구사항 파악
 
 - 구현 대상 feature 의 **조건 / 트리거 / 기대결과** 3 축 모두 확인
 - `features/NN-{slug}.md` 에 상태 전환 표가 있으면 반드시 숙지
-- 프로젝트별 `agents/planner.md` 의 `## 기능별 사전 확인 사항` 에서 해당 feature 의 사전 조사 항목을 확인
+- 프로젝트별 `prompts/planner.md` 의 `## 기능별 사전 확인 사항` 에서 해당 feature 의 사전 조사 항목을 확인
 
 ### 2. 영향 범위 분석
 

@@ -6,7 +6,7 @@ planner / generator / evaluator 래퍼가 코드베이스를 탐색할 때 따�
 
 ## 공통 원칙
 
-1. 파일 탐색·참조는 **1단계에서 로드한 scope 내용** (각 에이전트의 `agents/*.md` 선별본 또는 scope 원본 fallback) 의 **경로 범위 내에서만** 수행한다 (Read / Grep / Glob).
+1. 파일 탐색·참조는 **1단계에서 로드한 scope 내용** (각 에이전트의 `prompts/*.md` 선별본 또는 scope 원본 fallback) 의 **경로 범위 내에서만** 수행한다 (Read / Grep / Glob).
 2. 내장 `Explore` 서브에이전트를 호출할 때는 **반드시** prompt 에 scope 파일의 대상 경로 목록을 명시한다. scope 없이 전체 codebase 스캔 금지.
 3. 범위 밖 무차별 탐색은 이유를 불문하고 금지.
 

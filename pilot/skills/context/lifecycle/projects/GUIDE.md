@@ -1,10 +1,10 @@
 # Projects — 작성 가이드
 
-프로젝트 폴더는 **오케스트레이터(project.md) + 에이전트(agents/) + 기능 명세(features/)** 구조로 구성한다.
+프로젝트 폴더는 **오케스트레이터(project.md) + 에이전트 컨텍스트(prompts/) + 기능 명세(features/)** 구조로 구성한다.
 
 > 참조 파일이 100줄을 넘으면 상단에 목차를 추가한다. Claude가 부분적으로 읽을 때도 전체 구조를 파악할 수 있다.
 
-> 완성된 예시: [example/project.md](example/project.md) + [agents/](example/agents/)
+> 완성된 예시: [example/project.md](example/project.md) + [prompts/](example/prompts/)
 
 ---
 
@@ -13,7 +13,7 @@
 ```text
 projects/{PROJECT}/
 ├── project.md          # 오케스트레이터 — 개요, 목표, 에이전트 호출 흐름 (필수)
-├── agents/
+├── prompts/
 │   ├── planner.md      # 기능 분석 및 구현 계획 수립
 │   ├── generator.md    # 코드 구현 참조 (패턴, 서비스, 모델)
 │   └── evaluator.md    # 구현 검토 체크리스트
@@ -35,16 +35,16 @@ projects/{PROJECT}/
 
 ## 에이전트 동작 구조
 
-플러그인 루트 `agents/` 에 등록된 래퍼 에이전트(`@planner`, `@generator`, `@evaluator`)가 실제 별도 인스턴스로 실행된다 (`.claude-plugin/plugin.json` 기반 자동 로드). 래퍼는 `STATE.md`에서 현재 프로젝트를 읽고, 프로젝트별 `agents/*.md`를 로드해 지침을 따른다.
+플러그인 루트 `agents/` 에 등록된 래퍼 에이전트(`@planner`, `@generator`, `@evaluator`)가 실제 별도 인스턴스로 실행된다 (`.claude-plugin/plugin.json` 기반 자동 로드). 래퍼는 `STATE.md`에서 현재 프로젝트를 읽고, 프로젝트별 `prompts/*.md`를 로드해 지침을 따른다.
 
 ```
 사용자: @planner 실행
   └── ${CLAUDE_PLUGIN_ROOT}/agents/planner.md (래퍼)
         └── STATE.md에서 현재 프로젝트 확인
-              └── workspace/projects/{PROJECT}/agents/planner.md (프로젝트별 지침) 로드
+              └── workspace/projects/{PROJECT}/prompts/planner.md (프로젝트별 지침) 로드
 ```
 
-`projects/{PROJECT}/agents/` 파일은 **프로젝트 종속 내용만** 담는다. 공통 동작(STATE.md 읽기, 프로젝트 로드)은 래퍼가 처리한다.
+`projects/{PROJECT}/prompts/` 파일은 **프로젝트 종속 내용만** 담는다. 공통 동작(STATE.md 읽기, 프로젝트 로드)은 래퍼가 처리한다.
 
 ### pre / post-analyze 게이트
 
@@ -52,7 +52,7 @@ projects/{PROJECT}/
 
 | `analyzed` 값 | 래퍼 동작 |
 | ------------- | --------- |
-| `true` (post-analyze) | agents/*.md 가 analyze 주입 압축본이라 신뢰. `scope/{domain}.md` 재로드 생략 |
+| `true` (post-analyze) | prompts/*.md 가 analyze 주입 압축본이라 신뢰. `scope/{domain}.md` 재로드 생략 |
 | `false` (pre-analyze) | `scope/{domain}.md` fallback 로드 |
 | state.yml 부재 | 에러 + 마이그레이션 안내 후 종료 |
 
@@ -62,7 +62,7 @@ projects/{PROJECT}/
 
 1. `analyzed` 필드를 수동으로 편집하지 않는다. `/pilot:analyze` 가 유일한 정식 writer.
 2. 신규 프로젝트는 `/pilot:project` 가 `analyzed: false` 로 초기화.
-3. `agents/*.md` 안의 섹션명 (`## 기능별 사전 확인 사항`, `## 핵심 서비스/모델` 등) 은 analyze 가 주입·갱신할 때 anchor 로 사용하므로 임의 변경 금지.
+3. `prompts/*.md` 안의 섹션명 (`## 기능별 사전 확인 사항`, `## 핵심 서비스/모델` 등) 은 analyze 가 주입·갱신할 때 anchor 로 사용하므로 임의 변경 금지.
 
 ### drift 감지
 
@@ -70,8 +70,8 @@ projects/{PROJECT}/
 
 | 신호 | 원인 | 대응 |
 | ---- | ---- | ---- |
-| `features_count > last_analyzed_features + 1` | features 가 여러 개 추가됨 → agents/*.md 구식 가능성 | `/pilot:analyze --regen-agents` |
-| `scope/*.md mtime > analyzed_at` | 팀 도메인 지식 업데이트됨 → agents/*.md 구식 | `/pilot:analyze --regen-agents` |
+| `features_count > last_analyzed_features + 1` | features 가 여러 개 추가됨 → prompts/*.md 구식 가능성 | `/pilot:analyze --regen-agents` |
+| `scope/*.md mtime > analyzed_at` | 팀 도메인 지식 업데이트됨 → prompts/*.md 구식 | `/pilot:analyze --regen-agents` |
 
 **언제 재생성 돌려야 하나:**
 
@@ -94,7 +94,7 @@ projects/{PROJECT}/
 
 ## agent 파일 책임 경계
 
-프로젝트 agent 파일 (`agents/planner.md`·`generator.md`·`evaluator.md`) 에 **담아야 할 것**과 **담지 말아야 할 것** 을 분리한다. 경계가 흐려지면 지식 중복·drift 의 주원인이 된다.
+프로젝트 agent 파일 (`prompts/planner.md`·`generator.md`·`evaluator.md`) 에 **담아야 할 것**과 **담지 말아야 할 것** 을 분리한다. 경계가 흐려지면 지식 중복·drift 의 주원인이 된다.
 
 ### 담을 것 (프로젝트 고유)
 
@@ -177,7 +177,7 @@ projects/{PROJECT}/
 
 ## project.md — 오케스트레이터
 
-전체 흐름을 조율하는 진입점. 구체적 구현 지식은 `agents/` 에 위임한다. 실제 템플릿·섹션 예시는 [`example/project.md`](example/project.md) 가 SSOT.
+전체 흐름을 조율하는 진입점. 구체적 구현 지식은 `prompts/` 에 위임한다. 실제 템플릿·섹션 예시는 [`example/project.md`](example/project.md) 가 SSOT.
 
 **필수 섹션 (순서 고정):**
 
@@ -195,7 +195,7 @@ projects/{PROJECT}/
 
 ---
 
-## agents/planner.md
+## prompts/planner.md
 
 이 프로젝트에서 플래닝 시 따를 지침. 래퍼(`@planner`)가 로드해 실행한다.
 
@@ -203,13 +203,13 @@ projects/{PROJECT}/
 
 - `## 기능별 사전 확인 사항` — **pre-analyze 상태에선 빈 상태**. `/pilot:analyze` 가 feature 별 소항목 + 각 소항목 하위의 `**관련 파일 범위**` subsection (Routes/Models/Services) 을 자동 주입 (`[analyze-managed]` 영역). 래퍼의 pre/post-analyze 분기는 `.agent-state.yml` 의 `analyzed` 필드로 판정 — 위 "pre / post-analyze 게이트" 참조.
 
-> **플래닝 프로세스 공통 가이드** (요구사항 파악 → 영향 범위 분석 → 계획 출력 형식) 는 래퍼 (`.claude/agents/planner.md`) 가 제공한다. 프로젝트별 `agents/planner.md` 는 프로젝트 고유 사전 확인 사항만 담는다 (공통 템플릿 반복 금지 — GUIDE "agent 파일 책임 경계" 원칙).
+> **플래닝 프로세스 공통 가이드** (요구사항 파악 → 영향 범위 분석 → 계획 출력 형식) 는 래퍼 (`.claude/agents/planner.md`) 가 제공한다. 프로젝트별 `prompts/planner.md` 는 프로젝트 고유 사전 확인 사항만 담는다 (공통 템플릿 반복 금지 — GUIDE "agent 파일 책임 경계" 원칙).
 
 > **TDD 모드**일 때: `/pilot:tdd` 가 파일 말미에 Red 단계 앵커를 추가한다 (본 절차는 [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) 참조).
 
 ---
 
-## agents/generator.md
+## prompts/generator.md
 
 이 프로젝트에서 코드 구현 시 참조할 기술 레퍼런스. 래퍼(`@generator`)가 로드해 실행한다.
 
@@ -224,7 +224,7 @@ projects/{PROJECT}/
 
 ---
 
-## agents/evaluator.md
+## prompts/evaluator.md
 
 이 프로젝트 구현 완료 후 검토할 체크리스트. 래퍼(`@evaluator`)가 로드해 실행한다.
 
@@ -240,7 +240,7 @@ projects/{PROJECT}/
 
 ## 템플릿 원본
 
-스캐폴딩 소스는 [example/](example/) 폴더 4종 (`project.md`, `agents/planner.md`, `agents/generator.md`, `agents/evaluator.md`) 이다. 본 가이드는 **구조 설명용** 이며, 실제 프로젝트 생성 시에는 `/pilot:project` 가 example 파일을 그대로 복사한다 (상세: [project SKILL.md Step 2](../../../project/SKILL.md)).
+스캐폴딩 소스는 [example/](example/) 폴더 4종 (`project.md`, `prompts/planner.md`, `prompts/generator.md`, `prompts/evaluator.md`) 이다. 본 가이드는 **구조 설명용** 이며, 실제 프로젝트 생성 시에는 `/pilot:project` 가 example 파일을 그대로 복사한다 (상세: [project SKILL.md Step 2](../../../project/SKILL.md)).
 
 가이드 본문의 섹션 설명과 example 의 실제 파일이 충돌할 경우 **example 이 SSOT**. 가이드 쪽을 동기화할 것.
 

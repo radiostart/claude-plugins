@@ -58,7 +58,7 @@
 ```text
 projects/{PROJECT}/
 ├── project.md          # 오케스트레이터 — 개요, 목표, 에이전트 호출 흐름 (필수)
-├── agents/
+├── prompts/
 │   ├── planner.md      # 기능 분석 및 구현 계획 수립
 │   ├── generator.md    # 코드 구현 참조 (패턴, 서비스, 모델)
 │   └── evaluator.md    # 구현 검토 체크리스트
@@ -110,7 +110,7 @@ projects/{PROJECT}/features/
 
 ## 에이전트
 
-플러그인 루트 `agents/` 에 래퍼 에이전트가 등록되어 있다 (plugin.json 기반 자동 로드). 각 에이전트는 `STATE.md`에서 현재 프로젝트를 읽고 `projects/{PROJECT}/agents/{role}.md`를 로드해 프로젝트별 지침을 따른다.
+플러그인 루트 `agents/` 에 래퍼 에이전트가 등록되어 있다 (plugin.json 기반 자동 로드). 각 에이전트는 `STATE.md` 에서 현재 프로젝트를 읽고 `workspace/projects/{PROJECT}/prompts/{role}.md` 를 로드해 프로젝트별 지침을 따른다.
 
 | 에이전트     | 진입 조건                          | 기본 역할                        | TDD 모드                                        |
 | ------------ | ---------------------------------- | -------------------------------- | ----------------------------------------------- |
@@ -120,7 +120,7 @@ projects/{PROJECT}/features/
 
 TDD 모드 활성화: `/pilot:tdd` — `project.md` 제한사항에 TDD 모드 문구 추가 + 각 에이전트 파일 책임 확장
 
-프로젝트별 에이전트 파일(`projects/{PROJECT}/agents/`)이 없으면 `project.md`만으로 작업한다.
+프로젝트별 에이전트 파일(`projects/{PROJECT}/prompts/`)이 없으면 `project.md`만으로 작업한다.
 
 ## 이슈 폴더 구조
 
@@ -136,7 +136,7 @@ issues/{이슈명}/
 | `STATE.md` 가 없는 경우                                    | 빈 테이블(`\| 모드 \| 이름/이슈명 \| 상태 \|`)로 생성 후 계속 진행                    |
 | `STATE.md` 형식이 깨진 경우                                | `/pilot:project` 또는 `/pilot:issue`로 초기화하도록 안내하고 종료             |
 | `project.md` 가 없는 경우                                  | 사용자에게 파일 생성 여부를 확인 후 진행                                              |
-| `agents/` 폴더 또는 파일이 없는 경우                       | `project.md`만으로 작업한다                                                           |
+| `prompts/` 폴더 또는 파일이 없는 경우                      | `project.md`만으로 작업한다                                                           |
 | `issue.md` 가 없는 경우                                    | 사용자에게 파일 생성 여부를 확인 후 진행                                              |
 | `rules/{domain}.md` 가 `_(추가 예정)_` 또는 미존재인 경우 | scope만으로 작업하되, 도메인 규칙이 필요한 코드 수정은 사용자에게 규칙을 확인 후 진행 |
 | `workspace/context/MANIFEST.md` 가 미존재인 경우 | 사용자에게 컨텍스트를 먼저 설정하라고 안내하고 종료 |

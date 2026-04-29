@@ -1,15 +1,15 @@
-# agents/*.md 스캐폴딩 공통 노트
+# prompts/*.md 스캐폴딩 공통 노트
 
-`workspace/projects/{PROJECT}/agents/` 하위 `planner.md`·`generator.md`·`evaluator.md` 공통 가이드. 각 파일 상단에서 본 문서를 한 줄 링크로 참조한다.
+`workspace/projects/{PROJECT}/prompts/` 하위 `planner.md`·`generator.md`·`evaluator.md` 공통 가이드. 각 파일 상단에서 본 문서를 한 줄 링크로 참조한다.
 
 ## 주의 — 이 파일들은 subagent 정의가 아니다
 
-`workspace/projects/{PROJECT}/agents/*.md` 와 플러그인 `${CLAUDE_PLUGIN_ROOT}/agents/*.md` 는 **이름은 같지만 성격이 다르다**:
+`workspace/projects/{PROJECT}/prompts/*.md` 와 플러그인 `${CLAUDE_PLUGIN_ROOT}/agents/*.md` 는 **이름은 같지만 성격이 다르다**:
 
 | 위치 | 정체 | `@planner` 호출 시 | 편집 효과 |
 |---|---|---|---|
 | `${CLAUDE_PLUGIN_ROOT}/agents/{phase}.md` | **Claude Code subagent 정의** (frontmatter `name:`, `tools:`) | ✅ 실제 실행되는 wrapper | 플러그인 업데이트로만 변경 |
-| `workspace/projects/{PROJECT}/agents/{phase}.md` | **프로젝트 컨텍스트 문서** (마크다운) | wrapper 가 Read 로 내용만 참고 | 다음 `@{phase}` 호출에 반영 |
+| `workspace/projects/{PROJECT}/prompts/{phase}.md` | **프로젝트 컨텍스트 문서** (마크다운) | wrapper 가 Read 로 내용만 참고 | 다음 `@{phase}` 호출에 반영 |
 
 즉 프로젝트 쪽 파일은 Claude Code subagent 레지스트리에 등록되지 않으며, 단독으로는 아무것도 실행하지 않는다. wrapper 가 진입 시 `tools/orchestrate-load.py` 결과를 따라 Read 툴로 불러들이는 **입력 자료**일 뿐.
 

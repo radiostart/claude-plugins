@@ -1,6 +1,6 @@
-# 6 단계: agents/ 자동 갱신 상세
+# 6 단계: prompts/ 자동 갱신 상세
 
-features/ 분석 결과를 바탕으로 `workspace/projects/{PROJECT}/agents/` 의 에이전트 파일을 자동 갱신한다. 에이전트 파일이 없으면 새로 생성하고, 이미 존재하면 features/ 내용을 반영하여 업데이트한다.
+features/ 분석 결과를 바탕으로 `workspace/projects/{PROJECT}/prompts/` 의 에이전트 파일을 자동 갱신한다. 에이전트 파일이 없으면 새로 생성하고, 이미 존재하면 features/ 내용을 반영하여 업데이트한다.
 
 이 6 단계는 래퍼의 pre/post-analyze 게이트 판정 필드 (`.agent-state.yml` 의 `analyzed`) 를 `true` 로 전환시키는 유일한 경로다 (6-4 단계에서 실제 전환 수행).
 

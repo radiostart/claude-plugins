@@ -8,9 +8,9 @@
 대상 파일:
 
 - `workspace/projects/{PROJECT}/project.md`
-- `workspace/projects/{PROJECT}/agents/planner.md`
-- `workspace/projects/{PROJECT}/agents/generator.md`
-- `workspace/projects/{PROJECT}/agents/evaluator.md`
+- `workspace/projects/{PROJECT}/prompts/planner.md`
+- `workspace/projects/{PROJECT}/prompts/generator.md`
+- `workspace/projects/{PROJECT}/prompts/evaluator.md`
 
 ---
 
@@ -40,7 +40,7 @@
 ### 1. Planner — Red 계약 작성 (테스트 코드 X)
 
 - **진입 조건:** 새 기능 구현 시작 시 항상 실행
-- **로드:** `agents/planner.md` + [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md)
+- **로드:** `prompts/planner.md` + [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md)
 - **산출물:** `.plan.md` 에 스텝별 3 축 기록 — (a) 테스트 대상 경로 · (b) 검증할 행동 · (c) 기대 실패 유형
 - **완료 기준:** 스텝 목록과 Red 계약 3 축 확정 → Generator 진행
 - **금지:** 테스트 코드 작성 — Generator 담당
@@ -48,14 +48,14 @@
 ### 2. Generator — Red + Green + Refactor 순환
 
 - **진입 조건:** Planner 의 Red 계약 확정 후
-- **로드:** `agents/generator.md` + [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md) + [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) + workspace `conventions_doc` (`orchestrate-load` 자동 주입)
+- **로드:** `prompts/generator.md` + [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md) + [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) + workspace `conventions_doc` (`orchestrate-load` 자동 주입)
 - **동작:** 스텝마다 Red → Green → Refactor 를 한 컨텍스트에서 순환. 각 스텝의 `.plan.md` 에 `[Red] 실패 유형·메시지` / `[Green] 통과 시각` / `[Refactor] 수정 내역` 을 Edit 로 기록.
 - **완료 기준:** 모든 스텝 [Red]+[Green] 증거 기록 + 직전 `{test_command}` 전체 PASS + `{source_root}` 1 개 이상 수정 → Evaluator 진행
 
 ### 3. Evaluator — Red 증거 교차 검증 + 변경 관련 테스트 실행
 
 - **진입 조건:** Generator 완료 후
-- **로드:** `agents/evaluator.md`
+- **로드:** `prompts/evaluator.md`
 - **동작:** `{test_command} {변경 관련 경로}` 실행 + `.plan.md` 스텝별 [Red]+[Green] 증거 교차 검증. 증거 누락·"인프라 오류" 기록 스텝 발견 시 Generator 에 반려.
 - **완료 기준:** 변경 관련 테스트 통과 + Red 증거 교차 검증 통과 + 요구사항 체크리스트 확인 → 목표의 해당 항목 완료 처리 + VERIFICATION REPORT `status: READY` 출력
 - **금지:** 인자 없는 `{test_command}` (전체 스위트) 실행 금지 — 반드시 변경된 테스트 경로를 나열
@@ -63,7 +63,7 @@
 
 ---
 
-## 2. `agents/planner.md` — TDD Red 계약 단계 추가
+## 2. `prompts/planner.md` — TDD Red 계약 단계 추가
 
 **Detect literal:** `## TDD — Red 계약`
 
@@ -79,7 +79,7 @@
 
 ---
 
-## 3. `agents/generator.md` — TDD 모드 안내 추가
+## 3. `prompts/generator.md` — TDD 모드 안내 추가
 
 **Detect literal:** `> **TDD 모드**: Red 작성`
 
@@ -92,7 +92,7 @@
 
 ---
 
-## 4. `agents/evaluator.md` — TDD 테스트 실행 섹션 추가
+## 4. `prompts/evaluator.md` — TDD 테스트 실행 섹션 추가
 
 **Detect literal:** `## TDD 테스트 실행`
 
@@ -139,5 +139,5 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace
 
 호출자는 아래 항목을 요약해 사용자에게 안내한다.
 
-- 수정된 파일: `project.md`, `agents/planner.md`, `agents/generator.md`, `agents/evaluator.md`, `.agent-state.yml`
+- 수정된 파일: `project.md`, `prompts/planner.md`, `prompts/generator.md`, `prompts/evaluator.md`, `.agent-state.yml`
 - 참조 문서: `skills/context/modes/rgr.md`, `skills/context/lifecycle/state-schema.md`

@@ -3,7 +3,7 @@ name: create-feature
 description: >-
   활성 프로젝트에 사용자 프롬프트 한 줄로 단일 feature 명세를 추가할 때
   사용한다. features/NN-{slug}.md 를 prompt-origin 템플릿으로 생성하고
-  `/pilot:analyze` 와 동일하게 project.md (목표·관련 파일) 와 agents/*
+  `/pilot:analyze` 와 동일하게 project.md (목표·관련 파일) 와 prompts/*
   (planner·generator·evaluator) 를 함께 동기화한다. 기획서(docs/) 기반
   다건 분할은 `/pilot:analyze` 를 사용한다. 실행은 @planner 호출로 시작 —
   자동 파이프라인 아님.
@@ -11,7 +11,7 @@ description: >-
 
 # /pilot:create-feature
 
-활성 프로젝트에 **단일 기능** 을 프롬프트로 추가한다. `features/` 폴더에 명세 파일을 생성하고 `project.md` (목표·관련 파일) 와 `agents/*.md` 를 `/pilot:analyze` 와 동일한 절차로 동기화한다. 구현 흐름은 `@planner` 호출로 시작.
+활성 프로젝트에 **단일 기능** 을 프롬프트로 추가한다. `features/` 폴더에 명세 파일을 생성하고 `project.md` (목표·관련 파일) 와 `prompts/*.md` 를 `/pilot:analyze` 와 동일한 절차로 동기화한다. 구현 흐름은 `@planner` 호출로 시작.
 
 대상: $ARGUMENTS (기능 지시문 — 예: "지연 주문 UI 정렬 기능 — 기본 내림차순, 출고일 필터")
 
@@ -91,7 +91,7 @@ _(상태값 변화가 있는 기능만 작성)_
 
 프롬프트에서 명시적으로 추출 가능한 요소 (상태 값·정렬 기준·트리거 등) 는 해당 섹션에 채워 넣는다. 추측성 내용은 **넣지 않는다** — placeholder 로 둠.
 
-### 4. `project.md` 및 `agents/*` 자동 갱신
+### 4. `project.md` 및 `prompts/*` 자동 갱신
 
 신규 feature 파일 생성 후 [../analyze/SKILL.md](../analyze/SKILL.md) 의 **"분석 프로세스" 5 ~ 6 단계** 를 그대로 수행한다 — 분석 소스가 docs/ 가 아니라 **현재 features/ 전체** 라는 점만 다르다.
 
@@ -100,7 +100,7 @@ _(상태값 변화가 있는 기능만 작성)_
 - **도메인 결정** (5 단계 prelude). `.agent-state.yml.domain` 이 null 이면 analyze 와 동일한 우선순위로 후보 제시 후 사용자 확인 → state 에 기록. non-null 이면 그대로 사용 (재질의 금지).
 - **5-1. `## 목표` 갱신** — features 전체로 체크리스트 정렬 갱신. 기존 `[x]` 체크는 보존, 신규 feature 항목이 NN 순서에 추가된다.
 - **5-2. `## 관련 파일` 갱신** — `scope/{domain}.md` 의 Routes/Models/Services 표를 추출해 `## 관련 파일` 표 자동 기입.
-- **6-1 ~ 6-3. agents/\* 갱신** — `[analyze-managed]` 섹션을 features 전체 + scope 매칭 결과로 regen. `[analyze-managed]` 밖 사용자 수동 편집 영역 (`## 주의사항`·`## 구현 패턴` 등) 과 evaluator 의 `[x]` 체크는 보존.
+- **6-1 ~ 6-3. prompts/\* 갱신** — `[analyze-managed]` 섹션을 features 전체 + scope 매칭 결과로 regen. `[analyze-managed]` 밖 사용자 수동 편집 영역 (`## 주의사항`·`## 구현 패턴` 등) 과 evaluator 의 `[x]` 체크는 보존.
 - **6-4. `.agent-state.yml` 갱신** — `analyzed: true`, `analyzed_at`, `last_analyzed_features` 기록. domain 이 이번에 처음 결정됐다면 함께 기록.
 
 **보존 규칙 요약** (analyze 와 동일):
@@ -129,9 +129,9 @@ Feature 생성 완료: #{NN} {기능명}
 
 갱신:
   - project.md           (목표 +1, 관련 파일 동기화)
-  - agents/planner.md    (기능별 사전 확인 사항)
-  - agents/generator.md  (기술 레퍼런스)
-  - agents/evaluator.md  (체크리스트)
+  - prompts/planner.md    (기능별 사전 확인 사항)
+  - prompts/generator.md  (기술 레퍼런스)
+  - prompts/evaluator.md  (체크리스트)
   - .agent-state.yml     (analyzed: true)
 
 검증: {doctor 결과 한 줄 요약}

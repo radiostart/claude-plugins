@@ -10,7 +10,7 @@
 | 프로젝트 생애주기 이해 (생성·재개·완료) | [`projects/GUIDE.md`](projects/GUIDE.md) | [`projects/example/project.md`](projects/example/project.md) |
 | 이슈 모드 (단발성 처리) | [`issues/GUIDE.md`](issues/GUIDE.md) | [`issues/example/issue.md`](issues/example/issue.md) |
 | `.agent-state.yml` 스키마·필드 의미 | [`state-schema.md`](state-schema.md) | — |
-| 프로젝트 `agents/*.md` 구조 (분석본 vs 템플릿, `[analyze-managed]` 주석) | [`projects/agents-scaffold-notes.md`](projects/agents-scaffold-notes.md) | — |
+| 프로젝트 `prompts/*.md` 구조 (분석본 vs 템플릿, `[analyze-managed]` 주석) | [`projects/prompts-scaffold-notes.md`](projects/prompts-scaffold-notes.md) | — |
 | Drift 감지·`--regen-agents` 안전 절차 | [`drift-protocol.md`](drift-protocol.md) | `/pilot:doctor`, `/pilot:analyze --regen-agents` |
 | Planner 가 작성하는 `.plan.md` 형식 계약 (모드별 필수 섹션·필드) | [`plan-schema.md`](plan-schema.md) | `tools/plan-validate.py` |
 
@@ -19,7 +19,7 @@
 | 청중 | 필수 | 선택 |
 |---|---|---|
 | **워크스페이스 사용자** (`/pilot:project` 등 사용) | `setup/README.md` (1회) | `projects/GUIDE.md` (재개·문제 발생 시) |
-| **플러그인 운영자** | 위 + `state-schema.md`, `agents-scaffold-notes.md`, `drift-protocol.md` | `issues/GUIDE.md` |
+| **플러그인 운영자** | 위 + `state-schema.md`, `prompts-scaffold-notes.md`, `drift-protocol.md` | `issues/GUIDE.md` |
 | **신규 진입자** | INDEX (본 문서) → `setup/README.md` | 필요 시 위 문서 cherry-pick |
 | **에이전트 wrapper** | 직접 로드 — 본 INDEX 미참조 | — |
 
@@ -28,7 +28,7 @@
 | 분류 | 파일 | 성격 |
 |---|---|---|
 | **운영 가이드** | `projects/GUIDE.md`, `issues/GUIDE.md`, `setup/README.md`, `drift-protocol.md` | 절차·결정 트리·트러블슈팅 |
-| **계약 문서** | `state-schema.md`, `projects/agents-scaffold-notes.md`, `plan-schema.md` | 플러그인이 의존하는 형식·계약 정의 |
+| **계약 문서** | `state-schema.md`, `projects/prompts-scaffold-notes.md`, `plan-schema.md` | 플러그인이 의존하는 형식·계약 정의 |
 | **템플릿** | `projects/example/*`, `issues/example/issue.md` | 신규 프로젝트·이슈 생성 시 복사 기준 |
 
 ## 폴더 구조
@@ -41,10 +41,10 @@ lifecycle/
 ├── state-schema.md                       # .agent-state.yml v1.2 스키마
 ├── projects/
 │   ├── GUIDE.md                          # 프로젝트 생애주기 운영 가이드
-│   ├── agents-scaffold-notes.md          # agents/*.md 구조 메타 노트
+│   ├── agents-scaffold-notes.md          # prompts/*.md 구조 메타 노트
 │   └── example/                          # 신규 프로젝트 템플릿
 │       ├── project.md
-│       └── agents/{planner,generator,evaluator}.md
+│       └── prompts/{planner,generator,evaluator}.md
 ├── issues/
 │   ├── GUIDE.md                          # 이슈 모드 운영 가이드
 │   └── example/issue.md

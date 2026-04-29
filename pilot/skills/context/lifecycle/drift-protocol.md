@@ -27,9 +27,9 @@
 
 ### B. `workspace/projects/{PROJECT}/` — 프로젝트 산출물
 
-적용: `project.md`, `agents/generator.md`, `agents/evaluator.md`. **Planner 전용** — 계획 수립 전 코드베이스 분석 중 내용 (클래스명·상태값·경로 등) 이 실제와 다름을 발견하면 공통 원칙 1-3 을 따라 수정한다.
+적용: `project.md`, `prompts/generator.md`, `prompts/evaluator.md`. **Planner 전용** — 계획 수립 전 코드베이스 분석 중 내용 (클래스명·상태값·경로 등) 이 실제와 다름을 발견하면 공통 원칙 1-3 을 따라 수정한다.
 
-`agents/planner.md` 자체도 동일 대상이지만, 수정 시 다음 Planner 실행에 영향을 주므로 변경 범위를 한 번 더 점검한다.
+`prompts/planner.md` 자체도 동일 대상이지만, 수정 시 다음 Planner 실행에 영향을 주므로 변경 범위를 한 번 더 점검한다.
 
 ---
 
@@ -48,7 +48,7 @@
 드리프트가 **3 건 이상** 동시 발견되면 개별 보고 대신 **일괄 정리 경로** 를 우선 검토한다.
 일괄 정리 명령은 다음 중 하나:
 
-- `/pilot:analyze --regen-agents` — 프로젝트 산출물(`project.md`, `agents/*.md`) 재생성
+- `/pilot:analyze --regen-agents` — 프로젝트 산출물(`project.md`, `prompts/*.md`) 재생성
 - `/pilot:doctor --fix` — 워크스페이스 스키마·구조 자동 수정
 
 에이전트별 개입 시점은 다르다 — 사이클 흐름을 끊지 않기 위함:

@@ -20,7 +20,7 @@
 
 - {source_root}/services/order_service.{ext}
 - {source_root}/views/admin/orders/index.{ext}
-- workspace/projects/MyProject/agents/generator.md
+- workspace/projects/MyProject/prompts/generator.md
 
 포함할 파일을 알려주세요. (전체 포함 / 일부 선택 / 제외)
 ```
@@ -67,7 +67,7 @@ scope 없이 한국어 설명만으로도 무방하다 (단순 수정, 문서 �
 ### 예시
 
 ```
-skills: 프로젝트 단위 Harness 구조 도입 (Orchestrator + agents/)
+skills: 프로젝트 단위 Harness 구조 도입 (Orchestrator + prompts/)
 
 [TICKET-123] 주문 상태 전환 시 취소 제한 추가
 

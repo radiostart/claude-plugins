@@ -72,7 +72,7 @@ workspace/
 │   └── {PROJECT}/
 │       ├── project.md
 │       ├── .agent-state.yml      # machine-readable 상태 파일
-│       ├── agents/
+│       ├── prompts/
 │       └── features/
 └── issues/                       # /pilot:issue 로 생성
 ```

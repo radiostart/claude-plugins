@@ -200,22 +200,22 @@ pip install requests beautifulsoup4
 
 일반 흐름: **스킬로 환경 준비 → 에이전트로 작업 수행**.
 
-### `agents/` 폴더 2 가지 (혼동 주의)
+### `agents/` (플러그인) vs `prompts/` (프로젝트)
 
-플러그인과 프로젝트 양쪽에 `agents/planner.md` · `generator.md` · `evaluator.md` 가 존재한다. **이름은 같지만 성격이 다르다**:
+같은 이름의 phase 파일 (planner/generator/evaluator) 이 **두 위치** 에 존재하지만 **역할이 다르다**:
 
 | 위치 | 정체 | `@planner` 호출 시 | 편집 효과 |
 |---|---|---|---|
 | `${CLAUDE_PLUGIN_ROOT}/agents/{phase}.md` | **Claude Code subagent 정의** (frontmatter `name:`, `tools:`) | ✅ 실제 실행되는 wrapper | 플러그인 업데이트로만 변경 |
-| `workspace/projects/{PROJECT}/agents/{phase}.md` | **프로젝트 컨텍스트 문서** (마크다운) | wrapper 가 Read 로 내용만 참고 | 다음 `@{phase}` 호출에 반영 |
+| `workspace/projects/{PROJECT}/prompts/{phase}.md` | **프로젝트 컨텍스트 문서** (마크다운) | wrapper 가 Read 로 내용만 참고 | 다음 `@{phase}` 호출에 반영 |
 
-즉 프로젝트 쪽 파일은 Claude Code subagent 레지스트리에 등록되지 않는다. wrapper 가 진입 시 `tools/orchestrate-load.py` 결과에 따라 Read 로 불러들이는 **입력 자료**. wrapper 의 절차·tool 권한·model 은 플러그인 쪽에서만 선언된다.
+즉 프로젝트 쪽 `prompts/{phase}.md` 는 Claude Code subagent 레지스트리에 등록되지 않는다. wrapper 가 진입 시 `tools/orchestrate-load.py` 결과에 따라 Read 로 불러들이는 **입력 자료**. wrapper 의 절차·tool 권한·model 은 플러그인 쪽에서만 선언된다.
 
 **따라서:**
 
-- 프로젝트 `agents/*.md` 편집은 다음 `@{phase}` 호출에 반영되지만, `<!-- [analyze-managed] -->` 섹션은 다음 `--regen-agents` 에서 덮어쓰인다 → 커스텀은 주석 없는 섹션에.
+- 프로젝트 `prompts/*.md` 편집은 다음 `@{phase}` 호출에 반영되지만, `<!-- [analyze-managed] -->` 섹션은 다음 `--regen-agents` 에서 덮어쓰인다 → 커스텀은 주석 없는 섹션에.
 - wrapper 의 **동작 자체** (단계 순서, tool 허용 범위, model) 를 바꾸려면 플러그인 수정 필요.
-- 상세: [`skills/context/lifecycle/projects/agents-scaffold-notes.md`](skills/context/lifecycle/projects/agents-scaffold-notes.md).
+- 상세: [`skills/context/lifecycle/projects/prompts-scaffold-notes.md`](skills/context/lifecycle/projects/prompts-scaffold-notes.md).
 
 ### state 파일 2 가지
 
@@ -240,7 +240,7 @@ workspace/
 ├── projects/{PROJECT}/                     # /pilot:project 가 생성
 │   ├── project.md                          # 오케스트레이터
 │   ├── .agent-state.yml                    # machine-readable 상태
-│   ├── agents/
+│   ├── prompts/
 │   │   ├── planner.md                      # 프로젝트 고유 사전 확인
 │   │   ├── generator.md                    # 기술 레퍼런스
 │   │   └── evaluator.md                    # 체크리스트
@@ -249,7 +249,7 @@ workspace/
 │   ├── features/{NN}-{slug}.plan.md        # @planner 가 자동 생성
 │   ├── .focus.md                           # /pilot:focus 사용자 지시
 │   ├── .focus.history/                     # 아카이브
-│   └── .agents.bak/                        # regen 백업
+│   └── .prompts.bak/                       # regen 백업
 └── issues/{이슈명}/
     └── issue.md
 ```
@@ -269,7 +269,7 @@ workspace/
 
 | 값 | 동작 |
 |---|---|
-| `true` (post-analyze) | `agents/*.md` 가 analyze 주입 압축본. 도메인 scope 원본 재로드 생략 |
+| `true` (post-analyze) | `prompts/*.md` 가 analyze 주입 압축본. 도메인 scope 원본 재로드 생략 |
 | `false` (pre-analyze) | MANIFEST 가 선언한 도메인 scope 파일을 fallback 로드 |
 
 **`analyzed` 필드를 수동 편집하지 말 것.** `/pilot:analyze` 가 유일한 정식 writer.
@@ -313,14 +313,14 @@ Confluence 페이지를 `docs/` 에 저장하거나 저장된 내용 검색.
 
 #### `/pilot:analyze [keyword | filename | --regen-agents] [--force]`
 
-`docs/` → `features/` 기능별 명세. project.md 목표 + agents/*.md 자동 갱신.
+`docs/` → `features/` 기능별 명세. project.md 목표 + prompts/*.md 자동 갱신.
 
-- **`--regen-agents`**: docs 변화 없어도 agents/*.md 만 재작성 (drift 대응). **자동 백업** 수행 (`.agents.bak/{timestamp}/`) 후 post-check 중복 섹션 감지.
+- **`--regen-agents`**: docs 변화 없어도 prompts/*.md 만 재작성 (drift 대응). **자동 백업** 수행 (`.prompts.bak/{timestamp}/`) 후 post-check 중복 섹션 감지.
 - **`--force`**: 기존 features 덮어쓰기. **prompt-origin features 감지 시 사용자 승인 대기** (데이터 손실 방지).
 
 #### `/pilot:create-feature "{지시문}"`
 
-docs 없이 프롬프트로 단일 기능 명세 추가. `features/NN-{slug}.md` 를 prompt-origin 템플릿으로 작성하고 **`/pilot:analyze` 와 동일한 절차로 `project.md` (목표·관련 파일) 와 `agents/*.md` 를 자동 동기화**. 기존 features 의 `[analyze-managed]` 섹션 내용은 보존된다. 도메인 미지정 시 한 번 질의 후 `.agent-state.yml` 에 기록. 구현은 `@planner` 부터 사용자가 명시 호출.
+docs 없이 프롬프트로 단일 기능 명세 추가. `features/NN-{slug}.md` 를 prompt-origin 템플릿으로 작성하고 **`/pilot:analyze` 와 동일한 절차로 `project.md` (목표·관련 파일) 와 `prompts/*.md` 를 자동 동기화**. 기존 features 의 `[analyze-managed]` 섹션 내용은 보존된다. 도메인 미지정 시 한 번 질의 후 `.agent-state.yml` 에 기록. 구현은 `@planner` 부터 사용자가 명시 호출.
 
 ### 작업 지원
 
@@ -330,7 +330,7 @@ docs 없이 프롬프트로 단일 기능 명세 추가. `features/NN-{slug}.md`
 
 #### `/pilot:tdd`
 
-이미 구현된 프로젝트에 TDD 체계 도입. project.md + agents/*.md + `.agent-state.yml` 갱신. idempotent. 신규 프로젝트는 `/pilot:project ... --tdd` 사용.
+이미 구현된 프로젝트에 TDD 체계 도입. project.md + prompts/*.md + `.agent-state.yml` 갱신. idempotent. 신규 프로젝트는 `/pilot:project ... --tdd` 사용.
 
 #### `/pilot:characterize [on|off]`
 
@@ -550,7 +550,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {planner|generat
 
 # WARN: features 증가 / scope mtime / duplicate section
 /pilot:analyze --regen-agents
-  # 자동 백업 (.agents.bak/{ts}/) + agents/*.md 재생성 + post-check
+  # 자동 백업 (.prompts.bak/{ts}/) + prompts/*.md 재생성 + post-check
 
 # post-check 에 duplicate 발견되면 백업과 비교해 수동 머지
 ```
@@ -618,7 +618,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {planner|generat
 
 ### agent 파일 책임 경계
 
-프로젝트 `agents/*.md` (planner·generator·evaluator) 에:
+프로젝트 `prompts/*.md` (planner·generator·evaluator) 에:
 
 - **담을 것**: 이 프로젝트만의 서비스 시그니처·콜백·특이 비즈니스 규칙 + `## 기능별 사전 확인 사항` (analyze 주입)
 - **담지 말 것** (다른 곳이 SSOT):
@@ -684,7 +684,7 @@ doctor 가 아래 WARN 을 출력할 때:
 
 | WARN | 의미 |
 |---|---|
-| `features {N} → {M} (증가 {K})` | features 추가됨 → agents/*.md 가 구식일 수 있음 |
+| `features {N} → {M} (증가 {K})` | features 추가됨 → prompts/*.md 가 구식일 수 있음 |
 | `scope/*.md mtime > analyzed_at` | 도메인 지식 업데이트됨 |
 | `duplicate section: ...` | 이전 regen 에서 비표준 섹션이 중복 주입됨 (수동 머지 필요) |
 
@@ -692,8 +692,8 @@ doctor 가 아래 WARN 을 출력할 때:
 
 ### `--regen-agents` 안전 수순
 
-1. 실행 직전 자동으로 `.agents.bak/{ISO-timestamp}/` 에 전체 백업
-2. agents/planner.md·generator.md·evaluator.md 재작성
+1. 실행 직전 자동으로 `.prompts.bak/{ISO-timestamp}/` 에 전체 백업
+2. prompts/planner.md·generator.md·evaluator.md 재작성
 3. `.agent-state.yml` 의 `analyzed_at` / `last_analyzed_features` 갱신
 4. post-check 로 doctor 자동 실행 → 중복 섹션 감지 시 WARN + 수동 머지 권고
 
@@ -709,7 +709,7 @@ doctor 가 아래 WARN 을 출력할 때:
 
 - **플러그인은 도메인 지식을 내장하지 않는다.** `workspace/context/` 는 팀이 직접 유지.
 - **`.agent-state.yml` · `STATE.md` 는 로컬 상태.** `.gitignore` 권장.
-- **`.agents.bak/` · `.focus.history/` 도 로컬 복구용.** gitignore 권장.
+- **`.prompts.bak/` · `.focus.history/` 도 로컬 복구용.** gitignore 권장.
 - **래퍼 에이전트는 별도 인스턴스.** 메인 대화 컨텍스트를 못 봄 → 필요하면 `/pilot:focus` 로 전달.
 - **분리된 레이어.** 스킬 (환경 세팅) vs 에이전트 (작업 수행) vs 도메인 (팀 지식) — 섞지 않는다.
 - **도메인 규칙 하드코드 금지.** 프로젝트 agent 파일에 메모 문구·상태값 리스트 등을 박으면 `rules/` 와 drift. "참조만" 원칙.
