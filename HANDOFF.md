@@ -11,7 +11,7 @@ cd claude-plugins
 
 # 2. 테스트 환경 확인 (Python 3.11+ 권장, pytest 필요)
 pytest pilot/tests/ -q --ignore=pilot/tests/tools/test_confluence.py
-# → 93 passed 가 나오면 정상
+# → 107 passed 가 나오면 정상 (build-plugin v1 으로 +14: integrity 7 / migration 7)
 
 # 3. (선택) Confluence 사용 시 의존성
 pip install requests beautifulsoup4
@@ -27,18 +27,42 @@ EOF
 ## 현재 상태 (origin/main)
 
 ```
-abed86e refactor: scope/rules 를 플러그인 컨트랙트에서 권장 컨벤션으로 demote
-d10799d feat: /pilot:learn 스킬 — 소스코드에서 도메인 컨텍스트 부트스트랩
-de499a1 docs: tdd_batch 미구현 contract 제거
-865f6d6 refactor: 프로젝트쪽 agents/ → prompts/ rename
-c949152 refactor: 감사 결과 반영 — 버그·과적합·dead reference 정리
-af9d65b refactor: 사내 특화 항목 제거 → 범용화
-8ee766e chore: 잔존 정리 — fixture · 사내 마커 · 팀 표현
-2f228c8 chore: ai-review 스킬 제거
-c3df02c init: pilot 플러그인 + claude-plugins 마켓플레이스 셋업
+f72ecd1 chore(workspace): build-plugin 프로젝트 메타 + workspace/context 산출물
+8fc664c chore(gitignore): .slack.env + .claude/worktrees/ 보호 패턴 추가
+6d1f2e0 docs(readme): config.md 언어 패턴 example block (#01 짝)
+164fda3 feat(doctor): config 정합성 검증 + v0.1→v0.2 자동 마이그레이션 (#04 + #05)
+b40bd3d feat(project): project.md H3 동적 생성 + SSOT 분리 (#03)
+6ce4e6d feat(analyze): scope 카테고리 외부화 + create-feature 인용 동기화 (#02)
+fbc69a6 feat(learn): 언어 패턴 외부화 + default 표 폐지 (#01, D10)
+bc1ce77 test(fixtures): v0.1.0 회귀 골든 픽스처 인프라 (#00 0a)
+917fa7b require gstack for AI-assisted work
+2d15506 docs: HANDOFF.md — 다른 환경 인계용
 ```
 
-테스트 93/93 통과. clean working tree.
+build-plugin 프로젝트 v1 작업 (pilot 플러그인 범용화) 5/6 features 완료.
+테스트 107/107 통과 (#04 +7, #05 +7). clean working tree.
+
+## v1 (build-plugin 프로젝트) 완료 사항
+
+`workspace/projects/build-plugin/` 에서 진행. office-hours + plan-eng-review
+설계 결과:
+
+- **#01 learn 언어 패턴 외부화** (D10): SKILL.md default 5 언어 표 폐지,
+  workspace/context/config.md 의 `## learn 언어 패턴` 두 표 (의존성 추적
+  + 역할 분류 long-form) 가 SSOT
+- **#02 analyze scope 카테고리 외부화**: 5-2 단계의 scope 분류를
+  `## scope 카테고리` 표로 외부화 (3 컬럼 + `## ` prefix + H3 화이트리스트)
+- **#03 project.md H3 동적 생성 + SSOT 분리**: H3 헤더 = `/pilot:project`
+  1 회 생성, 표 본문 = `/pilot:analyze` / `/pilot:create-feature` 매번 갱신
+- **#04 doctor config 정합성 검증**: `check_workspace_config_sections` 신설,
+  컬럼 수·헤더·prefix·H3 화이트리스트 검증 + Result.INFO 레벨
+- **#05 v0.1→v0.2 자동 마이그레이션**: D10 default 폐지의 backward-compat
+  보장. `migrate_v0_1_to_v0_2` 가 `/pilot:doctor --fix` 시 v0.1.0 사용자에게
+  default 표 자동 주입 prompt (opt-in/out/postpone 3 분기)
+- **#00 0a 회귀 픽스처 인프라**: `pilot/tests/fixtures/v0.1.0-baseline/`
+  의 config 검증 6 케이스 + diff.sh 골격
+
+**미완**: #00 0b (`_input/` + `learn/expected/` + 등) — Open Q #1 결정 후 PR.
 
 ## 확정된 아키텍처 결정
 
@@ -51,11 +75,32 @@ c3df02c init: pilot 플러그인 + claude-plugins 마켓플레이스 셋업
 7. **TDD batch granularity** — 현재는 feature 단위 (호출 1회 = 1 feature). step/all 모드는 별도 feature 로 미루어둠.
 8. **`/pilot:learn`** — 소스코드에서 도메인 컨텍스트 자동 부트스트랩 (analyze 의 짝)
 9. **언어 중립** — Ruby fallback 제거 (config.md 미정의 시 사용자 질의)
+10. **D9 long-form 역할 분류** (build-plugin v1) — 역할 분류 표는 wide-form
+   (역할 × 언어) 폐기, long-form 2 컬럼 (`| 역할 | 식별 패턴 |`) 사용.
+   "(역할, 언어) 매트릭스 = (역할, 프레임워크) 의 잘못된 압축" 통찰 반영.
+11. **D10 default 표 폐지** (build-plugin v1) — pilot 은 특정 언어 대상이
+   아니므로 SKILL.md 의 default enumeration 자체가 모순. config 가 1 급
+   시민, SKILL.md 는 메커니즘만. README 에 v0.1.0 default example block 게시.
+12. **M1 자동 마이그레이션** (build-plugin v1) — D10 backward-compat 메커니즘.
+   `pilot/tools/doctor/integrity.py:migrate_v0_1_to_v0_2` 가 v0.1.0 →
+   v0.2.0 업그레이드 사용자에게 default 표 자동 주입 prompt
+   (opt-in/out/postpone). `.agent-state.yml.migration_v0_2_0` 에 결정 기록.
+13. **A2 runtime fallback** (build-plugin v1) — `/pilot:learn`·`/pilot:analyze`
+   등 runtime 은 잘못된 config 행을 만나도 abort 하지 않고 default fallback
+   + stderr WARN 1 줄. doctor 가 별도 실행될 때만 ERROR 보고. 1 행 오류로
+   전체 워크플로 중단 vs default fallback 안전성 — 후자.
 
 ## 보류·미정 사항
 
 - **영어 README** — 사용자가 "최종 완성 후 변경 예정" 으로 보류
-- **plugin.json version 0.1.0** — 별도 릴리스 시점에 bump
+- **plugin.json version 0.1.0 → 0.2.0** — build-plugin v1 코드 변경 완료.
+  bump 필요. 현재 v0.1.0 이라 #05 마이그레이션 함수가 조기 반환 상태
+  (활성화 트리거).
+- **Open Q #1 (#00 0b 입력 언어)** — 회귀 픽스처의 `_input/` 언어 결정 후
+  `_input/`·`learn/expected/`·`project/expected/`·`analyze/expected/` 별도 PR.
+- **5 번 회귀 검증** — `pilot/tests/fixtures/v0.1.0-baseline/diff.sh` 로 v1
+  출력 = v0.1.0 baseline 동일 확인 (0b 완료 시점까지 보류).
+- **GitHub Release v0.2.0** — version bump + 0b 회귀 검증 후 발행.
 - **Confluence 호스트** — `CONFLUENCE_HOST` 환경변수 (.env 또는 export)
 - **자동 메모리** — 다른 환경에선 새로 축적 (per-project-dir, 이전 환경 메모리 transfer 안 됨)
 
@@ -110,7 +155,14 @@ grep -rn 'dp-skills\|deali-skills\|dealicious\|workspace/{TEAM}\|workspace/_comm
 
 ## 다음 작업 후보
 
-언급되었으나 미진행:
+직전 작업 (build-plugin v1) 마무리:
+
+1. `pilot/.claude-plugin/plugin.json` version bump 0.1.0 → 0.2.0 — M1 활성화
+2. Open Q #1 결정 후 #00 0b PR (회귀 픽스처 입력·expected)
+3. 5번 회귀 검증 (`pilot/tests/fixtures/v0.1.0-baseline/diff.sh`)
+4. GitHub Release v0.2.0
+
+언급되었으나 미진행 (별개 작업):
 
 - 한국어 anchor lock 제거 (`## 언어·도구 기본값`·`## 설정` regex anchor 를 HTML comment anchor 로) — 비한국어 fork 대비
 - doctor `--diagnose` 패턴 추가 검증
