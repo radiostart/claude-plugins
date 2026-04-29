@@ -9,14 +9,14 @@
 
 | 파일 | 의존 파일 | 추출 패턴 |
 | ---- | --------- | --------- |
-| `main.py` | `routes.py` | `from routes import register_routes` (main.py:7) |
-| `routes.py` | `models/user.py` | `from models.user import User` (routes.py:4) |
-| `routes.py` | `models/order.py` | `from models.order import Order, OrderStatus` (routes.py:5) |
-| `routes.py` | `services/auth.py` | `from services.auth import AuthService` (routes.py:6) |
-| `routes.py` | `services/checkout.py` | `from services.checkout import CheckoutService` (routes.py:7) |
-| `services/checkout.py` | `models/order.py` | `from models.order import Order, OrderItem, OrderStatus` (checkout.py:4) |
-| `services/checkout.py` | `services/auth.py` | `from services.auth import AuthService` (checkout.py:5) |
-| `services/auth.py` | `models/user.py` | `from models.user import User` (auth.py:4) |
+| `main.py` | `routes.py` | `from routes import register_routes` (main.py:13) |
+| `routes.py` | `models/user.py` | `from models.user import User` (routes.py:3) |
+| `routes.py` | `models/order.py` | `from models.order import Order, OrderStatus` (routes.py:4) |
+| `routes.py` | `services/auth.py` | `from services.auth import AuthService` (routes.py:5) |
+| `routes.py` | `services/checkout.py` | `from services.checkout import CheckoutService` (routes.py:6) |
+| `services/checkout.py` | `models/order.py` | `from models.order import Order, OrderItem, OrderStatus` (checkout.py:3) |
+| `services/checkout.py` | `services/auth.py` | `from services.auth import AuthService` (checkout.py:4) |
+| `services/auth.py` | `models/user.py` | `from models.user import User` (auth.py:3) |
 
 ## 역할 분류
 
@@ -41,7 +41,7 @@
 
 ## 상태 enum
 
-`models/order.py:OrderStatus` (order.py:11)
+`models/order.py:OrderStatus` (order.py:8)
 
 | 값 | 의미 |
 | -- | ---- |
@@ -52,6 +52,6 @@
 
 ## 주요 비즈니스 규칙
 
-- 결제: `order.status == PENDING` 이 아니면 `ValueError` (checkout.py:17)
-- 취소: `status == SHIPPED` 면 취소 불가 `ValueError` (checkout.py:24)
-- 취소: `status == CANCELLED` 면 중복 취소 불가 `ValueError` (checkout.py:26)
+- 결제: `order.status == PENDING` 이 아니면 `ValueError` (checkout.py:28)
+- 취소: `status == SHIPPED` 면 취소 불가 `ValueError` (checkout.py:36)
+- 취소: `status == CANCELLED` 면 중복 취소 불가 `ValueError` (checkout.py:38)
