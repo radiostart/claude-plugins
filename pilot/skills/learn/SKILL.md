@@ -87,28 +87,19 @@ description: >-
 - **방문 set** — 의존성 추적 시 이미 본 파일은 재방문 금지. 순환 의존 (`Order` ↔ `OrderService`) 에서 무한 루프 방지.
 - **파일 수 cap** — 발견 파일 > **50 개** 면 통계 출력 직후 **사용자에게 좁히기를 강력 권유** (depth 축소·서브폴더 한정·helpers 제외 등). 그대로 진행도 허용하나 Phase 3 비용 경고 명시. 50 은 휴리스틱 — 너무 적으면 일반 controller-service-model 탐색이 막히고, 너무 많으면 토큰이 터진다.
 
-1. 진입점에서 시작해 의존성을 `--depth N` 만큼 추적한다.
-   - **언어별 추적 패턴** (Grep 으로 의존 식별자 추출):
+> **config lookup**: 본 단계 시작 전 `workspace/context/config.md` 의 `## learn 언어 패턴` 섹션을 Read. 두 표 (의존성 추적 + 역할 분류) 의 행이 있으면 우선 사용. 표가 비어있거나 매칭 행이 없으면 폴더 인접성 fallback. 이 플러그인은 특정 언어를 가정하지 않는다 — config 에 정의된 패턴만 사용하고 없으면 인접성 fallback.
+>
+> **A2 runtime fallback 절차**: config 표의 각 행을 사용 전 검증 (컬럼 수·헤더 일치). 잘못된 행은 무시하고 폴더 인접성 fallback 을 사용. 오류 1 건당 stderr 에 `[WARN] config.md ## learn 언어 패턴 {행번호 또는 사유}: fallback 사용` 1 줄 출력. abort 하지 않는다 — 1 행 오류로 전체 워크플로를 중단하는 것보다 fallback 이 안전하다. doctor 가 별도 실행될 때만 ERROR 로 보고 (integrity.py `check_workspace_config_sections`).
 
-     | 언어 | 추적 패턴 (예) |
-     | ---- | -------------- |
-     | Ruby | `require_relative` · 클래스 참조 (`OrderService`) → `app/**/order_service.rb` Glob |
-     | Kotlin | `import com.example.X` · `@Autowired`·`val foo: FooService` |
-     | TypeScript | `import { X } from "../foo"` · 상대 경로 추적 |
-     | Python | `from foo import X` · `import foo.bar` |
-     | Go | 동일 패키지 + `import "foo/bar"` |
+1. 진입점에서 시작해 의존성을 `--depth N` 만큼 추적한다.
+   - **언어별 추적 패턴** (Grep 으로 의존 식별자 추출). `workspace/context/config.md` 의 `## learn 언어 패턴` › `### 의존성 추적` 표에서 해당 언어 행이 있으면 그 패턴을 사용하고, 없으면 폴더 인접성 fallback (같은 폴더·하위 폴더) 을 사용한다.
+
+   > config lookup: 본 단계에서 `workspace/context/config.md` 의 `## learn 언어 패턴` › `### 의존성 추적` 표를 먼저 조회. 표가 비어있거나 해당 언어 행이 없으면 폴더 인접성 fallback. 이 플러그인은 특정 언어를 가정하지 않는다 — 언어 패턴은 사용자가 config 에 직접 정의 (참조: `pilot/README.md` 의 example block).
 
    - 식별 안 되는 언어는 단순 폴더 인접성 (같은 폴더·하위 폴더) 으로 fallback.
-2. 발견 파일을 역할별 분류 (Glob 패턴·파일명 패턴·간단 Grep 헤더로 판단 — Read 없이):
+2. 발견 파일을 역할별 분류 (Glob 패턴·파일명 패턴·간단 Grep 헤더로 판단 — Read 없이). `workspace/context/config.md` 의 `## learn 언어 패턴` › `### 역할 분류` 표에서 해당 역할 행이 있으면 그 패턴을 사용하고, 없으면 폴더 인접성 fallback 으로 분류한다.
 
-   | 역할 | Ruby | Kotlin | TypeScript |
-   | ---- | ---- | ------ | ---------- |
-   | routes | `config/routes.rb` 내 도메인 매칭 라인 | `@RestController`·`@RequestMapping` | `*.routes.ts`·`router.use` |
-   | controllers | `*_controller.rb`, `< ApplicationController` | `@RestController`·`@Controller` | `*.controller.ts` |
-   | services | `*_service.rb`·`app/services/**` | `@Service` | `*.service.ts` |
-   | models | `app/models/**`·`< ApplicationRecord` | `@Entity` | `*.model.ts`·`*.entity.ts` |
-   | helpers | `app/helpers/**` · util/lib 폴더 | `*Util.kt`·`*Helper.kt` | `*.util.ts`·`*.helper.ts` |
-   | other | 위 어느 것도 아님 | 동일 | 동일 |
+   > config lookup: 표가 비어있거나 매칭 행이 없으면 폴더 인접성 fallback — 같은 폴더 내 파일을 `other` 로 분류. 잘못된 행 발견 시 stderr 에 `[WARN] config.md ## learn 언어 패턴: {사유} — fallback 사용` 1 줄 (abort 안 함).
 
 3. **필터링**:
    - `config.md` 의 `Ignore` 패턴 매칭 파일 제외.
