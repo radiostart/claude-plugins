@@ -26,13 +26,11 @@
 
 | 경로 | 역할 |
 | --- | --- |
-| `workspace/context/MANIFEST.md` | 도메인 진입 파일 자동 파싱 (`## 도메인 분류` 표) → 진입 파일 자동 로드 |
-| `workspace/context/scope/{domain}.md` | 사용자 커스텀 layer (있을 때만 로드) |
-| `workspace/context/rules/{domain}.md` | 사용자 커스텀 layer (있을 때만 로드) |
+| `workspace/context/MANIFEST.md` | 도메인 지식 진입점. 플러그인이 항상 로드 + `## 도메인 분류` 표 자동 파싱하여 도메인 진입 파일 추가 로드 |
 
-폴더 이름 (`scope/`, `rules/`) 과 파일명 (`{domain}.md`) 은 변경 불가. 그 외 카테고리 (예: `enums/`) 와 폴더 안 구조·파일 내부 섹션은 자유.
+`workspace/context/` 하위의 폴더 구조·파일명은 **자유** — `scope/`, `rules/`, `enums/`, sub-domain 폴더 등 워크스페이스가 자유롭게 결정. 플러그인은 MANIFEST 만 알고, 그 외 파일은 MANIFEST 가 가리키는 경로를 따라 로드한다.
 
-에이전트·스킬은 **탐색·코드 수정 전에 MANIFEST.md 를 먼저 로드**하고, 도메인이 결정되면 위 컨트랙트 경로의 파일을 읽는다. 플러그인은 언어 컨벤션(`coding.md`), TDD 도구(`rgr.md`), 커밋·메시지 규약(`commit.md`, `messages.md`) 같은 메커니즘 자원만 보유한다.
+에이전트·스킬은 **탐색·코드 수정 전에 MANIFEST.md 를 먼저 로드**하고, 도메인이 결정되면 MANIFEST 가 가리키는 진입 파일·하위 파일을 읽는다. 플러그인은 언어 컨벤션(`coding.md`), TDD 도구(`rgr.md`), 커밋·메시지 규약(`commit.md`, `messages.md`) 같은 메커니즘 자원만 보유한다.
 
 도메인 지식은 사용자가 직접 채운다.
 
@@ -139,7 +137,7 @@ issues/{이슈명}/
 | `project.md` 가 없는 경우                                  | 사용자에게 파일 생성 여부를 확인 후 진행                                              |
 | `prompts/` 폴더 또는 파일이 없는 경우                      | `project.md`만으로 작업한다                                                           |
 | `issue.md` 가 없는 경우                                    | 사용자에게 파일 생성 여부를 확인 후 진행                                              |
-| `rules/{domain}.md` 가 `_(추가 예정)_` 또는 미존재인 경우 | scope만으로 작업하되, 도메인 규칙이 필요한 코드 수정은 사용자에게 규칙을 확인 후 진행 |
+| MANIFEST 에 도메인 진입 파일이 등록되지 않은 경우 | `/pilot:learn {진입점}` 으로 부트스트랩 안내 또는 사용자에게 MANIFEST 행 추가 요청 |
 | `workspace/context/MANIFEST.md` 가 미존재인 경우 | 사용자에게 컨텍스트를 먼저 설정하라고 안내하고 종료 |
 | `workspace/context/config.md` 가 미존재인 경우 | 파서 (`scope-guard`·`commit-format`·`orchestrate-load`) 가 해당 검증만 skip 하고 통과. toolchain 키 fallback 으로 Ruby 만 동작. 다른 언어는 `/pilot:doctor` 가 WARN |
 

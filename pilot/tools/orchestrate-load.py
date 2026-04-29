@@ -369,32 +369,21 @@ def build_load_plan(
             f"prompts/{phase}.md 없음 — project.md 만으로 작업"
         )
 
-    # 4) MANIFEST 의 도메인 진입 파일 자동 로드 (primary)
+    # 4) MANIFEST 의 도메인 진입 파일 자동 로드
     #    MANIFEST 의 `## 도메인 분류` 표에서 해당 domain 의 entry 파일 경로 추출.
-    #    free-form 인 경우 빈 리스트 → step 5 의 scope/rules fallback 로 흘러간다.
-    domain_entry_loaded = False
+    #    플러그인은 MANIFEST 만 알면 된다 — workspace/context/ 하위의 폴더 구조·
+    #    파일명 컨벤션은 워크스페이스가 자유롭게 결정한다 (플러그인은 강제하지 않음).
     if domain:
         entries = parse_manifest_domain_files(manifest_abs, domain)
-        for rel in entries:
-            entry_abs = workspace / "context" / rel
-            if add_if_exists(entry_abs, f"workspace/context/{rel}"):
-                domain_entry_loaded = True
-                hints.append(f"MANIFEST 도메인 진입 파일 로드: context/{rel}")
-
-    # 5) scope/{domain}.md / rules/{domain}.md — 사용자 커스텀 layer
-    #    MANIFEST 진입 파일이 도메인 지식의 primary. scope/rules 는 사용자가
-    #    추가로 작성한 컨벤션 (코드 스타일·세부 규칙) 으로, 존재 시에만 로드한다.
-    if domain:
-        scope_abs = workspace / "context" / "scope" / f"{domain}.md"
-        if add_if_exists(scope_abs, f"workspace/context/scope/{domain}.md"):
-            hints.append("커스텀 scope 로드: scope/{domain}.md")
-        rules_abs = workspace / "context" / "rules" / f"{domain}.md"
-        if add_if_exists(rules_abs, f"workspace/context/rules/{domain}.md"):
-            hints.append("커스텀 rules 로드: rules/{domain}.md")
-        if not domain_entry_loaded and not scope_abs.is_file() and not rules_abs.is_file():
+        if entries:
+            for rel in entries:
+                entry_abs = workspace / "context" / rel
+                if add_if_exists(entry_abs, f"workspace/context/{rel}"):
+                    hints.append(f"MANIFEST 도메인 진입 파일 로드: context/{rel}")
+        else:
             hints.append(
-                f"도메인 '{domain}' 에 대한 컨텍스트 파일 없음 — "
-                "`/pilot:learn {진입점}` 으로 부트스트랩 권장"
+                f"도메인 '{domain}' 의 진입 파일이 MANIFEST 에 등록되지 않음 — "
+                "`/pilot:learn {진입점}` 으로 부트스트랩하거나 MANIFEST 의 `## 도메인 분류` 표에 행 추가"
             )
     else:
         hints.append("도메인 판정 실패 — 도메인 컨텍스트 로드 skip. 사용자 확인 필요.")

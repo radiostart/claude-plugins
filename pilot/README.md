@@ -77,7 +77,7 @@ workspace/
     └── config.md                 # 런타임 설정 (Ignore · 언어·도구 · commit_scopes)
 ```
 
-카테고리 하위 폴더 (`scope/`·`rules/`·`enums/`) 는 **생성하지 않음**. MANIFEST.md 를 채우면서 실제 도메인 파일을 추가할 때 만든다. (`scope/{domain}.md`·`rules/{domain}.md` 경로는 플러그인 컨트랙트.)
+카테고리 하위 폴더는 **생성하지 않음**. MANIFEST.md 를 채우면서 실제 도메인 파일을 추가할 때 만든다. 폴더·파일 구조는 자유 — `scope/`·`rules/`·`enums/` 같은 컨벤션은 권장 패턴이며 강제는 아님. 플러그인은 MANIFEST 의 도메인 진입 파일만 자동 로드한다.
 
 **수동 대체:** `mkdir -p workspace/context` 후 각 파일 직접 작성. 템플릿은 `skills/context/lifecycle/setup/templates/` 참고.
 
@@ -179,7 +179,7 @@ pip install requests beautifulsoup4
 | orders | `scope/orders.md` | `rules/orders.md` | 주문 |
 ```
 
-> **`## 카테고리` 표는 적지 않아도 된다** — 플러그인이 `scope/{domain}.md` · `rules/{domain}.md` 경로를 자동으로 인식 (컨트랙트).
+> **`## 도메인 분류` 표만 있으면 된다** — 플러그인이 진입 파일을 자동 로드한다. 폴더·파일 구조는 자유 (scope/rules 컨벤션은 권장 패턴 중 하나).
 >
 > **`## Ignore` · `## 언어·도구 기본값` · `## 설정` 은 `config.md` 에 둔다.** MANIFEST 에 적으면 파서가 인식하지 않는다.
 
@@ -232,8 +232,9 @@ workspace/
 ├── context/                                # 지식·설정 (수동 유지)
 │   ├── MANIFEST.md                         # 도메인 지식 — 자유롭게 정의
 │   ├── config.md                           # 런타임 설정 (Ignore · 언어·도구 기본값 · commit_scopes; 파서 대상)
-│   ├── scope/{domain}.md                   # 도메인별 scope (플러그인 컨트랙트)
-│   ├── rules/{domain}.md                   # 도메인별 규칙 (플러그인 컨트랙트)
+│   ├── {domain}.md or {domain}/...         # 도메인 파일 (구조 자유 — `/pilot:learn` 또는 직접 작성)
+│   ├── scope/{domain}.md                   # (선택) 권장 컨벤션 — scope/rules 두 축 분할
+│   ├── rules/{domain}.md                   # (선택) 권장 컨벤션
 │   ├── pr.md                               # (선택) PR 컨벤션 — 플러그인 default 대체
 │   ├── coding.md                           # (선택) 코딩 컨벤션 — `conventions_doc` 키가 가리키는 경로
 │   └── {카테고리}/...                       # 예: enums/, testing/, evals/ 등 자유
@@ -573,13 +574,13 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {planner|generat
 
 ### SSOT 는 MANIFEST.md
 
-`workspace/context/MANIFEST.md` 가 도메인 지식의 진입점. 도메인 분류·판단 기준·공통 모델/서비스 등은 **자유롭게 구조를 정의**한다 (플러그인은 파싱하지 않음). 단, `scope/{domain}.md` · `rules/{domain}.md` 경로는 플러그인 컨트랙트로 강제. 런타임 설정 (Ignore · 언어·도구 · commit_scopes) 은 같은 폴더의 `config.md` 에서 분리 관리.
+`workspace/context/MANIFEST.md` 가 도메인 지식의 진입점. 도메인 분류·판단 기준·공통 모델/서비스 등은 **자유롭게 구조를 정의**한다. 플러그인은 MANIFEST 의 `## 도메인 분류` 표만 자동 파싱해 진입 파일을 로드 — 폴더·파일 구조는 워크스페이스가 자유롭게 결정. `scope/{domain}.md` · `rules/{domain}.md` 컨벤션은 권장 패턴 중 하나로 유지 (강제 아님). 런타임 설정 (Ignore · 언어·도구 · commit_scopes) 은 같은 폴더의 `config.md` 에서 분리 관리.
 
 에이전트·스킬은 **탐색·코드 수정 전 반드시 MANIFEST.md 먼저 로드**. 거기에 선언된 카테고리·로딩 시점을 따름.
 
 ### 작성 방법 (카테고리 설계)
 
-**기본 카테고리 (`scope`, `rules`) 는 플러그인 컨트랙트로 강제** — 별도 선언 없이 `scope/{domain}.md` · `rules/{domain}.md` 경로면 자동 로드. **추가 카테고리** (예: `enums`, `policies`) 를 만들 때만 MANIFEST 에 명시한다.
+**`scope`·`rules` 는 권장 컨벤션** (강제 아님) — "이 도메인엔 어떤 파일이 있나" (scope) vs "어떤 규칙이 적용되나" (rules) 두 축 분리가 자연스러운 도메인에서 유용. 플러그인은 MANIFEST 의 진입 파일만 자동 로드하며 폴더 구조는 워크스페이스 자유. 다른 형태 (예: sub-domain 분할 `payments/refund.md`) 도 동일하게 동작.
 
 **1 단계 (선택) — 추가 카테고리 선언.** 기본 외 카테고리를 쓰려면 `(이름, 로딩 시점, 경로 패턴, 역할)` 4 요소로 기술:
 

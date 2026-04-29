@@ -683,7 +683,7 @@ def check_project(workspace: Path, project: str) -> list[Result]:
                 )
             )
 
-    # scope mtime drift + docs drift (analyzed_at 이 있을 때만)
+    # context mtime drift + docs drift (analyzed_at 이 있을 때만)
     if analyzed_flag and isinstance(analyzed_at, str) and analyzed_at:
         try:
             from datetime import datetime
@@ -693,21 +693,30 @@ def check_project(workspace: Path, project: str) -> list[Result]:
 
             analyzed_dt = _parse_iso(analyzed_at)
 
-            # scope mtime drift
-            scope_dir = workspace / "context" / "scope"
-            newest_scope_mtime = 0.0
-            if scope_dir.is_dir():
-                for p in scope_dir.iterdir():
-                    if p.is_file() and p.suffix == ".md":
-                        newest_scope_mtime = max(newest_scope_mtime, p.stat().st_mtime)
-            if newest_scope_mtime > 0:
-                newest_scope_dt = datetime.fromtimestamp(newest_scope_mtime)
-                if newest_scope_dt > analyzed_dt:
+            # context/ 하위 도메인 지식 .md 파일 mtime drift 검사
+            # MANIFEST.md, config.md 같은 메타 파일은 제외 (도메인 지식 아님).
+            # 워크스페이스 폴더 구조는 자유라 .md 파일 전체를 재귀 스캔.
+            context_dir = workspace / "context"
+            META_FILES = {"MANIFEST.md", "config.md", "pr.md", "coding.md"}
+            newest_mtime = 0.0
+            newest_path = None
+            if context_dir.is_dir():
+                for p in context_dir.rglob("*.md"):
+                    if p.name in META_FILES:
+                        continue
+                    mt = p.stat().st_mtime
+                    if mt > newest_mtime:
+                        newest_mtime = mt
+                        newest_path = p
+            if newest_mtime > 0 and newest_path is not None:
+                newest_dt = datetime.fromtimestamp(newest_mtime)
+                if newest_dt > analyzed_dt:
+                    rel = newest_path.relative_to(workspace)
                     results.append(
                         Result(
                             Result.WARN,
                             f"{project} drift",
-                            f"scope/*.md mtime ({newest_scope_dt.isoformat(timespec='seconds')}) > analyzed_at ({analyzed_at})",
+                            f"context/ 도메인 파일 변경됨: {rel} ({newest_dt.isoformat(timespec='seconds')}) > analyzed_at ({analyzed_at})",
                             "`/pilot:analyze --regen-agents` 권장",
                         )
                     )

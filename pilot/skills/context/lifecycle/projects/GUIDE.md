@@ -52,8 +52,8 @@ projects/{PROJECT}/
 
 | `analyzed` 값 | 래퍼 동작 |
 | ------------- | --------- |
-| `true` (post-analyze) | prompts/*.md 가 analyze 주입 압축본이라 신뢰. `scope/{domain}.md` 재로드 생략 |
-| `false` (pre-analyze) | `scope/{domain}.md` fallback 로드 |
+| `true` (post-analyze) | prompts/*.md 가 analyze 주입 압축본이라 신뢰. MANIFEST 진입 파일 재로드 생략 |
+| `false` (pre-analyze) | MANIFEST 진입 파일 fallback 로드 |
 | state.yml 부재 | 에러 + 마이그레이션 안내 후 종료 |
 
 스키마 상세: [state-schema.md](../state-schema.md).
@@ -75,7 +75,7 @@ projects/{PROJECT}/
 
 **언제 재생성 돌려야 하나:**
 
-- 팀이 `scope/{domain}.md` 의 Routes / Models / Services 표를 업데이트한 직후
+- MANIFEST 의 도메인 진입 파일을 업데이트한 직후
 - 프로젝트 features 가 처음 analyze 시점의 2 배 이상 증가
 - `doctor` 가 drift WARN 을 출력할 때
 - 장기간 작업 없던 프로젝트 재개 시 한 번
@@ -95,6 +95,8 @@ projects/{PROJECT}/
 ## agent 파일 책임 경계
 
 프로젝트 agent 파일 (`prompts/planner.md`·`generator.md`·`evaluator.md`) 에 **담아야 할 것**과 **담지 말아야 할 것** 을 분리한다. 경계가 흐려지면 지식 중복·drift 의 주원인이 된다.
+
+> **이하의 `scope/{domain}.md` · `rules/{domain}.md` 언급은 권장 컨벤션이며 강제가 아니다.** 두 축 분리가 자연스러운 도메인 (CRUD + 비즈니스 룰) 에서 유용. 워크스페이스 구조는 자유 — 다른 형태로 작성하고 MANIFEST 가 가리키도록 해도 됨. 플러그인은 MANIFEST 만 알고 폴더 구조를 강제하지 않는다.
 
 ### 담을 것 (프로젝트 고유)
 
@@ -187,7 +189,7 @@ projects/{PROJECT}/
 | 2 | `## 제한사항` | 구현 제약 (DB 단일 조회·TDD 모드 등). `tdd: true` 와 `mode: characterize` 는 여기 literal 로 기술 |
 | 3 | `## 목표` | 완료 조건 체크리스트. 항목마다 `features/NN-{slug}.md` 링크 |
 | 4 | `## 에이전트 호출 흐름` | Planner → Generator → Evaluator 순서·로드 파일·완료 기준. TDD 모드면 RGR 변형 ([`tdd-activation.md`](../../modes/tdd-activation.md)) |
-| 5 | `## 관련 파일` | Models / Endpoints / Services 표. `/pilot:analyze` 가 scope/{domain}.md 로부터 자동 기입 |
+| 5 | `## 관련 파일` | Models / Endpoints / Services 표. scope/{domain}.md 컨벤션 사용 시 `/pilot:analyze` 가 거기로부터 자동 기입 (다른 구조면 사용자가 직접 작성) |
 
 > base 브랜치는 `/pilot:pr` 가 `.agent-state.yml` (`pr_base_branch`) → `workspace/context/config.md` (`pr_default_base`) → fallback `develop` 순서로 결정한다. project.md 에는 기록하지 않는다.
 

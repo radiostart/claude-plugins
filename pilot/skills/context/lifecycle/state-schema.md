@@ -54,8 +54,8 @@ pr_base_branch: "release/4.5"        # PR 생성 시 자동 타겟. 부재 시 c
 
 Wrapper 동작 차이:
 
-- `analyzed: true` → scope/{domain}.md 원본 재로드 생략 (prompts/*.md 에 압축 기입돼 있다고 신뢰)
-- `analyzed: false` → scope/{domain}.md 원본 fallback 로드
+- `analyzed: true` → context/ 도메인 파일 재로드 생략 (prompts/*.md 에 압축 기입돼 있다고 신뢰)
+- `analyzed: false` → MANIFEST 의 도메인 진입 파일을 fallback 로드
 
 ### `tdd`
 
@@ -73,14 +73,14 @@ Wrapper 동작 차이:
 
 - 값: 자유 문자열 (예: `orders`, `payments`, `auth`) 또는 `null`. MANIFEST.md 의 도메인 분류에 정의된 이름을 따른다.
 - `null` → `/pilot:analyze` 진입 시 **반드시 사용자에게 질의** 후 값 기록. 자동 추론으로 기록 금지 (후보 제시는 허용 — 사용자 확인 필수).
-- 값이 있으면 analyze·doctor 가 `workspace/context/scope/{domain}.md` · `workspace/context/rules/{domain}.md` 자동 로드 대상으로 사용.
+- 값이 있으면 analyze·orchestrate-load 가 `MANIFEST.md` 의 `## 도메인 분류` 표에서 진입 파일을 찾아 자동 로드 대상으로 사용.
 
 ### `analyzed_at` (optional)
 
 ISO 8601 UTC timestamp. `/pilot:analyze` 가 완료될 때 기록.
 
 - 부재 (legacy 또는 pre-analyze) → drift 체크 skip.
-- 존재 + `context/scope/{domain}.md` mtime 이 더 최근 → doctor 가 "scope 업데이트됨, `--regen-agents` 권장" WARN.
+- 존재 + `context/` 하위 도메인 파일 (MANIFEST·config 제외) mtime 이 더 최근 → doctor 가 "도메인 파일 업데이트됨, `--regen-agents` 권장" WARN.
 - 존재 + `docs_last_fetched_at` 이 더 최근 → doctor 가 "기획서 업데이트됨, `--force` 재분석 권장" WARN.
 
 ### `last_analyzed_features` (optional)
