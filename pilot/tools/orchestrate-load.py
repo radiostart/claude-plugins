@@ -243,6 +243,51 @@ def determine_domain(project_md: Path) -> str | None:
     return None
 
 
+def parse_manifest_domain_files(manifest_md: Path, domain: str) -> list[str]:
+    """
+    MANIFEST.md `## 도메인 분류` 표에서 해당 domain 의 진입 파일 경로 추출.
+
+    형식: `| {도메인} | <백틱>진입 파일<백틱> | {설명} |` (3 컬럼, 진입 파일 컬럼은
+    backtick·공백 허용). MANIFEST 가 자유 형식이라 best-effort — 매칭 실패 시
+    빈 리스트 반환 (호출자가 graceful degrade).
+
+    반환: workspace/context/ 기준 상대 경로 리스트 (예: `["orders.md"]`,
+    `["payments/index.md"]`). 절대경로·workspace/context/ 접두는 제거.
+    """
+    if not manifest_md.is_file() or not domain:
+        return []
+    try:
+        text = manifest_md.read_text(encoding="utf-8")
+    except Exception:
+        return []
+    # `## 도메인 분류` 섹션 추출 (한국어 헤딩만 인식 — 영문은 향후 확장)
+    m = re.search(r"##\s*도메인\s*분류([\s\S]*?)(?:\n##\s|\Z)", text)
+    if not m:
+        return []
+    section = m.group(1)
+    # 표 행에서 도메인 일치하는 행 찾기
+    for line in section.splitlines():
+        row = re.match(
+            r"^\|\s*`?([^`|\s]+)`?\s*\|\s*`?([^`|]+?)`?\s*\|", line
+        )
+        if not row:
+            continue
+        row_domain = row.group(1).strip()
+        if row_domain != domain:
+            continue
+        entry = row.group(2).strip().strip("`").strip()
+        if not entry or entry.lower() in ("진입 파일", "entry"):
+            continue
+        # workspace/context/ 접두 제거 (작성자 실수 보정)
+        entry = entry.lstrip("/")
+        if entry.startswith("workspace/context/"):
+            entry = entry[len("workspace/context/"):]
+        elif entry.startswith("context/"):
+            entry = entry[len("context/"):]
+        return [entry]
+    return []
+
+
 def read_focus(focus_md: Path) -> str | None:
     """.focus.md 의 본문 (첫 # 헤더 제외) 반환. 없으면 None."""
     if not focus_md.is_file():
@@ -324,23 +369,35 @@ def build_load_plan(
             f"prompts/{phase}.md 없음 — project.md 만으로 작업"
         )
 
-    # 4) scope/{domain}.md — pre-analyze 이거나 project prompt 파일이 없을 때 fallback
-    if domain and (not analyzed or not prompt_exists):
-        scope_abs = workspace / "context" / "scope" / f"{domain}.md"
-        if add_if_exists(
-            scope_abs, f"workspace/context/scope/{domain}.md"
-        ):
-            hints.append(
-                "pre-analyze: scope 원본 fallback 로드" if not analyzed
-                else f"prompts/{phase}.md 부재 — scope 원본 fallback 로드"
-            )
-
-    # 5) rules/{domain}.md (domain 판정 시)
+    # 4) MANIFEST 의 도메인 진입 파일 자동 로드 (primary)
+    #    MANIFEST 의 `## 도메인 분류` 표에서 해당 domain 의 entry 파일 경로 추출.
+    #    free-form 인 경우 빈 리스트 → step 5 의 scope/rules fallback 로 흘러간다.
+    domain_entry_loaded = False
     if domain:
+        entries = parse_manifest_domain_files(manifest_abs, domain)
+        for rel in entries:
+            entry_abs = workspace / "context" / rel
+            if add_if_exists(entry_abs, f"workspace/context/{rel}"):
+                domain_entry_loaded = True
+                hints.append(f"MANIFEST 도메인 진입 파일 로드: context/{rel}")
+
+    # 5) scope/{domain}.md / rules/{domain}.md — 사용자 커스텀 layer
+    #    MANIFEST 진입 파일이 도메인 지식의 primary. scope/rules 는 사용자가
+    #    추가로 작성한 컨벤션 (코드 스타일·세부 규칙) 으로, 존재 시에만 로드한다.
+    if domain:
+        scope_abs = workspace / "context" / "scope" / f"{domain}.md"
+        if add_if_exists(scope_abs, f"workspace/context/scope/{domain}.md"):
+            hints.append("커스텀 scope 로드: scope/{domain}.md")
         rules_abs = workspace / "context" / "rules" / f"{domain}.md"
-        add_if_exists(rules_abs, f"workspace/context/rules/{domain}.md")
+        if add_if_exists(rules_abs, f"workspace/context/rules/{domain}.md"):
+            hints.append("커스텀 rules 로드: rules/{domain}.md")
+        if not domain_entry_loaded and not scope_abs.is_file() and not rules_abs.is_file():
+            hints.append(
+                f"도메인 '{domain}' 에 대한 컨텍스트 파일 없음 — "
+                "`/pilot:learn {진입점}` 으로 부트스트랩 권장"
+            )
     else:
-        hints.append("도메인 판정 실패 — scope/rules 로드 skip. 사용자 확인 필요.")
+        hints.append("도메인 판정 실패 — 도메인 컨텍스트 로드 skip. 사용자 확인 필요.")
 
     # 6) generator 만 coding.md (플러그인 언어중립판) + workspace conventions_doc/evals (언어별)
     if phase == "generator":

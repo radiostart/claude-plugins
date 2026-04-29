@@ -26,8 +26,9 @@
 
 | 경로 | 역할 |
 | --- | --- |
-| `workspace/context/scope/{domain}.md` | 도메인 결정 시 자동 로드 |
-| `workspace/context/rules/{domain}.md` | 도메인 결정 시 자동 로드 |
+| `workspace/context/MANIFEST.md` | 도메인 진입 파일 자동 파싱 (`## 도메인 분류` 표) → 진입 파일 자동 로드 |
+| `workspace/context/scope/{domain}.md` | 사용자 커스텀 layer (있을 때만 로드) |
+| `workspace/context/rules/{domain}.md` | 사용자 커스텀 layer (있을 때만 로드) |
 
 폴더 이름 (`scope/`, `rules/`) 과 파일명 (`{domain}.md`) 은 변경 불가. 그 외 카테고리 (예: `enums/`) 와 폴더 안 구조·파일 내부 섹션은 자유.
 
