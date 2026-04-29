@@ -16,3 +16,9 @@ workspace/.env
 
 # macOS
 .DS_Store
+
+# pilot: Slack webhook secret — 절대 커밋 금지
+.slack.env
+
+# Claude Code: agent worktree isolation (로컬 전용)
+.claude/worktrees/
