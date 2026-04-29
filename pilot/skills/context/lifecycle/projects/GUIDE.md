@@ -145,7 +145,7 @@ projects/{PROJECT}/
 | 신규·기존 프로젝트에 활성화 | `/pilot:project {PROJECT} --tdd` |
 | 기존 코드에 사후 적용 | `/pilot:tdd` (활성 프로젝트 필요) |
 
-활성화 시 3-phase 흐름은 유지되고 각 에이전트가 Red/Green/Refactor 역할을 추가로 수행한다. 사이클 절차·Red Contract·증거 기록·`tdd_batch` (`step`/`feature`(기본)/`all`) 세부는 [`rgr.md`](../../modes/rgr.md) 가 SSOT.
+활성화 시 3-phase 흐름은 유지되고 각 에이전트가 Red/Green/Refactor 역할을 추가로 수행한다. 사이클 절차·Red Contract·증거 기록 세부는 [`rgr.md`](../../modes/rgr.md) 가 SSOT.
 
 활성화 시 `project.md § 에이전트 호출 흐름` 이 RGR 변형으로 교체되는 세부는 [`tdd-activation.md`](../../modes/tdd-activation.md) 참조.
 

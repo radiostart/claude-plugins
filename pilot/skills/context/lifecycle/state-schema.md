@@ -32,12 +32,9 @@ plugin_version: "0.1.75"             # .agent-state.yml 을 마지막으로 쓴 
 
 # Optional — /pilot:pr 가 사용자 명시 입력 시 기록 (v1.2 신규):
 pr_base_branch: "release/4.5"        # PR 생성 시 자동 타겟. 부재 시 context/config.md 의 pr_default_base 사용
-
-# Optional — TDD 실행 주기 (v1.2):
-tdd_batch: feature                   # step | feature | all — Planner·Generator 호출 범위. 미설정 시 feature
 ```
 
-필수 4 개 (`schema`·`analyzed`·`tdd`·`domain`) + optional 7 개. optional 필드는 drift 감지 (`/pilot:doctor`) · 모드 분기 (`mode`·`tdd_batch`) · 플러그인 업그레이드 감지 (`plugin_version`) · PR 자동 타겟 (`pr_base_branch`) 에 사용. 부재 시 해당 체크·분기만 skip.
+필수 4 개 (`schema`·`analyzed`·`tdd`·`domain`) + optional 6 개. optional 필드는 drift 감지 (`/pilot:doctor`) · 모드 분기 (`mode`) · 플러그인 업그레이드 감지 (`plugin_version`) · PR 자동 타겟 (`pr_base_branch`) 에 사용. 부재 시 해당 체크·분기만 skip.
 
 ## 필드 의미
 
@@ -99,20 +96,6 @@ ISO 8601 UTC timestamp. `/pilot:analyze` 가 완료될 때 기록.
 
 - file system mtime 대신 이 필드를 drift 비교 기준으로 사용 (git clone·cp -p 로 mtime 이 흔들리는 문제 회피).
 - `analyzed_at` 과 비교하여 기획서 변경 drift 감지.
-
-### `tdd_batch` (optional)
-
-TDD 모드 실행 주기. Planner·Generator 의 호출 범위를 결정한다. `tdd: true` 일 때만 의미 있음.
-
-| 값 | Planner 범위 | Generator 범위 | 적합한 상황 |
-| --- | --- | --- | --- |
-| `step` | 스텝마다 Red→Green 순환 | 스텝 단위 구현 | 복잡한 로직, 높은 품질 요구 |
-| `feature` (기본) | feature 전체 spec 작성 | feature 전체 구현 | 일반적인 개발 |
-| `all` | 미완료 feature 전체 spec 작성 | 전체 구현 | 단순 CRUD, 빠른 진행 |
-
-- 부재 시 `feature` 로 동작.
-- `all` 은 미완료 feature 가 4 개 이하일 때만 적용. 5 개 이상이면 `feature` 로 폴백.
-- 상세: [`rgr.md`](../modes/rgr.md) § 실행 주기.
 
 ### `pr_base_branch` (v1.2 신규, optional)
 

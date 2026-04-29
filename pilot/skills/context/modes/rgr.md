@@ -16,19 +16,12 @@ TDD 모드가 활성화된 프로젝트에서 기능을 구현할 때 아래 절
 - Planner → Generator → Evaluator 흐름을 유지한다. 별도 에이전트를 추가하지 않는다.
 - 테스트 없이 프로덕션 코드부터 작성하지 않는다.
 
-## 실행 주기 (`tdd_batch`)
+## 실행 단위
 
-`.agent-state.yml` 의 `tdd_batch` 값에 따라 Planner·Generator 의 호출 범위가 결정된다.
+호출 1 회 = **feature 1 개** 단위. 사용자가 `@planner` → `@generator` → `@evaluator` 를 feature 별로 명시 호출한다.
 
-| 값 | Planner 범위 | Generator 범위 | 적합한 상황 |
-| --- | --- | --- | --- |
-| `step` | 스텝마다 Red→Green 순환 | 스텝 단위 구현 | 복잡한 로직, 높은 품질 요구 |
-| `feature` | feature 전체 spec 작성 | feature 전체 구현 | 일반적인 개발 **(기본값)** |
-| `all` | 미완료 feature 전체 spec 작성 | 전체 구현 | 단순 CRUD, 빠른 진행 |
-
-- 필드 부재 시 **`feature`** 로 동작한다.
-- `all` 은 미완료 feature 가 4 개 이하일 때만 적용한다. 5 개 이상이면 `feature` 로 폴백한다.
-- 스키마 상세: [`state-schema.md`](../lifecycle/state-schema.md) § `tdd_batch`.
+- Planner 1 회 = 해당 feature 의 전체 스텝 Red 계약을 `.plan.md` 에 작성
+- Generator 1 회 = 그 .plan.md 의 모든 스텝을 한 컨텍스트에서 Red→Green→Refactor 순환
 
 ## 역할 분담
 
