@@ -393,6 +393,8 @@ def check_workspace(workspace: Path) -> list[Result]:
     # MANIFEST.md
     if manifest.is_file():
         results.append(Result(Result.PASS, "context/MANIFEST.md", "존재"))
+        # 외부 도메인 reference 섹션 schema 검증 (#10)
+        results.extend(check_workspace_external_domain_section(manifest))
     else:
         results.append(
             Result(
@@ -787,6 +789,7 @@ def _parse_md_tables_in_section(text: str, section_header: str) -> list[list[lis
 
     반환값: 표 리스트. 각 표 = 행 리스트. 각 행 = 셀 리스트 (헤더 행 포함).
     구분선 행 (`| --- |` 형태) 은 제외.
+    코드블록 (``` ... ```) 안의 `| ... |` 줄은 표로 인식하지 않는다.
     """
     # 섹션 추출 (다음 H2 또는 EOF 까지)
     pattern = re.compile(
@@ -801,9 +804,21 @@ def _parse_md_tables_in_section(text: str, section_header: str) -> list[list[lis
     tables: list[list[list[str]]] = []
     current_table: list[list[str]] = []
     in_table = False
+    in_code_block = False  # ``` 펜스 추적
 
     for line in section_text.splitlines():
         stripped = line.strip()
+        # 코드블록 진입/탈출 추적
+        if stripped.startswith("```"):
+            in_code_block = not in_code_block
+            if in_table and current_table:
+                tables.append(current_table)
+                current_table = []
+                in_table = False
+            continue
+        # 코드블록 안은 표로 인식하지 않음
+        if in_code_block:
+            continue
         if stripped.startswith("|") and stripped.endswith("|"):
             cells = [c.strip() for c in stripped.strip("|").split("|")]
             # 구분선 행 제외 (모든 셀이 --- 패턴)
@@ -1055,6 +1070,129 @@ def check_workspace_config_sections(config_path: Path) -> list[Result]:
                                 "H3 값에서 슬래시·콜론·#·| 등 마크다운 메타 문자를 제거",
                             )
                         )
+
+    return results
+
+
+def check_workspace_external_domain_section(manifest_path: Path) -> list[Result]:
+    """workspace/context/MANIFEST.md 의 외부 도메인 reference 섹션 schema 검증.
+
+    부재 → INFO 1 줄 (backward-compat: 모든 기존 사용자는 부재 상태).
+    존재 → 표 스키마 검증: 정확히 3 컬럼 + 헤더 정확 일치.
+    추가 검증: 표 행의 추정 도메인이 ## 도메인 분류 표에도 등록돼 있으면 INFO (stale row).
+    """
+    results: list[Result] = []
+
+    if not manifest_path.is_file():
+        # MANIFEST.md 자체 부재는 check_workspace 에서 처리
+        return results
+
+    try:
+        text = manifest_path.read_text(encoding="utf-8")
+    except Exception as e:
+        results.append(
+            Result(
+                Result.ERROR,
+                "context/MANIFEST.md",
+                f"읽기 실패: {e}",
+                "파일 권한·인코딩 확인",
+            )
+        )
+        return results
+
+    # ## 외부 도메인 reference 섹션 lookup (헤더에 "(learn 미완료)" 등 sub-string 허용)
+    EXT_SECTION_PATTERN = re.compile(r"^## 외부 도메인 reference", re.M)
+    has_ext_section = bool(EXT_SECTION_PATTERN.search(text))
+
+    if not has_ext_section:
+        results.append(
+            Result(
+                Result.INFO,
+                "context/MANIFEST.md",
+                "## 외부 도메인 reference 미정의 — 첫 cross-domain reference detect 시 `/pilot:learn` 이 자동 작성",
+            )
+        )
+        return results
+
+    # 섹션 헤더를 정확히 추출 (sub-string 매칭으로 실제 헤더 얻기)
+    ext_header_match = re.search(r"^(## 외부 도메인 reference[^\n]*)", text, re.M)
+    ext_section_header = ext_header_match.group(1).rstrip() if ext_header_match else "## 외부 도메인 reference"
+
+    ext_tables = _parse_md_tables_in_section(text, ext_section_header)
+
+    if not ext_tables:
+        # 섹션은 있지만 표 없음 → 표 형식 강제 안 함 (산문 허용), INFO 만
+        results.append(
+            Result(
+                Result.INFO,
+                "context/MANIFEST.md",
+                f"{ext_section_header} 섹션 존재하나 표 없음 — 표 형식이면 자동 갱신 대상",
+            )
+        )
+        return results
+
+    # 표 schema 검증
+    EXT_EXPECTED_COLS = 3
+    EXT_EXPECTED_HEADERS = ["추정 도메인", "클래스 (개수)", "추천 후속 학습"]
+
+    ext_table = ext_tables[0]
+    if not ext_table:
+        return results
+
+    header_row = ext_table[0]
+    col_count = len(header_row)
+
+    if col_count != EXT_EXPECTED_COLS:
+        results.append(
+            Result(
+                Result.ERROR,
+                "context/MANIFEST.md",
+                (
+                    f"{ext_section_header} 표: 컬럼 수 {col_count}개 "
+                    f"({EXT_EXPECTED_COLS}개 필요) "
+                    f"— 기대 헤더: {', '.join(EXT_EXPECTED_HEADERS)}"
+                ),
+                f"표 헤더를 '| 추정 도메인 | 클래스 (개수) | 추천 후속 학습 |' 형태로 수정",
+            )
+        )
+        return results
+
+    if header_row != EXT_EXPECTED_HEADERS:
+        results.append(
+            Result(
+                Result.ERROR,
+                "context/MANIFEST.md",
+                (
+                    f"{ext_section_header} 표: 헤더 불일치 "
+                    f"(받은: {', '.join(header_row)}) "
+                    f"— 기대: {', '.join(EXT_EXPECTED_HEADERS)}"
+                ),
+                f"헤더를 정확히 '{', '.join(EXT_EXPECTED_HEADERS)}' 로 수정",
+            )
+        )
+        return results
+
+    # stale row 검증: 외부 도메인 표의 추정 도메인이 ## 도메인 분류 표에도 있으면 INFO
+    domain_tables = _parse_md_tables_in_section(text, "## 도메인 분류")
+    learned_domains: set[str] = set()
+    if domain_tables:
+        domain_table = domain_tables[0]
+        for row in domain_table[1:]:  # 헤더 제외
+            if row and len(row) >= 1:
+                learned_domains.add(row[0].strip().lower())
+
+    for row in ext_table[1:]:  # 헤더 제외
+        if not row or len(row) < 1:
+            continue
+        estimated_domain = row[0].strip().lower()
+        if estimated_domain and estimated_domain in learned_domains:
+            results.append(
+                Result(
+                    Result.INFO,
+                    "context/MANIFEST.md",
+                    f"## 외부 도메인 reference 표: '{estimated_domain}' 은 이미 ## 도메인 분류 에 등록됨 — 해당 행 제거 권장 (idempotency)",
+                )
+            )
 
     return results
 

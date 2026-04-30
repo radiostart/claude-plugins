@@ -15,7 +15,7 @@
 schema: v1.2
 analyzed: false                      # /pilot:analyze 실행되어 prompts/*.md 가 분석본으로 채워졌는지
 tdd: false                           # TDD 모드 활성 여부 (Red-Green-Refactor 흐름 강제)
-domain: null                         # 도메인명 (자유 문자열, 예: orders/payments/auth) — null 이면 analyze 전 질의 필요
+domain: null                         # 도메인명 (자유 문자열, 사용자 정의) — null 이면 analyze 전 질의 필요
 
 # Optional — /pilot:characterize 가 설정:
 mode: null                           # null | characterize — characterize 는 레거시 현재 동작 포착 모드 ({source_root} 잠금, 테스트만 추가)
@@ -71,7 +71,7 @@ Wrapper 동작 차이:
 
 ### `domain` (v1.1 신규, 필수)
 
-- 값: 자유 문자열 (예: `orders`, `payments`, `auth`) 또는 `null`. MANIFEST.md 의 도메인 분류에 정의된 이름을 따른다.
+- 값: 자유 문자열 (사용자 정의 도메인명) 또는 `null`. MANIFEST.md 의 도메인 분류에 정의된 이름을 따른다.
 - `null` → `/pilot:analyze` 진입 시 **반드시 사용자에게 질의** 후 값 기록. 자동 추론으로 기록 금지 (후보 제시는 허용 — 사용자 확인 필수).
 - 값이 있으면 analyze·orchestrate-load 가 `MANIFEST.md` 의 `## 도메인 분류` 표에서 진입 파일을 찾아 자동 로드 대상으로 사용.
 

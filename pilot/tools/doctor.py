@@ -72,6 +72,7 @@ from doctor.integrity import (  # noqa: E402, F401
     check_slack_env_not_tracked,
     check_workspace,
     check_workspace_config_sections,
+    check_workspace_external_domain_section,
     determine_active_project,
     migrate_v0_1_to_v0_2,
     run_integrity_check,

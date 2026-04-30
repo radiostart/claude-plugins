@@ -2,8 +2,11 @@
 
 from models.order import Order, OrderItem, OrderStatus
 from services.auth import AuthService
+# cross-domain import — secondary_domain 은 외부 도메인 (회귀 픽스처용)
+from secondary_domain.auth_service import AuthService as ExternalAuthService
 
 auth_svc = AuthService()
+external_auth = ExternalAuthService()
 
 
 class CheckoutService:

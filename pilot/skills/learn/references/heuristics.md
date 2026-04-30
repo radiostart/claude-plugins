@@ -31,12 +31,12 @@
 
 | 코드 형태 | 추천 구조 | 예시 |
 | --------- | --------- | ---- |
-| 단일 파일 진입점 + 의존성 적음 (controller 1 + service 1 + model 1, 총 ≤ 200 줄) | `{domain}.md` 한 파일 | `/pilot:learn app/controllers/health_controller.rb` → `workspace/context/health.md` |
-| 단일 도메인이지만 추출량 큼 (총 > 200 줄, 코드 구조는 평면) | `{domain}/` + 카테고리 | `/pilot:learn app/services/orders/` (orders 안에 controllers·services·models 파일이 모두 들어 있음) → `workspace/context/orders/` 안에 `routes.md` · `services.md` · `models.md` |
-| 명확한 sub-domain 폴더 구조 | 코드 구조 미러 | `app/services/payments/{auth,refund,settlement}/` → `workspace/context/payments/{auth,refund,settlement}.md` |
-| Routes/Models/Services 가 코드에서 명확 분리 | 카테고리 분할 | Rails 표준 — `config/routes.rb` + `app/models/order.rb` + `app/services/order_service.rb` → `{domain}/routes.md` · `models.md` · `services.md` |
-| State machine 풍부 (enum 3 개 이상 또는 상태 전환 규칙 5 개 이상) | `enums/` 추가 | `workspace/context/{domain}/enums/OrderStatus.md` |
-| Admin / API / 기타 표면이 같은 도메인 안에 공존 | 표면별 분할 | `controllers/admin/orders_controller.rb` + `controllers/api/orders_controller.rb` → `{domain}/admin.md` + `{domain}/api.md` |
+| 단일 파일 진입점 + 의존성 적음 (controller 1 + service 1 + model 1, 총 ≤ 200 줄) | `{domain}.md` 한 파일 | `/pilot:learn app/controllers/<domain>_controller.rb` → `workspace/context/<domain>.md` |
+| 단일 도메인이지만 추출량 큼 (총 > 200 줄, 코드 구조는 평면) | `{domain}/` + 카테고리 | `/pilot:learn app/services/<domain>/` (`<domain>` 안에 controllers·services·models 파일이 모두 들어 있음) → `workspace/context/<domain>/` 안에 `routes.md` · `services.md` · `models.md` |
+| 명확한 sub-domain 폴더 구조 | 코드 구조 미러 | `app/services/<domain>/{<sub_a>,<sub_b>,<sub_c>}/` → `workspace/context/<domain>/{<sub_a>,<sub_b>,<sub_c>}.md` |
+| Routes/Models/Services 가 코드에서 명확 분리 | 카테고리 분할 | Rails 표준 — `config/routes.rb` + `app/models/<entity>.rb` + `app/services/<entity>_service.rb` → `{domain}/routes.md` · `models.md` · `services.md` |
+| State machine 풍부 (enum 3 개 이상 또는 상태 전환 규칙 5 개 이상) | `enums/` 추가 | `workspace/context/{domain}/enums/<EntityStatus>.md` |
+| Admin / API / 기타 표면이 같은 도메인 안에 공존 | 표면별 분할 | `controllers/admin/<entity>s_controller.rb` + `controllers/api/<entity>s_controller.rb` → `{domain}/admin.md` + `{domain}/api.md` |
 
 ---
 
@@ -73,87 +73,87 @@ MANIFEST.md 의 `## 도메인 분류` 행에 들어갈 "진입 파일" 은 사�
 
 ```
 app/
-  controllers/health_controller.rb    (40 줄)
-  services/health_check_service.rb    (60 줄)
-  models/health_status.rb             (20 줄)
+  controllers/<domain>_controller.rb    (40 줄)
+  services/<domain>_service.rb          (60 줄)
+  models/<entity>.rb                    (20 줄)
 ```
 
 → 출력:
 
 ```
 workspace/context/
-  health.md    (~120 줄, 단일 파일)
+  <domain>.md    (~120 줄, 단일 파일)
 ```
 
 내용 구조 (단일 파일):
 
 ```markdown
-# health 도메인
+# <domain> 도메인
 
 ## 개요
-- 진입점: `app/controllers/health_controller.rb`
-- 핵심 기능: 시스템 헬스체크
+- 진입점: `app/controllers/<domain>_controller.rb`
+- 핵심 기능: (도메인 한 줄 요약)
 
 ## Routes
 | Path | Method | Handler |
 | ...
 
 ## Services
-### HealthCheckService (`app/services/health_check_service.rb`)
+### <Domain>Service (`app/services/<domain>_service.rb`)
 - ...
 
 ## Models
-### HealthStatus (`app/models/health_status.rb`)
-- 상태 enum: `ok`·`degraded`·`down` (`app/models/health_status.rb:8`)
+### <Entity> (`app/models/<entity>.rb`)
+- 상태 enum: `<state_a>`·`<state_b>`·`<state_c>` (`app/models/<entity>.rb:8`)
 ```
 
-### 중간 코드베이스 (Rails 표준 orders 도메인, 총 ~600 줄)
+### 중간 코드베이스 (Rails 표준 단일 도메인, 총 ~600 줄)
 
 ```
 app/
-  controllers/api/orders_controller.rb       (180 줄)
-  services/order_creation_service.rb         (120 줄)
-  services/order_cancellation_service.rb     (90 줄)
-  models/order.rb                            (110 줄)
-  models/order_item.rb                       (60 줄)
-config/routes.rb (orders 관련 라인만)
+  controllers/api/<entity>s_controller.rb       (180 줄)
+  services/<entity>_create_service.rb           (120 줄)
+  services/<entity>_cancel_service.rb           (90 줄)
+  models/<entity>.rb                            (110 줄)
+  models/<entity>_item.rb                       (60 줄)
+config/routes.rb (`<domain>` 관련 라인만)
 ```
 
 → 출력:
 
 ```
-workspace/context/orders/
+workspace/context/<domain>/
   index.md       (~70 줄 — 요약 + 링크)
   routes.md      (~40 줄)
   services.md    (~150 줄)
   models.md      (~140 줄)
 ```
 
-### 큰 코드베이스 (sub-domain 분리 — payments)
+### 큰 코드베이스 (sub-domain 분리)
 
 ```
-app/services/payments/
-  auth/                     (3 파일, 총 ~250 줄)
-  refund/                   (4 파일, 총 ~320 줄)
-  settlement/               (5 파일, 총 ~400 줄)
-  payments_service.rb       (orchestrator, 80 줄)
+app/services/<domain>/
+  <sub_a>/                  (3 파일, 총 ~250 줄)
+  <sub_b>/                  (4 파일, 총 ~320 줄)
+  <sub_c>/                  (5 파일, 총 ~400 줄)
+  <domain>_service.rb       (orchestrator, 80 줄)
 ```
 
 → 출력:
 
 ```
-workspace/context/payments/
+workspace/context/<domain>/
   index.md         (~80 줄 — 도메인 요약 + sub-domain 링크)
-  auth.md          (~150 줄)
-  refund.md        (~180 줄)
-  settlement.md    (~200 줄)
+  <sub_a>.md       (~150 줄)
+  <sub_b>.md       (~180 줄)
+  <sub_c>.md       (~200 줄)
 ```
 
-→ 만약 `settlement.md` 가 200 줄을 넘으면 추가 분할:
+→ 만약 `<sub_c>.md` 가 200 줄을 넘으면 추가 분할:
 
 ```
-workspace/context/payments/
-  settlement/
+workspace/context/<domain>/
+  <sub_c>/
     index.md       (~50 줄)
     services.md    (~150 줄)
     models.md      (~120 줄)
@@ -168,15 +168,15 @@ workspace/context/payments/
 진입점을 한 번에 여러 언어에 걸치게 주지 않는다. **언어별로 별도 호출**:
 
 ```
-/pilot:learn backend/app/controllers/orders_controller.rb --domain orders-api
-/pilot:learn frontend/src/features/orders/ --domain orders-ui
+/pilot:learn backend/app/controllers/<entity>s_controller.rb --domain <domain>-api
+/pilot:learn frontend/src/features/<domain>/ --domain <domain>-ui
 ```
 
 도메인명에 surface 접미사 (`-api`·`-ui`·`-admin`) 를 붙여 충돌을 피한다.
 
 ### 진입점이 컨트롤러도 서비스도 아닌 경우 (예: 모델 진입)
 
-`/pilot:learn app/models/order.rb` — 모델 중심 진입은 의존성 추적이 역방향 (이 모델을 사용하는 controller·service 를 찾는다). Grep `Order\.` · `Order::` 로 역참조 수집 후 P2 분류 진행.
+`/pilot:learn app/models/<entity>.rb` — 모델 중심 진입은 의존성 추적이 역방향 (이 모델을 사용하는 controller·service 를 찾는다). Grep `<Entity>\.` · `<Entity>::` 로 역참조 수집 후 P2 분류 진행.
 
 ### 완전히 자연스러운 분할이 없을 때
 
@@ -187,7 +187,7 @@ workspace/context/payments/
 세 가지 선택지 (SKILL.md P4 의 충돌 처리 참고):
 
 - **overwrite** — 기존 분석이 outdated 일 때.
-- **sub-domain 추가** — 기존 도메인의 일부를 정밀화하는 경우. 예: 기존 `payments.md` 가 있고 새로 `auth/` sub-folder 학습 → `payments/auth.md` 로 합병하면서 `payments.md` 를 `payments/index.md` 로 승격.
+- **sub-domain 추가** — 기존 도메인의 일부를 정밀화하는 경우. 예: 기존 `<domain>.md` 가 있고 새로 `<sub_a>/` sub-folder 학습 → `<domain>/<sub_a>.md` 로 합병하면서 `<domain>.md` 를 `<domain>/index.md` 로 승격.
 - **`{domain}-v2`** — 기존을 보존하면서 새 분석을 별도로 두고 싶을 때 (사용자가 직접 비교하고 통합).
 
 ---

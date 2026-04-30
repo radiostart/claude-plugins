@@ -19,11 +19,11 @@ description: >-
 **사용 예:**
 
 ```
-/pilot:learn app/controllers/api/orders_controller.rb
-/pilot:learn app/services/payments/
-/pilot:learn src/main/kotlin/com/example/billing/ --domain billing
-/pilot:learn app/models/order.rb --depth 1
-/pilot:learn app/controllers/admin/refund_controller.rb --domain refund --force
+/pilot:learn app/controllers/api/<entity>s_controller.rb
+/pilot:learn app/services/<domain>/
+/pilot:learn src/main/kotlin/com/example/<domain>/ --domain <domain>
+/pilot:learn app/models/<entity>.rb --depth 1
+/pilot:learn app/controllers/admin/<sub_domain>_controller.rb --domain <sub_domain> --force
 ```
 
 **옵션:**
@@ -54,7 +54,7 @@ description: >-
 
 검증:
 
-- `{entry-point}` 비어있음 → "진입점 경로를 입력하세요. 예: `/pilot:learn app/controllers/orders_controller.rb`" 출력 후 종료.
+- `{entry-point}` 비어있음 → "진입점 경로를 입력하세요. 예: `/pilot:learn app/controllers/<entity>s_controller.rb`" 출력 후 종료.
 - 경로 미존재 → "진입점 `{path}` 가 존재하지 않습니다. 경로를 확인하세요." 출력 후 종료.
 - `--depth N` 이 음수·비숫자 → "depth 는 0 이상 정수여야 합니다." 출력 후 종료.
 
@@ -71,11 +71,11 @@ description: >-
 ### Phase 1. 도메인 도출
 
 1. **자동 도출 규칙** — 진입점 경로에서 도메인 후보 추출:
-   - 파일: `app/controllers/api/orders_controller.rb` → `orders` (파일명에서 `_controller`·`_service`·`Controller`·`Service` 접미사 제거).
-   - 폴더: `app/services/payments/` → `payments` (마지막 폴더명).
-   - 폴더 내부에 동명 파일이 있으면 그것을 진입 파일로 채택 (예: `payments/payments_service.rb`).
+   - 파일: `app/controllers/api/<entity>s_controller.rb` → `<entity>s` (파일명에서 `_controller`·`_service`·`Controller`·`Service` 접미사 제거).
+   - 폴더: `app/services/<domain>/` → `<domain>` (마지막 폴더명).
+   - 폴더 내부에 동명 파일이 있으면 그것을 진입 파일로 채택 (예: `<domain>/<domain>_service.rb`).
 2. `--domain NAME` 가 있으면 그 값을 채택 (자동 도출 무시).
-3. 자동 도출 결과가 모호 (`app/controllers/api/v2/admin_orders_controller.rb` 처럼 다층) → 사용자에게 후보 2~3 개 제시 후 선택.
+3. 자동 도출 결과가 모호 (`app/controllers/api/v2/admin_<entity>s_controller.rb` 처럼 다층) → 사용자에게 후보 2~3 개 제시 후 선택.
 4. 결정된 `{domain}` 으로 후속 단계 진행.
 
 ### Phase 2. Inventory — Glob/Grep 만 사용 (Read 금지)
@@ -88,6 +88,21 @@ description: >-
 - **파일 수 cap** — 발견 파일 > **50 개** 면 통계 출력 직후 **사용자에게 좁히기를 강력 권유** (depth 축소·서브폴더 한정·helpers 제외 등). 그대로 진행도 허용하나 Phase 3 비용 경고 명시. 50 은 휴리스틱 — 너무 적으면 일반 controller-service-model 탐색이 막히고, 너무 많으면 토큰이 터진다.
 
 > **config lookup**: 본 단계 시작 전 `workspace/context/config.md` 의 `## learn 언어 패턴` 섹션을 Read. 두 표 (의존성 추적 + 역할 분류) 의 행이 있으면 우선 사용. 표가 비어있거나 매칭 행이 없으면 폴더 인접성 fallback. 이 플러그인은 특정 언어를 가정하지 않는다 — config 에 정의된 패턴만 사용하고 없으면 인접성 fallback.
+
+**외부 도메인 클래스 reference 추출 (#09):**
+
+의존성 추적 중 발견된 클래스/모듈 reference 를 내부 vs 외부로 분류한다.
+
+- **내부 판정**: 진입점에서 추론된 본 도메인 namespace prefix 와 일치 (예: 진입점이 `app/services/<domain>/` 이면 `<Domain>::*` namespace 가 내부).
+- **외부 후보**: 그 외 namespace 첫 segment 가 있는 reference (예: `<OtherDomain>::<ClassName>`, `<AnotherDomain>::<ClassName>`).
+- **ignore 패턴 필터**: 외부 후보에서 standard library / framework 클래스를 제외한다.
+
+  > **config lookup**: `workspace/context/config.md` 의 `## learn 외부 도메인 ignore 패턴` 섹션을 먼저 조회. 섹션·행이 없으면 아래 Ruby default 12 항목을 사용:
+  > `ActiveRecord::Base`, `ApplicationRecord`, `String`, `Hash`, `Array`, `Integer`, `Float`, `Symbol`, `Time`, `Date`, `BigDecimal`, `Set`
+  >
+  > **A2 runtime fallback**: namespace 추출 실패 시 (예: 클래스명에 `::` 없어 도메인 추정 불가) → 해당 클래스 무시 + `[WARN] 외부 클래스 namespace 추출 실패: {class_name} — 수동 확인 권장` 1 줄. abort 하지 않는다.
+
+- 필터 후 남은 외부 클래스 목록을 **메모리에 누적** (추정 도메인별로 grouping). Phase 5 의 MANIFEST 갱신에서 사용.
 >
 > **A2 runtime fallback 절차**: config 표의 각 행을 사용 전 검증 (컬럼 수·헤더 일치). 잘못된 행은 무시하고 폴더 인접성 fallback 을 사용. 오류 1 건당 stderr 에 `[WARN] config.md ## learn 언어 패턴 {행번호 또는 사유}: fallback 사용` 1 줄 출력. abort 하지 않는다 — 1 행 오류로 전체 워크플로를 중단하는 것보다 fallback 이 안전하다. doctor 가 별도 실행될 때만 ERROR 로 보고 (integrity.py `check_workspace_config_sections`).
 
@@ -186,14 +201,14 @@ description: >-
    | --------- | --------- |
    | 단일 도메인, 작음 (총 ≤200 줄) | `{domain}.md` 한 파일 |
    | 단일 도메인, 큼 | `{domain}/` 폴더 + 카테고리 (`routes.md`·`models.md`·`services.md`) 또는 sub-cluster |
-   | 명확한 sub-domain (예: `payments/auth/` · `payments/refund/`) | 코드 구조 미러 — `{domain}/{sub}.md` |
+   | 명확한 sub-domain (예: `<domain>/<sub_a>/` · `<domain>/<sub_b>/`) | 코드 구조 미러 — `{domain}/{sub}.md` |
    | Routes/Models/Services 가 코드에서 명확 분리 | `{domain}/routes.md` · `models.md` · `services.md` |
    | State machine 풍부 | 자연스러우면 `enums/{Model}.md` 추가 |
 
 2. **파일 크기 정책** 적용:
    - 진입/index 파일 (예: `{domain}/index.md`) ≤ **100 줄** — 요약 + 링크만.
    - 본문 파일 ≤ **200 줄** — 초과 시 자연스러운 축으로 분할:
-     - 1 순위: sub-domain 분할 (`payments/refund.md` + `payments/auth.md`)
+     - 1 순위: sub-domain 분할 (`<domain>/<sub_a>.md` + `<domain>/<sub_b>.md`)
      - 2 순위: 카테고리 분할 (`services.md` + `models.md`)
      - 3 순위: 알파벳 분할 (`services-a-m.md` + `services-n-z.md` — 마지막 수단)
 3. **미리보기 출력**:
@@ -261,6 +276,33 @@ MANIFEST 의 자유 형식 원칙 준수 — **기존 정의가 있으면 그에
    > **새 섹션 생성 시** — 표준 3 컬럼 표를 만들고 그 위에 안내 한 줄: "_도메인 분류 — `/pilot:learn` 이 자동 갱신. 진입 파일은 workspace/context/ 기준 상대 경로._"
 
 4. **`orchestrate-load.py` 와의 호환성** — 표 형식으로 적은 경우 plugin 이 자동 파싱해 wrapper 진입 시 자동 로드한다 (`parse_manifest_domain_files`). 산문·리스트 형식은 자동 파싱 대상이 아니지만 MANIFEST 자체가 항상 로드되므로 agent 가 자연어로 추적 가능.
+
+4-bis. **외부 도메인 reference 섹션 갱신 (#09·#10)** — Phase 2 에서 누적된 외부 클래스 목록을 처리한다.
+
+   **idempotency — 현재 learn 도메인의 stale row 제거:**
+
+   - 현재 learn 의 `{domain}` 이 MANIFEST 의 `## 외부 도메인 reference` 표에 행으로 존재하면 그 행을 제거한다 (이미 학습됨 — 더 이상 "미완료" 아님).
+
+   **외부 클래스 목록이 0 이면:** 섹션 자체를 추가하지 않는다 (빈 섹션 방지). 이미 존재하는 섹션은 그대로 유지.
+
+   **외부 클래스 목록이 1 이상이면:**
+
+   - 추정 도메인별 grouping: Ruby `Module::Class` namespace 의 첫 segment 소문자화 (예: `<Module>::<Class>` → `<module>`). namespace 없는 클래스는 skip.
+   - 추정 도메인이 이미 `## 도메인 분류` 표에 등록된 도메인이면 제외 (이미 학습됨).
+   - 추천 경로 탐색: 사용자 코드베이스 root 에서 `app/{models,services,controllers}/{추정 도메인}/` 패턴 Glob. 존재하면 그 경로, 없으면 `(경로 자동 추정 실패 — 사용자 직접 지정)`.
+   - MANIFEST 의 `## 외부 도메인 reference (learn 미완료)` 섹션이 이미 존재하면:
+     - 같은 추정 도메인 행이 있으면 클래스 목록·개수 갱신 (행 내용 교체). 사용자 수동 추가 행은 보존.
+     - 없으면 새 행 추가 (행 끝에 ` (auto)` 마커).
+   - 섹션이 없으면 새 섹션 + 표 생성:
+     ```markdown
+     ## 외부 도메인 reference (learn 미완료)
+
+     | 추정 도메인 | 클래스 (개수) | 추천 후속 학습 |
+     | --- | --- | --- |
+     | {추정 도메인} | {Class1}, {Class2}... ({N}) | `/pilot:learn {추천 경로}` (auto) |
+     ```
+
+   > **A2 runtime fallback**: 추정 도메인 추출 전체 실패 시 → 섹션 작성 skip + `[WARN] 외부 도메인 reference 추출 실패 — 수동 관리 권장` 1 줄. learn 본 작업은 정상 종료.
 
 5. doctor 실행 — 결과를 사용자에게 그대로 출력:
 

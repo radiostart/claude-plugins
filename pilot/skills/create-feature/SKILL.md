@@ -91,6 +91,21 @@ _(상태값 변화가 있는 기능만 작성)_
 
 프롬프트에서 명시적으로 추출 가능한 요소 (상태 값·정렬 기준·트리거 등) 는 해당 섹션에 채워 넣는다. 추측성 내용은 **넣지 않는다** — placeholder 로 둠.
 
+### 3-bis. cross-domain 의존성 detect (#09)
+
+feature spec 작성 후, 산출물 lookup 시 답할 수 없는 영역이 있는지 MANIFEST 를 조회한다.
+
+1. `workspace/context/MANIFEST.md` 를 Read.
+2. 사용자 프롬프트 및 작성된 feature spec 에 등장하는 클래스/도메인 키워드를 추출한다.
+3. 키워드를 MANIFEST 의 `## 도메인 분류` 표와 `## 외부 도메인 reference` 표 양쪽에서 lookup:
+   - `## 외부 도메인 reference` 표에 매칭되는 도메인이 있으면:
+     ```
+     [INFO] 이 feature 는 {외부 도메인} 의존성이 감지됨 — 먼저 `/pilot:learn {추천 경로}` 권장
+     ```
+   - 매칭 없음이지만 산출물로 cover 되지 않는 영역이 있으면 spec 의 `## 비즈니스 규칙` 에 "(외부 시스템 또는 미학습 도메인 — 수동 확인 필요)" 주석 추가.
+
+> **A2 runtime fallback**: MANIFEST lookup 실패 또는 키워드 추출 실패 시 → spec 진행 (abort 안 함). INFO 출력 안 함.
+
 ### 4. `project.md` 및 `prompts/*` 자동 갱신
 
 신규 feature 파일 생성 후 [../analyze/SKILL.md](../analyze/SKILL.md) 의 **"분석 프로세스" 5 ~ 6 단계** 를 그대로 수행한다 — 분석 소스가 docs/ 가 아니라 **현재 features/ 전체** 라는 점만 다르다.

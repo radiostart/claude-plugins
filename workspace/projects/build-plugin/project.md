@@ -22,8 +22,8 @@
 - [x] project.md H3 동적 생성 + SSOT -> [상세](features/03-project-md-h3-dynamic.md)
 - [x] doctor config 정합성 검증 (D10 행 수 0 허용) -> [상세](features/04-doctor-config-validation.md)
 - [x] v0.1.0 → v0.2.0 자동 마이그레이션 (M1) -> [상세](features/05-config-default-migration.md)
-- [ ] cross-domain 처리 가이드 (V1 발견 main milestone) -> [상세](features/09-cross-domain-guide.md) `[v0.3.0 HIGH]`
-- [ ] MANIFEST.md 외부 도메인 섹션 자동 추가 -> [상세](features/10-manifest-external-domain-section.md) `[v0.3.0 HIGH]`
+- [x] cross-domain 처리 가이드 (V1 발견 main milestone) -> [상세](features/09-cross-domain-guide.md) `[v0.3.0 HIGH]`
+- [x] MANIFEST.md 외부 도메인 섹션 자동 추가 -> [상세](features/10-manifest-external-domain-section.md) `[v0.3.0 HIGH]`
 - [ ] feature spec Open Questions 템플릿 -> [상세](features/11-feature-spec-open-questions.md) `[v0.3.0 HIGH]`
 - [ ] cross-domain transaction 패턴 가이드 -> [상세](features/12-cross-domain-transaction-contract.md) `[v0.3.0 MED]`
 - [ ] learn SKILL.md 모호함 해소 (Phase 1 fallback + Phase 5 H2 매칭) -> [상세](features/06-learn-skill-ambiguity.md) `[v0.3.0 LOW]`
@@ -102,3 +102,9 @@
 - [x] #00 의 0b 캡처 산출물 디렉터리 rename 완료 — `project/expected/projects/python-sample-demo/`·`analyze/expected/projects/python-sample-demo/` 양쪽 일관. README.md tree·재실행 절차 + `_input/python-sample/README.md` line 33 동기화. `python-sample` (도메인명) ↔ `python-sample-demo` (프로젝트명) 구분 명확. 회귀 자동 검증 (`diff.sh --actual {regen}` 1 회 실행) 은 #01·#02·#03 runtime lookup 구현 후 별도 수행 (from #00)
 - [ ] #00 의 0b 캡처는 plan 의 `_input/` 8 파일 외에 `routes.py`·`helpers.py`·`README.md` 3 파일을 추가했음. 이는 `main.py` 가 `from routes import register_routes` 를 import 하기 위해 필요했고, 결과적으로 `inventory.md` 의 의존성 추적 표가 7 행으로 풍부해짐. plan 의 "1 도메인 단일 import" 표현은 literal 하게는 위반이지만 fixture 의 표현력을 위해 합리적 확장. 후속 plan 작성 시 `_input/` 의 파일 수를 명시적으로 합의 (from #00)
 - [ ] #00 의 LLM 시뮬레이션 캡처 한계 — `analyze/expected/projects/python-sample/prompts/generator.md` 의 `[analyze-managed]` `## 핵심 변경 대상` 헤더는 SKILL.md spec 의 `## 핵심 서비스/모델` 과 wording 차이. README.md 의 "wording 차이 ≠ 회귀" 정책으로 허용. 실제 `/pilot:analyze` 1 회 실행 후 wording 재캡처 권장 (from #00)
+- [ ] #09·#10 의 `_parse_md_tables_in_section` 헬퍼에 코드블록 (` ``` `) 추적 보강 완료 (integrity.py:807·811-820). 코드블록 안 `| ... |` 줄 = false positive 방지. 후속 신규 doctor schema 검증 함수에서도 동일 헬퍼 재사용 가능 — 별도 보강 불필요 (from #10)
+- [ ] #09·#10 의 `check_workspace_external_domain_section` 신규 함수 (integrity.py:1077-1197) 는 `## 외부 도메인 reference` 헤더에 sub-string 매칭 (`(learn 미완료)` 등 사용자 편집 friendly). 후속 #11 (Open Questions) · #12 (transaction contracts) doctor 검증 함수 작성 시 동일 sub-string 패턴 재사용 가능 (from #10)
+- [ ] #09 의 외부 도메인 ignore 패턴은 Ruby default 12 항목만 hardcoded (learn SKILL.md:101). config 의 `## learn 외부 도메인 ignore 패턴` 섹션 추가 가능 (선택). Python·TS 등 multi-language ignore 시스템은 v0.4.0 milestone (from #09)
+- [ ] #09 의 cross-domain detect (`/pilot:create-feature` 3-bis, `/pilot:analyze` 5-2) 는 MANIFEST 의 `## 외부 도메인 reference` 표 lookup → INFO 1 줄. #11 의 Open Questions 4 카테고리 (b) 자동 입력은 PR-2 머지 후 wiring 필요 (from #09)
+- [ ] #10 의 추정 도메인 알고리즘은 1 순위 (`Module::Class` namespace 첫 segment 소문자화) 만 구현. 2 순위 (snake_case 변환) 와 3 순위 (unclassified 카테고리) 는 v0.4.0 이월 (Open Q d-1 사용자 옵션 A 수락) (from #10)
+- [ ] #09·#10 의 회귀 픽스처 `_input/python-sample/secondary-domain/` (4 파일) + `services/checkout.py` 1 줄 추가는 cross-domain detect end-to-end 시나리오용. expected output 캡처 (`learn/expected/.../inventory.md` 외부 의존 카테고리 + `MANIFEST.md` 외부 도메인 섹션) 는 후속 0c PR 에서 진행 예정 (from #09·#10)

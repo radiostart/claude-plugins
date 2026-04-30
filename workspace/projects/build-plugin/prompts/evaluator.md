@@ -48,6 +48,8 @@
 - [x] #05 신규 사용자 (`plugin_version: 0.2.0` 부터) → skip
 - [x] #05 `--fix` 미호출 (기본 doctor) 시 마이그레이션 prompt 발생 안 함 (`run_auto_fixes` 가 `--fix` 모드에서만 호출)
 - [ ] backward-compat 0 brittle: 회귀 골든 픽스처 `pilot/tests/fixtures/v0.1.0-baseline/` 로 config 비어있을 때 v0.1.0 = v1 동일 출력 검증 (0a + 0b 캡처 완료. 실제 회귀 실행 = `bash diff.sh --actual {regen}` 미실행. 디렉터리 명 정합 후 1 회 수행 필요)
+- [x] #09 `/pilot:learn` Phase 2 외부 도메인 reference 추출 절차 명시 (내부 vs 외부 namespace 분류, ignore 패턴 12 항목 default, A2 runtime fallback). `/pilot:create-feature` 3-bis · `/pilot:analyze` 5-2 의 cross-domain detect (MANIFEST 외부 도메인 lookup → INFO 1 줄)
+- [x] #10 MANIFEST.md `## 외부 도메인 reference (learn 미완료)` 섹션 자동 작성 (3 컬럼 표). 추정 도메인 알고리즘 1 순위 (`Module::Class` namespace 첫 segment 소문자화). 추천 경로 (`app/{models,services,controllers}/{도메인}/`). idempotency (현재 learn 시 자기 행 제거 + 도메인 분류 표 등록 시 INFO). doctor `check_workspace_external_domain_section` schema 검증 (3 컬럼 + 헤더 정확 일치 + stale row INFO). MANIFEST.md.template placeholder 주석 추가
 
 ---
 
@@ -64,6 +66,8 @@
 - [ ] config 신규 섹션 정의 시 override 거동 (사용자 행이 default 위에 우선 적용) 검증 (#01·#02·#03 의 runtime lookup 미구현)
 - [x] `pilot/tests/tools/test_doctor_integrity.py` (#04) — 7/7 PASS (test_pass_empty_table 신규 포함)
 - [x] `pilot/tests/tools/test_doctor_migration.py` (#05) — 7/7 PASS (opt-in/out/postpone, 신규/부분/non-interactive/v010 detect)
+- [x] `pilot/tests/tools/test_doctor_external_domain.py` (#10) — 5/5 PASS (pass-empty/pass-valid/error-column-mismatch/error-header-mismatch/info-stale-row)
+- [x] `pilot/tests/tools/test_doctor_cross_domain.py` (#09) — 2/2 PASS (info-stale-row-bidirectional / no-error-on-valid-manifest)
 - [x] 해피패스 커버 (pass-empty + pass-valid + 빈 표)
 - [x] 에러 케이스 처리 (#04 doctor 검증 ERROR 케이스)
 - [x] 기존 테스트 영향 없음 (doctor --schema 5 PASS·1 WARN·0 ERROR 유지, doctor workspace 9 PASS·1 WARN·0 ERROR)

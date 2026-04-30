@@ -30,9 +30,9 @@ features/ 에서 추출한 내용 + 메인 5-2 에서 로드한 `scope/{domain}.
 - {비즈니스 규칙 중 플래닝에 영향을 주는 항목}
 
 **관련 파일 범위** (scope/{domain}.md 매칭):
-- Routes: `/orders/:id/cancel` (POST)
-- Models: `Order`, `OrderItem`
-- Services: `RefundService`
+- Routes: `/<entity>s/:id/<action>` (POST)
+- Models: `<Entity>`, `<EntityItem>`
+- Services: `<DomainService>`
 ```
 
 **매칭 규칙:**
@@ -62,17 +62,17 @@ features/ 내용 + 5-2 에서 로드한 `scope/{domain}.md` 로 기술 레퍼런
 이 프로젝트가 의존하는 도메인 지식 (래퍼가 자동 로드 — 수동 Read 불필요):
 
 - `workspace/context/MANIFEST.md`
-- `workspace/context/scope/orders.md`
-- `workspace/context/rules/orders.md`
-- `workspace/context/enums.md` — 관련 섹션: `Order`
+- `workspace/context/scope/<domain>.md`
+- `workspace/context/rules/<domain>.md`
+- `workspace/context/enums.md` — 관련 섹션: `<Entity>`
 
 <!-- [analyze-managed] -->
 ## 핵심 서비스/모델
 
 | 대상 | 파일 | 용도 |
 | --- | --- | --- |
-| Order | {source_root}/models/order.{ext} | 주문 헤더 |
-| RefundService | {source_root}/services/refund_service.{ext} | 환불 처리 |
+| `<Entity>` | {source_root}/models/<entity>.{ext} | (예시 entity) |
+| `<DomainService>` | {source_root}/services/<domain>_service.{ext} | (예시 domain service) |
 
 <!-- [analyze-managed] -->
 ## 관계 구조

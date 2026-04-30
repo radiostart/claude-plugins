@@ -162,9 +162,9 @@ projects/{PROJECT}/
 ```markdown
 ## 목표
 
-- [ ] 주문 생성 API -> [상세](features/01-order-create.md)
-- [ ] 결제 승인 흐름 -> [상세](features/02-payment-approval.md)
-- [x] 주문 취소 -> [상세](features/03-order-cancel.md)
+- [ ] 예시 기능 A -> [상세](features/01-<feature-slug-a>.md)
+- [ ] 예시 기능 B -> [상세](features/02-<feature-slug-b>.md)
+- [x] 예시 기능 C -> [상세](features/03-<feature-slug-c>.md)
 ```
 
 **규칙**

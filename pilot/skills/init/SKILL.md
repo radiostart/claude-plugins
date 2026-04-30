@@ -33,6 +33,8 @@ description: >-
 
 템플릿 위치: `${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/setup/templates/`
 
+> `MANIFEST.md.template` 에는 `## 외부 도메인 reference` 섹션 placeholder 주석이 포함되어 있다. 실제 섹션은 `/pilot:learn` 이 cross-domain reference 를 처음 발견할 때 자동으로 작성한다.
+
 절차:
 
 1. `workspace/context/` 폴더를 필요 시 생성.

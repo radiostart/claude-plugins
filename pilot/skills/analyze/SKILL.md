@@ -44,11 +44,10 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 
 ### 필터 분석 모드
 
-기획서에는 프론트엔드, API, 관리자 등 여러 영역의 기능이 혼재되어 있다.
+기획서에는 여러 영역 (프론트엔드, API, 어드민 등) 의 기능이 혼재되어 있다.
 키워드가 주어지면 docs/ 전체 파일을 읽되, **키워드와 관련된 섹션만** 추출하여 features/ 파일을 생성한다.
 
-- 예: `/pilot:analyze 관리자 기능` → 관리자(어드민) 관련 기능만 분석
-- 예: `/pilot:analyze 결제` → 결제 영역 기능만 분석
+- 예: `/pilot:analyze <도메인 키워드>` → 해당 도메인 영역 기능만 분석
 - 키워드 매칭은 섹션 제목과 내용 모두에서 판단한다.
 - 관련 없는 섹션은 스킵한다.
 
@@ -72,8 +71,8 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 
    ```
    ⚠ --force 재분석이 prompt-origin features 를 덮어쓸 가능성이 있습니다:
-     - features/05-refund-policy.md (source: prompt)
-     - features/07-notification-queue.md (source: prompt)
+     - features/05-<feature-slug-a>.md (source: prompt)
+     - features/07-<feature-slug-b>.md (source: prompt)
 
    이 파일들은 /pilot:create-feature 로 생성됐으며, docs/ 에 대응 원본이
    없습니다. --force 진행 시 slug 충돌이 발생하면 덮어쓰여 데이터가 손실될
@@ -243,6 +242,19 @@ features/ 생성 후 `project.md` 의 `## 목표` 와 `## 관련 파일` 을 자
 - 기존 사용자 수동 기입 행은 보존하되 중복만 제거한다.
 - 빈 행(`|  |  |  |`) 은 모두 삭제한다.
 - config 빈 표 (헤더만 있고 행 없음): SKILL.md default 사용 (= config 부재와 동일 처리).
+
+**cross-domain 의존성 detect (#09):**
+
+features/ 키워드와 scope/{domain}.md 매칭 시도 후, cover 되지 않는 외부 클래스/도메인 reference 를 감지한다.
+
+- `workspace/context/MANIFEST.md` 의 `## 외부 도메인 reference` 표 lookup:
+  - 매칭되는 도메인 있으면:
+    ```
+    [INFO] features/ 의 일부 영역이 {외부 도메인} 도메인에 의존 — `/pilot:learn {추천 경로}` 후 재분석 권장
+    ```
+  - 표 부재 시 또는 매칭 없으면: 안내 없이 진행 (abort 안 함).
+
+> **A2 runtime fallback**: lookup 실패 시 → 분석 정상 진행, INFO 출력 안 함.
 
 ### 6. prompts/ 자동 갱신
 
