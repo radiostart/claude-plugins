@@ -64,6 +64,44 @@ build-plugin 프로젝트 v1 작업 (pilot 플러그인 범용화) 5/6 features 
 
 **미완**: #00 0b (`_input/` + `learn/expected/` + 등) — Open Q #1 결정 후 PR.
 
+## V1-Full 충실성 검증 (2026-04-30)
+
+`/pilot:learn` stated purpose 가 진짜 큰 레거시에서 작동하는지 검증. 사용자 보유 nimda Rails monolith (126K Ruby + JSX/TS) 의 wms 도메인 dogfooding.
+
+### 검증 데이터
+
+- **wms 도메인 size**: 33 Ruby files / 4,112 lines (services 16 + models 10 + controllers 7)
+- **소요 시간**: 7 분 (subagent simulation)
+- **산출 size**: 922 lines / 5 files (`index.md` + `inventory.md` + `services.md` + `models.md` + `routes.md`)
+- **외부화 효율**: 22.4% (4,112 → 922)
+- **file:line 인용**: 217 개
+- **인용 정확성**: 10/10 sample 정확 (cat-n 검증, NS #5 hotfix #1 교훈 적용)
+- **추출 비즈니스 규칙**: 60+ (상태 전환, 검증 룰, 외부 통합, 권한, 다중 DB 패턴)
+
+### Step D 3 시나리오 결과 — feature spec 작성 시도 (산출물만으로)
+
+- **A (간단)** damage_reported PENDING_TYPE 추가 → 부분 충족 (백엔드 OK, 프론트엔드/locale 부족). 22 인용 활용
+- **B (중간)** DHL 배송사 추가 → 부분 충족 (변경 지점/패턴 OK, DHL API spec 외부). 33 인용 활용. **다중 service 분리 패턴 (cyber_bongo_register/invoice/cancel) 정확 캡처 입증**
+- **C (복잡)** 박스 단위 부분 취소 → 부분 ~40% (wms 안 OK, schoice 외부 도메인 부재 시 막힘). **cross-domain 한계 명확히 입증**
+
+### stated purpose 충족 평가
+
+- 도메인 지식 외부화 (single domain): **충족** (22.4% 압축 + 100% 인용 정확)
+- AI 효율 활용: **충족** (7 분 산출, 단일 turn spec 작성)
+- 큰 레거시 (single domain): **충족**
+- 큰 레거시 (cross-domain): **부분** — schoice 같은 외부 도메인 부재 시 막힘 = pilot 의 진짜 gap
+
+### V1 발견 → v0.3.0 milestone 재구성
+
+V1 결과 토대로 v0.3.0 features priority 재조정:
+
+- **HIGH (V1 발견)**:
+  - #09 cross-domain 처리 가이드 — 외부 도메인 의존성 detect + 가이드
+  - #10 MANIFEST.md 외부 도메인 섹션 자동 추가
+  - #11 feature spec Open Questions 템플릿 (4 카테고리)
+- **MED**: #12 cross-domain transaction 패턴 가이드
+- **LOW** (기존, 표층 fix): #06~#08 SKILL.md 모호함
+
 ## 확정된 아키텍처 결정
 
 1. **마켓플레이스 구조** — `claude-plugins/` (root) + `pilot/` (플러그인 본체)
