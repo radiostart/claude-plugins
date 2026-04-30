@@ -1,10 +1,25 @@
 # pilot
 
-개발 워크플로우 플러그인 — 기획서 분석부터 코드 구현·리뷰까지 에이전트 기반으로 자동화. 정확한 버전·구성은 [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) 과 `skills/`·`agents/`·`tools/`·`hooks/` 디렉토리 참조.
+**레거시 시스템에서 AI 활용을 위한 도메인 지식 외부화 + 프로젝트 단위 작업 틀.**
 
-플러그인은 **메커니즘** (에이전트 래퍼, 스킬, 훅, 오케스트레이션 스크립트) 만 제공한다. 도메인 지식 (비즈니스 규칙·파일 경로·상태값) 은 소비 프로젝트의 `workspace/context/` 에서 사용자가 직접 관리한다.
+큰 레거시 코드베이스 (수만~수십만 라인) 에서 AI 가 도메인을 한 번에 다 이해 못 하는 pain 을 해결한다. 코드에서 도메인 지식을 추출해 `workspace/context/` 에 외부 문서로 보관하고, 프로젝트 단위로 격리된 작업 틀 (`workspace/projects/{P}/`) 을 제공해 AI 가 도메인 지식만 효율적으로 load 하면서 작업하도록 한다. 정확한 버전·구성은 [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) 과 `skills/`·`agents/`·`tools/`·`hooks/` 디렉토리 참조.
 
+플러그인은 **메커니즘** (에이전트 래퍼, 스킬, 훅, 오케스트레이션 스크립트) 만 제공한다. 도메인 지식 (비즈니스 규칙·파일 경로·상태값) 은 소비 프로젝트의 `workspace/context/` 에서 사용자가 직접 관리한다 — config 가 1급 시민, SKILL.md 는 메커니즘만 (D10 결정).
+
+- **핵심 가치 3 layer:**
+  - L1 — 도메인 지식 외부화 (`/pilot:learn` 으로 코드 → `workspace/context/{domain}/` 산출, `/pilot:characterize` 로 레거시 동작 spec 포착)
+  - L2 — 프로젝트 단위 작업 틀 (1 workspace / N projects, 같은 도메인 지식 공유)
+  - L3 — 결정 trace + 자동 마이그레이션 (D1~D10 design doc, M1 v0.1→v0.2 자동 주입)
 - **핵심 계약:** 프로젝트별 `.agent-state.yml` (machine-readable 상태) + `workspace/context/MANIFEST.md` (도메인 SSOT) + `workspace/context/config.md` (런타임 설정 SSOT)
+- **검증 데이터:** Rails 4K 라인 도메인 (nimda wms) 산출 결과 — 922 라인 (22.4% 압축), 217 file:line 인용, 100% 인용 정확성 (V1-Full dogfooding, 2026-04-30)
+
+## ecosystem 안 위치 (다른 도구와 보완 관계)
+
+pilot 은 **workspace 도메인 지식 layer** 의 추상화. 다른 Claude Code 도구와 직접 경쟁이 아닌 보완 관계:
+
+- [moai-adk](https://github.com/modu-ai/moai-adk) (모두의AI) — SPEC-First Agentic Dev Kit. 코드 + SPEC layer 에서 autonomous quality code 산출. **다른 추상화 layer.** pilot 으로 도메인 외부화 후 moai-adk 로 quality code 산출하는 결합 사용 가능.
+- Aider / Cursor / Cline — 코드 직접 편집 도구. pilot 의 도메인 산출물을 컨텍스트로 활용 가능.
+- [Claude Code](https://docs.claude.com/claude-code/) — pilot 의 host. plugin 없이도 사용 가능, pilot 은 큰 레거시 시나리오에 특화된 추상화 layer 추가.
 
 ## 목차
 
