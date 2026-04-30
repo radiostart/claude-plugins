@@ -743,6 +743,9 @@ def check_project(workspace: Path, project: str) -> list[Result]:
         except Exception:
             pass
 
+    # features/ Open Questions 섹션 schema 검증 (#11)
+    results.extend(check_features_open_questions(features_dir))
+
     # Duplicate section 감지 (regen-gone-wrong 신호)
     prompts_dir = proj_dir / "prompts"
     if prompts_dir.is_dir():
@@ -1191,6 +1194,64 @@ def check_workspace_external_domain_section(manifest_path: Path) -> list[Result]
                     Result.INFO,
                     "context/MANIFEST.md",
                     f"## 외부 도메인 reference 표: '{estimated_domain}' 은 이미 ## 도메인 분류 에 등록됨 — 해당 행 제거 권장 (idempotency)",
+                )
+            )
+
+    return results
+
+
+def check_features_open_questions(features_dir: Path) -> list[Result]:
+    """features/NN-*.md 각 파일의 Open Questions 섹션 schema 검증.
+
+    ## Open Questions H2 부재 → INFO 1 줄 (backward-compat: 기존 파일은 INFO 만).
+    존재 → 4 카테고리 H3 모두 존재 검증. 일부 누락 → INFO (ERROR 아님 — 사용자 수동 작성 friendly).
+    4 카테고리 모두 빈 상태 (- (없음) 만) → PASS (정상 단순 feature).
+    """
+    EXPECTED_H3 = [
+        "### (a) 같은 도메인 추가 read 필요",
+        "### (b) cross-domain 산출물 부재",
+        "### (c) 외부 시스템 spec 부재",
+        "### (d) 비즈니스 결정 영역",
+    ]
+    OQ_PATTERN = re.compile(r"^## Open Questions\s*$", re.M)
+    H3_PATTERNS = [re.compile(re.escape(h3) + r"\s*$", re.M) for h3 in EXPECTED_H3]
+
+    results: list[Result] = []
+
+    if not features_dir.is_dir():
+        return results
+
+    feature_files = sorted(
+        p for p in features_dir.glob("*.md")
+        if re.match(r"^\d{2}-", p.name) and not p.name.endswith(".plan.md")
+    )
+
+    for feature_path in feature_files:
+        try:
+            text = feature_path.read_text(encoding="utf-8")
+        except Exception:
+            continue
+
+        rel = feature_path.name
+
+        if not OQ_PATTERN.search(text):
+            results.append(
+                Result(
+                    Result.INFO,
+                    f"features/{rel}",
+                    "## Open Questions 섹션 부재 — 추측 회피 위해 권장",
+                )
+            )
+            continue
+
+        # Open Questions 섹션 존재 — 4 카테고리 H3 검증
+        missing = [h3 for h3, pat in zip(EXPECTED_H3, H3_PATTERNS) if not pat.search(text)]
+        if missing:
+            results.append(
+                Result(
+                    Result.INFO,
+                    f"features/{rel}",
+                    f"## Open Questions: {len(missing)} 개 카테고리 누락 — {', '.join(missing)}",
                 )
             )
 

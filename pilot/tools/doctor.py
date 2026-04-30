@@ -67,6 +67,7 @@ from doctor.integrity import (  # noqa: E402, F401
     _parse_md_tables_in_section,
     check_auto_memory_presence,
     check_credential_drift,
+    check_features_open_questions,
     check_gitignore_required_patterns,
     check_project,
     check_slack_env_not_tracked,

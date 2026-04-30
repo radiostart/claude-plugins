@@ -24,7 +24,7 @@
 - [x] v0.1.0 → v0.2.0 자동 마이그레이션 (M1) -> [상세](features/05-config-default-migration.md)
 - [x] cross-domain 처리 가이드 (V1 발견 main milestone) -> [상세](features/09-cross-domain-guide.md) `[v0.3.0 HIGH]`
 - [x] MANIFEST.md 외부 도메인 섹션 자동 추가 -> [상세](features/10-manifest-external-domain-section.md) `[v0.3.0 HIGH]`
-- [ ] feature spec Open Questions 템플릿 -> [상세](features/11-feature-spec-open-questions.md) `[v0.3.0 HIGH]`
+- [x] feature spec Open Questions 템플릿 -> [상세](features/11-feature-spec-open-questions.md) `[v0.3.0 HIGH]`
 - [ ] cross-domain transaction 패턴 가이드 -> [상세](features/12-cross-domain-transaction-contract.md) `[v0.3.0 MED]`
 - [ ] learn SKILL.md 모호함 해소 (Phase 1 fallback + Phase 5 H2 매칭) -> [상세](features/06-learn-skill-ambiguity.md) `[v0.3.0 LOW]`
 - [ ] analyze SKILL.md scope/{domain}.md 생성 절차 명시 -> [상세](features/07-analyze-scope-creation.md) `[v0.3.0 LOW]`
@@ -108,3 +108,6 @@
 - [ ] #09 의 cross-domain detect (`/pilot:create-feature` 3-bis, `/pilot:analyze` 5-2) 는 MANIFEST 의 `## 외부 도메인 reference` 표 lookup → INFO 1 줄. #11 의 Open Questions 4 카테고리 (b) 자동 입력은 PR-2 머지 후 wiring 필요 (from #09)
 - [ ] #10 의 추정 도메인 알고리즘은 1 순위 (`Module::Class` namespace 첫 segment 소문자화) 만 구현. 2 순위 (snake_case 변환) 와 3 순위 (unclassified 카테고리) 는 v0.4.0 이월 (Open Q d-1 사용자 옵션 A 수락) (from #10)
 - [ ] #09·#10 의 회귀 픽스처 `_input/python-sample/secondary-domain/` (4 파일) + `services/checkout.py` 1 줄 추가는 cross-domain detect end-to-end 시나리오용. expected output 캡처 (`learn/expected/.../inventory.md` 외부 의존 카테고리 + `MANIFEST.md` 외부 도메인 섹션) 는 후속 0c PR 에서 진행 예정 (from #09·#10)
+- [ ] #11 의 `check_features_open_questions` 신규 함수 (integrity.py:1203-1258) 는 features/NN-*.md 의 `## Open Questions` H2 부재 시 INFO 1 줄 (backward-compat — 기존 v0.2.x features 13 건 모두 INFO 만, ERROR 없음). 후속 #12 (transaction contracts) doctor 검증 함수 작성 시 동일 sub-string 패턴 + INFO-only 거동 재사용 가능 (from #11)
+- [ ] #11 의 create-feature SKILL.md 3-bis 가 cross-domain detect 결과를 Open Questions (b) 행으로 자동 추가하는 wiring (PR-1 머지 후) 은 본 PR-2 에서 명문화 완료. PR-1 의 MANIFEST `## 외부 도메인 reference` 표 lookup 거동과 결합되어 end-to-end 동작. doctor 픽스처 `pass-valid` 의 (a)·(c) 행은 추상 placeholder (FooService·ExternalApi) 사용 — 후속 픽스처 작성 시 도메인 단어 누출 회피 패턴 답습 권장 (from #11)
+- [ ] #11 의 example/features template 신규 생성 안 함 (S5 결정 반영). create-feature SKILL.md inline 템플릿이 SSOT. v0.4.0 에서 별도 template 시스템 도입 시 재고 (from #11)

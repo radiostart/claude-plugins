@@ -256,6 +256,17 @@ features/ 키워드와 scope/{domain}.md 매칭 시도 후, cover 되지 않는 
 
 > **A2 runtime fallback**: lookup 실패 시 → 분석 정상 진행, INFO 출력 안 함.
 
+**Open Questions 섹션 보존 + 갱신 (#11):**
+
+features/ 갱신 시 기존 features/NN-*.md 파일의 `## Open Questions` 섹션을 다음 규칙으로 처리한다.
+
+- 기존 `## Open Questions` 섹션이 있으면 보존한다. 기존 `- (없음)` 행, 작성자 수동 기입 행 모두 그대로 유지.
+- cross-domain detect 결과 (외부 도메인 매칭) → 해당 feature 의 `### (b) cross-domain 산출물 부재` 에 행 추가만 (중복 행은 skip).
+- 신규 features/NN-*.md 생성 시에는 `## Open Questions` 4 카테고리 섹션 + `- (없음)` 을 반드시 포함한다.
+- `## Open Questions` 섹션이 아예 없는 기존 파일은 수정하지 않는다 (doctor 가 INFO 로 안내).
+
+> **A2 runtime fallback**: Open Questions 갱신 실패 시 → 해당 파일 skip, 분석 정상 진행.
+
 ### 6. prompts/ 자동 갱신
 
 features/ 분석 결과로 `prompts/planner.md`, `prompts/generator.md`, `prompts/evaluator.md` 를 갱신하고 `.agent-state.yml` 의 `analyzed: true` 게이트를 켠다.
