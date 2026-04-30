@@ -22,9 +22,13 @@
 - [x] project.md H3 동적 생성 + SSOT -> [상세](features/03-project-md-h3-dynamic.md)
 - [x] doctor config 정합성 검증 (D10 행 수 0 허용) -> [상세](features/04-doctor-config-validation.md)
 - [x] v0.1.0 → v0.2.0 자동 마이그레이션 (M1) -> [상세](features/05-config-default-migration.md)
-- [ ] learn SKILL.md 모호함 해소 (Phase 1 fallback + Phase 5 H2 매칭) -> [상세](features/06-learn-skill-ambiguity.md) `[v0.3.0]`
-- [ ] analyze SKILL.md scope/{domain}.md 생성 절차 명시 -> [상세](features/07-analyze-scope-creation.md) `[v0.3.0]`
-- [ ] project SKILL.md `{프로젝트명}` 치환 범위 명문화 -> [상세](features/08-project-token-substitution.md) `[v0.3.0]`
+- [ ] cross-domain 처리 가이드 (V1 발견 main milestone) -> [상세](features/09-cross-domain-guide.md) `[v0.3.0 HIGH]`
+- [ ] MANIFEST.md 외부 도메인 섹션 자동 추가 -> [상세](features/10-manifest-external-domain-section.md) `[v0.3.0 HIGH]`
+- [ ] feature spec Open Questions 템플릿 -> [상세](features/11-feature-spec-open-questions.md) `[v0.3.0 HIGH]`
+- [ ] cross-domain transaction 패턴 가이드 -> [상세](features/12-cross-domain-transaction-contract.md) `[v0.3.0 MED]`
+- [ ] learn SKILL.md 모호함 해소 (Phase 1 fallback + Phase 5 H2 매칭) -> [상세](features/06-learn-skill-ambiguity.md) `[v0.3.0 LOW]`
+- [ ] analyze SKILL.md scope/{domain}.md 생성 절차 명시 -> [상세](features/07-analyze-scope-creation.md) `[v0.3.0 LOW]`
+- [ ] project SKILL.md `{프로젝트명}` 치환 범위 명문화 -> [상세](features/08-project-token-substitution.md) `[v0.3.0 LOW]`
 
 > `/pilot:analyze` 실행 시 features/ 파일과 동기화되어 이 목록이 자동 갱신된다.
 
