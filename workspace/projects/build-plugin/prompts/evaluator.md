@@ -51,6 +51,7 @@
 - [x] #09 `/pilot:learn` Phase 2 외부 도메인 reference 추출 절차 명시 (내부 vs 외부 namespace 분류, ignore 패턴 12 항목 default, A2 runtime fallback). `/pilot:create-feature` 3-bis · `/pilot:analyze` 5-2 의 cross-domain detect (MANIFEST 외부 도메인 lookup → INFO 1 줄)
 - [x] #10 MANIFEST.md `## 외부 도메인 reference (learn 미완료)` 섹션 자동 작성 (3 컬럼 표). 추정 도메인 알고리즘 1 순위 (`Module::Class` namespace 첫 segment 소문자화). 추천 경로 (`app/{models,services,controllers}/{도메인}/`). idempotency (현재 learn 시 자기 행 제거 + 도메인 분류 표 등록 시 INFO). doctor `check_workspace_external_domain_section` schema 검증 (3 컬럼 + 헤더 정확 일치 + stale row INFO). MANIFEST.md.template placeholder 주석 추가
 - [x] #11 `/pilot:create-feature` 가 features/NN-*.md 작성 시 `## Open Questions` 4 카테고리 (a/b/c/d) 강제 + 빈 카테고리 `- (없음)` 표시. 3-bis cross-domain detect 결과를 (b)/(c) 로 자동 분류. `/pilot:analyze` 5-2 가 기존 Open Questions 섹션 보존 + 갱신. doctor `check_features_open_questions` schema 검증 (섹션 부재 INFO, H3 누락 INFO, ERROR 없음 — backward-compat). 4 픽스처 (pass-empty/pass-valid/info-missing-section/info-missing-h3) + 4 unit 테스트 PASS
+- [x] #12 `/pilot:learn` Phase 3 transaction nesting Grep 패턴 추가 (`\.transaction\s*do\s*$|ActiveRecord::Base\.transaction|\w+Record\w*\.transaction` ±20 줄 Read). Phase 3 추출 항목에 cross-domain transaction nesting (외부 namespace 만, 본 도메인 nesting 제외 = Open Q d-4) + 변경 type 매핑 (`update→write`/`destroy→destroy`/`find→read`/`create→create`). Phase 4 step 2 신규 — `### Cross-domain Transaction Contracts` sub-section (4 컬럼 표) 자동 작성. inline vs 분리 룰 (5 행 임계 = Open Q d-3). `(auto)` 마커 + idempotency. A2 runtime fallback (detect 실패 시 placeholder 행, abort 안 함). doctor `check_domain_transaction_contracts` schema 검증 (4 컬럼 + 헤더 정확 + 변경 type 화이트리스트). 7 픽스처 + 7 unit 테스트 PASS. backward-compat — 섹션 부재 시 INFO 만
 
 ---
 
@@ -70,6 +71,7 @@
 - [x] `pilot/tests/tools/test_doctor_external_domain.py` (#10) — 5/5 PASS (pass-empty/pass-valid/error-column-mismatch/error-header-mismatch/info-stale-row)
 - [x] `pilot/tests/tools/test_doctor_cross_domain.py` (#09) — 2/2 PASS (info-stale-row-bidirectional / no-error-on-valid-manifest)
 - [x] `pilot/tests/tools/test_doctor_open_questions.py` (#11) — 4/4 PASS (pass-empty/pass-valid/info-missing-section/info-missing-h3)
+- [x] `pilot/tests/tools/test_doctor_cross_domain_transaction.py` (#12) — 7/7 PASS (pass-no-subsection/pass-inline/pass-separated/pass-empty/error-column-mismatch/error-header-mismatch/error-bad-type)
 - [x] 해피패스 커버 (pass-empty + pass-valid + 빈 표)
 - [x] 에러 케이스 처리 (#04 doctor 검증 ERROR 케이스)
 - [x] 기존 테스트 영향 없음 (doctor --schema 5 PASS·1 WARN·0 ERROR 유지, doctor workspace 9 PASS·1 WARN·0 ERROR)

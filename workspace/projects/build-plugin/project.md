@@ -25,7 +25,7 @@
 - [x] cross-domain 처리 가이드 (V1 발견 main milestone) -> [상세](features/09-cross-domain-guide.md) `[v0.3.0 HIGH]`
 - [x] MANIFEST.md 외부 도메인 섹션 자동 추가 -> [상세](features/10-manifest-external-domain-section.md) `[v0.3.0 HIGH]`
 - [x] feature spec Open Questions 템플릿 -> [상세](features/11-feature-spec-open-questions.md) `[v0.3.0 HIGH]`
-- [ ] cross-domain transaction 패턴 가이드 -> [상세](features/12-cross-domain-transaction-contract.md) `[v0.3.0 MED]`
+- [x] cross-domain transaction 패턴 가이드 -> [상세](features/12-cross-domain-transaction-contract.md) `[v0.3.0 MED]`
 - [ ] learn SKILL.md 모호함 해소 (Phase 1 fallback + Phase 5 H2 매칭) -> [상세](features/06-learn-skill-ambiguity.md) `[v0.3.0 LOW]`
 - [ ] analyze SKILL.md scope/{domain}.md 생성 절차 명시 -> [상세](features/07-analyze-scope-creation.md) `[v0.3.0 LOW]`
 - [ ] project SKILL.md `{프로젝트명}` 치환 범위 명문화 -> [상세](features/08-project-token-substitution.md) `[v0.3.0 LOW]`
@@ -111,3 +111,7 @@
 - [ ] #11 의 `check_features_open_questions` 신규 함수 (integrity.py:1203-1258) 는 features/NN-*.md 의 `## Open Questions` H2 부재 시 INFO 1 줄 (backward-compat — 기존 v0.2.x features 13 건 모두 INFO 만, ERROR 없음). 후속 #12 (transaction contracts) doctor 검증 함수 작성 시 동일 sub-string 패턴 + INFO-only 거동 재사용 가능 (from #11)
 - [ ] #11 의 create-feature SKILL.md 3-bis 가 cross-domain detect 결과를 Open Questions (b) 행으로 자동 추가하는 wiring (PR-1 머지 후) 은 본 PR-2 에서 명문화 완료. PR-1 의 MANIFEST `## 외부 도메인 reference` 표 lookup 거동과 결합되어 end-to-end 동작. doctor 픽스처 `pass-valid` 의 (a)·(c) 행은 추상 placeholder (FooService·ExternalApi) 사용 — 후속 픽스처 작성 시 도메인 단어 누출 회피 패턴 답습 권장 (from #11)
 - [ ] #11 의 example/features template 신규 생성 안 함 (S5 결정 반영). create-feature SKILL.md inline 템플릿이 SSOT. v0.4.0 에서 별도 template 시스템 도입 시 재고 (from #11)
+- [ ] #12 의 `_parse_md_tables_in_h3_section` 신규 헬퍼 (integrity.py:1271-1326) 는 H3 (`### ...`) 섹션 안 표 파싱 + 코드블록 펜스 추적. 후속 신규 H3 sub-section schema 검증에 재사용 가능 (#10 의 `_parse_md_tables_in_section` H2 버전과 짝). 후속 feature 에서 H3 단위 검증 필요 시 활용 (from #12)
+- [ ] #12 의 `_TX_TYPE_WHITELIST` (integrity.py:1264-1269) 는 Rails ActiveRecord 메서드 → CRUD type 매핑 결과의 화이트리스트. `read` / `write` / `destroy` / `create` + `·` 조합 14 항목. v0.4.0 multi-language ignore 시스템 도입 시 재고 (from #12)
+- [ ] #12 의 transaction nesting Grep 패턴 (`\.transaction\s*do\s*$|ActiveRecord::Base\.transaction|\w+Record\w*\.transaction`) 은 Ruby 전용. Python (`with conn:` / `@transaction.atomic`) · TS (`prisma.$transaction`) 다른 언어는 v0.4.0 multi-language pattern 도입 시 추가 (from #12)
+- [ ] #12 inline vs 분리 5 행 임계 (Open Q d-3) 는 SKILL.md 본문 가이드만. 실제 5 행 초과 시 자동 분리 거동은 `/pilot:learn` 실제 호출에서 LLM 이 판단. doctor 는 분리 파일 (`{domain}/transaction-contracts.md`) 도 별도 entry path 추적 안 함 — index.md 만 검증 (분리 파일 = INFO only). 후속 v0.4.0 에서 분리 파일 자동 추적 추가 검토 (from #12)

@@ -167,6 +167,7 @@ description: >-
 | route / endpoint | `@GetMapping\|@PostMapping\|^get \|^post ` (Rails routes.rb·decorator) |
 | state enum 선언 | `enum \|STATUSES =\|@Entity\|case class ` |
 | validation·guard | `validates \|@Valid\|require\|assert ` |
+| transaction nesting (cross-domain) | `\.transaction\s*do\s*$\|ActiveRecord::Base\.transaction\|\w+Record\w*\.transaction` — 매치 시 ±20 줄 추가 Read (transaction block 안 외부 클래스 호출 추출) |
 
 각 매치 라인을 `Read` 의 `offset` 으로 ±10 줄 (또는 다음 빈 줄까지) 만 읽는다. 25k 토큰 거부 발생 시 `limit` 1/2 축소 재시도.
 
@@ -188,6 +189,12 @@ description: >-
   - validation 행 (`validates :amount, presence: true`)
   - 상태 전환 가드 (`if status == :paid && ...`)
   - 도메인 의미가 담긴 if/case 분기
+- **cross-domain transaction nesting** — outer / inner transaction 의 receiver 가 다른 도메인 namespace 이면 nesting detect:
+  - inner transaction block 안의 외부 클래스 메서드 호출 (`update` / `destroy` / `find` / `create`) 추출.
+  - 변경 type 매핑: `update` → `write`, `destroy` → `destroy`, `find` / `where` / `select` → `read`, `create` / `insert` → `create`.
+  - **본 도메인 nested transaction 은 제외** — receiver namespace 가 본 도메인과 동일하면 캡처 안 함. 외부 namespace 만 캡처.
+  - A2 runtime fallback: namespace 판별 불가 시 해당 호출 단순 무시 + WARN 1 줄 (`[WARN] transaction nesting detect 실패 — 수동 확인 권장`). 나머지 추출 정상 진행.
+  - 추출 결과를 메모리의 `cross_domain_transactions` 카테고리에 누적 (Phase 4 에서 sub-section 생성에 사용).
 
 집계 시 **추측 금지**:
 
@@ -210,13 +217,36 @@ description: >-
    | Routes/Models/Services 가 코드에서 명확 분리 | `{domain}/routes.md` · `models.md` · `services.md` |
    | State machine 풍부 | 자연스러우면 `enums/{Model}.md` 추가 |
 
-2. **파일 크기 정책** 적용:
+2. **Cross-domain Transaction Contracts sub-section 작성** (Phase 3 에서 누적된 `cross_domain_transactions` 결과 사용):
+
+   - `cross_domain_transactions` 가 비어있음 (0 건) → sub-section 자체 추가 안 함. 단일 DB 시스템이거나 cross-domain transaction 없는 경우 정상.
+   - 1 건 이상이면:
+     - `{domain}/index.md` (폴더 도메인) 또는 `{domain}.md` (단일 파일 도메인) 의 `## 다중 DB` 섹션 직후에 sub-section 삽입.
+     - `## 다중 DB` 섹션 자체가 없으면 H2 `## 다중 DB` + sub-section 을 한 번에 추가.
+     - sub-section 형식:
+
+       ```markdown
+       ### Cross-domain Transaction Contracts
+
+       | 본 도메인 entry | 외부 도메인 영향 | 변경 type | file:line |
+       | --- | --- | --- | --- |
+       | `<DomainA>::<ServiceClass>#<method>` | `<DomainB>::<ExternalClass>` field / `<OtherClass>` destroy | write·destroy | service_file.rb:NN-MM |
+       ```
+
+     - **변경 type 화이트리스트**: `read`, `write`, `destroy`, `create` 및 `·` 구분 조합 (예: `write·destroy`).
+     - **inline vs 분리 룰** (Open Q d-3):
+       - 표 데이터 행이 **5 행 이상** → `{domain}/transaction-contracts.md` 별도 파일로 분리. index.md 에 `→ [Cross-domain Transaction Contracts]({domain}/transaction-contracts.md)` 링크만 유지.
+       - **5 행 미만** → `## 다중 DB` 섹션 직후 inline 유지.
+     - **idempotency**: 두 번째 `/pilot:learn` 호출 시 자동 detect 행은 갱신 (기존 행 대체), 사용자 수동 추가 행 (` (auto)` 마커 없는 행) 은 보존. 자동 detect 행 끝에 ` (auto)` 마커 (선택).
+     - **A2 runtime fallback**: detect 알고리즘 실패 시 → sub-section 헤더 + `| (자동 detect 실패 — 수동 작성 권장) | | | |` placeholder. abort 안 함.
+
+3. **파일 크기 정책** 적용:
    - 진입/index 파일 (예: `{domain}/index.md`) ≤ **100 줄** — 요약 + 링크만.
    - 본문 파일 ≤ **200 줄** — 초과 시 자연스러운 축으로 분할:
      - 1 순위: sub-domain 분할 (`<domain>/<sub_a>.md` + `<domain>/<sub_b>.md`)
      - 2 순위: 카테고리 분할 (`services.md` + `models.md`)
      - 3 순위: 알파벳 분할 (`services-a-m.md` + `services-n-z.md` — 마지막 수단)
-3. **미리보기 출력**:
+4. **미리보기 출력**:
 
    ```
    생성될 파일 (tree):
@@ -232,7 +262,7 @@ description: >-
      ...
    ```
 
-4. **사용자 확인 2** — 구조 승인:
+5. **사용자 확인 2** — 구조 승인:
 
    ```
    이 구조로 생성할까요?
@@ -241,7 +271,7 @@ description: >-
      c) 중단
    ```
 
-5. **충돌 처리** — `workspace/context/{domain}.md` 또는 `workspace/context/{domain}/` 가 이미 존재하면:
+6. **충돌 처리** — `workspace/context/{domain}.md` 또는 `workspace/context/{domain}/` 가 이미 존재하면:
    - `--force` 있음 → 조용히 덮어쓰기.
    - `--force` 없음 → 3-way 질의:
 
@@ -252,7 +282,7 @@ description: >-
        c) 중단
      ```
 
-6. 승인 후 **batch Write** — 같은 turn 안에서 여러 Write tool_use 를 한 번에 묶어 호출한다 (3~5 개 단위 권장; harness 가 병렬 실행).
+7. 승인 후 **batch Write** — 같은 turn 안에서 여러 Write tool_use 를 한 번에 묶어 호출한다 (3~5 개 단위 권장; harness 가 병렬 실행).
 
 ### Phase 5. MANIFEST.md 갱신 + doctor
 
