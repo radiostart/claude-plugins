@@ -343,6 +343,14 @@ def build_load_plan(
             return True
         return False
 
+    # 0) SSOT — 모든 wrapper 가 톤·instinct·판정 축을 강제 로드.
+    #    페르소나는 identity.yml 의 personas.{phase} 가 자기 역할에 해당.
+    for ssot in ("identity.yml", "instincts.yaml", "guardrails.md"):
+        files.append(f"{plugin_root()}/skills/context/shared/{ssot}")
+    hints.append(
+        f"페르소나: identity.yml `personas.{phase}` 적용 (voice·phrasing·forbid 준수)"
+    )
+
     # 1) context — 도메인 지식(MANIFEST.md) + 런타임 설정(config.md)
     manifest_abs = workspace / "context" / "MANIFEST.md"
     add_if_exists(manifest_abs, "workspace/context/MANIFEST.md")

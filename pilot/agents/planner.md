@@ -6,7 +6,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 ---
 
 > **이 파일은 wrapper입니다.** 직접 실행하지 않는다.
-> **톤·판정 SSOT:** [`identity.yml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) · [`instincts.yaml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/instincts.yaml) · [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md)
+> **톤·판정 SSOT:** [`identity.yml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) (`personas.planner` = architect) · [`instincts.yaml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/instincts.yaml) · [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md)
 >
 > **경로 규칙:** 플러그인 지식 `${CLAUDE_PLUGIN_ROOT}/skills/` · 프로젝트 상태 `workspace/` (CWD)
 >
