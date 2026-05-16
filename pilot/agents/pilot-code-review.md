@@ -36,7 +36,7 @@ tools: Read, Glob, Grep, Bash
    - 감지된 각 언어 `{lang}` 에 대해 `workspace/context/review/{lang}.md` 가 존재하면 Read 해 규칙에 추가한다. 없으면 baseline 만 적용.
    - `review/{lang}.md` 상단에 `lint:` 로 시작하는 줄이 있으면, 해당 언어의 변경 파일 경로를 인자로 그 명령을 Bash 로 1회 실행하고 출력을 findings 판단에 반영한다. `lint:` 줄이 없으면 lint 를 실행하지 않는다.
 
-4. **현재 feature 파악 (라우팅용)** — `workspace/STATE.md` 를 Read 해 `진행중` 프로젝트를 확인하고, `workspace/projects/{PROJECT}/project.md` 에서 진행 중 feature 번호를 파악한다. 파일이 없거나 파싱에 실패해도 리뷰는 계속한다 (이 경우 `feature` 라우팅은 "feature 명세 점검 필요" 로 일반화).
+4. **현재 feature 파악 (라우팅용)** — `workspace/STATE.md` 를 Read 해 `진행중` 프로젝트를 확인하고, `workspace/projects/{PROJECT}/project.md` 에서 진행 중 feature 번호를 파악한다. 미체크(`[ ]`) feature 가 여럿이면 이번 변경분 파일과 가장 직접 관련된 feature 1 개를 택한다 — 판별이 어렵거나 대응하는 feature 가 없으면 특정 번호를 추정하지 말고 `feature` 라우팅을 "feature 명세 점검 필요" 로 일반화한다. 파일이 없거나 파싱에 실패해도 리뷰는 계속한다 (동일하게 일반화).
 
 5. **리뷰** — 수집한 diff 헌크를 로드한 규칙 대비 검토한다. 발견한 결함마다:
    - **severity** — `blocking` / `suggestion` / `nit`. blocking 격상은 `review-principles.md` 의 항목별 격상 기준을 따른다. 취향·스타일 차이를 blocking 으로 올리지 않는다.
