@@ -20,6 +20,24 @@ evaluator 와 축이 다르다:
 - orchestrate-load.py 의 4번째 phase 로 통합하지 않는다. 사이클·도메인 컨텍스트 로딩과 독립이다.
 - 코드를 직접 수정하지 않는다 (report-only).
 - planner/generator/evaluator 의 `prompts/*.md` 같은 프로젝트별 프롬프트 파일을 두지 않는다. 언어별 규칙 파일로 충분하다.
+- GitHub PR 을 다루지 않는다. PR 게시·`gh` 연동은 본 에이전트의 범위가 아니다 (아래 경계 참조).
+
+## 관련 도구와의 경계
+
+공식 `claude-plugins-official/code-review` 플러그인(`/code-review`)·내장 `/security-review` 와 **목적·시점이 다르다**. `pilot-code-review` 는 이들을 대체하지 않으며, **PR 생성 이전 사이클 내부 리뷰** 전용이다.
+
+| 축 | 공식 `/code-review` | `pilot-code-review` |
+| --- | --- | --- |
+| 시점 | PR 생성 후 | 사이클 진행 중, PR 이전 |
+| 대상 | GitHub PR (`gh` 필요) | 로컬 git diff |
+| 출력 | GitHub PR 코멘트 | 대화창 리포트 + 재진입 라우팅 |
+| 범위 | 버그 + CLAUDE.md 준수 (좁게) | 언어별 워크스페이스 규칙 + baseline 품질 |
+| 후속 | 사람이 읽고 수정 | feature/planner/generator 재진입 라우팅 |
+
+공식 플러그인에서 가져올 점:
+
+- **신뢰도 기반 false positive 억제** — 다중 에이전트·0-100 채점까지 도입하지 않는다 (오버엔지니어링). 대신 `review-principles.md` 의 항목별 **blocking 격상 기준**으로 critic 의 과잉 격상을 가볍게 억제한다.
+- **역할 분담 안내** — `/pilot:review` SKILL.md 에 "PR 생성 후 게이트형 리뷰는 공식 `/code-review`, 심층 보안 패스는 `/security-review` 권장"을 한 줄 명시한다. `/pilot:pr` 의 다음 단계로 자연스럽게 이어진다.
 
 ## 구성 요소
 
