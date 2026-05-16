@@ -404,7 +404,7 @@ PR 생성 직전 `git ls-remote --exit-code origin <base>` 로 stale 검증, 없
 
 #### `/pilot:review`
 
-PR 올리기 전 내부 코드 리뷰. `@pilot-code-review` 를 호출해 변경 코드의 품질·설계·테스트 커버리지를 점검한다. PR 이전 단계 — 공식 `/code-review` (PR 이후 GitHub 리뷰) 와 구분.
+PR 올리기 전 내부 코드 리뷰. `@pilot-code-review` 를 호출해 변경분(git diff)의 품질·설계·테스트 가능성을 점검하고, 결함마다 재진입 라우팅(feature/planner/generator)을 제시한다. PR 이전 단계 — 공식 `/code-review` (PR 이후 GitHub 리뷰) 와 구분.
 
 ### 알림 (선택)
 
