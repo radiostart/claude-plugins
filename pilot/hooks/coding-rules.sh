@@ -11,6 +11,9 @@ FILE_PATH=$(cat /dev/stdin | python3 -c "import sys,json; d=json.load(sys.stdin)
 [[ -z "$FILE_PATH" ]] && exit 0
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+
+# 프로젝트 디렉토리 밖의 파일은 대상 아님 → skip (REL_PATH 미스트립 오발화 방지)
+[[ "$FILE_PATH" != "$PROJECT_DIR"/* ]] && exit 0
 REL_PATH="${FILE_PATH#$PROJECT_DIR/}"
 
 # workspace/ 내부 (pilot 컨텍스트·상태 문서) 는 프로젝트 소스가 아님 → skip
