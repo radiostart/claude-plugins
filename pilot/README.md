@@ -53,7 +53,7 @@ Claude Code 의 marketplace 기반 플러그인 시스템을 사용한다. 이 �
 
 설치 후 Claude Code 재시작 (또는 `/plugin reload`) 시 에이전트·스킬·훅이 자동 등록. 업데이트 반영은 `/plugin marketplace update claude-plugins` → `/plugin update pilot@claude-plugins`.
 
-**확인:** 설치 성공 시 slash 커맨드 자동완성에 `/pilot:project`·`/pilot:init` 등이 노출되고, `@pilot-planner`·`@pilot-generator`·`@pilot-evaluator` subagent 호출 가능.
+**확인:** 설치 성공 시 slash 커맨드 자동완성에 `/pilot:project`·`/pilot:init` 등이 노출되고, `@pilot-planner`·`@pilot-generator`·`@pilot-evaluator`·`@pilot-code-review` subagent 호출 가능.
 
 #### `/plugin` 이 막힌 환경에서의 수동 업데이트 — `pilot-update`
 
@@ -402,6 +402,10 @@ workspace·project 정합성 검사. 각 skill 말미 자동 실행. 수동 실�
 
 PR 생성 직전 `git ls-remote --exit-code origin <base>` 로 stale 검증, 없으면 재질의 (최대 3회). uncommitted 변경 있으면 `/pilot:commit` 안내 후 종료. 본문은 `skills/context/shared/pr.md` (또는 워크스페이스 override `workspace/context/pr.md`) 의 컨벤션을 따라 자동 작성. `.slack.env` 활성 시 PR URL 알림.
 
+#### `/pilot:review`
+
+PR 올리기 전 내부 코드 리뷰. `@pilot-code-review` 를 호출해 변경 코드의 품질·설계·테스트 커버리지를 점검한다. PR 이전 단계 — 공식 `/code-review` (PR 이후 GitHub 리뷰) 와 구분.
+
 ### 알림 (선택)
 
 #### `/pilot:slack [test | status | disable]`
@@ -452,6 +456,8 @@ SLACK_EVENTS=complete,approval        # 생략 시 둘 다
 | **Planner** | `@pilot-planner` | 요구사항 분석 + 영향 범위 + 계획 수립 + plan.md 저장 |
 | **Generator** | `@pilot-generator` | 계획대로 구현 + 제출 전 sanity check (언어 중립 `skills/context/shared/evals/coding.json` + 팀 `conventions_evals`) |
 | **Evaluator** | `@pilot-evaluator` | 완성도 심사 + 체크리스트 평가 + 전달사항 기록 |
+
+> **독립 에이전트:** `@pilot-code-review` 는 위 3-phase 사이클과 별개로, PR 올리기 전 코드 품질을 검토하는 독립 에이전트다 (PR-이전 내부 코드 리뷰).
 
 ### 호출 순서
 
