@@ -6,7 +6,7 @@
 
 `workspace/projects/{PROJECT}/prompts/*.md` 와 플러그인 `${CLAUDE_PLUGIN_ROOT}/agents/*.md` 는 **이름은 같지만 성격이 다르다**:
 
-| 위치 | 정체 | `@planner` 호출 시 | 편집 효과 |
+| 위치 | 정체 | `@pilot-planner` 호출 시 | 편집 효과 |
 |---|---|---|---|
 | `${CLAUDE_PLUGIN_ROOT}/agents/{phase}.md` | **Claude Code subagent 정의** (frontmatter `name:`, `tools:`) | ✅ 실제 실행되는 wrapper | 플러그인 업데이트로만 변경 |
 | `workspace/projects/{PROJECT}/prompts/{phase}.md` | **프로젝트 컨텍스트 문서** (마크다운) | wrapper 가 Read 로 내용만 참고 | 다음 `@{phase}` 호출에 반영 |
@@ -35,7 +35,7 @@
 
 ## wrapper 분기 판정
 
-래퍼 (`@planner`·`@generator`·`@evaluator`) 의 pre/post-analyze 분기는 `.agent-state.yml` 의 `analyzed` 필드로 판정.
+래퍼 (`@pilot-planner`·`@pilot-generator`·`@pilot-evaluator`) 의 pre/post-analyze 분기는 `.agent-state.yml` 의 `analyzed` 필드로 판정.
 
 - 스키마 상세: [state-schema.md](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/state-schema.md)
 
@@ -49,8 +49,8 @@
 
 | 파일 | 로드 주체 | 핵심 섹션 |
 | ---- | --------- | --------- |
-| `planner.md` | `@planner` 래퍼 | `## 기능별 사전 확인 사항` (analyze-managed) |
-| `generator.md` | `@generator` 래퍼 | `## 컨텍스트 로드`, `## 핵심 서비스/모델` (둘 다 analyze-managed) |
-| `evaluator.md` | `@evaluator` 래퍼 | `## 기능 완성도`, `## 프로젝트 고유 항목` (analyze-managed) |
+| `planner.md` | `@pilot-planner` 래퍼 | `## 기능별 사전 확인 사항` (analyze-managed) |
+| `generator.md` | `@pilot-generator` 래퍼 | `## 컨텍스트 로드`, `## 핵심 서비스/모델` (둘 다 analyze-managed) |
+| `evaluator.md` | `@pilot-evaluator` 래퍼 | `## 기능 완성도`, `## 프로젝트 고유 항목` (analyze-managed) |
 
-플래닝 공통 가이드는 래퍼 `.claude/agents/planner.md` 의 `## 플래닝 프로세스 (공통 가이드)` 섹션. 프로젝트 planner.md 에 복사 금지.
+플래닝 공통 가이드는 래퍼 `.claude/agents/pilot-planner.md` 의 `## 플래닝 프로세스 (공통 가이드)` 섹션. 프로젝트 planner.md 에 복사 금지.

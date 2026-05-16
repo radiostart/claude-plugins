@@ -2,7 +2,7 @@
 """
 pilot orchestrate-load — wrapper agents 용 컨텍스트 로드 의사결정.
 
-래퍼 (@planner / @generator / @evaluator) 가 프로젝트 workspace 를 조사해서
+래퍼 (@pilot-planner / @pilot-generator / @pilot-evaluator) 가 프로젝트 workspace 를 조사해서
 어떤 파일을 Read 해야 하는지 결정하는 로직을 여기로 이관.
 
 입력:

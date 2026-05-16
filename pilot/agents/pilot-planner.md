@@ -1,5 +1,5 @@
 ---
-name: planner
+name: pilot-planner
 # model 미지정 → 기본 모델(opus) 사용. 요구사항 분석·영향 범위 파악에 높은 추론 능력 필요.
 description: 새 기능 구현 시작 시 구현 계획을 수립한다. 요구사항 분석, 영향 범위 파악, 단계별 계획 작성.
 tools: Read, Glob, Grep, Edit, Write, Bash
@@ -74,7 +74,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
    - `.slack.env` 부재 시 notifier 가 자동 no-op — 호출은 그대로 실행한다.
    - 호출 결과는 사용자에게 보고 불요. stderr 경고가 나오면 원문 그대로 전달.
 
-8. 계획 확정 후 generator를 자동으로 실행하지 않는다. **"`@generator`를 호출해 구현을 진행하세요."** 라고 안내하고 종료한다.
+8. 계획 확정 후 generator를 자동으로 실행하지 않는다. **"`@pilot-generator`를 호출해 구현을 진행하세요."** 라고 안내하고 종료한다.
 
 ---
 
@@ -120,7 +120,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 
 TDD 모드 (`tdd: true`) 는 "구현 순서" 대신 "스텝 목록 (Red 계약 3 축)" 으로 대체. 포맷은 [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Planner — Red Contract 참조.
 
-`교차 의존` 섹션은 계획 수립 중 다른 feature 에 영향을 줄 변경을 발견했을 때만 기재한다. 해당 feature 의 `@planner`·`@generator` 가 교차 참조한다. 영향이 없으면 섹션을 생략한다.
+`교차 의존` 섹션은 계획 수립 중 다른 feature 에 영향을 줄 변경을 발견했을 때만 기재한다. 해당 feature 의 `@pilot-planner`·`@pilot-generator` 가 교차 참조한다. 영향이 없으면 섹션을 생략한다.
 
 이 양식으로 작성한 계획은 본 래퍼 절차 6 번에서 `features/NN-{slug}.plan.md` 로 저장된다. Generator 가 직접 Read 하므로 변경 파일·구현 순서·주의사항·교차 의존을 구체적으로 기술.
 

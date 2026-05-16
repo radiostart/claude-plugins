@@ -172,7 +172,7 @@ evaluator.md 고유:
    - `domain: {사용자가 확인한 도메인}` — 5 단계에서 질의·확인한 값. null 로 두지 않는다 (null 이면 다음 analyze 가 다시 도메인 질의를 해 사용자가 같은 답을 두 번 입력하게 된다).
 4. 그 외 필드 (`schema`, `tdd`, `docs_last_fetched_at`) 는 건드리지 않는다. `schema` 가 `v1` 또는 `v1.1` 이면 이번 기회에 최신(`v1.2`) 으로 업그레이드 + `domain` 기록까지 한 번에 처리.
 
-이 단계를 통과해야 wrapper (`@planner`·`@generator`·`@evaluator`) 가 post-analyze 분기 (`scope` 원본 재로드 생략) 로 동작한다.
+이 단계를 통과해야 wrapper (`@pilot-planner`·`@pilot-generator`·`@pilot-evaluator`) 가 post-analyze 분기 (`scope` 원본 재로드 생략) 로 동작한다.
 
 `analyzed_at` 과 `last_analyzed_features` 는 `/pilot:doctor` 가 **drift 감지** 에 사용한다:
 

@@ -35,11 +35,11 @@ projects/{PROJECT}/
 
 ## 에이전트 동작 구조
 
-플러그인 루트 `agents/` 에 등록된 래퍼 에이전트(`@planner`, `@generator`, `@evaluator`)가 실제 별도 인스턴스로 실행된다 (`.claude-plugin/plugin.json` 기반 자동 로드). 래퍼는 `STATE.md`에서 현재 프로젝트를 읽고, 프로젝트별 `prompts/*.md`를 로드해 지침을 따른다.
+플러그인 루트 `agents/` 에 등록된 래퍼 에이전트(`@pilot-planner`, `@pilot-generator`, `@pilot-evaluator`)가 실제 별도 인스턴스로 실행된다 (`.claude-plugin/plugin.json` 기반 자동 로드). 래퍼는 `STATE.md`에서 현재 프로젝트를 읽고, 프로젝트별 `prompts/*.md`를 로드해 지침을 따른다.
 
 ```
-사용자: @planner 실행
-  └── ${CLAUDE_PLUGIN_ROOT}/agents/planner.md (래퍼)
+사용자: @pilot-planner 실행
+  └── ${CLAUDE_PLUGIN_ROOT}/agents/pilot-planner.md (래퍼)
         └── STATE.md에서 현재 프로젝트 확인
               └── workspace/projects/{PROJECT}/prompts/planner.md (프로젝트별 지침) 로드
 ```
@@ -199,13 +199,13 @@ projects/{PROJECT}/
 
 ## prompts/planner.md
 
-이 프로젝트에서 플래닝 시 따를 지침. 래퍼(`@planner`)가 로드해 실행한다.
+이 프로젝트에서 플래닝 시 따를 지침. 래퍼(`@pilot-planner`)가 로드해 실행한다.
 
 ### 포함 내용
 
 - `## 기능별 사전 확인 사항` — **pre-analyze 상태에선 빈 상태**. `/pilot:analyze` 가 feature 별 소항목 + 각 소항목 하위의 `**관련 파일 범위**` subsection (Routes/Models/Services) 을 자동 주입 (`[analyze-managed]` 영역). 래퍼의 pre/post-analyze 분기는 `.agent-state.yml` 의 `analyzed` 필드로 판정 — 위 "pre / post-analyze 게이트" 참조.
 
-> **플래닝 프로세스 공통 가이드** (요구사항 파악 → 영향 범위 분석 → 계획 출력 형식) 는 래퍼 (`.claude/agents/planner.md`) 가 제공한다. 프로젝트별 `prompts/planner.md` 는 프로젝트 고유 사전 확인 사항만 담는다 (공통 템플릿 반복 금지 — GUIDE "agent 파일 책임 경계" 원칙).
+> **플래닝 프로세스 공통 가이드** (요구사항 파악 → 영향 범위 분석 → 계획 출력 형식) 는 래퍼 (`.claude/agents/pilot-planner.md`) 가 제공한다. 프로젝트별 `prompts/planner.md` 는 프로젝트 고유 사전 확인 사항만 담는다 (공통 템플릿 반복 금지 — GUIDE "agent 파일 책임 경계" 원칙).
 
 > **TDD 모드**일 때: `/pilot:tdd` 가 파일 말미에 Red 단계 앵커를 추가한다 (본 절차는 [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) 참조).
 
@@ -213,7 +213,7 @@ projects/{PROJECT}/
 
 ## prompts/generator.md
 
-이 프로젝트에서 코드 구현 시 참조할 기술 레퍼런스. 래퍼(`@generator`)가 로드해 실행한다.
+이 프로젝트에서 코드 구현 시 참조할 기술 레퍼런스. 래퍼(`@pilot-generator`)가 로드해 실행한다.
 
 ### 포함 내용
 
@@ -228,7 +228,7 @@ projects/{PROJECT}/
 
 ## prompts/evaluator.md
 
-이 프로젝트 구현 완료 후 검토할 체크리스트. 래퍼(`@evaluator`)가 로드해 실행한다.
+이 프로젝트 구현 완료 후 검토할 체크리스트. 래퍼(`@pilot-evaluator`)가 로드해 실행한다.
 
 ### 포함 내용
 
@@ -265,7 +265,7 @@ projects/{PROJECT}/
 
 **우회 기준 불분명 시:**
 
-- `@planner` 에게 "trivial 로 판단되면 간단히만 계획" 지시 (`.focus.md` 또는 `/pilot:focus "{지시}"` 로 전달)
+- `@pilot-planner` 에게 "trivial 로 판단되면 간단히만 계획" 지시 (`.focus.md` 또는 `/pilot:focus "{지시}"` 로 전달)
 - Planner 가 스스로 "이건 trivial 이라 바로 구현 가능" 이라고 판단하면 Generator 로 scope 축소해서 진행
 
 이 경로는 pipeline **우회 정식 선택지**. 우회했다고 평가·품질 이슈가 되지 않는다.

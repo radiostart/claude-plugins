@@ -105,6 +105,6 @@
   - `.focus.md` 없으면 "활성 focus 가 없습니다" 출력 후 종료.
   - 있으면 `.focus.history/{timestamp}.md` 로 이동 후 삭제.
 - **래퍼 동작** (`pilot/skills/focus/SKILL.md:85-89`):
-  - `@planner`·`@generator`·`@evaluator` 가 컨텍스트 로드 시 `.focus.md` Read 하여 본 호출에 반영.
+  - `@pilot-planner`·`@pilot-generator`·`@pilot-evaluator` 가 컨텍스트 로드 시 `.focus.md` Read 하여 본 호출에 반영.
   - 래퍼는 **파일을 수정·삭제·아카이브하지 않는다** — 한 focus 가 여러 phase 에 걸쳐 유효.
 - **제약** (`pilot/skills/focus/SKILL.md:93-97`): 활성 focus 최대 1 개·focus 는 사양이 아니라 지시·`.focus.md` 와 `.focus.history/` 는 gitignore 대상.

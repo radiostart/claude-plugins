@@ -18,7 +18,7 @@ TDD 모드가 활성화된 프로젝트에서 기능을 구현할 때 아래 절
 
 ## 실행 단위
 
-호출 1 회 = **feature 1 개** 단위. 사용자가 `@planner` → `@generator` → `@evaluator` 를 feature 별로 명시 호출한다.
+호출 1 회 = **feature 1 개** 단위. 사용자가 `@pilot-planner` → `@pilot-generator` → `@pilot-evaluator` 를 feature 별로 명시 호출한다.
 
 - Planner 1 회 = 해당 feature 의 전체 스텝 Red 계약을 `.plan.md` 에 작성
 - Generator 1 회 = 그 .plan.md 의 모든 스텝을 한 컨텍스트에서 Red→Green→Refactor 순환

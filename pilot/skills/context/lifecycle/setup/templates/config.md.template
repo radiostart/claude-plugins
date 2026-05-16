@@ -17,7 +17,7 @@
 
 ## 언어·도구 기본값
 
-에이전트 래퍼 (`planner`·`generator`·`evaluator`) 가 `{test_command}`·`{source_root}` 등 플레이스홀더를 해석할 때 참조. Ruby 프로젝트는 fallback 이 있지만 **다른 언어는 이 표가 비어 있으면 동작하지 않는다**.
+에이전트 래퍼 (`pilot-planner`·`pilot-generator`·`pilot-evaluator`) 가 `{test_command}`·`{source_root}` 등 플레이스홀더를 해석할 때 참조. Ruby 프로젝트는 fallback 이 있지만 **다른 언어는 이 표가 비어 있으면 동작하지 않는다**.
 
 | 키 | 값 | 용도 |
 | --- | --- | --- |

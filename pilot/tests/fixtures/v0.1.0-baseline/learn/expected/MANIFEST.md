@@ -1,6 +1,6 @@
 # Domain Manifest
 
-도메인 지식의 진입점. 에이전트 (`@planner`·`@generator`·`@evaluator`) 와 스킬 (`/pilot:*`) 이 **탐색·코드 수정 전**에 이 파일을 먼저 읽는다.
+도메인 지식의 진입점. 에이전트 (`@pilot-planner`·`@pilot-generator`·`@pilot-evaluator`) 와 스킬 (`/pilot:*`) 이 **탐색·코드 수정 전**에 이 파일을 먼저 읽는다.
 
 > 이 파일의 **내용 구조는 자유롭게 정의한다.** 런타임 설정은 같은 폴더의 `config.md` 가 담당하고, 도메인 지식 파일들의 폴더 구조·파일명 컨벤션은 워크스페이스가 자유롭게 결정한다.
 >

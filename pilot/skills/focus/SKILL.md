@@ -2,7 +2,7 @@
 name: focus
 description: >-
   사용자가 대화 중 내린 결정·방향 조정(예: "소프트 딜리트 빼줘",
-  "Goal 5 먼저")을 다음 서브에이전트 호출(@planner·@generator·@evaluator)에
+  "Goal 5 먼저")을 다음 서브에이전트 호출(@pilot-planner·@pilot-generator·@pilot-evaluator)에
   전달해야 할 때 사용한다. 메인 대화의 결정이 서브에이전트에겐 보이지 않는
   문제를 `.focus.md` 파일 매개로 해소한다.
 ---
@@ -70,7 +70,7 @@ description: >-
 
    ```
    focus 기록됨: workspace/projects/{PROJECT}/.focus.md
-   다음 @planner / @generator / @evaluator 호출 시 자동 반영됩니다.
+   다음 @pilot-planner / @pilot-generator / @pilot-evaluator 호출 시 자동 반영됩니다.
    (이전 focus 는 .focus.history/ 로 이동됨)
    ```
 
@@ -89,7 +89,7 @@ description: >-
 
 ## 래퍼와의 상호작용
 
-- `@planner` / `@generator` / `@evaluator` 는 컨텍스트 로드 단계에서 `.focus.md` 를 Read 하고 **본 호출에 한해** 지시에 반영한다.
+- `@pilot-planner` / `@pilot-generator` / `@pilot-evaluator` 는 컨텍스트 로드 단계에서 `.focus.md` 를 Read 하고 **본 호출에 한해** 지시에 반영한다.
 - 래퍼는 파일을 수정·삭제·아카이브하지 않는다. 즉 **한 focus 가 여러 phase 에 걸쳐 유효**.
 - 사용자가 "이제 반영 완료됐어" 라고 판단하면 `/pilot:focus --clear` 로 제거. 또는 새 focus 로 덮어쓰기.
 

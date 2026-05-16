@@ -93,7 +93,7 @@ projects/{PROJECT}/docs/
 | `/pilot:analyze` | Read 로 원본 파일 로드 | 기능 분할을 위해 전체 원본이 필요 |
 | `/pilot:project --url` | `confluence.py fetch` Bash 직접 호출 | 새 기획서 저장이 목적 |
 
-에이전트(@planner/@generator/@evaluator)는 `features/` 를 우선 참조하고, 원본 확인이 필요한 경우에만 `/pilot:confl` 를 거친다.
+에이전트(@pilot-planner/@pilot-generator/@pilot-evaluator)는 `features/` 를 우선 참조하고, 원본 확인이 필요한 경우에만 `/pilot:confl` 를 거친다.
 
 ### features/ 폴더 (분석된 기능 명세)
 
@@ -103,9 +103,9 @@ projects/{PROJECT}/features/
 ```
 
 - `/pilot:analyze` 커맨드로 docs/ 원본을 분석하여 생성한다.
-- `features/` 파일은 **직접 Read 가능**하다. 에이전트(@planner, @generator)가 요구사항 참조 시 사용한다.
+- `features/` 파일은 **직접 Read 가능**하다. 에이전트(@pilot-planner, @pilot-generator)가 요구사항 참조 시 사용한다.
 - `features/` 가 있으면 docs/ 대신 features/ 를 우선 참조한다.
-- TDD 모드에서는 @planner 가 Red 단계에서 `feature.md` 를 직접 읽어 실패 테스트를 작성한다.
+- TDD 모드에서는 @pilot-planner 가 Red 단계에서 `feature.md` 를 직접 읽어 실패 테스트를 작성한다.
 
 ## 에이전트
 
@@ -113,9 +113,9 @@ projects/{PROJECT}/features/
 
 | 에이전트     | 진입 조건                          | 기본 역할                        | TDD 모드                                        |
 | ------------ | ---------------------------------- | -------------------------------- | ----------------------------------------------- |
-| `@planner`   | 새 기능 시작 / 구현 방향 불명확 시 | 요구사항 분석 → 단계별 구현 계획 | + 스텝 분할 + 실패 테스트 작성 (Red)            |
-| `@generator` | 코드 작성 시                       | 패턴·서비스·모델 참조, 구현 수행 | + 실패 테스트 통과 최소 구현 + Refactor (Green) |
-| `@evaluator` | 구현 완료 후                       | 요구사항 충족 여부·일관성 검토   | + 변경 관련 테스트만 `{test_command} {paths}`     |
+| `@pilot-planner`   | 새 기능 시작 / 구현 방향 불명확 시 | 요구사항 분석 → 단계별 구현 계획 | + 스텝 분할 + 실패 테스트 작성 (Red)            |
+| `@pilot-generator` | 코드 작성 시                       | 패턴·서비스·모델 참조, 구현 수행 | + 실패 테스트 통과 최소 구현 + Refactor (Green) |
+| `@pilot-evaluator` | 구현 완료 후                       | 요구사항 충족 여부·일관성 검토   | + 변경 관련 테스트만 `{test_command} {paths}`     |
 
 TDD 모드 활성화: `/pilot:tdd` — `project.md` 제한사항에 TDD 모드 문구 추가 + 각 에이전트 파일 책임 확장
 

@@ -5,7 +5,7 @@
 데이터 흐름:
 
 ```
-Confluence  ──/pilot:confl──▶  docs/  ──/pilot:analyze──▶  features/  ──@planner──▶ 구현
+Confluence  ──/pilot:confl──▶  docs/  ──/pilot:analyze──▶  features/  ──@pilot-planner──▶ 구현
 사용자 프롬프트 ──/pilot:create-feature──▶  features/
 소스 코드  ──/pilot:learn──▶  workspace/context/{domain}/
 ```
@@ -85,7 +85,7 @@ Confluence 기획서 fetch / 검색 (`pilot/skills/confl/SKILL.md:9`).
   > user_prompt: "{원문 지시}"
 
   ## 요구사항
-  - **조건**: _(상세 필요 — @planner 가 영향 분석 시 보강)_
+  - **조건**: _(상세 필요 — @pilot-planner 가 영향 분석 시 보강)_
   - **트리거**: _(상세 필요)_
   - **기대결과**: _({프롬프트에서 추출})_
 
@@ -94,7 +94,7 @@ Confluence 기획서 fetch / 검색 (`pilot/skills/confl/SKILL.md:9`).
   - 추측성 내용 **금지** — placeholder 로 둠.
 - **자동 갱신** — `analyze` 의 5 ~ 6 단계 그대로 호출 (소스가 docs/ 가 아니라 **현재 features/ 전체**) (`pilot/skills/create-feature/SKILL.md:94-110`).
 - **제약** (`pilot/skills/create-feature/SKILL.md:146-150`):
-  - 에이전트 자동 호출 안 함. 시작점은 `@planner`.
+  - 에이전트 자동 호출 안 함. 시작점은 `@pilot-planner`.
   - `> source: prompt` tag → `analyze --force` 가 덮어쓰기 시 사용자 승인 필요.
 
 ---

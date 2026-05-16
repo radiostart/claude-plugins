@@ -53,7 +53,7 @@ Claude Code 의 marketplace 기반 플러그인 시스템을 사용한다. 이 �
 
 설치 후 Claude Code 재시작 (또는 `/plugin reload`) 시 에이전트·스킬·훅이 자동 등록. 업데이트 반영은 `/plugin marketplace update claude-plugins` → `/plugin update pilot@claude-plugins`.
 
-**확인:** 설치 성공 시 slash 커맨드 자동완성에 `/pilot:project`·`/pilot:init` 등이 노출되고, `@planner`·`@generator`·`@evaluator` subagent 호출 가능.
+**확인:** 설치 성공 시 slash 커맨드 자동완성에 `/pilot:project`·`/pilot:init` 등이 노출되고, `@pilot-planner`·`@pilot-generator`·`@pilot-evaluator` subagent 호출 가능.
 
 #### `/plugin` 이 막힌 환경에서의 수동 업데이트 — `pilot-update`
 
@@ -163,9 +163,9 @@ pip install requests beautifulsoup4
 # /pilot:create-feature "지연 주문 목록 UI"
 
 # 5. 3-phase 구현 — 각 에이전트를 명시 호출
-@planner        # features/NN-*.md → features/NN-*.plan.md 계획 수립
-@generator      # plan 기반 구현 (TDD 면 Red→Green→Refactor)
-@evaluator      # 요구사항 충족·spec·VERIFICATION REPORT
+@pilot-planner        # features/NN-*.md → features/NN-*.plan.md 계획 수립
+@pilot-generator      # plan 기반 구현 (TDD 면 Red→Green→Refactor)
+@pilot-evaluator      # 요구사항 충족·spec·VERIFICATION REPORT
 
 # 6. (선택) 중간에 방향 조정
 /pilot:focus 소프트 딜리트는 빼줘
@@ -200,7 +200,7 @@ pip install requests beautifulsoup4
 
 이후 `context/scope/orders.md` · `context/rules/orders.md` 를 작성. 첫 도메인 파일 1 쌍을 `_(추가 예정)_` 로 두고 시작해도 `/pilot:project` 는 동작한다 — 실제 코드 작업 전까지 채우면 충분.
 
-`/pilot:analyze` 가 docs/ → features/\*.md 벌크 생성. 구현은 사용자가 `@planner → @generator → @evaluator` 를 명시 호출. 각 phase 에서 중단·수정 가능한 투명한 흐름. ad-hoc 지시는 `/pilot:focus` 로 `.focus.md` 작성.
+`/pilot:analyze` 가 docs/ → features/\*.md 벌크 생성. 구현은 사용자가 `@pilot-planner → @pilot-generator → @pilot-evaluator` 를 명시 호출. 각 phase 에서 중단·수정 가능한 투명한 흐름. ad-hoc 지시는 `/pilot:focus` 로 `.focus.md` 작성.
 
 ---
 
@@ -219,7 +219,7 @@ pip install requests beautifulsoup4
 
 같은 이름의 phase 파일 (planner/generator/evaluator) 이 **두 위치** 에 존재하지만 **역할이 다르다**:
 
-| 위치 | 정체 | `@planner` 호출 시 | 편집 효과 |
+| 위치 | 정체 | `@pilot-planner` 호출 시 | 편집 효과 |
 |---|---|---|---|
 | `${CLAUDE_PLUGIN_ROOT}/agents/{phase}.md` | **Claude Code subagent 정의** (frontmatter `name:`, `tools:`) | ✅ 실제 실행되는 wrapper | 플러그인 업데이트로만 변경 |
 | `workspace/projects/{PROJECT}/prompts/{phase}.md` | **프로젝트 컨텍스트 문서** (마크다운) | wrapper 가 Read 로 내용만 참고 | 다음 `@{phase}` 호출에 반영 |
@@ -262,7 +262,7 @@ workspace/
 │   │   └── evaluator.md                    # 체크리스트
 │   ├── docs/{page_id}_{slug}.md            # /pilot:confl 가 저장
 │   ├── features/{NN}-{slug}.md             # /pilot:analyze 가 생성
-│   ├── features/{NN}-{slug}.plan.md        # @planner 가 자동 생성
+│   ├── features/{NN}-{slug}.plan.md        # @pilot-planner 가 자동 생성
 │   ├── .focus.md                           # /pilot:focus 사용자 지시
 │   ├── .focus.history/                     # 아카이브
 │   └── .prompts.bak/                       # regen 백업
@@ -336,13 +336,13 @@ Confluence 페이지를 `docs/` 에 저장하거나 저장된 내용 검색.
 
 #### `/pilot:create-feature "{지시문}"`
 
-docs 없이 프롬프트로 단일 기능 명세 추가. `features/NN-{slug}.md` 를 prompt-origin 템플릿으로 작성하고 **`/pilot:analyze` 와 동일한 절차로 `project.md` (목표·관련 파일) 와 `prompts/*.md` 를 자동 동기화**. 기존 features 의 `[analyze-managed]` 섹션 내용은 보존된다. 도메인 미지정 시 한 번 질의 후 `.agent-state.yml` 에 기록. 구현은 `@planner` 부터 사용자가 명시 호출.
+docs 없이 프롬프트로 단일 기능 명세 추가. `features/NN-{slug}.md` 를 prompt-origin 템플릿으로 작성하고 **`/pilot:analyze` 와 동일한 절차로 `project.md` (목표·관련 파일) 와 `prompts/*.md` 를 자동 동기화**. 기존 features 의 `[analyze-managed]` 섹션 내용은 보존된다. 도메인 미지정 시 한 번 질의 후 `.agent-state.yml` 에 기록. 구현은 `@pilot-planner` 부터 사용자가 명시 호출.
 
 ### 작업 지원
 
 #### `/pilot:focus "{지시}"` / `/pilot:focus --clear`
 
-사용자 지시를 `.focus.md` 에 기록 → 다음 `@planner`·`@generator`·`@evaluator` 호출 시 자동 반영. **메인 대화의 의도가 서브에이전트에 안 전달되는** 문제 해소. `--clear` 로 명시 삭제.
+사용자 지시를 `.focus.md` 에 기록 → 다음 `@pilot-planner`·`@pilot-generator`·`@pilot-evaluator` 호출 시 자동 반영. **메인 대화의 의도가 서브에이전트에 안 전달되는** 문제 해소. `--clear` 로 명시 삭제.
 
 #### `/pilot:tdd`
 
@@ -429,9 +429,9 @@ SLACK_EVENTS=complete,approval        # 생략 시 둘 다
 
 | 이벤트 | 트리거 | 메시지 예 |
 | --- | --- | --- |
-| `complete` | `@evaluator` 가 `status: READY` | `✅ [Proj] #NN 작업 완료 (evaluator READY)` |
+| `complete` | `@pilot-evaluator` 가 `status: READY` | `✅ [Proj] #NN 작업 완료 (evaluator READY)` |
 | `approval` | 권한 다이얼로그 (PermissionRequest 훅) | `⏸ [Proj] 승인 필요: [Bash] ...` (코드블록) |
-| `approval` | `@planner` 가 계획 확정 후 사용자 확인 대기 | `⏸ [Proj] 승인 필요: 계획 확인 필요: #NN ...` |
+| `approval` | `@pilot-planner` 가 계획 확정 후 사용자 확인 대기 | `⏸ [Proj] 승인 필요: 계획 확인 필요: #NN ...` |
 
 **Secret 보호 (강제):**
 
@@ -449,17 +449,17 @@ SLACK_EVENTS=complete,approval        # 생략 시 둘 다
 
 | 에이전트 | 호출 | 역할 |
 |---|---|---|
-| **Planner** | `@planner` | 요구사항 분석 + 영향 범위 + 계획 수립 + plan.md 저장 |
-| **Generator** | `@generator` | 계획대로 구현 + 제출 전 sanity check (언어 중립 `skills/context/shared/evals/coding.json` + 팀 `conventions_evals`) |
-| **Evaluator** | `@evaluator` | 완성도 심사 + 체크리스트 평가 + 전달사항 기록 |
+| **Planner** | `@pilot-planner` | 요구사항 분석 + 영향 범위 + 계획 수립 + plan.md 저장 |
+| **Generator** | `@pilot-generator` | 계획대로 구현 + 제출 전 sanity check (언어 중립 `skills/context/shared/evals/coding.json` + 팀 `conventions_evals`) |
+| **Evaluator** | `@pilot-evaluator` | 완성도 심사 + 체크리스트 평가 + 전달사항 기록 |
 
 ### 호출 순서
 
 ```
-@planner → 계획 확정 → @generator → 구현 완료 → @evaluator → 검토 통과
+@pilot-planner → 계획 확정 → @pilot-generator → 구현 완료 → @pilot-evaluator → 검토 통과
 ```
 
-순서 엄수. 이전 단계 완료 전 다음 단계 금지. 각 에이전트는 사용자가 **명시 호출** (`@planner` → `@generator` → `@evaluator`). 이전 단계 완료 후 다음 에이전트 명시 호출. 자동 파이프라인 없음 — phase 간 사용자 개입 가능.
+순서 엄수. 이전 단계 완료 전 다음 단계 금지. 각 에이전트는 사용자가 **명시 호출** (`@pilot-planner` → `@pilot-generator` → `@pilot-evaluator`). 이전 단계 완료 후 다음 에이전트 명시 호출. 자동 파이프라인 없음 — phase 간 사용자 개입 가능.
 
 ### TDD 모드 확장
 
@@ -527,9 +527,9 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {planner|generat
 /pilot:project MyFeature https://wiki.example.com/pages/12345 --tdd
   # → 프로젝트 생성 + Confluence fetch + analyze 실행 + TDD 모드
 
-@planner       # features/01-{slug}.md → plan 수립 → 사용자 확인
-@generator     # plan 기반 구현 (TDD 면 Red→Green→Refactor)
-@evaluator     # VERIFICATION REPORT + project.md 목표 체크
+@pilot-planner       # features/01-{slug}.md → plan 수립 → 사용자 확인
+@pilot-generator     # plan 기반 구현 (TDD 면 Red→Green→Refactor)
+@pilot-evaluator     # VERIFICATION REPORT + project.md 목표 체크
 
 /pilot:commit
 ```
@@ -537,14 +537,14 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {planner|generat
 ### B. 중간에 방향 조정
 
 ```
-@planner 로 계획 받음 → 사용자가 "소프트 딜리트 빼자" 결정
+@pilot-planner 로 계획 받음 → 사용자가 "소프트 딜리트 빼자" 결정
 
 /pilot:focus "소프트 딜리트는 archived_at 타임스탬프로 대체"
   # .focus.md 기록
 
-@planner              # 지시 반영된 새 계획
-@generator
-@evaluator
+@pilot-planner              # 지시 반영된 새 계획
+@pilot-generator
+@pilot-evaluator
 ```
 
 ### C. Trivial 변경 (우회 정식 경로)

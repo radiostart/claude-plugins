@@ -5,13 +5,13 @@ description: >-
   사용한다. features/NN-{slug}.md 를 prompt-origin 템플릿으로 생성하고
   `/pilot:analyze` 와 동일하게 project.md (목표·관련 파일) 와 prompts/*
   (planner·generator·evaluator) 를 함께 동기화한다. 기획서(docs/) 기반
-  다건 분할은 `/pilot:analyze` 를 사용한다. 실행은 @planner 호출로 시작 —
+  다건 분할은 `/pilot:analyze` 를 사용한다. 실행은 @pilot-planner 호출로 시작 —
   자동 파이프라인 아님.
 ---
 
 # /pilot:create-feature
 
-활성 프로젝트에 **단일 기능** 을 프롬프트로 추가한다. `features/` 폴더에 명세 파일을 생성하고 `project.md` (목표·관련 파일) 와 `prompts/*.md` 를 `/pilot:analyze` 와 동일한 절차로 동기화한다. 구현 흐름은 `@planner` 호출로 시작.
+활성 프로젝트에 **단일 기능** 을 프롬프트로 추가한다. `features/` 폴더에 명세 파일을 생성하고 `project.md` (목표·관련 파일) 와 `prompts/*.md` 를 `/pilot:analyze` 와 동일한 절차로 동기화한다. 구현 흐름은 `@pilot-planner` 호출로 시작.
 
 대상: $ARGUMENTS (기능 지시문 — 예: "지연 주문 UI 정렬 기능 — 기본 내림차순, 출고일 필터")
 
@@ -72,7 +72,7 @@ slug 결정이 모호하면 사용자에게 후보 2-3 개 제시 후 선택받�
 
 ## 요구사항
 
-- **조건**: _(상세 필요 — @planner 가 영향 분석 시 보강)_
+- **조건**: _(상세 필요 — @pilot-planner 가 영향 분석 시 보강)_
 - **트리거**: _(상세 필요)_
 - **기대결과**: _({프롬프트에서 추출 가능한 결과})_
 
@@ -86,7 +86,7 @@ _(상태값 변화가 있는 기능만 작성)_
 
 ## 예외 케이스
 
-- _(초기 비움 — @planner 가 영향 분석 중 발견 시 추가)_
+- _(초기 비움 — @pilot-planner 가 영향 분석 중 발견 시 추가)_
 ```
 
 프롬프트에서 명시적으로 추출 가능한 요소 (상태 값·정렬 기준·트리거 등) 는 해당 섹션에 채워 넣는다. 추측성 내용은 **넣지 않는다** — placeholder 로 둠.
@@ -184,14 +184,14 @@ Feature 생성 완료: #{NN} {기능명}
 
 다음 단계:
 → 명세가 부족하면 features/{NN}-{slug}.md 직접 편집
-→ `@planner` 를 호출해 구현 계획을 수립하세요.
+→ `@pilot-planner` 를 호출해 구현 계획을 수립하세요.
 ```
 
 ---
 
 ## 제약
 
-- **이 스킬은 에이전트를 자동 호출하지 않는다.** Planner → Generator → Evaluator 흐름은 사용자가 각각 명시 호출. feature 의 시작점은 `@planner`.
+- **이 스킬은 에이전트를 자동 호출하지 않는다.** Planner → Generator → Evaluator 흐름은 사용자가 각각 명시 호출. feature 의 시작점은 `@pilot-planner`.
 - **prompt-origin feature 는 `> source: prompt`** 로 표시된다. `/pilot:analyze --force` 실행 시 이 tag 를 감지해 사용자에게 덮어쓰기 여부를 확인한다 (의도되지 않은 데이터 손실 방지).
 - **docs 기반 feature 생성은 `/pilot:analyze`** 사용. 이 스킬은 docs 없이 단건 추가 용도.
 
@@ -201,4 +201,4 @@ Feature 생성 완료: #{NN} {기능명}
 
 - `/pilot:analyze` — docs/ 기획서 벌크 분석
 - `/pilot:focus` — ad-hoc 사용자 지시 기록 (features/ 밖)
-- `@planner` — features/{NN}-{slug}.md 를 읽어 구현 계획 수립
+- `@pilot-planner` — features/{NN}-{slug}.md 를 읽어 구현 계획 수립

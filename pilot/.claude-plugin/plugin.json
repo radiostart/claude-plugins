@@ -1,7 +1,7 @@
 {
   "name": "pilot",
   "version": "0.2.1",
-  "description": "Domain-knowledge-driven agent workflow plugin for complex projects (planner → generator → evaluator)",
+  "description": "Domain-knowledge-driven agent workflow plugin for complex projects (pilot-planner → pilot-generator → pilot-evaluator)",
   "author": {
     "name": "Jay-P",
     "email": "noreply@example.com"
