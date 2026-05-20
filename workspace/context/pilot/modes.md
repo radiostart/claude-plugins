@@ -18,7 +18,7 @@
      - 이미 있으면 → `messages.md:tdd_already_active` 출력 후 누락 항목만 보완.
      - 없으면 → 2 단계 수행.
   2. `tdd-activation.md` 절차에 따라 `project.md`, `prompts/{planner,generator,evaluator}.md` 갱신. **각 단계 idempotent** — 이미 적용된 항목은 자동 skip.
-  3. 결과 요약 + "TDD 모드 활성화 완료. `@planner` 를 호출해 기능을 스텝 단위로 분할하고 실패 테스트를 작성하세요." 안내.
+  3. 결과 요약 + "TDD 모드 활성화 완료. `@pilot-planner` 를 호출해 기능을 스텝 단위로 분할하고 실패 테스트를 작성하세요." 안내.
 - **수정 대상 파일**: `project.md`, `prompts/planner.md`, `prompts/generator.md`, `prompts/evaluator.md`.
 - **참조 문서**: `skills/rgr.md` (TDD Red-Green-Refactor 절차) (`pilot/skills/tdd/SKILL.md:28`).
 

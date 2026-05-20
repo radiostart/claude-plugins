@@ -1258,6 +1258,223 @@ def check_features_open_questions(features_dir: Path) -> list[Result]:
     return results
 
 
+# ---------------------------------------------------------------------------
+# #12 cross-domain transaction contracts schema 검증
+# ---------------------------------------------------------------------------
+
+_TX_TYPE_WHITELIST = frozenset([
+    "read", "write", "destroy", "create",
+    "read·write", "write·destroy", "read·destroy", "read·create",
+    "write·create", "read·write·destroy", "read·write·create",
+    "write·destroy·create", "read·write·destroy·create",
+])
+
+
+def _parse_md_tables_in_h3_section(text: str, h3_header: str) -> list[list[list[str]]]:
+    """마크다운 텍스트에서 특정 H3 섹션 내 표 목록을 반환.
+
+    H3 (`### ...`) 섹션을 대상으로 함. 다음 H2/H3 헤더 또는 EOF 까지를 섹션으로 본다.
+    구분선 행 (`| --- |` 형태) 은 제외. 코드블록 안 표는 인식하지 않는다.
+    """
+    pattern = re.compile(
+        rf"^{re.escape(h3_header)}\s*$(.*?)(?=^##\s|\Z)",
+        re.M | re.S,
+    )
+    m = pattern.search(text)
+    if not m:
+        return []
+    section_text = m.group(1)
+
+    tables: list[list[list[str]]] = []
+    current_table: list[list[str]] = []
+    in_table = False
+    in_code_block = False
+
+    for line in section_text.splitlines():
+        stripped = line.strip()
+        # H3 이상 헤더 만나면 섹션 종료
+        if stripped.startswith("###") and stripped != h3_header.strip():
+            if in_table and current_table:
+                tables.append(current_table)
+                current_table = []
+                in_table = False
+            break
+        if stripped.startswith("```"):
+            in_code_block = not in_code_block
+            if in_table and current_table:
+                tables.append(current_table)
+                current_table = []
+                in_table = False
+            continue
+        if in_code_block:
+            continue
+        if stripped.startswith("|") and stripped.endswith("|"):
+            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            if all(re.match(r"^[-:]+$", c) for c in cells):
+                continue
+            current_table.append(cells)
+            in_table = True
+        else:
+            if in_table and current_table:
+                tables.append(current_table)
+                current_table = []
+                in_table = False
+
+    if in_table and current_table:
+        tables.append(current_table)
+
+    return tables
+
+
+def check_domain_transaction_contracts(workspace: Path) -> list[Result]:
+    """도메인 산출물의 Cross-domain Transaction Contracts 섹션 schema 검증 (#12).
+
+    MANIFEST ## 도메인 분류 에서 등록된 도메인 별로:
+    - ### Cross-domain Transaction Contracts H3 부재 → INFO 1 줄 (단일 DB 정상).
+    - 존재 → 4 컬럼 + 헤더 정확 일치 + 변경 type 화이트리스트 검증.
+    INFO-only (backward-compat: 기존 v0.2.x 산출물에 섹션 부재해도 INFO 만).
+    """
+    TX_SECTION_HEADER = "### Cross-domain Transaction Contracts"
+    TX_EXPECTED_COLS = 4
+    TX_EXPECTED_HEADERS = ["본 도메인 entry", "외부 도메인 영향", "변경 type", "file:line"]
+
+    results: list[Result] = []
+
+    manifest_path = workspace / "context" / "MANIFEST.md"
+    if not manifest_path.is_file():
+        return results
+
+    try:
+        manifest_text = manifest_path.read_text(encoding="utf-8")
+    except Exception:
+        return results
+
+    # MANIFEST 의 ## 도메인 분류 표에서 등록 도메인 + 진입 파일 추출
+    domain_tables = _parse_md_tables_in_section(manifest_text, "## 도메인 분류")
+    if not domain_tables or not domain_tables[0]:
+        return results
+
+    domain_table = domain_tables[0]
+    context_dir = workspace / "context"
+
+    for row in domain_table[1:]:  # 헤더 제외
+        if not row or len(row) < 2:
+            continue
+        domain_name = row[0].strip()
+        entry_rel = row[1].strip().strip("`")
+        if not domain_name or not entry_rel:
+            continue
+
+        # 진입 파일 경로로 도메인 산출물 찾기
+        entry_path = context_dir / entry_rel
+        if not entry_path.is_file():
+            # 진입 파일 없음 → skip (다른 검증이 이미 처리)
+            continue
+
+        try:
+            domain_text = entry_path.read_text(encoding="utf-8")
+        except Exception:
+            continue
+
+        # ### Cross-domain Transaction Contracts 섹션 lookup
+        tx_pattern = re.compile(
+            r"^### Cross-domain Transaction Contracts\s*$",
+            re.M,
+        )
+        has_tx_section = bool(tx_pattern.search(domain_text))
+
+        entry_rel_display = entry_path.relative_to(workspace)
+
+        if not has_tx_section:
+            results.append(
+                Result(
+                    Result.INFO,
+                    str(entry_rel_display),
+                    f"### Cross-domain Transaction Contracts 부재 — 단일 DB 시스템이거나 미작성 (정상)",
+                )
+            )
+            continue
+
+        # 섹션 존재 — 표 파싱 + schema 검증
+        tx_tables = _parse_md_tables_in_h3_section(domain_text, TX_SECTION_HEADER)
+
+        if not tx_tables:
+            # 섹션은 있지만 표 없음 → INFO (placeholder 허용)
+            results.append(
+                Result(
+                    Result.INFO,
+                    str(entry_rel_display),
+                    f"### Cross-domain Transaction Contracts: 표 없음 — placeholder 상태 또는 수동 작성 진행 중",
+                )
+            )
+            continue
+
+        tx_table = tx_tables[0]
+        if not tx_table:
+            continue
+
+        header_row = tx_table[0]
+        col_count = len(header_row)
+
+        # 컬럼 수 검증
+        if col_count != TX_EXPECTED_COLS:
+            results.append(
+                Result(
+                    Result.ERROR,
+                    str(entry_rel_display),
+                    (
+                        f"### Cross-domain Transaction Contracts 표: "
+                        f"컬럼 수 {col_count}개 ({TX_EXPECTED_COLS}개 필요) "
+                        f"— 기대 헤더: {', '.join(TX_EXPECTED_HEADERS)}"
+                    ),
+                    f"표 헤더를 '| 본 도메인 entry | 외부 도메인 영향 | 변경 type | file:line |' 형태로 수정",
+                )
+            )
+            continue
+
+        # 헤더 정확 일치 검증
+        if header_row != TX_EXPECTED_HEADERS:
+            results.append(
+                Result(
+                    Result.ERROR,
+                    str(entry_rel_display),
+                    (
+                        f"### Cross-domain Transaction Contracts 표: "
+                        f"헤더 불일치 (받은: {', '.join(header_row)}) "
+                        f"— 기대: {', '.join(TX_EXPECTED_HEADERS)}"
+                    ),
+                    f"헤더를 정확히 '{', '.join(TX_EXPECTED_HEADERS)}' 로 수정",
+                )
+            )
+            continue
+
+        # 변경 type 화이트리스트 검증 (데이터 행)
+        for i, data_row in enumerate(tx_table[1:], start=1):
+            if not data_row or len(data_row) < TX_EXPECTED_COLS:
+                continue
+            # placeholder 행은 검증 skip
+            if "(자동 detect 실패" in data_row[0] or "(없음)" in data_row[0]:
+                continue
+            tx_type_raw = data_row[2].strip()
+            # (auto) 마커 제거 후 검증
+            tx_type = tx_type_raw.replace(" (auto)", "").strip()
+            if tx_type and tx_type not in _TX_TYPE_WHITELIST:
+                results.append(
+                    Result(
+                        Result.ERROR,
+                        str(entry_rel_display),
+                        (
+                            f"### Cross-domain Transaction Contracts 표: "
+                            f"행 {i} 의 변경 type '{tx_type_raw}' 이 화이트리스트에 없음 "
+                            f"— 허용: {', '.join(sorted(_TX_TYPE_WHITELIST))}"
+                        ),
+                        "변경 type 을 read / write / destroy / create 또는 '·' 구분 조합으로 수정",
+                    )
+                )
+
+    return results
+
+
 def determine_active_project(workspace: Path) -> str | None:
     state_md = workspace / "STATE.md"
     count, names = parse_state_md(state_md)
@@ -1533,6 +1750,12 @@ def run_integrity_check(workspace: Path, project: str | None, fix: bool) -> int:
     for r in ws_results:
         print(r.render())
     all_results.extend(ws_results)
+
+    # domain 산출물 transaction contracts schema 검증 (#12)
+    tx_results = check_domain_transaction_contracts(workspace)
+    for r in tx_results:
+        print(r.render())
+    all_results.extend(tx_results)
 
     # Project
     project = project or determine_active_project(workspace)

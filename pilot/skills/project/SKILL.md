@@ -157,15 +157,15 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace
 
 프로젝트 컨텍스트를 요약하고 다음 작업을 안내한다.
 
-- `project.md` 제한사항에 **TDD 모드** 문구가 있으면: "이 프로젝트는 TDD 모드입니다. `@planner` 호출 시 스텝 분할과 실패 테스트 작성이 함께 수행됩니다." 안내 추가.
+- `project.md` 제한사항에 **TDD 모드** 문구가 있으면: "이 프로젝트는 TDD 모드입니다. `@pilot-planner` 호출 시 스텝 분할과 실패 테스트 작성이 함께 수행됩니다." 안내 추가.
 
 **다음 단계 안내** — features/ 존재 여부로 분기:
 
-- **features/ 있음** (6~8단계 완료): 생성된 features 와 갱신된 파일을 요약하고 "`@planner` 를 호출해 구현을 시작하세요." 안내.
+- **features/ 있음** (6~8단계 완료): 생성된 features 와 갱신된 파일을 요약하고 "`@pilot-planner` 를 호출해 구현을 시작하세요." 안내.
 - **features/ 없음**: 생성된 파일(`project.md`, `prompts/`)을 요약하고 아래 순서 안내:
   1. `project.md` 의 개요·목표·관련 파일을 채운다
   2. **기획서 기반 다건 생성** — `/pilot:confl {url}` → `/pilot:analyze`
   3. **프롬프트 기반 단건 생성** — `/pilot:create-feature "<한 줄 설명>"` (기획서 없을 때)
-  4. 준비되면 `@planner` 호출
+  4. 준비되면 `@pilot-planner` 호출
 
 **선택 안내 (공통):** "작업 완료·승인 알림을 Slack 으로 받고 싶으면 `/pilot:slack` 으로 활성화하세요." 한 줄을 덧붙인다. 기존 프로젝트 재활성화 시에는 출력하지 않는다 (이미 알고 있거나 의도적으로 비활성).

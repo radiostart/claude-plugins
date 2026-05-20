@@ -30,7 +30,7 @@
 3. /pilot:analyze {기획서} 또는 /pilot:create-feature  →  features/ 명세 작성
 4. (선택) moai-adk 의 /moai run SPEC-XXX  →  features 명세를 SPEC 으로 변환해 autonomous code 산출
    또는
-   pilot 의 @planner → @generator → @evaluator wrapper 흐름 진행
+   pilot 의 @pilot-planner → @pilot-generator → @pilot-evaluator wrapper 흐름 진행
 ```
 
 ### 시나리오 2: 큰 레거시 + 부분 refactor

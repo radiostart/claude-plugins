@@ -306,7 +306,7 @@ features/ 분석 결과로 `prompts/planner.md`, `prompts/generator.md`, `prompt
 
 ## 참고
 
-- `features/` 파일은 프로젝트 에이전트(@planner, @generator)가 직접 Read하여 사용한다.
+- `features/` 파일은 프로젝트 에이전트(@pilot-planner, @pilot-generator)가 직접 Read하여 사용한다.
 - `docs/` 파일은 원본 보관용이며 `/pilot:confl` 커맨드를 통해서만 접근한다.
 - 분석 품질이 낮으면 `/pilot:analyze --force` 로 재분석할 수 있다.
-- TDD 모드에서는 @planner 가 Red 단계에서 `features/NN-{slug}.md` 를 직접 읽어 실패 테스트를 작성한다 (상세: [`rgr.md`](../context/modes/rgr.md)).
+- TDD 모드에서는 @pilot-planner 가 Red 단계에서 `features/NN-{slug}.md` 를 직접 읽어 실패 테스트를 작성한다 (상세: [`rgr.md`](../context/modes/rgr.md)).

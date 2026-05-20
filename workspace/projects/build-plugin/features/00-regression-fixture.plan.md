@@ -8,7 +8,7 @@
 
 본 plan 은 사용자가 다음 결정을 확정한 뒤 작성한다 — generator 가 추가 질의 없이 그대로 실행 가능.
 
-- **옵션 C**: plan 만 저장. 본 turn 에서 generator 자동 진행 금지. 사용자가 다른 세션에서 `@generator` 호출 시점 결정.
+- **옵션 C**: plan 만 저장. 본 turn 에서 generator 자동 진행 금지. 사용자가 다른 세션에서 `@pilot-generator` 호출 시점 결정.
 - **Open Q #2 (Stage 1 정의 재해석)**: Stage 1 = "v0.2.0 + config-post-accepted (마이그레이션 후 default 주입된 상태)". v0.1.0 ↔ v0.2.0 byte-diff 0 의 원래 약속은 D10 default 폐지로 의미가 달라졌으므로 **현재 v0.2.0 의 마이그레이션 accepted 상태를 baseline 으로 캡처**한다. v1.0 기준선이 아닌 v0.2.0 기준선.
 - **Open Q #3 (diff.sh 단순화)**: timestamp/UUID 정규화 placeholder 도입 보류. `diff.sh` 는 `--actual {dir}` 인자를 받아 `_input/` 으로 세 스킬 (`/pilot:learn` `/pilot:project` `/pilot:analyze`) 를 재실행한 결과 디렉터리와 `expected/` 를 단순 `diff -ru` 로 비교. timestamp 류 정규화는 v1.1 milestone.
 - **Open Q #4 (analyze 토이 docs)**: `_input/python-sample/docs/sample-spec.md` 1 개 추가 — `/pilot:analyze` 가 docs/ 트리를 발견하고 scope 표에 반영하는 흐름 회귀.

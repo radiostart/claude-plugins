@@ -4,7 +4,7 @@
 
 **역할:** 계획 (plan.md) 에 따라 코드 작성 + **제출 전 sanity check** (`evals/coding.json` 체크리스트로 자체 검증). 완성도 심사는 Evaluator 가 담당 — 본 단계는 "내가 방금 쓴 코드가 컨벤션을 벗어나지 않았나" 를 자가 확인.
 
-> **⚠️ 이 파일은 `@generator` subagent 정의가 아닙니다.** 실제 subagent 는 플러그인의 [`${CLAUDE_PLUGIN_ROOT}/agents/generator.md`](${CLAUDE_PLUGIN_ROOT}/agents/generator.md) 에 등록돼 있고, wrapper 가 Read 로 **이 파일을 컨텍스트 문서로** 불러들입니다. 이 파일 편집은 다음 `@generator` 호출에 반영됩니다 (단 `<!-- [analyze-managed] -->` 섹션은 다음 `--regen-agents` 시 덮어쓰임).
+> **⚠️ 이 파일은 `@pilot-generator` subagent 정의가 아닙니다.** 실제 subagent 는 플러그인의 [`${CLAUDE_PLUGIN_ROOT}/agents/pilot-generator.md`](${CLAUDE_PLUGIN_ROOT}/agents/pilot-generator.md) 에 등록돼 있고, wrapper 가 Read 로 **이 파일을 컨텍스트 문서로** 불러들입니다. 이 파일 편집은 다음 `@pilot-generator` 호출에 반영됩니다 (단 `<!-- [analyze-managed] -->` 섹션은 다음 `--regen-agents` 시 덮어쓰임).
 >
 > 스캐폴딩·analyze-managed·TDD 상세: [agents-scaffold-notes.md](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/projects/agents-scaffold-notes.md) 참조.
 

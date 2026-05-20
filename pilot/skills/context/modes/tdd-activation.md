@@ -118,7 +118,7 @@
 - `tdd: true` 이미 있으면 생략.
 - 없으면 `tdd: false` 를 `tdd: true` 로 Edit.
 
-이 단계를 통과해야 wrapper (`@planner`·`@generator`·`@evaluator`) 가 TDD 분기로 동작한다. 스키마 상세: [state-schema.md](../lifecycle/state-schema.md).
+이 단계를 통과해야 wrapper (`@pilot-planner`·`@pilot-generator`·`@pilot-evaluator`) 가 TDD 분기로 동작한다. 스키마 상세: [state-schema.md](../lifecycle/state-schema.md).
 
 ---
 

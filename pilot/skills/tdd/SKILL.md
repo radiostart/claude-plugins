@@ -26,4 +26,4 @@ description: >-
 3. 적용 결과를 요약 출력한다:
    - 수정된 파일: `project.md`, `prompts/planner.md`, `prompts/generator.md`, `prompts/evaluator.md`
    - 참조 문서: `skills/rgr.md`
-   - 다음 작업 안내: **"TDD 모드 활성화 완료. `@planner` 를 호출해 기능을 스텝 단위로 분할하고 실패 테스트를 작성하세요."**
+   - 다음 작업 안내: **"TDD 모드 활성화 완료. `@pilot-planner` 를 호출해 기능을 스텝 단위로 분할하고 실패 테스트를 작성하세요."**

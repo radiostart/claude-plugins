@@ -27,7 +27,7 @@ Planner 가 작성하고 Generator 가 Read 하는 plan 파일의 **형식 계�
 
 ## standard 모드
 
-근거: [`agents/planner.md`:84-110](../../../agents/planner.md)
+근거: [`agents/pilot-planner.md`:84-110](../../../agents/pilot-planner.md)
 
 ### 필수 섹션
 
@@ -122,5 +122,5 @@ JSON 형식:
 
 - `tools/plan-validate.py` — 검증 로직
 - `tests/tools/test_plan_validate.py` — 회귀 테스트
-- `agents/planner.md` step 6, `agents/generator.md` step 2 — 호출 지점
+- `agents/pilot-planner.md` step 6, `agents/pilot-generator.md` step 2 — 호출 지점
 - 본 인덱스의 `INDEX.md` 표 — 본 문서 행 추가

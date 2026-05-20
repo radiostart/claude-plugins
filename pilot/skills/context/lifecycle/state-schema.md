@@ -1,6 +1,6 @@
 # `.agent-state.yml` 스키마
 
-프로젝트 단위 machine-readable 상태 파일. Wrapper agents (`@planner`·`@generator`·`@evaluator`) 가 분기 결정에 사용한다. 문자열 detection literal 을 대체한다.
+프로젝트 단위 machine-readable 상태 파일. Wrapper agents (`@pilot-planner`·`@pilot-generator`·`@pilot-evaluator`) 가 분기 결정에 사용한다. 문자열 detection literal 을 대체한다.
 
 ## 위치
 

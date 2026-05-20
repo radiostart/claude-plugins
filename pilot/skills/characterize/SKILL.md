@@ -45,7 +45,7 @@ description: >-
    - mode: {characterize | null}
    - tdd: {true | false}
 
-   이후 @planner / @generator / @evaluator 호출 시 {characterize.md | rgr.md | 표준} 절차가 적용됩니다.
+   이후 @pilot-planner / @pilot-generator / @pilot-evaluator 호출 시 {characterize.md | rgr.md | 표준} 절차가 적용됩니다.
    상세: {CLAUDE_PLUGIN_ROOT}/skills/context/modes/characterize.md
    ```
 

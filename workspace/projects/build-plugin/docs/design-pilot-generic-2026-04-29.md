@@ -198,7 +198,7 @@ v1 ship 직후 사용자가 자기 "레거시+복잡 도메인" 프로젝트에�
 3. `/pilot:learn {진입점}` → workspace/context/{domain}/ 부트스트랩 (config 패턴이 적용된 상태로)
 4. `/pilot:project {프로젝트명}` → 프로젝트 폴더 생성 (config 의 scope 카테고리가 project.md `## 관련 파일` 로 반영)
 5. `/pilot:analyze` 또는 `/pilot:create-feature` → features/ 생성 (5-2 가 config 카테고리 따라 표 채움)
-6. `@planner` → `@generator` → `@evaluator` 사이클 1 회
+6. `@pilot-planner` → `@pilot-generator` → `@pilot-evaluator` 사이클 1 회
 
 위 6 단계가 ERROR 없이 완료되고 산출물이 의미 있게 채워지면 v1 통과.
 
@@ -308,4 +308,4 @@ Spec review 1 라운드 (general-purpose subagent, QUALITY 6/10) → 본 v2 에 
 /pilot:create-feature "v1 (a) learn 언어 패턴 외부화"
 ```
 
-부터 시작. `@planner` 호출 시 본 디자인 doc 가 자동으로 컨텍스트로 들어온다 (`docs/` 폴더이므로 `/pilot:confl all` 또는 직접 read).
+부터 시작. `@pilot-planner` 호출 시 본 디자인 doc 가 자동으로 컨텍스트로 들어온다 (`docs/` 폴더이므로 `/pilot:confl all` 또는 직접 read).

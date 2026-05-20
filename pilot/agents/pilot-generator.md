@@ -1,12 +1,12 @@
 ---
-name: generator
+name: pilot-generator
 model: sonnet  # 코드 구현은 계획이 확정된 상태에서 수행하므로 빠른 모델로 충분. 비용·속도 최적화.
 description: 코드를 구현한다. Planner 계획 확정 후 실행. 패턴·서비스·모델 참조해 일관성 있게 작성.
 tools: Read, Glob, Grep, Edit, Write, Bash
 ---
 
 > **이 파일은 wrapper입니다.** 직접 실행하지 않는다.
-> **톤·판정 SSOT:** [`identity.yml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) · [`instincts.yaml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/instincts.yaml) · [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md)
+> **톤·판정 SSOT:** [`identity.yml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) (`personas.generator` = craftsman) · [`instincts.yaml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/instincts.yaml) · [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md)
 >
 > **경로 규칙:** 플러그인 지식 `${CLAUDE_PLUGIN_ROOT}/skills/` · 프로젝트 상태 `workspace/` (CWD)
 >
@@ -57,7 +57,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
      - 완료 게이트: `{source_root}` 하위 1 개 이상 수정 + 직전 `{test_command} {file}` 전체 통과 + 모든 스텝 `[Red] + [Green]` 증거 기록. 조건 미충족 시 종료하지 않는다.
    - **둘 다 아님** — 일반 구현 (plan.md 의 변경 파일 · 구현 순서 · 주의사항 기반).
 4. **[필수]** 구현 과정에서 체크리스트(`[ ]`)를 작성했거나, 기존 체크리스트 항목(planner가 작성한 변경 파일 목록 등)을 완료한 경우 **반드시** Edit 툴로 해당 항목을 `[x]`로 업데이트한다. 체크 결과를 텍스트로만 보고하고 파일을 수정하지 않는 것은 금지한다.
-5. 구현 완료 후 evaluator를 자동으로 실행하지 않는다. **"`@evaluator`를 호출해 검토를 진행하세요."** 라고 안내하고 종료한다.
+5. 구현 완료 후 evaluator를 자동으로 실행하지 않는다. **"`@pilot-evaluator`를 호출해 검토를 진행하세요."** 라고 안내하고 종료한다.
 
 ---
 

@@ -2,7 +2,7 @@
 """
 pilot orchestrate-load — wrapper agents 용 컨텍스트 로드 의사결정.
 
-래퍼 (@planner / @generator / @evaluator) 가 프로젝트 workspace 를 조사해서
+래퍼 (@pilot-planner / @pilot-generator / @pilot-evaluator) 가 프로젝트 workspace 를 조사해서
 어떤 파일을 Read 해야 하는지 결정하는 로직을 여기로 이관.
 
 입력:
@@ -342,6 +342,14 @@ def build_load_plan(
             files.append(rel_path)
             return True
         return False
+
+    # 0) SSOT — 모든 wrapper 가 톤·instinct·판정 축을 강제 로드.
+    #    페르소나는 identity.yml 의 personas.{phase} 가 자기 역할에 해당.
+    for ssot in ("identity.yml", "instincts.yaml", "guardrails.md"):
+        files.append(f"{plugin_root()}/skills/context/shared/{ssot}")
+    hints.append(
+        f"페르소나: identity.yml `personas.{phase}` 적용 (voice·phrasing·forbid 준수)"
+    )
 
     # 1) context — 도메인 지식(MANIFEST.md) + 런타임 설정(config.md)
     manifest_abs = workspace / "context" / "MANIFEST.md"

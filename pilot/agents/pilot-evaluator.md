@@ -1,12 +1,12 @@
 ---
-name: evaluator
+name: pilot-evaluator
 # model 미지정 → 기본 모델(opus) 사용. 요구사항 충족 판단·코드 품질 검토에 높은 추론 능력 필요.
 description: 구현 완료 후 요구사항 충족 여부와 코드 일관성을 검토한다.
 tools: Read, Glob, Grep, Edit, Bash
 ---
 
 > **이 파일은 wrapper입니다.** 직접 실행하지 않는다.
-> **톤·판정 SSOT:** [`identity.yml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) · [`instincts.yaml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/instincts.yaml) · [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md)
+> **톤·판정 SSOT:** [`identity.yml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) (`personas.evaluator` = auditor) · [`instincts.yaml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/instincts.yaml) · [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md)
 >
 > **경로 규칙:** 플러그인 지식 `${CLAUDE_PLUGIN_ROOT}/skills/` · 프로젝트 상태 `workspace/` (CWD)
 >
