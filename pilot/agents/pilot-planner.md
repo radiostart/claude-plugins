@@ -74,7 +74,18 @@ tools: Read, Glob, Grep, Edit, Write, Bash
    - `.slack.env` 부재 시 notifier 가 자동 no-op — 호출은 그대로 실행한다.
    - 호출 결과는 사용자에게 보고 불요. stderr 경고가 나오면 원문 그대로 전달.
 
-8. 계획 확정 후 generator를 자동으로 실행하지 않는다. **"`@pilot-generator`를 호출해 구현을 진행하세요."** 라고 안내하고 종료한다.
+8. 계획 확정 후 generator/critic 을 자동으로 실행하지 않는다. 다음 안내 후 종료한다:
+
+   - **권장 (기본)**: "**`@pilot-planner-critic` 으로 계획을 한 번 챌린지해 보세요** — 전제·범위·엣지케이스·대안·리스크를 별도 `.plan.critic.md` 에 기록합니다."
+   - **스킵 가능**: trivial 한 변경·시간 제약 등으로 챌린지가 불필요하면 바로 **`@pilot-generator`** 호출.
+
+   사용자 선택 후 흐름은 `@pilot-planner-critic → (필요 시) @pilot-planner 재호출 → @pilot-generator → @pilot-evaluator`.
+
+9. **[재호출 분기]** 직전 호출이 critic 이후 plan 수정인 경우 (`features/NN-{slug}.plan.critic.md` 가 이미 존재) 다음을 추가 수행:
+
+   - critic 의 챌린지 항목을 모두 검토하고, plan.md 수정 시 반영한 항목·기각한 항목·이월한 항목을 결정한다.
+   - `.plan.critic.md` 의 `## 합의` 표에 각 `C#` 별로 처리(`accepted | rejected | deferred`) 와 짧은 메모를 Edit 으로 채운다 — 빈 표 그대로 두지 않는다.
+   - 합의 표를 채우지 않은 채 generator 안내로 넘어가지 않는다 (인수인계 단절 방지).
 
 ---
 

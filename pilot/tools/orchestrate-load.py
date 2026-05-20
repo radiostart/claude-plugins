@@ -2,11 +2,11 @@
 """
 pilot orchestrate-load — wrapper agents 용 컨텍스트 로드 의사결정.
 
-래퍼 (@pilot-planner / @pilot-generator / @pilot-evaluator) 가 프로젝트 workspace 를 조사해서
-어떤 파일을 Read 해야 하는지 결정하는 로직을 여기로 이관.
+래퍼 (@pilot-planner / @pilot-planner-critic / @pilot-generator / @pilot-evaluator) 가 프로젝트
+workspace 를 조사해서 어떤 파일을 Read 해야 하는지 결정하는 로직을 여기로 이관.
 
 입력:
-    --phase {planner|generator|evaluator}
+    --phase {planner|planner-critic|generator|evaluator}
     --workspace PATH          (default: ./workspace)
     --project NAME            (optional — 미지정 시 STATE.md 진행중)
 
@@ -367,14 +367,24 @@ def build_load_plan(
         hints.append("project.md 없음 — 에이전트 가이드만으로 작업")
 
     # 3) prompts/{phase}.md (if exists)
+    #    planner-critic 는 critic 전용 가이드(prompts/planner-critic.md) 가 있으면 우선,
+    #    없으면 planner 와 동일한 prompts/planner.md 로 fallback — 같은 계획 기준 위에서 챌린지.
+    prompt_phase = phase
     prompt_abs = workspace / "projects" / project / "prompts" / f"{phase}.md"
+    if phase == "planner-critic" and not prompt_abs.is_file():
+        prompt_phase = "planner"
+        prompt_abs = workspace / "projects" / project / "prompts" / "planner.md"
     prompt_exists = add_if_exists(
         prompt_abs,
-        f"workspace/projects/{project}/prompts/{phase}.md",
+        f"workspace/projects/{project}/prompts/{prompt_phase}.md",
     )
     if not prompt_exists:
         hints.append(
-            f"prompts/{phase}.md 없음 — project.md 만으로 작업"
+            f"prompts/{prompt_phase}.md 없음 — project.md 만으로 작업"
+        )
+    elif phase == "planner-critic" and prompt_phase == "planner":
+        hints.append(
+            "prompts/planner-critic.md 없음 — prompts/planner.md 로 대체 (같은 계획 기준 위에서 챌린지)"
         )
 
     # 4) MANIFEST 의 도메인 진입 파일 자동 로드
@@ -452,7 +462,9 @@ def main() -> int:
         description="pilot orchestrate-load — LOAD phase 의사결정"
     )
     parser.add_argument(
-        "--phase", required=True, choices=["planner", "generator", "evaluator"]
+        "--phase",
+        required=True,
+        choices=["planner", "planner-critic", "generator", "evaluator"],
     )
     parser.add_argument("--workspace", default="workspace", help="workspace/ 경로")
     parser.add_argument(

@@ -47,7 +47,7 @@ Claude Code 의 marketplace 기반 플러그인 시스템을 사용한다. 이 �
 
 설치 후 Claude Code 재시작 (또는 `/plugin reload`) 시 에이전트·스킬·훅이 자동 등록. 업데이트 반영은 `/plugin marketplace update claude-plugins` → `/plugin update pilot@claude-plugins`.
 
-**확인:** 설치 성공 시 slash 커맨드 자동완성에 `/pilot:project`·`/pilot:init` 등이 노출되고, `@pilot-planner`·`@pilot-generator`·`@pilot-evaluator`·`@pilot-code-review` subagent 호출 가능.
+**확인:** 설치 성공 시 slash 커맨드 자동완성에 `/pilot:project`·`/pilot:init` 등이 노출되고, `@pilot-planner`·`@pilot-planner-critic`·`@pilot-generator`·`@pilot-evaluator`·`@pilot-code-review` subagent 호출 가능.
 
 #### `/plugin` 이 막힌 환경에서의 수동 업데이트 — `pilot-update`
 
@@ -158,6 +158,7 @@ pip install requests beautifulsoup4
 
 # 5. 3-phase 구현 — 각 에이전트를 명시 호출
 @pilot-planner        # features/NN-*.md → features/NN-*.plan.md 계획 수립
+@pilot-planner-critic # (선택) plan.md 챌린지 → features/NN-*.plan.critic.md
 @pilot-generator      # plan 기반 구현 (TDD 면 Red→Green→Refactor)
 @pilot-evaluator      # 요구사항 충족·spec·VERIFICATION REPORT
 
@@ -194,7 +195,7 @@ pip install requests beautifulsoup4
 
 이후 `context/scope/orders.md` · `context/rules/orders.md` 를 작성. 첫 도메인 파일 1 쌍을 `_(추가 예정)_` 로 두고 시작해도 `/pilot:project` 는 동작한다 — 실제 코드 작업 전까지 채우면 충분.
 
-`/pilot:analyze` 가 docs/ → features/\*.md 벌크 생성. 구현은 사용자가 `@pilot-planner → @pilot-generator → @pilot-evaluator` 를 명시 호출. 각 phase 에서 중단·수정 가능한 투명한 흐름. ad-hoc 지시는 `/pilot:focus` 로 `.focus.md` 작성.
+`/pilot:analyze` 가 docs/ → features/\*.md 벌크 생성. 구현은 사용자가 `@pilot-planner → (선택) @pilot-planner-critic → @pilot-generator → @pilot-evaluator` 를 명시 호출. 각 phase 에서 중단·수정 가능한 투명한 흐름. ad-hoc 지시는 `/pilot:focus` 로 `.focus.md` 작성.
 
 ---
 
@@ -257,6 +258,7 @@ workspace/
 │   ├── docs/{page_id}_{slug}.md            # /pilot:confl 가 저장
 │   ├── features/{NN}-{slug}.md             # /pilot:analyze 가 생성
 │   ├── features/{NN}-{slug}.plan.md        # @pilot-planner 가 자동 생성
+│   ├── features/{NN}-{slug}.plan.critic.md # @pilot-planner-critic 가 작성 (선택)
 │   ├── .focus.md                           # /pilot:focus 사용자 지시
 │   ├── .focus.history/                     # 아카이브
 │   └── .prompts.bak/                       # regen 백업
@@ -336,7 +338,7 @@ docs 없이 프롬프트로 단일 기능 명세 추가. `features/NN-{slug}.md`
 
 #### `/pilot:focus "{지시}"` / `/pilot:focus --clear`
 
-사용자 지시를 `.focus.md` 에 기록 → 다음 `@pilot-planner`·`@pilot-generator`·`@pilot-evaluator` 호출 시 자동 반영. **메인 대화의 의도가 서브에이전트에 안 전달되는** 문제 해소. `--clear` 로 명시 삭제.
+사용자 지시를 `.focus.md` 에 기록 → 다음 `@pilot-planner`·`@pilot-planner-critic`·`@pilot-generator`·`@pilot-evaluator` 호출 시 자동 반영. **메인 대화의 의도가 서브에이전트에 안 전달되는** 문제 해소. `--clear` 로 명시 삭제.
 
 #### `/pilot:tdd`
 
@@ -441,25 +443,29 @@ SLACK_EVENTS=complete,approval        # 생략 시 둘 다
 
 ---
 
-## 에이전트 (3종)
+## 에이전트 (3종 + 1선택)
 
 `@에이전트명` 으로 호출. 별도 인스턴스로 실행되며 `tools/orchestrate-load.py` 를 통해 컨텍스트를 자동 로드.
 
 | 에이전트 | 호출 | 역할 |
 |---|---|---|
 | **Planner** | `@pilot-planner` | 요구사항 분석 + 영향 범위 + 계획 수립 + plan.md 저장 |
+| **Planner-Critic** *(선택)* | `@pilot-planner-critic` | planner 의 plan.md 를 adversarial(red-team) 챌린지 → `features/NN-{slug}.plan.critic.md` 작성. plan/코드 직접 수정 안 함 |
 | **Generator** | `@pilot-generator` | 계획대로 구현 + 제출 전 sanity check (언어 중립 `skills/context/shared/evals/coding.json` + 팀 `conventions_evals`) |
 | **Evaluator** | `@pilot-evaluator` | 완성도 심사 + 체크리스트 평가 + 전달사항 기록 |
 
-> **독립 에이전트:** `@pilot-code-review` 는 위 3-phase 사이클과 별개로, PR 올리기 전 코드 품질을 검토하는 독립 에이전트다 (PR-이전 내부 코드 리뷰).
+> **독립 에이전트:** `@pilot-code-review` 는 위 사이클과 별개로, PR 올리기 전 코드 품질을 검토하는 독립 에이전트다 (PR-이전 내부 코드 리뷰). critic 과 책임 분리 — critic 은 *작성된 계획*, code-review 는 *작성된 코드* (git diff).
 
 ### 호출 순서
 
 ```
-@pilot-planner → 계획 확정 → @pilot-generator → 구현 완료 → @pilot-evaluator → 검토 통과
+@pilot-planner → 계획 확정
+  ├─ (권장) @pilot-planner-critic → 챌린지 검토 → @pilot-planner 재호출(합의 표 채움)
+  └─ (스킵 가능) 바로 @pilot-generator
+→ @pilot-generator → 구현 완료 → @pilot-evaluator → 검토 통과
 ```
 
-순서 엄수. 이전 단계 완료 전 다음 단계 금지. 각 에이전트는 사용자가 **명시 호출** (`@pilot-planner` → `@pilot-generator` → `@pilot-evaluator`). 이전 단계 완료 후 다음 에이전트 명시 호출. 자동 파이프라인 없음 — phase 간 사용자 개입 가능.
+순서 엄수 (planner-critic 만 선택). 이전 단계 완료 전 다음 단계 금지. 각 에이전트는 사용자가 **명시 호출**. 자동 파이프라인 없음 — phase 간 사용자 개입 가능. critic 은 trivial 한 변경에서 스킵해도 된다.
 
 ### TDD 모드 확장
 
