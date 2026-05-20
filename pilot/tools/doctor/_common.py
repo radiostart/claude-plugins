@@ -279,10 +279,9 @@ def _git_repo_root(start: Path) -> Path | None:
 # ---------------------------------------------------------------------------
 
 def run_auto_fixes(results: list[Result]) -> None:
-    """--fix 모드: 각 Result 의 fix 를 실행. WARN/ERROR 만 대상."""
+    """--fix 모드: 각 Result 의 fix 를 실행. WARN/ERROR 만 대상. 대상 0건이면 silent."""
     fixable = [r for r in results if r.fix is not None and r.level in (Result.WARN, Result.ERROR)]
     if not fixable:
-        print(f"\n{BOLD}[--fix]{RESET} 자동 수정 대상 없음.")
         return
 
     print(f"\n{BOLD}[--fix]{RESET} 자동 수정 대상 {len(fixable)} 건 처리:")

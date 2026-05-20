@@ -61,6 +61,24 @@ description: >-
 `workspace/projects/{PROJECT}/` 폴더 존재 여부를 Glob 으로 확인한다.
 
 - **없으면**: [skills/context/lifecycle/projects/example/](../context/lifecycle/projects/example/) 의 파일 4종 (`project.md`, `prompts/planner.md`, `prompts/generator.md`, `prompts/evaluator.md`) 을 **그대로 복사**한 뒤 `{프로젝트명}` 토큰만 실제 프로젝트명으로 치환한다. **그 외 본문은 일절 재작성·요약·환각·도메인 예시 삽입 금지.**
+
+  > **치환 범위 (H1 헤더 정확 매칭)** — 토큰 치환은 다음 두 조건을 모두 만족하는 라인만 대상:
+  >
+  > - `^#\s+.*\{프로젝트명\}.*$` 정확 매칭 (단일 라인 H1 안 `{프로젝트명}` 토큰)
+  > - 코드블록 (` ``` `) 외부 위치
+  >
+  > **보존 대상 (치환 안 함):**
+  >
+  > - 가이드 주석 (`` > `{프로젝트명}` 토큰만 ... `` 같은 self-reference) — example template 의 스캐폴딩 설명용. 본문 prose 안 백틱 토큰은 보존.
+  > - 마크다운 코드블록 (` ``` `) 안의 `{프로젝트명}` — 예시 코드.
+  > - 표 본문 셀 안의 `{프로젝트명}` — 예시 행.
+  >
+  > **사용자 프로젝트명 sanitize** — `[a-zA-Z0-9가-힣\-_]` 외 문자 (예: `{`·`}`·정규식 메타) 포함 시 차단하고 사용자 질의 prompt. sanitize 통과 후 H1 치환 진행.
+  >
+  > **A2 runtime fallback** — H1 헤더에 `{프로젝트명}` 토큰 부재 (사용자가 이미 H1 직접 작성 등) → 치환 skip + `[INFO] {프로젝트명} 토큰 부재 — 치환 skip, 기존 H1 보존` 1 줄. abort 하지 않는다.
+  >
+  > **대상 파일 (4 종)** — 본 단계가 치환하는 파일은 `project.md` 1 + `prompts/{planner,generator,evaluator}.md` 3 = 총 4 종. 각 파일의 H1 1 회씩 치환 (`# {프로젝트명}` / `# Planner — {프로젝트명}` / `# Generator — {프로젝트명}` / `# Evaluator — {프로젝트명}`).
+
   - example 은 실구현 콘텐츠 없이 구조·세만틱 명시만 담긴 순수 템플릿이다. 본문의 `{…}` 플레이스홀더와 `_(analyze 실행 전 …)_` 같은 표식은 그대로 유지한다.
   - 섹션명·순서는 `/pilot:analyze` 주입 대상과 동기화되어 있다. 임의 변경 금지.
   - `## 개요` / `## 제한사항` / `## 목표` / `관련 파일` 표는 이후 사용자가 수동으로 또는 `/pilot:analyze` 가 자동으로 채운다. 스캐폴딩 단계에서 추측·기입하지 않는다. (base 브랜치는 `/pilot:pr` 가 state/config 로 자체 관리하므로 project.md 에 기록하지 않는다.)

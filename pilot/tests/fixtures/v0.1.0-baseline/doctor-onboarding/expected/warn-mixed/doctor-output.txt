@@ -1,4 +1,4 @@
-pilot doctor  workspace: {WORKSPACE}
+pilot doctor  workspace: /Users/jay-p/Projects/claude-plugins/pilot/tests/fixtures/v0.1.0-baseline/doctor-onboarding/expected/warn-mixed/workspace
 
 Workspace:
   [PASS] workspace/: 존재

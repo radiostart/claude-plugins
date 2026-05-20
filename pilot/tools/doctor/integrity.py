@@ -2021,27 +2021,7 @@ def run_integrity_check(workspace: Path, project: str | None, fix: bool) -> int:
         )
         if fix:
             run_auto_fixes(all_results)
-
-        # 활성 프로젝트 없어도 OH-1~4 는 검사, OH-5 = N/A (spec line 50)
-        print(f"\n{BOLD}── Onboarding Health ─────────────────{RESET}")
-        if fix:
-            print(f"  [{RESET}INFO{RESET}] --fix 모드 — onboarding-health 섹션 skip (사용자 의도 필요)")
-        else:
-            oh_results = check_onboarding_health(workspace, project=None)
-            # WARN 4룰 (OH-1~4) 모두 발화 시 안내 1줄 (OH-5 는 N/A)
-            oh_rules_warn = set()
-            for r in oh_results:
-                if r.level == Result.WARN:
-                    for prefix in ("OH-1", "OH-2", "OH-3", "OH-4"):
-                        if r.label.startswith(prefix):
-                            oh_rules_warn.add(prefix)
-                            break
-            if len(oh_rules_warn) >= 4:
-                print(f"  [{YELLOW}INFO{RESET}] 신규 워크스페이스 감지 — getting-started.md 권장 (pilot/docs/getting-started.md)")
-            for r in oh_results:
-                print(r.render())
-            all_results.extend(oh_results)
-
+        _print_onboarding_health_section(workspace, None, fix, all_results)
         return summarize(all_results)
 
     print(f"\n{BOLD}Project ({project}):{RESET}")
@@ -2059,27 +2039,33 @@ def run_integrity_check(workspace: Path, project: str | None, fix: bool) -> int:
     if fix:
         run_auto_fixes(all_results)
 
-    # Onboarding Health 섹션 (--fix 시 skip)
+    _print_onboarding_health_section(workspace, project, fix, all_results)
+    return summarize(all_results)
+
+
+def _print_onboarding_health_section(
+    workspace: Path, project: str | None, fix: bool, all_results: list[Result]
+) -> None:
+    """Onboarding Health 섹션 출력 (--fix 시 skip, project=None 시 OH-5 N/A)."""
     print(f"\n{BOLD}── Onboarding Health ─────────────────{RESET}")
     if fix:
         print(f"  [{RESET}INFO{RESET}] --fix 모드 — onboarding-health 섹션 skip (사용자 의도 필요)")
-    else:
-        oh_results = check_onboarding_health(workspace, project)
-        # WARN 5건 동시 시 안내 1줄 (OH-1~5 각 룰이 모두 WARN 상태인 경우)
-        # OH-1 은 섹션별 복수 WARN 가능 — 룰 단위로 판정 (label prefix 기반)
-        oh_rules_warn = set()
-        for r in oh_results:
-            if r.level == Result.WARN:
-                for prefix in ("OH-1", "OH-2", "OH-3", "OH-4", "OH-5"):
-                    if r.label.startswith(prefix):
-                        oh_rules_warn.add(prefix)
-                        break
-        # OH-5 는 project 인자 지정 시만 포함 (N/A 이면 4룰 기준으로 제외)
-        oh_total_rules = 5 if project is not None else 4
-        if len(oh_rules_warn) >= oh_total_rules:
-            print(f"  [{YELLOW}INFO{RESET}] 신규 워크스페이스 감지 — getting-started.md 권장 (pilot/docs/getting-started.md)")
-        for r in oh_results:
-            print(r.render())
-        all_results.extend(oh_results)
+        return
 
-    return summarize(all_results)
+    oh_results = check_onboarding_health(workspace, project)
+    # OH 룰 단위로 WARN 판정 (OH-1 은 섹션별 복수 WARN 가능 — prefix 기반 dedupe)
+    oh_rules_warn = set()
+    prefixes = ("OH-1", "OH-2", "OH-3", "OH-4", "OH-5")
+    for r in oh_results:
+        if r.level == Result.WARN:
+            for prefix in prefixes:
+                if r.label.startswith(prefix):
+                    oh_rules_warn.add(prefix)
+                    break
+    # OH-5 는 project 인자 지정 시만 포함 — N/A 인 경우 4룰 기준
+    oh_total_rules = 5 if project is not None else 4
+    if len(oh_rules_warn) >= oh_total_rules:
+        print(f"  [{YELLOW}INFO{RESET}] 신규 워크스페이스 감지 — getting-started.md 권장 (pilot/docs/getting-started.md)")
+    for r in oh_results:
+        print(r.render())
+    all_results.extend(oh_results)
