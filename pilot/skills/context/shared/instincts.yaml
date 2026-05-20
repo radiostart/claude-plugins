@@ -19,6 +19,17 @@ instincts:
       파일은 수정 차단 (exit 2). config.md 가 단일 소스. 해당 파일 수정이
       필요하면 사용자 확인을 먼저 받는다.
 
+  - id: coding-rules
+    trigger: "Edit|Write 도구 호출 후 (PostToolUse)"
+    evidence: hooks/coding-rules.sh
+    applies_to: [generator]
+    rule: >
+      소스 파일(`workspace/` 외부)이 수정되면 호출 주체·에이전트 사이클 진입 여부와
+      무관하게 hook 이 코딩 규칙 준수 검증을 리마인드한다. 트리거 조건은
+      `workspace/context/rules/*.md`(도메인 규칙) 또는 `config.md` 의 `conventions_doc`
+      가 가리키는 파일이 실재할 때. 둘 다 없으면 hook 은 no-op. 차단하지 않으며
+      additionalContext 로 리마인드만 주입한다 — 수신 시 변경분을 규칙 대비 검증한다.
+
   - id: tdd-red-owner
     trigger: "tdd: true 프로젝트의 구현 단계"
     evidence: skills/context/modes/rgr.md, commit 1741b50

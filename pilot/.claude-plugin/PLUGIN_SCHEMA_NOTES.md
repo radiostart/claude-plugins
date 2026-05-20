@@ -19,7 +19,7 @@
 - 최상위 `hooks` 객체 필수
 - matcher 허용값: `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Stop`, `SubagentStop`, `PreCompact`, `SessionStart`, `SessionEnd`, `Notification`
 - 각 훅 `timeout` 권장 (기본 5)
-- 현재 실제 사용 중: `PreToolUse` 매처 하위 `Bash`, `Edit|Write` (정규식 매처 허용 — 툴 이름을 `|` 로 구분)
+- 현재 실제 사용 중: `PreToolUse`(`Bash`, `Edit|Write`), `PostToolUse`(`Edit|Write`), `PermissionRequest`, `Notification` (정규식 매처 허용 — 툴 이름을 `|` 로 구분)
 
 ## SKILL.md frontmatter
 
