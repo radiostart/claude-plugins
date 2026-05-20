@@ -46,18 +46,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace --project {PROJECT}
 python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace --fix
 ```
 
-**`--fix` 마이그레이션 동작 (v0.1.0 → v0.2.0)**
-
-pilot v0.2.0 부터 `## learn 언어 패턴` 의 default 표가 SKILL.md 에서 제거됐다. `--fix` 실행 시 다음 조건을 자동 감지해 사용자에게 마이그레이션을 제안한다:
-
-- **감지 조건**: `.agent-state.yml.plugin_version` 이 `0.1.x` 또는 부재 + 현재 plugin 이 `0.2.0+` + `workspace/context/config.md` 의 `## learn 언어 패턴` 두 표 모두 빈 행.
-- **동작**: interactive 환경에서 `a) 주입 / b) 거부 / c) 미루기` 선택. non-interactive 환경에서는 자동 미루기 (hang 방지).
-- **결과**:
-  - `a) 주입`: v0.1.0 default 5 언어 표를 `config.md` 에 자동 주입 + `.agent-state.yml.migration_v0_2_0: accepted` + `plugin_version: 0.2.0`.
-  - `b) 거부`: config 빈 채로 유지 + `migration_v0_2_0: declined` + `plugin_version: 0.2.0`.
-  - `c) 미루기`: 변경 없음, 다음 `--fix` 호출 시 다시 묻기.
-- **부분 정의 사용자**: `## learn 언어 패턴` 에 이미 행이 있으면 마이그레이션 skip + INFO.
-- **신규 사용자** (`plugin_version: 0.2.0` 부터): 마이그레이션 skip.
+`--fix` 의 v0.1.0 → v0.2.0 마이그레이션 동작 (`## learn 언어 패턴` default 표 자동 주입 여부 질의) 상세: [`references/migration.md`](references/migration.md).
 
 ---
 
@@ -143,60 +132,27 @@ Project (MyProject):
 
 ## 실패 진단 모드 (`--diagnose`)
 
-기존 정합성 검사와 독립. 런타임 실패 패턴을 4-phase (capture → diagnose → reduce → report) 로 진단한다.
+정합성 검사와 독립. 런타임 실패 패턴 (`loop`·`red-miss`·`repeat-not-ready`·`scope-violation`·`none`) 을 4-phase (capture → diagnose → reduce → report) 로 진단한다.
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace --diagnose
-python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace --diagnose --project MyProject
+python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace --diagnose [--project MyProject]
 ```
 
-검출 패턴:
+- exit code: `0` (pattern=none) · `1` (감지).
+- 복수 패턴 동시 감지 시 우선순위: `red-miss > repeat-not-ready > scope-violation > loop` (이 때 `confidence: medium`).
+- 호출 시점: evaluator `NOT_READY` 2회 / 동일 도구 반복 의심 / 완료 선언인데 체크리스트·REPORT 비어있을 때.
 
-| 패턴 | 의미 | 판정 근거 |
-|---|---|---|
-| `loop` | 에이전트 루프 의심 | `.plan.md` 에 동일 설명 3회+ 반복 |
-| `red-miss` | TDD Red 증거 누락 | `tdd: true` 인데 스텝 대비 `[Red]` 마크 부족 |
-| `repeat-not-ready` | 동일 feature 2회+ 반려 | `.plan.md` / `project.md` 에 `NOT_READY` · `반려` 누적 |
-| `scope-violation` | `.focus.md` scope 외 편집 | git diff 파일과 scope 불일치 |
-| `none` | 정상 | 감지된 패턴 없음 |
-
-출력:
-
-```
-## DIAGNOSIS
-- project: MyProject
-- pattern: red-miss | repeat-not-ready | loop | scope-violation | none
-- evidence: {근거 요약}
-- recommended_action: {권장 액션}
-- confidence: high | medium
-```
-
-exit code: `0` (pattern=none) · `1` (패턴 감지). 복수 패턴 동시 감지 시 우선순위는 `red-miss > repeat-not-ready > scope-violation > loop` 이며 이 때 `confidence: medium`.
-
-언제 호출:
-
-- evaluator 가 같은 feature 에 `status: NOT_READY` 를 2회 출력했을 때
-- 에이전트가 동일 도구·명령을 반복하는 것으로 의심될 때
-- 체크리스트·REPORT 기록이 비어있는데 완료 선언된 경우 (Red 증거 누락 의심)
+검출 패턴·판정 근거·출력 형식 상세: [`references/diagnose.md`](references/diagnose.md).
 
 ---
 
 ## 스키마 검사 모드 (`--schema`)
 
-플러그인 구조 전용 검사. workspace 와 무관.
+플러그인 구조 전용 검사 (workspace 와 무관). `plugin.json` 필수·금지 키, `hooks/hooks.json` matcher, `skills/*/SKILL.md` · `agents/*.md` frontmatter, `version` ↔ git tag 일치를 검증한다. CI 자동 실행 (`.github/workflows/validate.yml`). 상세: [`references/schema.md`](references/schema.md).
 
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py --schema
 ```
-
-검사 범위: [`.claude-plugin/PLUGIN_SCHEMA_NOTES.md`](../../.claude-plugin/PLUGIN_SCHEMA_NOTES.md) 기준.
-
-- `plugin.json` 필수·금지 키
-- `hooks/hooks.json` matcher 허용값
-- `skills/*/SKILL.md` · `agents/*.md` frontmatter
-- `version` ↔ git tag 일치 (불일치는 WARN)
-
-CI 에서 자동 실행 — `.github/workflows/validate.yml`.
 
 ---
 
