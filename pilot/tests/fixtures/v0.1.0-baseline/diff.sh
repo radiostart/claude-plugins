@@ -67,7 +67,7 @@ fi
 # ---------------------------------------------------------------------------
 # expected 서브 트리 목록
 # ---------------------------------------------------------------------------
-EXPECTED_SUBDIRS=("learn/expected" "project/expected" "analyze/expected")
+EXPECTED_SUBDIRS=("learn/expected" "project/expected" "analyze/expected" "wizard/expected" "tdd-on/expected" "tdd-off/expected" "doctor-onboarding/expected/pass-only" "doctor-onboarding/expected/warn-mixed")
 
 # ---------------------------------------------------------------------------
 # diff 실행

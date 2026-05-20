@@ -546,30 +546,62 @@ def check_project(workspace: Path, project: str) -> list[Result]:
             )
         )
 
-    # tdd 정합성
+    # tdd 정합성 (3-way: state.yml ↔ project.md ↔ prompts/*.md)
     tdd_flag = state_data.get("tdd", False)
     tdd_literal = project_has_tdd_literal(project_md)
-    if tdd_flag and not tdd_literal:
+
+    # prompts/*.md TDD 섹션 존재 여부 detect (백업 마커 기준)
+    prompts_dir = proj_dir / "prompts"
+    prompts_tdd: dict[str, bool] = {}
+    for role, marker in [
+        ("planner", "<!-- pilot-tdd-original-planner:start -->"),
+        ("generator", "<!-- pilot-tdd-original-generator:start -->"),
+        ("evaluator", "<!-- pilot-tdd-original-evaluator:start -->"),
+    ]:
+        prompt_file = prompts_dir / f"{role}.md"
+        if prompt_file.is_file():
+            try:
+                content = prompt_file.read_text(encoding="utf-8")
+                prompts_tdd[role] = marker in content
+            except Exception:
+                prompts_tdd[role] = False
+        else:
+            prompts_tdd[role] = False
+
+    prompts_active_count = sum(1 for v in prompts_tdd.values() if v)
+    prompts_total = len(prompts_tdd)
+    prompts_status = (
+        "TDD" if prompts_active_count == prompts_total
+        else "표준" if prompts_active_count == 0
+        else "MIXED"
+    )
+
+    # 3-way 일치 판정
+    project_status = "TDD" if tdd_literal else "표준"
+    state_status = "TDD" if tdd_flag else "표준"
+
+    consistent = (
+        (tdd_flag and tdd_literal and prompts_active_count == prompts_total)
+        or (not tdd_flag and not tdd_literal and prompts_active_count == 0)
+    )
+
+    if consistent:
         results.append(
-            Result(
-                Result.WARN,
-                f"{project} tdd",
-                "state.yml tdd=true 이지만 project.md 에 `**TDD 모드**` 문구 없음",
-                "`/pilot:tdd` 재실행",
-            )
-        )
-    elif not tdd_flag and tdd_literal:
-        results.append(
-            Result(
-                Result.WARN,
-                f"{project} tdd",
-                "state.yml tdd=false 이지만 project.md 에 `**TDD 모드**` 문구 있음",
-                "`/pilot:tdd` 재실행 또는 project.md 문구 제거",
-            )
+            Result(Result.PASS, f"{project} tdd", f"tdd={tdd_flag}, 3-way 일치")
         )
     else:
         results.append(
-            Result(Result.PASS, f"{project} tdd", f"tdd={tdd_flag}, 일치")
+            Result(
+                Result.WARN,
+                f"{project} tdd",
+                (
+                    f"TDD 모드 정합성 불일치 — "
+                    f"state.yml=tdd:{str(tdd_flag).lower()} · "
+                    f"project.md={project_status} · "
+                    f"prompts/*.md={prompts_status} ({prompts_active_count}/{prompts_total})"
+                ),
+                "`/pilot:tdd --fix` 실행 권장 (state.yml 값을 진실로 보정)",
+            )
         )
 
     # domain 체크 (v1.1+ 필수 필드) — null 일 때만 WARN. 값은 자유 문자열.
@@ -1732,6 +1764,229 @@ def migrate_v0_1_to_v0_2(workspace: Path, project: str) -> list[Result]:
 
 
 # ---------------------------------------------------------------------------
+# #16 Onboarding Health 검사 (OH-1~5)
+# ---------------------------------------------------------------------------
+
+def _check_oh1_config_sections(workspace: Path) -> list[Result]:
+    """OH-1: workspace/context/config.md 의 3 핵심 섹션 표 본문 행 수 ≥ 1.
+
+    ## learn 언어 패턴 / ## scope 카테고리 / ## Ignore 3 섹션 검증.
+    _parse_md_tables_in_section 헬퍼 재사용 (인수인계 line 88).
+    """
+    config_path = workspace / "context" / "config.md"
+    if not config_path.is_file():
+        # config.md 부재는 구조 정합성 ERROR 가 사전 처리 — OH-1 진입 안 함
+        return []
+
+    try:
+        text = config_path.read_text(encoding="utf-8")
+    except Exception:
+        return []
+
+    SECTIONS = [
+        "## learn 언어 패턴",
+        "## scope 카테고리",
+        "## Ignore",
+    ]
+
+    all_filled = True
+    results: list[Result] = []
+
+    for section_header in SECTIONS:
+        tables = _parse_md_tables_in_section(text, section_header)
+        filled = False
+        if tables:
+            # 첫 번째 표의 헤더 제외 본문 행 수 ≥ 1 이면 채워진 것
+            table0 = tables[0]
+            data_rows = len(table0) - 1  # 헤더 행 제외
+            filled = data_rows >= 1
+
+        if not filled:
+            all_filled = False
+            results.append(
+                Result(
+                    Result.WARN,
+                    f"OH-1  config 핵심 섹션",
+                    f"'{section_header}' 미채움",
+                    "수동으로 config.md 편집 (또는 /pilot:init --rewizard v2 — 미구현)",
+                )
+            )
+
+    if all_filled:
+        results.append(
+            Result(Result.PASS, "OH-1  config 핵심 섹션", "3 섹션 모두 채워짐")
+        )
+
+    return results
+
+
+def _check_oh2_scope_dir(workspace: Path) -> list[Result]:
+    """OH-2: workspace/context/scope/ 디렉터리에 *.md 파일 ≥ 1."""
+    scope_dir = workspace / "context" / "scope"
+    if not scope_dir.is_dir() or not list(scope_dir.glob("*.md")):
+        return [
+            Result(
+                Result.WARN,
+                "OH-2  scope/ 채움",
+                "scope/ 미채움 (*.md 파일 없음)",
+                "/pilot:learn <진입파일> 호출 권장 (analyze 가 scope 파일 생성)",
+            )
+        ]
+    return [Result(Result.PASS, "OH-2  scope/ 채움", "*.md 파일 존재")]
+
+
+def _check_oh3_project_registered(workspace: Path) -> list[Result]:
+    """OH-3: workspace/STATE.md 의 진행중 또는 대기 프로젝트 ≥ 1.
+
+    STATE.md 부재 시 구조 정합성 ERROR 가 사전 차단 — 여기서는 존재 전제.
+    """
+    state_md = workspace / "STATE.md"
+    if not state_md.is_file():
+        # 구조 정합성에서 이미 ERROR — OH-3 진입 안 함
+        return []
+
+    try:
+        text = state_md.read_text(encoding="utf-8")
+    except Exception:
+        return []
+
+    count = 0
+    for line in text.splitlines():
+        s = line.strip()
+        if not s.startswith("|"):
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        status = cells[2]
+        # 헤더·구분선 제외
+        if status in ("상태", "status") or set(status) <= set("-: "):
+            continue
+        if status in ("진행중", "대기"):
+            count += 1
+
+    if count == 0:
+        return [
+            Result(
+                Result.WARN,
+                "OH-3  첫 project 등록",
+                "등록 프로젝트 없음 (진행중/대기 0건)",
+                "/pilot:project {이름} 호출 권장",
+            )
+        ]
+    return [Result(Result.PASS, "OH-3  첫 project 등록", f"진행중/대기 {count}건")]
+
+
+def _check_oh4_manifest_entry(workspace: Path) -> list[Result]:
+    """OH-4: workspace/context/MANIFEST.md 의 ## 도메인 분류 표 본문 행 수 ≥ 1.
+
+    _parse_md_tables_in_section 헬퍼 재사용 (OH-1 과 공유).
+    placeholder 행 (|  |  |  |) 은 0 으로 카운트.
+    """
+    manifest = workspace / "context" / "MANIFEST.md"
+    if not manifest.is_file():
+        # 구조 정합성에서 ERROR — OH-4 진입 안 함
+        return []
+
+    try:
+        text = manifest.read_text(encoding="utf-8")
+    except Exception:
+        return []
+
+    tables = _parse_md_tables_in_section(text, "## 도메인 분류")
+    filled = False
+    if tables:
+        table0 = tables[0]
+        # 헤더 제외 본문 행, placeholder 제외
+        for row in table0[1:]:
+            if row and any(c.strip() for c in row):
+                # 모든 셀이 비어있지 않은 경우만 유효 행
+                if not all(c.strip() == "" for c in row):
+                    filled = True
+                    break
+
+    if not filled:
+        return [
+            Result(
+                Result.WARN,
+                "OH-4  MANIFEST 진입파일",
+                "## 도메인 분류 표 미등록",
+                "/pilot:learn <진입파일> 호출 권장",
+            )
+        ]
+    return [Result(Result.PASS, "OH-4  MANIFEST 진입파일", "도메인 분류 표 등록됨")]
+
+
+def _check_oh5_features_entry(workspace: Path, project: str) -> list[Result]:
+    """OH-5: workspace/projects/{project}/features/ 에 *.md 파일 ≥ 1.
+
+    .plan.md 포함, hidden 파일 (. 시작) 제외.
+    인수인계 line 115 의 check_features_open_questions 순회 패턴 답습.
+    """
+    features_dir = workspace / "projects" / project / "features"
+    if not features_dir.is_dir():
+        return [
+            Result(
+                Result.WARN,
+                "OH-5  features/ 진입 가능",
+                "features/ 디렉터리 없음",
+                "@pilot-planner 또는 /pilot:create-feature 호출 권장",
+            )
+        ]
+
+    md_files = [
+        p for p in features_dir.glob("*.md")
+        if not p.name.startswith(".")
+    ]
+    if not md_files:
+        return [
+            Result(
+                Result.WARN,
+                "OH-5  features/ 진입 가능",
+                "features/ 비어있음 (*.md 파일 없음)",
+                "@pilot-planner 또는 /pilot:create-feature 호출 권장",
+            )
+        ]
+    return [Result(Result.PASS, "OH-5  features/ 진입 가능", f"*.md {len(md_files)}건")]
+
+
+def check_onboarding_health(workspace: Path, project: str | None = None) -> list[Result]:
+    """OH-1~5 dispatcher.
+
+    OH-1~4 는 항상 실행. OH-5 는 project 인자 지정 시만 실행.
+    project 미지정 시 OH-5 = INFO (N/A).
+    반환: list[Result] (PASS / WARN / INFO — ERROR 사용 안 함).
+    """
+    results: list[Result] = []
+
+    # OH-1: config.md 핵심 섹션
+    results.extend(_check_oh1_config_sections(workspace))
+
+    # OH-2: scope/ 채움
+    results.extend(_check_oh2_scope_dir(workspace))
+
+    # OH-3: 첫 project 등록
+    results.extend(_check_oh3_project_registered(workspace))
+
+    # OH-4: MANIFEST 진입파일
+    results.extend(_check_oh4_manifest_entry(workspace))
+
+    # OH-5: features/ (프로젝트 인자 지정 시만)
+    if project is not None:
+        results.extend(_check_oh5_features_entry(workspace, project))
+    else:
+        results.append(
+            Result(
+                Result.INFO,
+                "OH-5  features/ 진입 가능",
+                "N/A — 프로젝트 지정 시 features/ 진입 가능성 검사",
+            )
+        )
+
+    return results
+
+
+# ---------------------------------------------------------------------------
 # Default 모드 진입점
 # ---------------------------------------------------------------------------
 
@@ -1766,6 +2021,27 @@ def run_integrity_check(workspace: Path, project: str | None, fix: bool) -> int:
         )
         if fix:
             run_auto_fixes(all_results)
+
+        # 활성 프로젝트 없어도 OH-1~4 는 검사, OH-5 = N/A (spec line 50)
+        print(f"\n{BOLD}── Onboarding Health ─────────────────{RESET}")
+        if fix:
+            print(f"  [{RESET}INFO{RESET}] --fix 모드 — onboarding-health 섹션 skip (사용자 의도 필요)")
+        else:
+            oh_results = check_onboarding_health(workspace, project=None)
+            # WARN 4룰 (OH-1~4) 모두 발화 시 안내 1줄 (OH-5 는 N/A)
+            oh_rules_warn = set()
+            for r in oh_results:
+                if r.level == Result.WARN:
+                    for prefix in ("OH-1", "OH-2", "OH-3", "OH-4"):
+                        if r.label.startswith(prefix):
+                            oh_rules_warn.add(prefix)
+                            break
+            if len(oh_rules_warn) >= 4:
+                print(f"  [{YELLOW}INFO{RESET}] 신규 워크스페이스 감지 — getting-started.md 권장 (pilot/docs/getting-started.md)")
+            for r in oh_results:
+                print(r.render())
+            all_results.extend(oh_results)
+
         return summarize(all_results)
 
     print(f"\n{BOLD}Project ({project}):{RESET}")
@@ -1782,5 +2058,28 @@ def run_integrity_check(workspace: Path, project: str | None, fix: bool) -> int:
 
     if fix:
         run_auto_fixes(all_results)
+
+    # Onboarding Health 섹션 (--fix 시 skip)
+    print(f"\n{BOLD}── Onboarding Health ─────────────────{RESET}")
+    if fix:
+        print(f"  [{RESET}INFO{RESET}] --fix 모드 — onboarding-health 섹션 skip (사용자 의도 필요)")
+    else:
+        oh_results = check_onboarding_health(workspace, project)
+        # WARN 5건 동시 시 안내 1줄 (OH-1~5 각 룰이 모두 WARN 상태인 경우)
+        # OH-1 은 섹션별 복수 WARN 가능 — 룰 단위로 판정 (label prefix 기반)
+        oh_rules_warn = set()
+        for r in oh_results:
+            if r.level == Result.WARN:
+                for prefix in ("OH-1", "OH-2", "OH-3", "OH-4", "OH-5"):
+                    if r.label.startswith(prefix):
+                        oh_rules_warn.add(prefix)
+                        break
+        # OH-5 는 project 인자 지정 시만 포함 (N/A 이면 4룰 기준으로 제외)
+        oh_total_rules = 5 if project is not None else 4
+        if len(oh_rules_warn) >= oh_total_rules:
+            print(f"  [{YELLOW}INFO{RESET}] 신규 워크스페이스 감지 — getting-started.md 권장 (pilot/docs/getting-started.md)")
+        for r in oh_results:
+            print(r.render())
+        all_results.extend(oh_results)
 
     return summarize(all_results)

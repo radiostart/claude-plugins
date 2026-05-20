@@ -26,11 +26,31 @@
 - **TDD 모드**: 테스트 없이 프로덕션 코드를 작성하지 않는다. Planner 는 Red 계약 (스텝 분할 + 테스트 경로·검증 행동·기대 실패 유형) 만 남기고, Generator 가 **Red 작성·실패 확인 → Green → Refactor** 를 한 컨텍스트에서 순환한다. Evaluator 는 `.plan.md` 의 Red 증거 교차 검증 + **변경 관련 테스트만** 실행한다.
 ```
 
+### 1-1b. `## 에이전트 호출 흐름` 기존 본문을 백업 마커로 감싸기
+
+**on 활성화 직전에 수행한다.** 1-2 교체 전 단계.
+
+1. `## 에이전트 호출 흐름` H2 직후부터 다음 H2 (`^## ` 로 시작하는 줄) 직전까지 본문을 잘라낸다.
+   - H2 시작 매칭: `^## 에이전트 호출 흐름\s*$` (정확 일치, 양 끝 공백 허용)
+   - H2 끝 매칭: 다음 `^## ` 로 시작하는 줄 직전까지 (또는 파일 끝)
+2. 잘라낸 본문이 **이미 마커로 감싸여 있으면** (마커 매칭: `<!-- pilot-tdd-original-flow:start -->[\s\S]*?<!-- pilot-tdd-original-flow:end -->`, non-greedy) → 이 단계 skip (idempotent).
+3. **표준 흐름 literal 확인** (`### 1. Planner — 구현 계획 수립` 포함 여부):
+   - 포함 → 잘라낸 본문을 아래 마커 쌍으로 감싸서 H2 직후에 삽입:
+     ```
+     <!-- pilot-tdd-original-flow:start -->
+     {원본 본문}
+     <!-- pilot-tdd-original-flow:end -->
+     ```
+   - 미포함 (사용자가 본문 수정) → **WARN 1줄** 출력 후 마커 주입 skip:
+     ```
+     [WARN] '## 에이전트 호출 흐름' H2 본문이 표준 형식과 다름 — 백업 마커 주입 skip. /pilot:tdd off 시 template fallback 으로 복원됨.
+     ```
+
 ### 1-2. `## 에이전트 호출 흐름` 을 TDD 버전으로 교체
 
 **Detect literal:** `### 1. Planner — Red 계약 작성` (`## 에이전트 호출 흐름` 섹션 내 포함 여부로 판단)
 
-이미 있으면 생략한다. 없으면 기존 `## 에이전트 호출 흐름` 섹션을 아래 구조로 교체한다.
+이미 있으면 생략한다. 없으면 기존 `## 에이전트 호출 흐름` 섹션 본문 (백업 마커 주입 후) 을 아래 구조로 교체한다.
 
 ```markdown
 ## 에이전트 호출 흐름
@@ -105,6 +125,91 @@
 
 ---
 ```
+
+---
+
+## 비활성화 절차 (/pilot:tdd off)
+
+이 섹션은 `/pilot:tdd off` 분기가 위임한다. 단계는 **idempotent** 하다.
+
+### off-1. `.agent-state.yml` — `tdd: false` 갱신
+
+`workspace/projects/{PROJECT}/.agent-state.yml` 을 Read 후 `tdd: true` 를 `tdd: false` 로 Edit.
+이미 `tdd: false` 이면 skip.
+
+### off-2. `project.md` 의 `## 에이전트 호출 흐름` 복원
+
+1. `## 에이전트 호출 흐름` H2 본문에서 `<!-- pilot-tdd-original-flow:start -->` ... `<!-- pilot-tdd-original-flow:end -->` 마커를 검색한다.
+   - **마커 발견** → 마커 안의 원본 본문을 꺼내, 마커 쌍 + TDD 분기 본문 전체를 원본 본문으로 교체 (마커 제거). 인라인 백업 우선 (Q2 b 채택).
+   - **마커 부재** → `pilot/skills/context/lifecycle/setup/templates/project.md.template` 의 `## 에이전트 호출 흐름` 섹션 본문으로 교체 + INFO 1줄 출력:
+     ```
+     [INFO] 백업 마커 부재 (구버전 프로젝트) — template 표준 흐름으로 복원. 사용자가 표준 흐름을 수정한 적이 있다면 수동 검토 권장.
+     ```
+
+### off-3. `project.md` 의 `## 제한사항` 에서 TDD 문구 제거
+
+**Detect literal:** `- **TDD 모드**:` (제한사항 섹션 내)
+
+literal 이 있으면 해당 bullet 1개 단락 (다음 bullet 직전까지) 을 제거한다. 없으면 skip.
+literal 매칭 실패 시 (구버전 문구) → **WARN 1줄** + 사용자에게 수동 제거 안내:
+```
+[WARN] `## 제한사항` 내 TDD 문구 literal 매칭 실패 — 수동 제거 필요.
+```
+
+### off-4. `prompts/planner.md` — TDD Red 계약 단계 제거
+
+**Detect literal:** `## TDD — Red 계약`
+
+literal 이 있으면:
+1. `<!-- pilot-tdd-original-planner:start -->` ... `<!-- pilot-tdd-original-planner:end -->` 마커 검색.
+   - 마커 발견 → 마커 안 원본 본문 복원 + 마커·TDD 섹션 제거.
+   - 마커 부재 → `## TDD — Red 계약` 섹션 (다음 `---` 구분선 또는 파일 끝까지) 을 포함한 앞 `---` 줄까지 제거.
+
+없으면 skip.
+
+### off-5. `prompts/generator.md` — TDD 모드 안내 제거
+
+**Detect literal:** `> **TDD 모드**: Red 작성`
+
+literal 이 있으면:
+1. `<!-- pilot-tdd-original-generator:start -->` ... `<!-- pilot-tdd-original-generator:end -->` 마커 검색.
+   - 마커 발견 → 마커 안 원본 본문 복원 + 마커·TDD 안내 제거.
+   - 마커 부재 → `> **TDD 모드**: Red 작성` 으로 시작하는 blockquote 블록 (연속된 `>` 줄) 을 제거.
+
+없으면 skip.
+
+### off-6. `prompts/evaluator.md` — TDD 테스트 실행 섹션 제거
+
+**Detect literal:** `## TDD 테스트 실행`
+
+literal 이 있으면:
+1. `<!-- pilot-tdd-original-evaluator:start -->` ... `<!-- pilot-tdd-original-evaluator:end -->` 마커 검색.
+   - 마커 발견 → 마커 안 원본 본문 복원 + 마커·TDD 섹션 제거.
+   - 마커 부재 → `## TDD 테스트 실행` 섹션 (다음 `---` 구분선까지, `---` 포함) 제거.
+
+없으면 skip.
+
+### off-7. 완료 보고
+
+수정된 파일 목록 + state.yml `tdd: false` 확인:
+
+```
+✓ TDD 모드 비활성화
+  - .agent-state.yml: tdd: false
+  - project.md `## 에이전트 호출 흐름`: 표준 흐름 복원 (백업 마커에서)
+  - prompts/{planner,generator,evaluator}.md: 표준 분기 복원
+```
+
+---
+
+### literal 매칭 정확 문자열 (§1-1b · off-2 · off-3)
+
+generator 가 본문 그대로 사용. 매칭 실패 시 WARN + skip (abort 금지 — A2 runtime fallback).
+
+- H2 시작 매칭: `^## 에이전트 호출 흐름\s*$` (정확 일치, 양 끝 공백 허용)
+- H2 끝 매칭: 다음 `^## ` 로 시작하는 줄 직전까지 (또는 파일 끝)
+- 마커 매칭: `<!-- pilot-tdd-original-flow:start -->[\s\S]*?<!-- pilot-tdd-original-flow:end -->` (non-greedy, 첫 `:end -->` 까지)
+- prompts 마커 명명 패턴: `<!-- pilot-tdd-original-{planner|generator|evaluator}:start -->` ... `:end -->` (각 파일별 고유, 혼용 금지)
 
 ---
 

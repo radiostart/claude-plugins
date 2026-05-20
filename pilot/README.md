@@ -6,6 +6,8 @@
 
 플러그인은 **메커니즘** (에이전트 래퍼, 스킬, 훅, 오케스트레이션 스크립트) 만 제공한다. 도메인 지식 (비즈니스 규칙·파일 경로·상태값) 은 소비 프로젝트의 `workspace/context/` 에서 사용자가 직접 관리한다 — config 가 1급 시민, SKILL.md 는 메커니즘만 (D10 결정).
 
+> 처음 사용하시나요? → [Getting Started](docs/getting-started.md)
+
 - **핵심 가치 3 layer:**
   - L1 — 도메인 지식 외부화 (`/pilot:learn` 으로 코드 → `workspace/context/{domain}/` 산출, `/pilot:characterize` 로 레거시 동작 spec 포착)
   - L2 — 프로젝트 단위 작업 틀 (1 workspace / N projects, 같은 도메인 지식 공유)
