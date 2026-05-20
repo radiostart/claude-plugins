@@ -64,24 +64,7 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 
 #### `--force` 실행 시 prompt-origin 보호
 
-`--force` 는 기존 features/ 파일을 덮어쓸 수 있다. 그 전에 `/pilot:create-feature` 로 생성된 **prompt-origin features** 가 있는지 확인하고 사용자에게 승인받는다 (자동 진행 시 사용자 의도로 만든 기능 명세가 소리 없이 사라져 데이터 손실로 직결되기 때문):
-
-1. `features/*.md` 를 Grep 하여 `> source: prompt` 태그가 있는 파일 목록 수집
-2. 1 건 이상 있으면 사용자에게 경고 + 승인 대기:
-
-   ```
-   ⚠ --force 재분석이 prompt-origin features 를 덮어쓸 가능성이 있습니다:
-     - features/05-<feature-slug-a>.md (source: prompt)
-     - features/07-<feature-slug-b>.md (source: prompt)
-
-   이 파일들은 /pilot:create-feature 로 생성됐으며, docs/ 에 대응 원본이
-   없습니다. --force 진행 시 slug 충돌이 발생하면 덮어쓰여 데이터가 손실될
-   수 있습니다. 계속? (y/n)
-   ```
-
-3. 사용자 `n` → 종료. `y` → 진행. 명시 승인 없이 자동 진행하지 않는다.
-
-0 건이면 이 절차를 건너뛴다.
+`--force` 는 기존 features/ 파일을 덮어쓸 수 있다. 그 전에 `> source: prompt` 태그를 Grep 으로 검색하여 prompt-origin features 가 있는지 확인하고 사용자에게 승인받는다 (1 건 이상 발견 시 경고 + y/n 질의, `n` 또는 미응답이면 종료). 상세 절차: [`references/scope-sync.md`](references/scope-sync.md) `--force prompt-origin 보호` 섹션.
 
 ### 2. 원본 파일 읽기
 
@@ -105,15 +88,9 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 
 ### 3. 기능 분할 및 구조화
 
-원본 문서를 아래 기준으로 기능 단위로 분할한다:
+**분할 기준:** H2(`##`) 섹션을 기능 단위로 인식. 번호 패턴(`#N`·`N.`·`N)`) 있으면 기능 번호로, 없으면 순차 부여.
 
-**분할 기준:**
-
-- H2(`##`) 섹션을 기능 단위로 인식
-- 번호 패턴(`#N`, `N.`, `N)`)이 있으면 기능 번호로 사용
-- 번호가 없으면 순차 번호 부여
-
-**각 기능에서 추출할 항목:**
+**각 기능 추출 템플릿:**
 
 ```markdown
 # #{번호} {기능명}
@@ -122,36 +99,27 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 
 ## 요구사항
 
-각 요구사항을 아래 구조로 정리한다:
-
-- **조건**: 이 기능이 동작하기 위한 전제 조건
-- **트리거**: 이 기능을 실행시키는 사용자 액션 또는 시스템 이벤트
-- **기대결과**: 실행 후 예상되는 결과 (UI 변경, 데이터 변경, 알림 등)
+- **조건**: 동작 전제 조건
+- **트리거**: 사용자 액션 또는 시스템 이벤트
+- **기대결과**: 실행 후 예상 결과 (UI·데이터 변경·알림 등)
 
 ## 상태 전환
-
-상태값 변경이 포함된 경우만 작성한다:
 
 | 전환 전 | 전환 후 | 조건 | 처리 |
 | ------- | ------- | ---- | ---- |
 
 ## 비즈니스 규칙
-
-- 검증 조건, 제약사항, 계산 로직 등을 목록으로 정리
-- 표로 정의된 규칙은 표 형태를 유지하되, 행/열 의미를 명확히 보완
+- 검증·제약·계산 로직 목록. 원본 표는 표 형태 유지 가능.
 
 ## 예외 케이스
-
-- 정상 흐름에서 벗어나는 케이스를 목록으로 정리
-- 각 케이스의 조건과 처리 방법을 명시
+- 정상 흐름 외 케이스 + 조건·처리 방법.
 ```
 
-**분석 시 주의사항:**
-
-- 원본의 표(table)는 의미를 해석하여 서술형으로 풀어쓰되, 상태 전환표처럼 표 형태가 더 명확한 경우는 표를 유지한다.
-- 원본에 없는 내용을 추측하여 추가하지 않는다 (한 번 추측이 들어가면 후속 6 단계의 prompts/ 갱신·planner·generator 가 모두 잘못된 사실을 기반으로 동작한다).
-- Figma 링크 등 디자인 참조는 유지한다.
-- 하나의 H2 섹션이 여러 기능을 포함하면 기능별로 분리한다.
+**주의사항:**
+- 원본 표는 의미 해석해 서술형으로 풀되 상태 전환표 같은 경우는 표 유지.
+- 원본에 없는 내용 추측 금지 (한 번 추측이 들어가면 후속 prompts/·planner·generator 가 잘못된 사실 기반으로 동작).
+- Figma 등 디자인 참조 유지.
+- 하나의 H2 가 여러 기능 포함하면 기능별 분리.
 
 ### 4. 파일 저장
 
@@ -166,88 +134,31 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 
 features/ 생성 후 `project.md` 의 `## 목표` 와 `## 관련 파일` 을 자동 동기화한다.
 
-**도메인 결정 (5-1, 5-2 공통 전제):**
-
-아래 우선순위로 결정한다. 자동 판정은 **후보 제시용** 으로만 사용하고 기록은 항상 사용자 확인을 거친다 (한 번 잘못 기록되면 후속 분석이 전부 오염되며 되돌리려면 features 전체 재분석이 필요하다).
-
-1. `.agent-state.yml` 의 `domain` 이 non-null → 그대로 사용 (이미 확정된 값).
-2. null 이면:
-   - (a) `project.md` 제한사항 섹션에서 `- domain: {x}` 라인 파싱 시도. 성공 시 후보로 채택.
-   - (b) 실패 시 `workspace/context/MANIFEST.md` 의 도메인 분류 테이블과 프로젝트명·features 키워드로 매칭하여 후보 제시.
-   - (c) 사용자에게 질의:
-
-     ```
-     이 프로젝트의 도메인을 확인해주세요.
-     자동 판정 후보: {후보} (근거: {근거 한 줄})
-     선택지: MANIFEST.md 의 도메인 분류에 정의된 값 또는 새 도메인명 입력
-     ```
-
-   - 사용자 응답을 `.agent-state.yml` 의 `domain` 필드에 Edit 로 기록.
-3. 결정된 도메인으로 `workspace/context/scope/{domain}.md` 를 Read.
+**도메인 결정 (5-1, 5-2 공통 전제):** `.agent-state.yml.domain` 이 non-null 이면 그대로 사용 (이미 확정). null 이면 (a) project.md 제한사항 `- domain: {x}` 파싱 → (b) MANIFEST.md 도메인 분류 + 프로젝트명·features 키워드 매칭으로 후보 → (c) 사용자 질의 후 `.agent-state.yml.domain` 에 Edit 기록. 결정 후 `workspace/context/scope/{domain}.md` 를 Read. 자동 판정은 **후보 제시용** 만, 기록은 항상 사용자 확인 (한 번 잘못 기록되면 후속 분석 전부 오염).
 
 #### 5-1. `## 목표` 갱신
 
-1. `workspace/projects/{PROJECT}/project.md`를 Read한다.
-2. `## 목표` 섹션을 찾는다 (없으면 `## 에이전트 호출 흐름` 바로 앞에 생성한다).
-3. 생성된 features/ 파일 목록을 기준으로 목표 체크리스트를 갱신한다:
-   - **신규 feature:** `- [ ] {기능명} -> [상세](features/{NN}-{slug}.md)` 항목을 추가한다.
-   - **기존 항목 유지:** 이미 `[x]`로 완료 처리된 항목은 변경하지 않는다 (사용자가 이미 끝낸 일을 미완료로 되돌리면 진행 상황이 거꾸로 보임).
-   - **삭제된 feature:** `--force` 재분석으로 features/ 파일이 교체된 경우, 기존 항목 중 대응하는 features/ 파일이 없는 항목은 제거한다.
-4. 목표 항목 순서는 features/ 파일의 번호(NN) 순서를 따른다.
+`project.md` 의 `## 목표` 섹션 (없으면 `## 에이전트 호출 흐름` 바로 앞에 생성) 을 features/ 목록 기준으로 갱신.
 
-**갱신 예시:**
-
-```markdown
-## 목표
-
-- [x] Order 모델 생성 및 관계 설정 -> [상세](features/01-order-model.md)
-- [ ] 주문 생성 API -> [상세](features/02-order-create-api.md)
-- [ ] 주문 취소 API -> [상세](features/03-order-cancel-api.md)
-```
+- 신규 feature: `- [ ] {기능명} -> [상세](features/{NN}-{slug}.md)` 항목 추가.
+- `[x]` 로 완료 처리된 항목은 변경 안 함 (이미 끝난 일을 미완료로 돌리지 않음).
+- `--force` 재분석으로 대응 features/ 파일이 없어진 항목은 제거.
+- 항목 순서는 features/ NN 순서.
 
 #### 5-1.5. scope/{domain}.md 자동 생성
 
-5-2 진입 전 scope 파일 부재를 detect 하고 자동 생성한다. NS #5 cycle 검증 결과 — LLM 이 사실상 5-2 진입 시 이 절차를 수행 中. 본 단계는 그 거동의 명문화.
+5-2 진입 전 scope 파일 부재를 detect 하고 자동 생성한다.
 
 **트리거 조건 (둘 다 만족):**
 
-- `workspace/context/scope/{domain}.md` 부재 또는 빈 파일
-- MANIFEST 진입파일 (`workspace/context/{domain}/index.md` 또는 `workspace/context/{domain}.md`) 에 `config.md` 의 `## scope 카테고리` `scope 헤더` 컬럼 값과 일치하는 H2 헤더 존재
+- `workspace/context/scope/{domain}.md` 부재 또는 빈 파일.
+- MANIFEST 진입파일 (`workspace/context/{domain}/index.md` 또는 `workspace/context/{domain}.md`) 에 `config.md` 의 `## scope 카테고리` `scope 헤더` 컬럼 값과 일치하는 H2 헤더 존재.
 
-**본문 구성:**
-
-- H2 헤더 = `config.md` 의 `scope 헤더` 컬럼 값 그대로 (예: `## Routes`·`## Models`·`## Services`).
-- 표 헤더 = `config.md` 의 `표 헤더` 컬럼 값 (예: `엔드포인트, Method, 목적`).
-- 표 본문 행은 아래 우선순위로 추출:
-  1. `workspace/context/{domain}/inventory.md` 의 역할 분류 표 (learn 산출) — 해당 카테고리 행 추출. `## Routes` → 역할 = `routes`, `## Models` → 역할 = `models`. 각 행에 `(file:line)` 인용 그대로 복사.
-  2. `workspace/context/{domain}/index.md` 본문의 매칭 표 (사용자 수동 정의 가능성).
-  3. 본문 추출 실패 → 표 헤더만 있는 빈 표 + `[INFO] scope/{domain}.md 표 본문 추출 실패 — 사용자 수동 채움 권장` 1 줄.
-
-> **wizard 인용 주입 SSOT** — `/pilot:init` wizard 가 작성한 `workspace/context/config.md` 의 `## learn 언어 패턴` 표 행 (features/01 default 매핑) 이 inventory.md 산출 형식의 SSOT. 표 헤더 일치 시 그 행을 그대로 인용해 본문 추출 — wizard 결정과 analyze 산출 사이의 정합 보존.
-
-**idempotency:**
-
-- `scope/{domain}.md` 가 이미 존재 (빈 파일 아님) → 새로 만들지 않는다. 5-2 가 그대로 사용.
-- 사용자가 직접 작성한 행 (자동 생성 행 외) 도 그대로 보존. 자동 갱신은 별도 옵션 (`/pilot:analyze --regen-scope` v2 외).
-
-> **A2 runtime fallback**: 본 단계 실패 (MANIFEST 진입파일 부재·본문 추출 실패) → 빈 표 + INFO 1 줄 + 5-2 진행 (abort 안 함). 사용자 수동 채움 후 다음 analyze 호출 시 5-2 가 정상 추출.
-
-**예외:**
-
-- MANIFEST 진입파일 부재 → scope 파일 생성 skip + `[INFO] MANIFEST 진입 파일 없음 — scope 파일 생성 skip` 1 줄. 5-2 도 skip (5-2 의 기존 룰과 일관).
-- `config.md` 의 `## scope 카테고리` 빈 표 → features/02 default 매핑 사용 (Routes/Models/Services → Endpoints/Models/Services). scope 파일 헤더도 default 따라 작성.
-- `inventory.md` 부재 → 1순위 실패. 2순위 (`index.md`) 또는 3순위 (빈 표 + INFO) 적용.
-- `scope 헤더` 컬럼 값이 `## ` prefix 미준수 → features/04 의 doctor 검증이 사전 차단 (ERROR). 본 단계 진입 자체가 안 됨 — A2 fallback 으로 default 적용.
+본문 구성·idempotency·예외·A2 fallback 등 상세: [`references/scope-sync.md`](references/scope-sync.md) `5-1.5` 섹션.
 
 #### 5-2. `## 관련 파일` 갱신
 
-> **config lookup**: 본 단계 시작 전 `workspace/context/config.md` 의 `## scope 카테고리` 섹션을 Read. 표 행이 아래 default 매핑보다 우선. 빈 표·매칭 부재·잘못된 행은 default fallback (A2 runtime). 잘못된 행 발견 시 stderr 에 `[WARN] config.md ## scope 카테고리: {사유} — default 사용` 1 줄 (abort 안 함).
->
-> **A2 runtime fallback 절차**: config 표의 각 행을 사용 전 검증 (컬럼 수·헤더 일치). 잘못된 행은 무시하고 default 를 사용. 오류 1 건당 stderr 에 `[WARN] config.md ## scope 카테고리 {행번호 또는 사유}: default 사용` 1 줄 출력. abort 하지 않는다 — 1 행 오류로 전체 워크플로를 중단하는 것보다 default fallback 이 안전하다. doctor 가 별도 실행될 때만 ERROR 로 보고 (integrity.py `check_workspace_config_sections`).
-
 로드한 `scope/{domain}.md` 의 매칭 H2 섹션 표를 추출해 project.md 의 `## 관련 파일` 표를 자동 기입한다. 어떤 scope 헤더를 어떤 H3 로 기입할지는 `config.md` 의 `## scope 카테고리` 표가 결정하고, 비어있으면 아래 default 를 사용한다.
-
-> default — `workspace/context/config.md` 의 `## scope 카테고리` 가 비어있을 때 사용. config 행이 있으면 그 행이 우선.
 
 | scope 헤더 | project.md 대상 H3 | 표 헤더 |
 | --- | --- | --- |
@@ -255,86 +166,25 @@ features/ 생성 후 `project.md` 의 `## 목표` 와 `## 관련 파일` 을 자
 | ## Models | Models | Class, DB, 목적 |
 | ## Services | Services | Class, 파일, 목적 |
 
-**프로세스:**
+**핵심 규칙** — features/ 에 명시적으로 언급된 모델·서비스·라우트는 빠뜨리지 않고 포함 (planner 영향 범위 누락 방지). scope 에 없지만 features/ 에 등장한 신규 대상은 `목적` 열 끝에 `(from features/NN-{slug})` 주석 붙여 추가. 기존 사용자 수동 기입 행은 보존하되 중복만 제거. 빈 행(`|  |  |  |`) 은 삭제.
 
-1. project.md 의 `## 관련 파일` 섹션을 찾는다 (없으면 `## 에이전트 호출 흐름` 뒤에 GUIDE.md 템플릿대로 생성한다).
-2. config (또는 default) 매핑의 각 행을 순서대로 처리한다:
-   - scope/{domain}.md 에서 `scope 헤더` 와 일치하는 H2 섹션을 찾는다.
-   - 섹션이 없으면 해당 표만 skip + `[INFO] MANIFEST 진입 파일에 {scope 헤더} 없음 — 5-2 에서 해당 표 skip` 1 줄. `analyzed: true` 게이트는 정상 켬.
-   - scope 파일 자체가 없으면 동일하게 skip (기존 5-2 거동과 일관).
-   - 섹션이 있으면 `project.md 대상 H3` 의 이름으로 H3 표를 `표 헤더` 형식에 맞춰 기입한다.
-3. **Endpoints 표** (default: `## Routes` → Endpoints, `| 엔드포인트 | Method | 목적 |`):
-   - features/ 요구사항과 관련된 route 를 우선 선별한다 (경로·목적 키워드 매칭).
-   - 매칭이 불명확하면 도메인 전체 Routes 를 포함한다 (best-effort).
-4. **Models 표** (default: `## Models` → Models, `| Class | DB | 목적 |`): scope 의 해당 섹션에서 추출.
-5. **Services 표** (default: `## Services` → Services, `| Class | 파일 | 목적 |`): scope 의 해당 섹션에서 추출.
+config lookup·default fallback·프로세스 단계 상세: [`references/scope-sync.md`](references/scope-sync.md) `5-2` 섹션.
 
-**갱신 규칙:**
+**cross-domain 의존성 detect (#09)** — features/ 키워드와 scope/{domain}.md 매칭 시도 후 cover 되지 않는 외부 클래스/도메인을 MANIFEST 의 `## 외부 도메인 reference` 표에서 lookup. 매칭되면 INFO `[INFO] features/ 의 일부 영역이 {외부 도메인} 도메인에 의존 — \`/pilot:learn {추천 경로}\` 후 재분석 권장` 출력. 상세: [`references/scope-sync.md`](references/scope-sync.md).
 
-- features/ 에 명시적으로 언급된 모델·서비스·라우트는 빠뜨리지 않고 포함한다 (누락 시 planner 가 영향 범위를 잘못 잡아 후속 작업이 어긋남).
-- scope 에 없지만 features/ 에 등장한 신규 대상은 추가하되 `목적` 열 끝에 `(from features/NN-{slug})` 주석을 붙인다.
-- 기존 사용자 수동 기입 행은 보존하되 중복만 제거한다.
-- 빈 행(`|  |  |  |`) 은 모두 삭제한다.
-- config 빈 표 (헤더만 있고 행 없음): SKILL.md default 사용 (= config 부재와 동일 처리).
-
-**cross-domain 의존성 detect (#09):**
-
-features/ 키워드와 scope/{domain}.md 매칭 시도 후, cover 되지 않는 외부 클래스/도메인 reference 를 감지한다.
-
-- `workspace/context/MANIFEST.md` 의 `## 외부 도메인 reference` 표 lookup:
-  - 매칭되는 도메인 있으면:
-    ```
-    [INFO] features/ 의 일부 영역이 {외부 도메인} 도메인에 의존 — `/pilot:learn {추천 경로}` 후 재분석 권장
-    ```
-  - 표 부재 시 또는 매칭 없으면: 안내 없이 진행 (abort 안 함).
-
-> **A2 runtime fallback**: lookup 실패 시 → 분석 정상 진행, INFO 출력 안 함.
-
-**Open Questions 섹션 보존 + 갱신 (#11):**
-
-features/ 갱신 시 기존 features/NN-*.md 파일의 `## Open Questions` 섹션을 다음 규칙으로 처리한다.
-
-- 기존 `## Open Questions` 섹션이 있으면 보존한다. 기존 `- (없음)` 행, 작성자 수동 기입 행 모두 그대로 유지.
-- cross-domain detect 결과 (외부 도메인 매칭) → 해당 feature 의 `### (b) cross-domain 산출물 부재` 에 행 추가만 (중복 행은 skip).
-- 신규 features/NN-*.md 생성 시에는 `## Open Questions` 4 카테고리 섹션 + `- (없음)` 을 반드시 포함한다.
-- `## Open Questions` 섹션이 아예 없는 기존 파일은 수정하지 않는다 (doctor 가 INFO 로 안내).
-
-> **A2 runtime fallback**: Open Questions 갱신 실패 시 → 해당 파일 skip, 분석 정상 진행.
+**Open Questions 섹션 보존 + 갱신 (#11)** — 기존 `## Open Questions` 섹션 보존 + cross-domain detect 결과는 `### (b) cross-domain 산출물 부재` 에 행 추가 + 신규 파일은 4 카테고리 + `- (없음)` 포함. 4 카테고리 분류 기준: [`../context/shared/open-questions.md`](../context/shared/open-questions.md). 상세 규칙: [`references/scope-sync.md`](references/scope-sync.md).
 
 ### 6. prompts/ 자동 갱신
 
-features/ 분석 결과로 `prompts/planner.md`, `prompts/generator.md`, `prompts/evaluator.md` 를 갱신하고 `.agent-state.yml` 의 `analyzed: true` 게이트를 켠다.
-
-상세 절차 (6-1 ~ 6-5): [`references/prompts-update.md`](references/prompts-update.md).
+features/ 분석 결과로 `prompts/{planner,generator,evaluator}.md` 갱신 + `.agent-state.yml.analyzed: true` 게이트. 상세 (6-1 ~ 6-5): [`references/prompts-update.md`](references/prompts-update.md).
 
 ### 7. 분석 품질 자가 검증
 
-6-5 (doctor) 가 끝나면 분석 내용 자체의 품질을 4 항목 (커버리지·구조·정합성·추측 혐의) 으로 자가 점검한다.
-
-상세 절차 (7-1 ~ 7-4) + 출력 형식: [`references/self-verify.md`](references/self-verify.md).
+6-5 (doctor) 완료 후 4 항목 (커버리지·구조·정합성·추측 혐의) 자가 점검. 상세 + 출력 형식: [`references/self-verify.md`](references/self-verify.md).
 
 ### 8. 결과 출력
 
-분석 완료 후 아래 형식으로 요약한다:
-
-```
-분석 완료: {원본 파일명}
-
-생성된 features:
-  - features/{NN}-{slug}.md — {기능명}
-  ...
-
-총 {N}개 기능 명세 생성.
-
-갱신된 파일:
-  - project.md — 목표 {N}개 동기화 + 관련 파일(Models/Endpoints/Services) 자동 기입
-  - prompts/planner.md — 기능별 사전 확인 사항 갱신
-  - prompts/generator.md — 기술 레퍼런스 갱신
-  - prompts/evaluator.md — 체크리스트 갱신
-  - .agent-state.yml — analyzed: true
-
-검증: {7 단계 요약 한 줄 — "all checks passed" 또는 "WARN N건" 등}
-```
+`분석 완료: {원본 파일명}` + 생성된 features 목록 (`features/{NN}-{slug}.md — {기능명}`) + `총 N개` + 갱신 파일 (project.md / prompts/*.md / .agent-state.yml) + 검증 한 줄.
 
 ---
 
