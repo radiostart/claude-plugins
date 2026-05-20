@@ -79,6 +79,9 @@ description: >-
    - 파일: `app/controllers/api/<entity>s_controller.rb` → `<entity>s` (파일명에서 `_controller`·`_service`·`Controller`·`Service` 접미사 제거).
    - 폴더: `app/services/<domain>/` → `<domain>` (마지막 폴더명).
    - 폴더 내부에 동명 파일이 있으면 그것을 진입 파일로 채택 (예: `<domain>/<domain>_service.rb`).
+   - 파일명이 일반 진입점 (`main.*`·`app.*`·`server.*`·`index.*`·`__main__.py` 등 — 도메인 식별자·역할 suffix 없음) → **부모 폴더명을 도메인명으로 채택**. 부모 폴더도 일반 (`src/`·`app/`·`lib/`·`source/`) 이면 **2단계 상위 폴더명** 또는 **레포 root 디렉터리명** fallback. 모두 일반이면 사용자에게 도메인명 입력 prompt (A2 패턴 — abort 안 함).
+   - **도메인명 sanitize** — 도메인명 후보에서 영숫자·하이픈 외 문자를 제거하고 소문자화. 정규화 결과가 공집합이면 사용자 질의.
+   - **절대경로 정규화** — 진입점이 절대경로이면 상대경로로 정규화 후 부모 폴더명 추출. 정규화 실패 시 사용자 질의.
 2. `--domain NAME` 가 있으면 그 값을 채택 (자동 도출 무시).
 3. 자동 도출 결과가 모호 (`app/controllers/api/v2/admin_<entity>s_controller.rb` 처럼 다층) → 사용자에게 후보 2~3 개 제시 후 선택.
 4. 결정된 `{domain}` 으로 후속 단계 진행.
@@ -297,6 +300,10 @@ MANIFEST 의 자유 형식 원칙 준수 — **기존 정의가 있으면 그에
    | `## 도메인 분류` H2 + 산문/리스트 (표 아님) | 동일 형식으로 한 항목 append (예: `- {domain}: \`{entry}\` — {설명}`) |
    | `## 도메인` 또는 다른 헤딩으로 도메인 목록이 있음 | 그 헤딩 안에 동일 형식으로 append |
    | 도메인 분류 섹션이 전혀 없음 | 새 섹션 생성 — 표준 3 컬럼 표 (`| 도메인 | 진입 파일 | 설명 |`) |
+
+   > **H2 헤더 정확 매칭 강제** — `## 도메인 분류` 섹션 detect 는 `^##\s+도메인\s*분류\s*$` 정규식 정확 매칭. 본문 prose 의 동일 string 등장 (가이드 주석·코드블록·표 본문 안 `## 도메인 분류` 인용) 은 무시한다. `orchestrate-load.py:parse_manifest_domain_files` 의 자동 파싱 호환을 위해 필수.
+   >
+   > **코드블록 안 `## 도메인 분류` 줄 무시** — 펜스 (` ``` `) 를 추적해 코드블록 안 줄은 H2 detect 대상에서 제외 (`_parse_md_tables_in_section` 헬퍼의 코드블록 추적 보강과 정합 — integrity.py:807·811-820).
 
    파싱은 best-effort — 모호하면 사용자에게 1 줄 질의 ("MANIFEST 에 도메인 항목을 어떻게 추가할까요? a) 기존 표에 행, b) 산문 1 줄, c) 새 섹션 생성").
 
