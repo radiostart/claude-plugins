@@ -85,13 +85,13 @@ def _should_ignore_dir(dir_name: str) -> bool:
 # ---------------------------------------------------------------------------
 
 def detect_languages(
-    cwd: Path,
+    cwd,
     max_files: int = 50000,
 ) -> Tuple[list, list]:
     """저장소 확장자 빈도를 집계해 주 언어 목록을 반환한다.
 
     Args:
-        cwd: 스캔 대상 루트 디렉터리.
+        cwd: 스캔 대상 루트 디렉터리. str 또는 Path 모두 허용.
         max_files: 샘플링 상한. 초과 시 상위 N개만 집계하고 INFO 메시지 추가.
 
     Returns:
@@ -100,6 +100,7 @@ def detect_languages(
           매핑 결과 0건 → 빈 리스트 반환 (spec line 21: default fallback 은 호출자 책임).
         - info_messages: 비매핑 확장자 및 샘플링 알림 문자열 목록.
     """
+    cwd = Path(cwd)
     ext_counter: Counter = Counter()
     info_messages: list = []
     file_count = 0
@@ -149,11 +150,11 @@ def detect_languages(
     return seen_langs, info_messages
 
 
-def detect_scope_candidates(cwd: Path) -> Tuple[dict, list]:
+def detect_scope_candidates(cwd) -> Tuple[dict, list]:
     """depth ≤ 2 폴더명을 집계해 scope 후보를 반환한다.
 
     Args:
-        cwd: 스캔 대상 루트 디렉터리.
+        cwd: 스캔 대상 루트 디렉터리. str 또는 Path 모두 허용.
 
     Returns:
         (scope_map, info_messages) 튜플.
@@ -161,6 +162,7 @@ def detect_scope_candidates(cwd: Path) -> Tuple[dict, list]:
           빈도 ≥ 1 (= 존재 시) 이고 영문 소문자 폴더명 조건 (Q1 결정).
         - info_messages: 매핑 안 되는 폴더명 안내 문자열 목록.
     """
+    cwd = Path(cwd)
     folder_counter: Counter = Counter()
 
     # depth ≤ 2 탐색 (cwd 직속 하위 + 그 하위)

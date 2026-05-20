@@ -53,15 +53,28 @@ description: >-
 
 wizard 가 활성화되면 아래 3 단계를 순서대로 실행한다. **어느 단계가 실패해도 abort 금지 — 다른 단계는 계속 진행 (A2 fallback 정책).**
 
-1. **언어 감지** — `${CLAUDE_PLUGIN_ROOT}/tools/init_detect.py` 의 `detect_languages(cwd)` 를 호출하여 주 언어 목록을 추출한다.
-   - 반환된 언어 목록을 `workspace/context/config.md` 의 `## learn 언어 패턴` 표 본문에 주입 (features/01 의 5 default 언어 매핑 기준).
+> **표 헤더 고정 스키마 (doctor strict 검증 대상)** — wizard 가 만들거나 갱신하는 표는 아래 헤더를 **정확히** 사용해야 한다. 한 글자라도 다르면 doctor 가 ERROR 로 차단한다.
+>
+> - `## learn 언어 패턴` 표 1 (의존성 추적): `| 언어 | 의존성 추출 패턴 |`
+> - `## learn 언어 패턴` 표 2 (역할 분류): `| 역할 | 식별 패턴 |`
+> - `## scope 카테고리`: `| scope 헤더 | project.md 대상 H3 | 표 헤더 |` (정확히 3 컬럼). `scope 헤더` 컬럼 값은 반드시 `## ` 로 시작.
+> - `## Ignore`: `| 패턴 | 사유 |`
+
+1. **언어 감지** — `${CLAUDE_PLUGIN_ROOT}/tools/init_detect.py` 의 `detect_languages(cwd_path)` 를 호출 (`cwd_path` 는 `pathlib.Path` 객체). 주 언어 목록을 추출한다.
+   - 반환된 언어 목록을 `workspace/context/config.md` 의 `## learn 언어 패턴` 두 표 본문에 주입:
+     - 표 1 (의존성 추적): `| {언어} | {의존성 추출 패턴} |` 형식. 언어별 default 패턴 (ruby: `require_relative`·`include`·`extend`·`Module::Class` / typescript: `import.*from`·`require\(` / python: `^from\|^import` / kotlin: `import\s`·`package\s` / go: `^import\s`).
+     - 표 2 (역할 분류): `| {역할} | {식별 패턴} |` 형식. 일반적 5 역할 (controllers·services·models·workers·jobs) + 언어별 파일 glob 패턴.
    - 기존 행이 있으면 dedupe 병합 (사용자 수동 추가 보존).
-   - 감지 0건 → 해당 섹션은 features/01 의 default 표 사용 + INFO 1줄.
-2. **scope 후보 감지** — `detect_scope_candidates(cwd)` 를 호출하여 폴더명 → scope 카테고리 매핑을 추출한다.
-   - 반환된 매핑을 `workspace/context/config.md` 의 `## scope 카테고리` 표 본문에 주입.
+   - 감지 0건 → 두 표는 헤더만 남기고 빈 행 + INFO 1줄.
+2. **scope 후보 감지** — `detect_scope_candidates(cwd_path)` 를 호출. 폴더명 → scope 카테고리 매핑을 추출한다.
+   - 반환된 매핑을 `workspace/context/config.md` 의 `## scope 카테고리` 표 본문에 주입. **3 컬럼 강제**:
+     - `scope 헤더`: 폴더가 mapping 한 H2 헤더 — 반드시 `## ` 로 시작 (예: `## Routes`·`## Models`·`## Services`).
+     - `project.md 대상 H3`: project.md `## 관련 파일` 안에 생성될 H3 이름 (예: `Endpoints`·`Models`·`Services`).
+     - `표 헤더`: 해당 표의 컬럼 헤더 (쉼표 구분, 예: `엔드포인트, Method, 목적`).
+   - 같은 `project.md 대상 H3` 가 여러 폴더에서 매핑되면 (예: services·workers·jobs → Services) 1 행만 남기고 dedupe.
    - 기존 행이 있으면 dedupe 병합.
-   - 후보 0건 → features/02 의 default 매핑 그대로 주입 + INFO 1줄.
-3. **Ignore baseline 주입** — `IGNORE_BASELINE` 상수의 10 패턴을 `workspace/context/config.md` 의 `## Ignore` 표 본문에 주입한다.
+   - 후보 0건 → default 3 행 (Routes·Models·Services) 그대로 주입 + INFO 1줄.
+3. **Ignore baseline 주입** — `IGNORE_BASELINE` 상수의 10 패턴을 `workspace/context/config.md` 의 `## Ignore` 표 본문에 주입한다. 헤더: `| 패턴 | 사유 |`.
    - 기존 행이 있으면 dedupe 병합 (사용자 수동 추가 보존).
 
 ---
