@@ -15,14 +15,6 @@
 - **핵심 계약:** 프로젝트별 `.agent-state.yml` (machine-readable 상태) + `workspace/context/MANIFEST.md` (도메인 SSOT) + `workspace/context/config.md` (런타임 설정 SSOT)
 - **검증 데이터:** Rails 4K 라인 도메인 (nimda wms) 산출 결과 — 922 라인 (22.4% 압축), 217 file:line 인용, 100% 인용 정확성 (V1-Full dogfooding, 2026-04-30)
 
-## ecosystem 안 위치 (다른 도구와 보완 관계)
-
-pilot 은 **workspace 도메인 지식 layer** 의 추상화. 다른 Claude Code 도구와 직접 경쟁이 아닌 보완 관계:
-
-- [moai-adk](https://github.com/modu-ai/moai-adk) (모두의AI) — SPEC-First Agentic Dev Kit. 코드 + SPEC layer 에서 autonomous quality code 산출. **다른 추상화 layer.** pilot 으로 도메인 외부화 후 moai-adk 로 quality code 산출하는 결합 사용 가능.
-- Aider / Cursor / Cline — 코드 직접 편집 도구. pilot 의 도메인 산출물을 컨텍스트로 활용 가능.
-- [Claude Code](https://docs.claude.com/claude-code/) — pilot 의 host. plugin 없이도 사용 가능, pilot 은 큰 레거시 시나리오에 특화된 추상화 layer 추가.
-
 ## 목차
 
 1. [설치 및 초기 세팅](#설치-및-초기-세팅)
