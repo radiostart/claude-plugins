@@ -1,0 +1,23 @@
+pilot doctor  workspace: {WORKSPACE}
+
+Workspace:
+  [PASS] workspace/: 존재
+  [PASS] STATE.md: 진행중: sample-project
+  [PASS] context/MANIFEST.md: 존재
+  [INFO] context/MANIFEST.md: ## 외부 도메인 reference 미정의 — 첫 cross-domain reference detect 시 `/pilot:learn` 이 자동 작성
+  [PASS] context/config.md: 존재
+  [PASS] .gitignore secrets: .slack.env 보호됨
+
+Project (sample-project):
+  [ERROR] sample-project/.agent-state.yml: 없음
+         → `/pilot:project {프로젝트명}` 재실행 또는 직접 작성
+  [INFO] sample-project migration: config 의 ## learn 언어 패턴 이 부분 정의됨 — 마이그레이션 skip, 사용자 직접 갱신 권장
+
+── Onboarding Health ─────────────────
+  [PASS] OH-1  config 핵심 섹션: 3 섹션 모두 채워짐
+  [PASS] OH-2  scope/ 채움: *.md 파일 존재
+  [PASS] OH-3  첫 project 등록: 진행중/대기 1건
+  [PASS] OH-4  MANIFEST 진입파일: 도메인 분류 표 등록됨
+  [PASS] OH-5  features/ 진입 가능: *.md 1건
+
+요약: 10 PASS · 0 WARN · 1 ERROR

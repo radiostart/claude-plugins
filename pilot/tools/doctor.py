@@ -71,6 +71,7 @@ from doctor.integrity import (  # noqa: E402, F401
     check_domain_transaction_contracts,
     check_features_open_questions,
     check_gitignore_required_patterns,
+    check_onboarding_health,
     check_project,
     check_slack_env_not_tracked,
     check_workspace,

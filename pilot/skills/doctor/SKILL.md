@@ -74,10 +74,37 @@ pilot v0.2.0 부터 `## learn 언어 패턴` 의 default 표가 SKILL.md 에서 
 
 - `.agent-state.yml` 존재 + `schema: v1.2` (v1·v1.1 은 업그레이드 권장 WARN)
 - `analyzed` 필드 ↔ `features/*.md` (`.plan.md` 제외) 실제 존재 일치
-- `tdd` 필드 ↔ `project.md` 의 `**TDD 모드**` 문자열 일치
+- `tdd` 필드 ↔ `project.md` 의 `**TDD 모드**` 문자열 ↔ `prompts/{flow,planner,generator,evaluator}.md` 의 백업 마커 3-way 일치 (인수인계 line 130 패턴)
 - `pr_base_branch` (있을 경우) ↔ `git ls-remote origin <X>` 존재 일치 (stale 시 WARN)
 
 스키마 상세: [state-schema.md](../context/lifecycle/state-schema.md)
+
+---
+
+## Onboarding Health
+
+기존 구조 정합성 검사 직후 신규 사용자 관점 5개 항목을 WARN 수준으로 추가 진단한다.
+
+```
+── Onboarding Health ─────────────────
+OH-1  config 핵심 섹션:        PASS|WARN
+OH-2  scope/ 채움:              PASS|WARN
+OH-3  첫 project 등록:          PASS|WARN
+OH-4  MANIFEST 진입파일:        PASS|WARN
+OH-5  features/ 진입 가능:      PASS|WARN|N/A
+```
+
+- **OH-1**: `config.md` 의 `## learn 언어 패턴` / `## scope 카테고리` / `## Ignore` 3 섹션 표 본문 행 수 ≥ 1.
+- **OH-2**: `workspace/context/scope/` 에 `*.md` 파일 ≥ 1.
+- **OH-3**: `STATE.md` 에 `진행중` 또는 `대기` 프로젝트 ≥ 1.
+- **OH-4**: `MANIFEST.md` 의 `## 도메인 분류` 표 본문 행 ≥ 1.
+- **OH-5**: `projects/{project}/features/` 에 `*.md` ≥ 1. 프로젝트 인자 미지정 시 `N/A`.
+
+**WARN 수준 정책**: exit code 영향 없음 (구조 정합성 ERROR 만 exit 1). 항목마다 처방 1줄 동반.
+
+**`--fix` 미지원**: onboarding-health 는 사용자의 실제 작업 의도가 필요. `--fix` 호출 시 OH 섹션은 skip + INFO 1줄.
+
+**WARN 5건 동시**: "신규 워크스페이스 감지 — getting-started.md 권장" 안내 1줄 추가 (`pilot/docs/getting-started.md`).
 
 ---
 
@@ -96,7 +123,7 @@ Project (MyProject):
   [PASS] MyProject/.agent-state.yml: schema v1.2
   [WARN] MyProject analyzed: state.yml analyzed=false 이지만 features/ 에 3 개 존재
          → /pilot:analyze 재실행으로 state.yml 동기화
-  [PASS] MyProject tdd: tdd=false, 일치
+  [PASS] MyProject tdd: state=false ↔ project=false ↔ prompts 마커 부재, 3-way 일치
 
 요약: 5 PASS · 1 WARN · 0 ERROR
 ```

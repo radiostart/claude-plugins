@@ -45,6 +45,27 @@ description: >-
 
 ---
 
+### 2. wizard 적용 (created 인 경우만)
+
+`config.md` 상태가 `created` 인 경우에만 진입. `exists` 이면 이 단계를 skip.
+
+사용자 입력에 `--no-wizard` 토큰이 포함되어 있으면 이 단계를 skip (Q6 자연어 분기).
+
+wizard 가 활성화되면 아래 3 단계를 순서대로 실행한다. **어느 단계가 실패해도 abort 금지 — 다른 단계는 계속 진행 (A2 fallback 정책).**
+
+1. **언어 감지** — `${CLAUDE_PLUGIN_ROOT}/tools/init_detect.py` 의 `detect_languages(cwd)` 를 호출하여 주 언어 목록을 추출한다.
+   - 반환된 언어 목록을 `workspace/context/config.md` 의 `## learn 언어 패턴` 표 본문에 주입 (features/01 의 5 default 언어 매핑 기준).
+   - 기존 행이 있으면 dedupe 병합 (사용자 수동 추가 보존).
+   - 감지 0건 → 해당 섹션은 features/01 의 default 표 사용 + INFO 1줄.
+2. **scope 후보 감지** — `detect_scope_candidates(cwd)` 를 호출하여 폴더명 → scope 카테고리 매핑을 추출한다.
+   - 반환된 매핑을 `workspace/context/config.md` 의 `## scope 카테고리` 표 본문에 주입.
+   - 기존 행이 있으면 dedupe 병합.
+   - 후보 0건 → features/02 의 default 매핑 그대로 주입 + INFO 1줄.
+3. **Ignore baseline 주입** — `IGNORE_BASELINE` 상수의 10 패턴을 `workspace/context/config.md` 의 `## Ignore` 표 본문에 주입한다.
+   - 기존 행이 있으면 dedupe 병합 (사용자 수동 추가 보존).
+
+---
+
 ## 결과 출력
 
 아래 형식으로 요약:
@@ -58,6 +79,11 @@ Workspace: {workspace 절대 경로}
   workspace/context/MANIFEST.md         {created|exists}
   workspace/context/config.md           {created|exists}
 
+wizard 결과:
+  언어 감지: {N}개 자동 주입 ({언어목록})
+  scope 후보: {M}개 매핑 ({폴더목록})
+  Ignore baseline: {P}개 추가
+
 ▶ 다음 단계 (필수):
   /pilot:project {프로젝트명}        # 바로 시작 가능
 
@@ -69,6 +95,12 @@ Workspace: {workspace 절대 경로}
 > 모든 파일은 비워둬도 동작합니다. 코드 작업 중 필요해지는 순간에 채우세요.
 ```
 
+wizard skip 시 위 "wizard 결과" 블록 대신:
+
+```
+  wizard skipped (config.md exists 또는 --no-wizard)
+```
+
 ---
 
 ## 참고
@@ -77,3 +109,4 @@ Workspace: {workspace 절대 경로}
 - 생성되는 모든 파일은 사용자가 직접 채워야 하는 스켈레톤이다 (도메인·공통 모델·Ignore 등).
 - 생성 후 스켈레톤을 실제 값으로 채우는 작업은 이 스킬 범위 밖. 사용자가 문서를 편집한다.
 - 각 스켈레톤 상단에 "이 파일은 `/pilot:init` 가 생성했다" 주석이 있어, 어디서 왔는지 역추적 가능.
+- 사용자 입력에 `--no-wizard` 토큰이 포함되어 있으면 wizard 단계를 건너뛴다. v0.2.x 이전 동작과 동일하게 빈 스켈레톤만 생성된다.
