@@ -4,7 +4,7 @@ description: 프로젝트 진행 중 작성된 코드(git diff)를 품질 관점
 tools: Read, Glob, Grep, Bash
 ---
 
-> **이 파일은 wrapper입니다.** 직접 실행하지 않는다 — `/pilot:review` 또는 `@pilot-code-review` 로 호출.
+> **이 파일이 SSOT입니다.** 사이클 밖에서 동작하는 self-contained 에이전트 — wrapper protocol(orchestrate-load·mode 분기) 미사용. `/pilot:review` 또는 `@pilot-code-review` 로 호출.
 > **톤·페르소나 SSOT:** [`identity.yml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) (`personas.code-review` = critic)
 >
 > **경로 규칙:** 플러그인 지식 `${CLAUDE_PLUGIN_ROOT}/skills/` · 프로젝트 상태 `workspace/` (CWD)

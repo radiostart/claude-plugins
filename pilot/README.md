@@ -402,6 +402,14 @@ PR 생성 직전 `git ls-remote --exit-code origin <base>` 로 stale 검증, 없
 
 PR 올리기 전 내부 코드 리뷰. `@pilot-code-review` 를 호출해 변경분(git diff)의 품질·설계·테스트 가능성을 점검하고, 결함마다 재진입 라우팅(feature/planner/generator)을 제시한다. PR 이전 단계 — 공식 `/code-review` (PR 이후 GitHub 리뷰) 와 구분.
 
+#### `/pilot:code-review-init [lang]`
+
+언어별 코드 리뷰 룰 파일 `workspace/context/review/{lang}.md` 를 셋업한다. 3 가지 시작 전략 — 사전 작성된 예시 복사(`examples/code-review/`) / 빈 형식 템플릿(`review-rules-template.md`) / 코드베이스 기반 AI draft 생성 — 중 사용자가 선택. 생성 후 사용자가 본문을 편집해 팀 컨벤션을 반영한다. `/pilot:review` 에서 변경 언어의 룰 파일이 없어 baseline 만 적용됐을 때 호출.
+
+#### `/pilot:fix-review [--from <path>]`
+
+`@pilot-code-review` 의 CODE REVIEW REPORT 를 읽어 finding 별 처리 경로를 추천한다 — `trivial`(직접 Edit) / `one-shot`(`@pilot-generator`) / `full-cycle`(`@pilot-planner` 사이클) / `new-feature`(`/pilot:create-feature`) / `dismiss`(룰 보강). 자동 실행은 안 하며, 분류 표만 출력해 사용자가 다음 액션을 선택한다.
+
 ### 알림 (선택)
 
 #### `/pilot:slack [test | status | disable]`
@@ -460,12 +468,12 @@ SLACK_EVENTS=complete,approval        # 생략 시 둘 다
 
 ```
 @pilot-planner → 계획 확정
-  ├─ (권장) @pilot-planner-critic → 챌린지 검토 → @pilot-planner 재호출(합의 표 채움)
-  └─ (스킵 가능) 바로 @pilot-generator
+  ├─ (기본) @pilot-planner-critic → 챌린지 검토 → @pilot-planner 재호출(합의 표 채움)
+  └─ (사용자 동의 시) 바로 @pilot-generator
 → @pilot-generator → 구현 완료 → @pilot-evaluator → 검토 통과
 ```
 
-순서 엄수 (planner-critic 만 선택). 이전 단계 완료 전 다음 단계 금지. 각 에이전트는 사용자가 **명시 호출**. 자동 파이프라인 없음 — phase 간 사용자 개입 가능. critic 은 trivial 한 변경에서 스킵해도 된다.
+순서 엄수 (planner-critic 만 선택). 이전 단계 완료 전 다음 단계 금지. 각 에이전트는 사용자가 **명시 호출**. 자동 파이프라인 없음 — phase 간 사용자 개입 가능. **critic skip 은 오케스트레이터가 자의적으로 결정하지 않는다** — plan 작성 후 기본은 `@pilot-planner-critic` 호출이며, trivial 변경이라 건너뛰려면 사용자에게 먼저 확인한다.
 
 ### TDD 모드 확장
 
@@ -727,6 +735,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {planner|generat
 |---|---|---|
 | `commit-format.sh` | `PreToolUse: Bash` | 커밋 메시지 형식 검증 (scope: description, 한글, 50자 권장). 허용 scope 는 `workspace/context/config.md` `## 설정` 의 `commit_scopes` 에서 로드 · 부재 시 기본 CSV fallback. |
 | `scope-guard.sh` | `PreToolUse: Edit\|Write` | `config.md § Ignore` SSOT. 해당 패턴 파일의 Edit/Write 차단. 담당 범위 조정은 config.md 만 수정하면 됨. |
+| `protect-managed.sh` | `PreToolUse: Bash` + `Edit\|Write` | `workspace/projects/{PROJECT}/` 하위 *기존 파일* 의 Write·destructive Bash(rm/mv/cp/sed -i 등) 차단 — 동일 프로젝트명 재호출 시 누적 작업물 손실 방지. Edit·신규 파일·백업 경로(`.prompts.bak/`)는 통과. 의도적 reset 은 `PILOT_PROTECT_BYPASS=1` 로 우회. |
 | `slack-notify.sh` | `PermissionRequest` + `Notification` | 권한 다이얼로그·알림 이벤트를 `tools/slack-notify.py` 로 릴레이 → 프로젝트별 `.slack.env` 로 발송. 백그라운드 POST 로 비차단. 설정 없는 프로젝트는 완전 no-op. |
 
 ### Tools (`tools/`)
@@ -737,6 +746,10 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {planner|generat
 | `doctor.py` | workspace 정합성 검사 + `.gitignore secret` 자동 주입 + `.slack.env` tracked 검사. `/pilot:doctor` 가 호출. |
 | `confluence.py` | Confluence API 연동. `.env` fallback + credential drift 경고. |
 | `slack-notify.py` | Slack Incoming Webhook 전송. 프로젝트 단위 `.slack.env` 파싱 · webhook 없으면 no-op · `git ls-files` 이중 방어 · 실패해도 exit 0 (파이프라인 차단 금지). |
+| `plan-validate.py` | `.plan.md` 형식 검증 (standard / tdd / characterize 모드별 필수 섹션·Red 계약). |
+| `handoff-quality.py` | planner→generator 인계 콘텐츠 품질 정량 측정 — 변경 파일 구체성·사유 명시도·Red 계약 구체성. plan-validate 가 안 보는 *품질* 축. |
+| `regen-verify.py` | `/pilot:analyze --regen-agents` 후 `.prompts.bak/` 백업과 현재 `prompts/` 를 비교해 `[analyze-managed]` 밖 수동 편집 영역 보존 여부 검증. |
+| `verify-report-lint.py` | evaluator VERIFICATION REPORT 의 형식·gate enum·status↔gates 일관성·mode↔skip 매핑을 결정론적으로 검증. |
 
 ## 운영 — drift 감지 및 대응
 

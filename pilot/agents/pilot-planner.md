@@ -74,10 +74,13 @@ tools: Read, Glob, Grep, Edit, Write, Bash
    - `.slack.env` 부재 시 notifier 가 자동 no-op — 호출은 그대로 실행한다.
    - 호출 결과는 사용자에게 보고 불요. stderr 경고가 나오면 원문 그대로 전달.
 
-8. 계획 확정 후 generator/critic 을 자동으로 실행하지 않는다. 다음 안내 후 종료한다:
+8. 계획 확정 후 generator/critic 을 자동으로 실행하지 않는다. 아래를 안내하고 종료한다:
 
-   - **권장 (기본)**: "**`@pilot-planner-critic` 으로 계획을 한 번 챌린지해 보세요** — 전제·범위·엣지케이스·대안·리스크를 별도 `.plan.critic.md` 에 기록합니다."
-   - **스킵 가능**: trivial 한 변경·시간 제약 등으로 챌린지가 불필요하면 바로 **`@pilot-generator`** 호출.
+   - 다음 기본 단계는 **`@pilot-planner-critic`** — 전제·범위·엣지케이스·대안·리스크를 별도 `.plan.critic.md` 에 기록한다.
+   - **[오케스트레이터 지시] critic skip 을 자의적으로 결정하지 않는다.** plan.md 신규 작성 완료 후 오케스트레이터는 다음 둘 중 하나만 수행한다:
+     1. **(기본)** `@pilot-planner-critic` 을 이어서 호출한다.
+     2. critic 이 불필요하다고 판단되면 (예: 1~2 줄 수준 trivial 변경) **사용자에게 "`@pilot-planner-critic` 을 건너뛰고 바로 `@pilot-generator` 로 갈까요?" 라고 먼저 묻고**, 사용자가 명시 동의한 경우에만 generator 로 진행한다.
+   - critic 을 거치지 않고 `@pilot-generator` 를 곧바로 자동 호출하는 것은 금지한다 — skip 은 항상 사용자 결정이다.
 
    사용자 선택 후 흐름은 `@pilot-planner-critic → (필요 시) @pilot-planner 재호출 → @pilot-generator → @pilot-evaluator`.
 
