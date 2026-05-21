@@ -11,11 +11,9 @@ site_dir: docs-site
 # 임시 exclude — 다음 step 에서 정리·이전하면서 풀린다:
 #   - PLAN-manual.md: SDLC 메타 산출물, 사이트 콘텐츠 아님 (영구 exclude)
 #   - getting-started.md: step 6 에서 tutorial/getting-started.md 로 이전
-#   - INTEGRATION-MOAI-ADK.md: step 4 에서 how-to/moai-adk-integration.md 로 이전
 exclude_docs: |
   PLAN-manual.md
   getting-started.md
-  INTEGRATION-MOAI-ADK.md
 
 theme:
   name: material
@@ -78,6 +76,21 @@ nav:
       - Quick Start (5 분): tutorial/quick-start.md
   - How-to:
       - how-to/index.md
+      - 개발 워크플로우:
+          - TDD 모드 활성화: how-to/tdd-mode.md
+          - Characterize 모드: how-to/characterize-mode.md
+          - Critic 활용: how-to/critic-review.md
+          - Focus 로 방향 조정: how-to/focus-direction.md
+      - 컨텍스트 관리:
+          - 기획서로 features 일괄 생성: how-to/analyze-docs.md
+          - 프롬프트로 feature 단건 추가: how-to/create-feature.md
+          - 외부 도메인 부트스트랩: how-to/cross-domain-learn.md
+      - 운영:
+          - Doctor 진단·마이그레이션: how-to/doctor-migration.md
+          - Confluence 동기화: how-to/confluence-sync.md
+          - Slack 알림 설정: how-to/slack-notify.md
+      - 통합:
+          - MOAI-ADK 연동: how-to/moai-adk-integration.md
   - Reference:
       - reference/index.md
       - Agents: reference/agents/        # literate-nav 가 디렉토리 안 .md 파일을 알파벳 순 자동 인덱싱
