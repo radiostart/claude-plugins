@@ -1,5 +1,5 @@
 {
-  "description": "코드 품질 훅 — 커밋 메시지 검증 + 파일 수정 범위 제한 + 코딩 규칙 리마인드 + Slack 승인 알림",
+  "description": "코드 품질 훅 — 커밋 메시지 검증 + 파일 수정 범위 제한 + 코딩 규칙 리마인드 + managed 파일 보호 + Slack 승인 알림",
   "hooks": {
     "PreToolUse": [
       {
@@ -8,6 +8,11 @@
           {
             "type": "command",
             "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/commit-format.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/protect-managed.sh",
             "timeout": 5
           }
         ]
@@ -18,6 +23,11 @@
           {
             "type": "command",
             "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scope-guard.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/protect-managed.sh",
             "timeout": 5
           }
         ]
