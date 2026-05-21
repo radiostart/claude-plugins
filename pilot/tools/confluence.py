@@ -19,17 +19,140 @@ Required env vars (둘 중 하나로 설정):
   CONFLUENCE_TOKEN  — Atlassian API 토큰 (https://id.atlassian.com/manage-profile/security/api-tokens 에서 생성)
 """
 
+from __future__ import annotations
+
 import sys
 import os
 import re
 import json
 import base64
-import requests
+import urllib.error
+import urllib.parse
+import urllib.request
 from pathlib import Path
 from datetime import date, datetime, timezone
-from bs4 import BeautifulSoup
+from html.parser import HTMLParser
 
 WORKSPACE_ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
+
+
+# ---------------------------------------------------------------------------
+# 경량 HTML 파서 — bs4 의존성 제거 (stdlib html.parser 기반)
+#
+# confluence.py 가 실제로 쓰는 bs4 API (children/name/get/get_text/find_all/
+# find) 만 최소 구현한다. 텍스트 노드는 별도 클래스 없이 `str` 로 children 에
+# 들어간다 — bs4 의 NavigableString 이 str 서브클래스라 `isinstance(node, str)`
+# 검사가 그대로 호환된다.
+# ---------------------------------------------------------------------------
+
+_VOID_TAGS = frozenset({
+    "area", "base", "br", "col", "embed", "hr", "img", "input",
+    "link", "meta", "param", "source", "track", "wbr",
+})
+
+
+class Element:
+    """경량 DOM 노드 (bs4 Tag 대체)."""
+
+    def __init__(self, name: str, attrs: dict | None = None):
+        self.name = name
+        self.attrs = attrs or {}
+        self.children: list = []
+
+    def get(self, key, default=None):
+        if key == "class":
+            # bs4 는 다중값 속성인 class 를 리스트로 반환한다.
+            val = self.attrs.get("class")
+            return val.split() if val is not None else default
+        return self.attrs.get(key, default)
+
+    def get_text(self, separator: str = "", strip: bool = False) -> str:
+        texts: list[str] = []
+
+        def collect(node: Element) -> None:
+            for ch in node.children:
+                if isinstance(ch, str):
+                    texts.append(ch)
+                else:
+                    collect(ch)
+
+        collect(self)
+        if strip:
+            return separator.join(t.strip() for t in texts if t.strip())
+        return separator.join(texts)
+
+    def find_all(self, name, recursive: bool = True) -> list:
+        names = {name} if isinstance(name, str) else set(name)
+        found: list = []
+
+        def walk(node: Element) -> None:
+            for ch in node.children:
+                if isinstance(ch, str):
+                    continue
+                if ch.name in names:
+                    found.append(ch)
+                if recursive:
+                    walk(ch)
+
+        walk(self)
+        return found
+
+    def find(self, name):
+        matches = self.find_all(name)
+        return matches[0] if matches else None
+
+
+class _DOMBuilder(HTMLParser):
+    """html.parser 이벤트를 Element 트리로 조립한다."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.root = Element("[document]")
+        self._stack: list[Element] = [self.root]
+
+    def _make(self, tag: str, attrs: list) -> Element:
+        return Element(tag, {k: (v if v is not None else "") for k, v in attrs})
+
+    def handle_starttag(self, tag: str, attrs: list) -> None:
+        el = self._make(tag, attrs)
+        self._stack[-1].children.append(el)
+        if tag not in _VOID_TAGS:
+            self._stack.append(el)
+
+    def handle_startendtag(self, tag: str, attrs: list) -> None:
+        self._stack[-1].children.append(self._make(tag, attrs))
+
+    def handle_endtag(self, tag: str) -> None:
+        # 스택에서 매칭되는 가장 가까운 열린 태그까지 닫는다. 매칭이 없으면
+        # (stray end tag) 무시 — 경미한 mis-nesting 을 견딘다.
+        for i in range(len(self._stack) - 1, 0, -1):
+            if self._stack[i].name == tag:
+                del self._stack[i:]
+                return
+
+    def handle_data(self, data: str) -> None:
+        # 인접 텍스트는 bs4 처럼 하나의 노드로 합친다.
+        parent = self._stack[-1]
+        if parent.children and isinstance(parent.children[-1], str):
+            parent.children[-1] += data
+        else:
+            parent.children.append(data)
+
+
+def parse_html(html: str) -> Element:
+    """HTML 문자열을 Element 트리로 파싱. 루트(`[document]`) 를 반환."""
+    builder = _DOMBuilder()
+    builder.feed(html)
+    builder.close()
+    return builder.root
+
+
+def BeautifulSoup(html: str, parser: str = "html.parser") -> Element:
+    """bs4.BeautifulSoup 호환 shim — stdlib html.parser 기반 `parse_html` 로 위임.
+
+    기존 호출부 `BeautifulSoup(html, "html.parser")` 를 그대로 유지하기 위한 별칭.
+    """
+    return parse_html(html)
 
 
 # ---------------------------------------------------------------------------
@@ -152,28 +275,30 @@ def fetch_page(page_id: str) -> dict:
     """
     email, token = get_credentials()
     creds = base64.b64encode(f"{email}:{token}".encode()).decode()
-    resp = requests.get(
-        f"{CONFLUENCE_HOST}/api/v2/pages/{page_id}",
-        params={"body-format": "view"},
+    query = urllib.parse.urlencode({"body-format": "view"})
+    req = urllib.request.Request(
+        f"{CONFLUENCE_HOST}/api/v2/pages/{page_id}?{query}",
         headers={"Authorization": f"Basic {creds}", "Accept": "application/json"},
-        timeout=30,
     )
-    # 사용자가 읽을 수 있는 메시지로 변환. 그 외 상태코드는 raise_for_status 에 위임.
-    if resp.status_code == 401:
-        raise RuntimeError(
-            "인증 실패 (401). CONFLUENCE_EMAIL / CONFLUENCE_TOKEN 이 유효한지 확인하세요.\n"
-            "  진단: /pilot:doctor 또는 https://id.atlassian.com/manage-profile/security/api-tokens 에서 토큰 재발급"
-        )
-    if resp.status_code == 403:
-        raise RuntimeError(
-            f"권한 없음 (403, page_id={page_id}). 해당 페이지/스페이스 접근 권한이 있는 계정인지 확인하세요."
-        )
-    if resp.status_code == 404:
-        raise RuntimeError(
-            f"페이지를 찾을 수 없음 (404, page_id={page_id}). URL 또는 page_id 가 올바른지 확인하세요."
-        )
-    resp.raise_for_status()
-    data = resp.json()
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.load(resp)
+    except urllib.error.HTTPError as e:
+        # 사용자가 읽을 수 있는 메시지로 변환. 그 외 상태코드는 그대로 전파.
+        if e.code == 401:
+            raise RuntimeError(
+                "인증 실패 (401). CONFLUENCE_EMAIL / CONFLUENCE_TOKEN 이 유효한지 확인하세요.\n"
+                "  진단: /pilot:doctor 또는 https://id.atlassian.com/manage-profile/security/api-tokens 에서 토큰 재발급"
+            ) from e
+        if e.code == 403:
+            raise RuntimeError(
+                f"권한 없음 (403, page_id={page_id}). 해당 페이지/스페이스 접근 권한이 있는 계정인지 확인하세요."
+            ) from e
+        if e.code == 404:
+            raise RuntimeError(
+                f"페이지를 찾을 수 없음 (404, page_id={page_id}). URL 또는 page_id 가 올바른지 확인하세요."
+            ) from e
+        raise
     return {
         "title": data.get("title", page_id),
         "body": {"storage": {"value": data.get("body", {}).get("view", {}).get("value", "")}},

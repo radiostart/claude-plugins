@@ -1,6 +1,7 @@
 """
 tools/confluence.py 의 HTML → Markdown 변환 로직 단위 테스트.
 
+    - parse_html / Element 셰임 (stdlib html.parser 기반, bs4 대체)
     - _table_to_md (rowspan / colspan / nested table 평탄화)
     - _inline_md (bold / italic / link / mention)
     - _cell_md (pipe escape, <br> 보존)
@@ -15,8 +16,6 @@ tools/confluence.py 의 HTML → Markdown 변환 로직 단위 테스트.
 import importlib.util
 import unittest
 from pathlib import Path
-
-from bs4 import BeautifulSoup
 
 THIS_DIR = Path(__file__).resolve().parent
 PLUGIN_ROOT = THIS_DIR.parent.parent
@@ -34,7 +33,34 @@ c = _load_confluence()
 
 
 def _table(html: str):
-    return BeautifulSoup(html, "html.parser").find("table")
+    return c.parse_html(html).find("table")
+
+
+class HtmlParserShim(unittest.TestCase):
+    """parse_html / Element 셰임의 기본 동작."""
+
+    def test_text_nodes_are_plain_str(self):
+        # bs4 NavigableString 처럼 텍스트 노드는 str 이어야 isinstance 검사가 호환된다.
+        root = c.parse_html("<p>hello</p>")
+        p = root.find("p")
+        self.assertTrue(all(isinstance(ch, str) for ch in p.children))
+
+    def test_void_tag_not_pushed_to_stack(self):
+        # <br> 같은 void 태그는 닫는 태그가 없어도 후속 형제를 자식으로 빨아들이면 안 된다.
+        root = c.parse_html("<div>a<br>b</div>")
+        div = root.find("div")
+        names = [ch.name for ch in div.children if not isinstance(ch, str)]
+        self.assertEqual(names, ["br"])
+
+    def test_class_attr_returns_list(self):
+        root = c.parse_html('<a class="x y">t</a>')
+        self.assertEqual(root.find("a").get("class"), ["x", "y"])
+
+    def test_find_all_recursive_flag(self):
+        root = c.parse_html("<table><tr><td><table><tr><td>n</td></tr></table></td></tr></table>")
+        outer = root.find("table")
+        self.assertEqual(len(outer.find_all("tr", recursive=False)), 1)
+        self.assertEqual(len(outer.find_all("tr", recursive=True)), 2)
 
 
 class TableRowspanFlatten(unittest.TestCase):
@@ -115,20 +141,20 @@ class TableCellEscape(unittest.TestCase):
 
 class InlineMarkup(unittest.TestCase):
     def test_bold_italic_preserved(self):
-        soup = BeautifulSoup("<p>hello <strong>bold</strong> and <em>em</em>.</p>", "html.parser")
-        out = c._inline_md(soup.find("p"))
+        root = c.parse_html("<p>hello <strong>bold</strong> and <em>em</em>.</p>")
+        out = c._inline_md(root.find("p"))
         self.assertIn("**bold**", out)
         self.assertIn("_em_", out)
 
     def test_link_preserved(self):
-        soup = BeautifulSoup('<p>see <a href="https://x">link</a></p>', "html.parser")
-        out = c._inline_md(soup.find("p"))
+        root = c.parse_html('<p>see <a href="https://x">link</a></p>')
+        out = c._inline_md(root.find("p"))
         self.assertIn("[link](https://x)", out)
 
     def test_user_mention_renders_as_text_only(self):
         # confluence 멘션 링크는 class="user-mention" 로 표시됨 → 링크 텍스트만 남기고 URL 제거
-        soup = BeautifulSoup('<p>cc <a class="user-mention" href="/people/123">홍길동</a></p>', "html.parser")
-        out = c._inline_md(soup.find("p"))
+        root = c.parse_html('<p>cc <a class="user-mention" href="/people/123">홍길동</a></p>')
+        out = c._inline_md(root.find("p"))
         self.assertIn("홍길동", out)
         self.assertNotIn("/people/123", out)
 
@@ -141,7 +167,7 @@ class SplitSections(unittest.TestCase):
         <h2>하위1</h2>
         <p>내용1</p>
         """
-        soup = BeautifulSoup(html, "html.parser")
+        soup = c.parse_html(html)
         sections = c.split_sections(soup)
         headings = [s["heading"] for s in sections]
         self.assertIn("그룹헤딩", headings)
@@ -164,7 +190,7 @@ class ExtractPageId(unittest.TestCase):
 class HtmlToMdIntegration(unittest.TestCase):
     def test_style_block_is_stripped(self):
         # _node_to_md 가 style 태그를 무시하는지 (cmd_fetch 의 사전 strip 과는 별개의 안전망)
-        soup = BeautifulSoup("<div><style>.x{}</style><p>text</p></div>", "html.parser")
+        soup = c.parse_html("<div><style>.x{}</style><p>text</p></div>")
         out = c.html_to_md(soup)
         self.assertNotIn(".x{}", out)
         self.assertIn("text", out)
