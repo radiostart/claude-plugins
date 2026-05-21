@@ -1,0 +1,5 @@
+# venv (docs build 용 — 시스템 python 격리)
+.venv/
+
+# mkdocs build artifact
+docs-site/
