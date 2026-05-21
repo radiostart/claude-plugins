@@ -8,12 +8,9 @@ edit_uri: edit/main/pilot/docs/
 docs_dir: docs
 site_dir: docs-site
 
-# 임시 exclude — 다음 step 에서 정리·이전하면서 풀린다:
-#   - PLAN-manual.md: SDLC 메타 산출물, 사이트 콘텐츠 아님 (영구 exclude)
-#   - getting-started.md: step 6 에서 tutorial/getting-started.md 로 이전
+# 영구 exclude — PLAN-manual.md 는 SDLC 메타 산출물, 사이트 콘텐츠 아님.
 exclude_docs: |
   PLAN-manual.md
-  getting-started.md
 
 theme:
   name: material
@@ -74,6 +71,7 @@ nav:
   - Tutorial:
       - tutorial/index.md
       - Quick Start (5 분): tutorial/quick-start.md
+      - Deep Walkthrough (30 분): tutorial/getting-started.md
   - How-to:
       - how-to/index.md
       - 개발 워크플로우:

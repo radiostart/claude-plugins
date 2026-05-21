@@ -1,11 +1,9 @@
-# Pilot 시작하기 — 5분 완주
+# Pilot 시작하기 — Deep Walkthrough (30 분)
 
-이 가이드는 더미 저장소 `_input/python-sample/` 를 따라 5분 안에 첫 plan 산출
-(`features/01-{slug}.plan.md`) 까지 진행한다.
+이 가이드는 더미 저장소 `_input/python-sample/` 를 따라 *init → learn → project → create-feature → planner → critic* 의 한 사이클을 직접 돈다. 약 30 분 소요.
 
-> **시작 전:** 사전 준비 완료 시점부터 Step 5 완료까지 stopwatch 측정을 권장한다.
-> 5분 초과 시 어느 step 에서 막혔는지 `features/05-dogfooding.md` 로 피드백을 전달해 준다.
-> 실측 책임은 별도 dogfooding feature 가 담당 — 본 가이드는 경로만 안내한다.
+!!! tip "더 짧은 경로"
+    "이게 뭔지 모양만 보고 싶다" 면 [Quick Start (5 분)](quick-start.md) 가 적합하다 — 3 명령으로 첫 plan 까지. 본 가이드는 *실제 프로젝트에 도입하려는* 사용자 대상.
 
 ---
 
@@ -181,30 +179,48 @@ plan-validate: exit 0 (valid)
   services/user_service.py — validate_email 로직 추가
 ```
 
-**이것이 이 가이드의 최종 목표다.** plan 파일
-(`features/01-user-email-field.plan.md`) 이 생성되면 5분 완주에 성공한 것이다.
+plan 파일 (`features/01-user-email-field.plan.md`) 이 생성되면 1차 목표 달성. 다음 step 으로 *adversarial 검증* 을 한 번 돌려 본다.
+
+---
+
+## Step 6: plan 검증 (`@pilot-planner-critic`) — v0.4.0 신규
+
+```
+@pilot-planner-critic
+```
+
+planner 와 같은 컨텍스트 위에서 페르소나만 정반대 (architect → red-team) 로 동작한다. 5 카테고리 — `premise` · `scope` · `edge-case` · `alternative` · `risk` — 로 챌린지를 만들고:
+
+```
+features/01-user-email-field.plan.critic.md
+```
+
+에 결과를 기록한다. `severity` 별 `blocking` · `suggestion` · `nit` 개수가 보고된다.
+
+**critic 의 책임 경계** — plan/코드를 *직접 수정하지 않는다*. 챌린지 검토 후 사용자가 어떤 항목을 채택할지 결정하고 `@pilot-planner` 재호출이 합의 표를 채운다. 자세히는 [Critic 활용 How-to](../how-to/critic-review.md) 참조.
+
+trivial 한 변경에서는 critic 을 건너뛰고 바로 `@pilot-generator` 로 가도 된다 — 다만 *생략은 항상 사용자 결정*.
 
 ---
 
 ## 다음 단계
 
-plan 이 준비됐으면 아래 순서로 구현·검토를 진행한다:
+본 사이클을 끝까지 돌리려면:
 
 ```
-@pilot-generator   # plan 기반 코드 구현
-@pilot-evaluator   # 구현 완성도 검토 + 체크리스트
+@pilot-planner          # 합의 표 채우면서 plan 수정 (critic 결과 반영)
+@pilot-generator        # plan 기반 코드 구현
+@pilot-evaluator        # 구현 완성도 검토 + 체크리스트
 ```
 
-**관련 features (현재 작업 중):**
+**자주 함께 쓰는 작업:**
 
-- [TDD 모드 토글](../skills/tdd/SKILL.md)
-  — 구현 완료 후 TDD 사이클로 전환하는 방법.
-- [Doctor 진단](../skills/doctor/SKILL.md)
-  — `/pilot:doctor` 로 워크스페이스 정합성을 자동 점검하는 방법.
-- [SKILL 인덱스](../skills/context/INDEX.md) — 전체 스킬 목록.
+- How-to: [TDD 모드 활성화](../how-to/tdd-mode.md) · [Critic 활용](../how-to/critic-review.md) · [Doctor 진단·마이그레이션](../how-to/doctor-migration.md)
+- Reference: [에이전트](../reference/agents/) · [스킬](../reference/skills/) · [도구](../reference/tools/)
+- Explanation: [에이전트 흐름](../explanation/agent-flow.md) · [모드](../explanation/modes.md)
 
-> **cross-domain 시나리오**를 시도하는 경우 (`secondary-domain/` 서브트리 포함)
-> — 단일 도메인 5분 완주 이후에 features/09 cross-domain 처리 가이드를 참조한다.
+!!! note "cross-domain 시나리오"
+    `secondary-domain/` 서브트리를 포함한 더미 저장소를 사용한 경우 — 본 가이드 완료 후 [외부 도메인 부트스트랩](../how-to/cross-domain-learn.md) 으로 진입.
 
 ---
 
@@ -226,7 +242,7 @@ cat workspace/context/config.md   # 표 내용 확인
 
 ---
 
-### 2. wizard 잘못 매핑 정정 경로
+### 2. wizard 잘못 매핑 정정 경로 { #2-wizard-잘못-매핑-정정-경로 }
 
 **증상:** 결과의 "scope 후보: M개 매핑 ({폴더목록})" 에서 `controllers/` 같이
 도메인과 무관한 폴더가 잡혔다. 이는 wizard 가 빈도 ≥ 1 인 폴더를 자동 매핑하는
@@ -308,17 +324,15 @@ orchestrate-load 관련 항목도 확인한다.
 
 ---
 
-## timing 측정 가이드
-
-사전 준비 완료 후 **Step 1 부터 Step 5 까지** stopwatch 로 측정을 권장한다. 목표: 5분 이내.
+## 예상 소요
 
 | Step | 작업 | 예상 소요 |
 |------|------|-----------|
-| 1 | `/pilot:init` | 30초~1분 |
-| 2 | `/pilot:learn` (Phase 2 확인 포함) | 1~2분 |
+| 1 | `/pilot:init` | 30초 ~ 1분 |
+| 2 | `/pilot:learn` (Phase 2 확인 포함) | 1 ~ 2 분 |
 | 3 | `/pilot:project` | 20초 |
 | 4 | `/pilot:create-feature` | 30초 |
-| 5 | `@pilot-planner` | 1~2분 |
+| 5 | `@pilot-planner` | 1 ~ 2 분 |
+| 6 | `@pilot-planner-critic` | 1 ~ 2 분 |
 
-5분 초과 시 어느 step 에서 막혔는지 `features/05-dogfooding.md` 로 피드백을 전달해 준다.
-실측 자동화 인프라는 미구현 — 사용자의 직접 측정이 가이드 개선의 가장 빠른 경로다.
+합계 약 5 ~ 10 분의 실 작업 + Step 5·6 검토 + Troubleshooting 확인 시간을 포함해 *30 분* 정도 예산. 처음 사용 시 wizard 응답·도메인 매핑·feature 명세 보강에 시간이 더 들 수 있다.
