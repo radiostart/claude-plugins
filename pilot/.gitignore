@@ -3,3 +3,9 @@
 
 # mkdocs build artifact
 docs-site/
+
+# docs_build.py 자동 추출 결과 (SSOT 는 agents/skills/tools/identity.yml — drift 는 CI --check 가 감지)
+docs/reference/agents/
+docs/reference/skills/
+docs/reference/tools/
+docs/reference/identity.md
