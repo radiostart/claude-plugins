@@ -1,0 +1,16 @@
+## VERIFICATION REPORT
+- status: READY
+- feature: #07 회원 가입 capture
+- mode: characterize
+- gates:
+  - requirements: pass
+  - tdd_evidence: pass — [Captured] 4 라인
+  - capture_lockdown: skip — (잘못! characterize 모드에선 pass|fail 이어야 함)
+  - test_run: pass — exit 0
+  - scope: pass
+  - drift: none
+- metrics:
+  - coverage: skip
+- issues_to_fix:
+  - none
+- next: null

@@ -1,0 +1,16 @@
+## VERIFICATION REPORT
+- status: maybe
+- feature: #03 결제
+- mode: tdd_mode
+- gates:
+  - requirements: ok
+  - tdd_evidence: passed
+  - capture_lockdown: skip
+  - test_run: pass
+  - scope: pass
+  - drift: detected
+- metrics:
+  - coverage: skip
+- issues_to_fix:
+  - [Major] drift 발견 — workspace/...
+- next: null

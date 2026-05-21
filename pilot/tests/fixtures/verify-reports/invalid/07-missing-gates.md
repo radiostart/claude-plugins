@@ -1,0 +1,14 @@
+## VERIFICATION REPORT
+- status: READY
+- feature: #03 결제
+- mode: red_contract
+- gates:
+  - requirements: pass
+  - tdd_evidence: pass
+  - test_run: pass
+  - scope: pass
+- metrics:
+  - coverage: skip
+- issues_to_fix:
+  - none
+- next: null

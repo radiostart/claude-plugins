@@ -1,0 +1,16 @@
+## VERIFICATION REPORT
+- status: NOT_READY
+- feature: #08 회원 등급 갱신
+- mode: standard
+- gates:
+  - requirements: pass — features/08-grade-update.md
+  - tdd_evidence: skip — tdd:false & mode≠characterize
+  - capture_lockdown: skip — mode 가 characterize 아님
+  - test_run: skip — 수기 시나리오
+  - scope: pass — .focus.md 범위 내
+  - drift: detected — workspace/context/scope/member.md:32 vs app/models/member.rb (count: 4) — 일괄 정리 권장
+- metrics:
+  - coverage: skip
+- issues_to_fix:
+  - [Minor] drift 4 건 — workspace/context/scope/member.md 갱신 필요
+- next: null

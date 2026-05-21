@@ -1,0 +1,16 @@
+## VERIFICATION REPORT
+- status: READY
+- feature: #07 회원 가입 spec capture
+- mode: characterize
+- gates:
+  - requirements: pass — features/07-signup-capture.md
+  - tdd_evidence: pass — [Captured] 4 라인 × 5 스텝 기록
+  - capture_lockdown: pass — git diff --stat app/ empty
+  - test_run: pass — bundle exec rspec spec/characterize/signup_spec.rb (exit 0)
+  - scope: pass — .focus.md 범위 내
+  - drift: none
+- metrics:
+  - coverage: skip
+- issues_to_fix:
+  - none
+- next: null
