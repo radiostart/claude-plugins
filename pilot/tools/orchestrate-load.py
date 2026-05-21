@@ -165,19 +165,23 @@ LANG_KEYS = (
 )
 
 
-def parse_lang_tools(config_md: Path) -> dict[str, str]:
+def parse_lang_tools(config_md: Path) -> dict[str, str] | None:
     """
     config.md 의 `## 언어·도구 기본값` 섹션에서 표 행을 파싱.
     | `key` | `value` | 설명 | 형식만 지원. 반환 키는 LANG_KEYS 에 제한.
 
     호출 대상: `workspace/context/config.md`
+
+    반환값:
+    - `dict` — 정상 파싱 (섹션·키 없으면 빈 dict).
+    - `None` — 파일 부재 또는 읽기 예외 (호출부가 "손상" 으로 판단해 경고).
     """
     if not config_md.is_file():
-        return {}
+        return None
     try:
         text = config_md.read_text(encoding="utf-8")
     except Exception:
-        return {}
+        return None
     m = re.search(
         r"##\s*언어[·\s]*도구[\s]*기본값([\s\S]*?)(?:\n##\s|\Z)", text
     )
@@ -301,7 +305,12 @@ def read_focus(focus_md: Path) -> str | None:
     lines = text.splitlines()
     if lines and lines[0].lstrip().startswith("#"):
         body = "\n".join(lines[1:]).strip()
-        return body or None
+        if body:
+            return body
+        # heading 만 있는 파일 — heading 텍스트 자체를 지시로 간주.
+        # (본문이 비었다고 사용자 지시를 통째로 버리지 않는다.)
+        heading = lines[0].lstrip().lstrip("#").strip()
+        return heading or None
     return text
 
 
@@ -310,11 +319,19 @@ def plugin_root() -> str:
     return os.environ.get(PLUGIN_ROOT_ENV, "${CLAUDE_PLUGIN_ROOT}")
 
 
+def has_path_traversal(name: str) -> bool:
+    """식별자(project/domain)에 경로 구분자나 `..` 가 있으면 True.
+
+    이 값들은 workspace 하위 경로에 그대로 보간되므로, traversal 문자가
+    있으면 workspace 밖 파일이 `files_to_read` 에 섞일 수 있다.
+    """
+    return "/" in name or "\\" in name or ".." in name
+
+
 def build_load_plan(
     workspace: Path,
     project: str,
     domain: str | None,
-    analyzed: bool,
     tdd: bool,
     phase: str,
     mode: str | None = None,
@@ -356,7 +373,13 @@ def build_load_plan(
     add_if_exists(manifest_abs, "workspace/context/MANIFEST.md")
     config_abs = workspace / "context" / "config.md"
     if config_abs.is_file():
-        config.update(parse_lang_tools(config_abs))
+        parsed = parse_lang_tools(config_abs)
+        if parsed is None:
+            hints.append(
+                "[WARN] workspace/context/config.md 읽기 실패 — 언어·도구 기본값 누락"
+            )
+        else:
+            config.update(parsed)
 
     # 2) project.md (always if exists)
     project_md_abs = workspace / "projects" / project / "project.md"
@@ -513,15 +536,31 @@ def main() -> int:
             )
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 1
+    if has_path_traversal(project):
+        result["error"] = (
+            f"프로젝트명에 허용되지 않는 문자(`/` `\\` `..`): {project!r}"
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 1
     result["project"] = project
 
-    # state.yml
+    # state.yml — 누락 / 읽기 실패 / 빈 파일을 각각 구분해 안내한다.
     state_yml = workspace / "projects" / project / ".agent-state.yml"
     state = parse_state_yml(state_yml)
     if not state:
-        result["error"] = (
-            f".agent-state.yml 누락. `/pilot:project {project}` 재실행 또는 직접 작성."
-        )
+        if not state_yml.is_file():
+            result["error"] = (
+                f".agent-state.yml 누락. `/pilot:project {project}` 재실행 또는 직접 작성."
+            )
+        elif state is None:
+            result["error"] = (
+                f".agent-state.yml 읽기 실패 (인코딩·권한 등 확인 필요): {state_yml}"
+            )
+        else:
+            result["error"] = (
+                f".agent-state.yml 가 비어 있거나 유효한 `key: value` 가 없음: "
+                f"{state_yml}. 내용을 확인하거나 `/pilot:project {project}` 로 재생성."
+            )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 1
 
@@ -550,6 +589,11 @@ def main() -> int:
     state_mode = state.get("mode")
     if isinstance(state_mode, str) and state_mode:
         result["mode"] = state_mode
+        if state_mode != "characterize":
+            result["hints"].append(
+                f"[WARN] state.mode={state_mode!r} 는 인식되지 않는 모드 — "
+                "표준 모드로 처리됨. 유효 값: 'characterize' 또는 미설정."
+            )
 
     # Domain — state 의 domain 필드 우선, null 이면 project.md 에서 추출
     project_md = workspace / "projects" / project / "project.md"
@@ -558,6 +602,13 @@ def main() -> int:
         result["domain"] = state_domain
     else:
         result["domain"] = determine_domain(project_md)
+    # domain 은 scope/rules 경로에 보간되므로 traversal 문자가 있으면 무시한다.
+    if result["domain"] and has_path_traversal(result["domain"]):
+        result["hints"].append(
+            f"[WARN] domain={result['domain']!r} 에 허용되지 않는 문자 — 무시됨. "
+            "도메인 미판정으로 처리."
+        )
+        result["domain"] = None
 
     # Focus
     focus_md = workspace / "projects" / project / ".focus.md"
@@ -572,7 +623,6 @@ def main() -> int:
         workspace=workspace,
         project=project,
         domain=result["domain"],
-        analyzed=result["analyzed"],
         tdd=result["tdd"],
         phase=args.phase,
         mode=result["mode"],

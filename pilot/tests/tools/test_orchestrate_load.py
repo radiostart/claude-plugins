@@ -138,6 +138,10 @@ class ParseLangTools(unittest.TestCase):
         manifest = self._write_manifest("# foo\n\n## 다른 섹션\n\n내용\n")
         self.assertEqual(m.parse_lang_tools(manifest), {})
 
+    def test_missing_file_returns_none(self):
+        """파일 부재·읽기 실패는 None — 호출부가 '손상' 으로 구분해 경고."""
+        self.assertIsNone(m.parse_lang_tools(Path("/nonexistent/config.md")))
+
 
 class ParseLangOverride(unittest.TestCase):
     def _write(self, body: str) -> Path:
@@ -203,6 +207,11 @@ class ReadFocus(unittest.TestCase):
     def test_missing_file_returns_none(self):
         self.assertIsNone(m.read_focus(Path("/nonexistent")))
 
+    def test_heading_only_returns_heading_text(self):
+        """본문 없이 heading 만 있는 focus 파일은 heading 텍스트를 지시로 반환."""
+        p = self._write("# 소프트 딜리트 빼줘\n")
+        self.assertEqual(m.read_focus(p), "소프트 딜리트 빼줘")
+
 
 class BuildLoadPlanIntegration(unittest.TestCase):
     """build_load_plan 통합 — 실제 workspace 디렉토리 트리 만들고 호출."""
@@ -221,7 +230,7 @@ class BuildLoadPlanIntegration(unittest.TestCase):
 
             files, hints, config = m.build_load_plan(
                 workspace=ws, project=project,
-                domain=None, analyzed=False, tdd=False, phase="planner",
+                domain=None, tdd=False, phase="planner",
             )
             self.assertIn("workspace/context/MANIFEST.md", files)
             self.assertIn(f"workspace/projects/{project}/project.md", files)
@@ -249,7 +258,7 @@ class BuildLoadPlanIntegration(unittest.TestCase):
 
             _, _, config = m.build_load_plan(
                 workspace=ws, project=project,
-                domain=None, analyzed=False, tdd=False, phase="planner",
+                domain=None, tdd=False, phase="planner",
             )
             # 프로젝트 override 적용
             self.assertEqual(config.get("test_command"), "bundle exec rspec --format documentation")
@@ -262,7 +271,7 @@ class BuildLoadPlanIntegration(unittest.TestCase):
             (ws / "projects" / "P").mkdir(parents=True)
             files, _, _ = m.build_load_plan(
                 workspace=ws, project="P",
-                domain=None, analyzed=False, tdd=False, phase="generator",
+                domain=None, tdd=False, phase="generator",
             )
             self.assertTrue(any("coding.md" in f for f in files))
 
@@ -272,7 +281,7 @@ class BuildLoadPlanIntegration(unittest.TestCase):
             (ws / "projects" / "P").mkdir(parents=True)
             files, hints, _ = m.build_load_plan(
                 workspace=ws, project="P",
-                domain=None, analyzed=False, tdd=True, phase="planner",
+                domain=None, tdd=True, phase="planner",
             )
             self.assertTrue(any("rgr.md" in f for f in files))
             self.assertTrue(any("TDD" in h for h in hints))
@@ -283,12 +292,96 @@ class BuildLoadPlanIntegration(unittest.TestCase):
             (ws / "projects" / "P").mkdir(parents=True)
             files, hints, _ = m.build_load_plan(
                 workspace=ws, project="P",
-                domain=None, analyzed=False, tdd=True, phase="planner",
+                domain=None, tdd=True, phase="planner",
                 mode="characterize",
             )
             self.assertTrue(any("characterize.md" in f for f in files))
             # tdd=true 였지만 mode 가 우선이므로 경고 힌트 포함
             self.assertTrue(any("characterize" in h for h in hints))
+
+
+class HasPathTraversal(unittest.TestCase):
+    def test_plain_identifier_is_safe(self):
+        self.assertFalse(m.has_path_traversal("MyProject"))
+        self.assertFalse(m.has_path_traversal("proj-1"))
+        self.assertFalse(m.has_path_traversal("retail_v2"))
+
+    def test_path_separator_flagged(self):
+        self.assertTrue(m.has_path_traversal("a/b"))
+        self.assertTrue(m.has_path_traversal("a\\b"))
+
+    def test_dotdot_flagged(self):
+        self.assertTrue(m.has_path_traversal(".."))
+        self.assertTrue(m.has_path_traversal("../etc"))
+
+
+class MainStateErrors(unittest.TestCase):
+    """main() 의 .agent-state.yml 진단 메시지 — 누락 / 빈 파일 / 손상 구분."""
+
+    def _run(self, workspace: Path) -> tuple[int, dict]:
+        import json
+        import subprocess
+
+        proc = subprocess.run(
+            ["python3", str(TOOL_PATH), "--phase", "planner",
+             "--workspace", str(workspace)],
+            capture_output=True, text=True,
+        )
+        return proc.returncode, json.loads(proc.stdout)
+
+    def _scaffold(self, td: str) -> Path:
+        """STATE.md(1 개 진행중) + projects/P/ 까지 구성. state.yml 은 미생성."""
+        ws = Path(td)
+        (ws / "projects" / "P").mkdir(parents=True)
+        (ws / "STATE.md").write_text(
+            "| 순번 | 이름 | 상태 | 비고 |\n"
+            "| --- | --- | --- | --- |\n"
+            "| 1 | P | 진행중 | x |\n",
+            encoding="utf-8",
+        )
+        return ws
+
+    def test_missing_state_reports_누락(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._scaffold(td)
+            rc, out = self._run(ws)
+            self.assertEqual(rc, 1)
+            self.assertIn("누락", out["error"])
+
+    def test_empty_state_reports_비어있음(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._scaffold(td)
+            (ws / "projects" / "P" / ".agent-state.yml").write_text(
+                "", encoding="utf-8"
+            )
+            rc, out = self._run(ws)
+            self.assertEqual(rc, 1)
+            self.assertIn("비어", out["error"])
+            self.assertNotIn("누락", out["error"])
+
+    def test_comments_only_state_reports_비어있음(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._scaffold(td)
+            (ws / "projects" / "P" / ".agent-state.yml").write_text(
+                "# 주석만 있는 파일\n# key 없음\n", encoding="utf-8"
+            )
+            rc, out = self._run(ws)
+            self.assertEqual(rc, 1)
+            self.assertIn("비어", out["error"])
+
+    def test_traversal_in_project_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            (ws / "projects").mkdir(parents=True)
+            (ws / "STATE.md").write_text(
+                "| 순번 | 이름 | 상태 | 비고 |\n"
+                "| --- | --- | --- | --- |\n"
+                "| 1 | ../evil | 진행중 | x |\n",
+                encoding="utf-8",
+            )
+            rc, out = self._run(ws)
+            self.assertEqual(rc, 1)
+            self.assertIn("허용되지 않는 문자", out["error"])
 
 
 if __name__ == "__main__":
