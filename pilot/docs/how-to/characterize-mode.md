@@ -48,5 +48,5 @@
 ## 다음 단계
 
 - :material-book-open-variant: Reference: [`/pilot:characterize`](../reference/skills/characterize.md) · [plan-schema 의 characterize 모드](https://github.com/radiostart/claude-plugins/blob/main/pilot/skills/context/lifecycle/plan-schema.md)
-- :material-lightbulb-on: Explanation: [모드 비교](../explanation/index.md#modes)
+- :material-lightbulb-on: Explanation: [모드 — Standard / TDD / Characterize](../explanation/modes.md)
 - :material-tools: How-to: 안전망이 확보되면 [TDD 모드](tdd-mode.md) 로 전환해 리팩터를 진행하는 흐름이 자연스럽습니다.

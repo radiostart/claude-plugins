@@ -99,6 +99,16 @@ nav:
       - Identity SSOT: reference/identity.md
   - Explanation:
       - explanation/index.md
+      - 핵심 개념: explanation/concepts.md
+      - 에이전트 시스템:
+          - 에이전트 흐름: explanation/agent-flow.md
+          - Workspace 레이아웃: explanation/workspace-layout.md
+      - 모드·운영:
+          - 모드 - Standard / TDD / Characterize: explanation/modes.md
+          - Drift Protocol: explanation/drift-protocol.md
+      - SSOT·릴리스:
+          - SSOT 와 derived: explanation/ssot-and-derivation.md
+          - 릴리스·업그레이드: explanation/release-and-upgrade.md
 
 extra:
   version: "0.4.0"  # docs_build.py 가 plugin.json 으로 동기화 (예정)

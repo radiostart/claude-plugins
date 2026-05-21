@@ -52,5 +52,5 @@
 ## 다음 단계
 
 - :material-book-open-variant: Reference: [`/pilot:tdd`](../reference/skills/tdd.md) · [`@pilot-planner`](../reference/agents/pilot-planner.md)
-- :material-lightbulb-on: Explanation: [모드 비교 — Standard / TDD / Characterize](../explanation/index.md#modes)
+- :material-lightbulb-on: Explanation: [모드 — Standard / TDD / Characterize](../explanation/modes.md)
 - :material-tools: How-to: 레거시 코드는 TDD 대신 [Characterize 모드](characterize-mode.md) 가 더 안전합니다.
