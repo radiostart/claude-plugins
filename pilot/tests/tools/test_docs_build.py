@@ -62,43 +62,101 @@ class ParseFrontmatter(unittest.TestCase):
 class RewriteLinks(unittest.TestCase):
     GITHUB = m.GITHUB_BLOB_BASE
 
-    def test_plugin_root_prefix_becomes_github_url(self):
-        text = "see [planner](${CLAUDE_PLUGIN_ROOT}/agents/pilot-planner.md) for details."
-        out = m.rewrite_links(text, source_rel_dir="agents")
-        self.assertIn(f"({self.GITHUB}/agents/pilot-planner.md)", out)
+    # ── site internal 변환 ──
 
-    def test_relative_skill_link_resolves_via_source_dir(self):
-        # skills/project/SKILL.md 안의 `../analyze/SKILL.md` → pilot/skills/analyze/SKILL.md
-        text = "see [analyze](../analyze/SKILL.md)."
-        out = m.rewrite_links(text, source_rel_dir="skills/project")
-        self.assertIn(f"({self.GITHUB}/skills/analyze/SKILL.md)", out)
+    def test_agent_to_agent_becomes_same_dir(self):
+        # reference/agents/pilot-X.md 안에서 다른 agent → 같은 디렉토리 상대 link
+        text = "see [planner](${CLAUDE_PLUGIN_ROOT}/agents/pilot-planner.md)"
+        out = m.rewrite_links(text, source_rel_dir="agents", output_rel_dir="agents")
+        self.assertIn("(pilot-planner.md)", out)
+        self.assertNotIn(self.GITHUB, out)
 
-    def test_relative_to_context_resolves(self):
-        text = "[guide](../context/lifecycle/state-schema.md)"
-        out = m.rewrite_links(text, source_rel_dir="skills/project")
+    def test_agent_to_skill_uses_parent_dir(self):
+        # reference/agents/X.md 안에서 skill → ../skills/Y.md
+        text = "[tdd](${CLAUDE_PLUGIN_ROOT}/skills/tdd/SKILL.md)"
+        out = m.rewrite_links(text, source_rel_dir="agents", output_rel_dir="agents")
+        self.assertIn("(../skills/tdd.md)", out)
+
+    def test_skill_to_agent_uses_parent_dir(self):
+        # reference/skills/X.md 안에서 agent → ../agents/pilot-Y.md
+        text = "[planner](${CLAUDE_PLUGIN_ROOT}/agents/pilot-planner.md)"
+        out = m.rewrite_links(text, source_rel_dir="skills/tdd", output_rel_dir="skills")
+        self.assertIn("(../agents/pilot-planner.md)", out)
+
+    def test_relative_sibling_skill_becomes_same_dir(self):
+        # skills/project/SKILL.md 안의 `../analyze/SKILL.md` → site `analyze.md` (same dir)
+        text = "[analyze](../analyze/SKILL.md)"
+        out = m.rewrite_links(text, source_rel_dir="skills/project", output_rel_dir="skills")
+        self.assertIn("(analyze.md)", out)
+        self.assertNotIn(self.GITHUB, out)
+
+    # ── GitHub fallback ──
+
+    def test_skill_context_lifecycle_falls_back_to_github(self):
+        # skills/context/lifecycle/* 는 site Reference 에 없음 → GitHub URL.
+        text = "[schema](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/state-schema.md)"
+        out = m.rewrite_links(text, source_rel_dir="agents", output_rel_dir="agents")
         self.assertIn(f"({self.GITHUB}/skills/context/lifecycle/state-schema.md)", out)
+
+    def test_relative_to_context_falls_back_to_github(self):
+        text = "[guide](../context/lifecycle/state-schema.md)"
+        out = m.rewrite_links(text, source_rel_dir="skills/project", output_rel_dir="skills")
+        self.assertIn(f"({self.GITHUB}/skills/context/lifecycle/state-schema.md)", out)
+
+    # ── 무변경 ──
 
     def test_external_url_unchanged(self):
         text = "[gh](https://github.com/foo/bar) and [http](http://example.com)"
-        out = m.rewrite_links(text, source_rel_dir="agents")
+        out = m.rewrite_links(text, source_rel_dir="agents", output_rel_dir="agents")
         self.assertEqual(out, text)
 
     def test_anchor_unchanged(self):
         text = "[section](#some-anchor)"
-        out = m.rewrite_links(text, source_rel_dir="agents")
+        out = m.rewrite_links(text, source_rel_dir="agents", output_rel_dir="agents")
         self.assertEqual(out, text)
 
     def test_link_escaping_pilot_root_preserves_original(self):
         # `..` 가 pilot/ 밖으로 나가는 경우 원본 유지 (사용자 검토용)
         text = "[outside](../../README.md)"
-        out = m.rewrite_links(text, source_rel_dir="agents")
+        out = m.rewrite_links(text, source_rel_dir="agents", output_rel_dir="agents")
         self.assertEqual(out, text)
 
     def test_code_block_placeholder_untouched(self):
-        # markdown link 형식이 아닌 placeholder 는 손대지 않는다.
         text = "환경 변수 `${CLAUDE_PLUGIN_ROOT}` 를 참조."
-        out = m.rewrite_links(text, source_rel_dir="agents")
+        out = m.rewrite_links(text, source_rel_dir="agents", output_rel_dir="agents")
         self.assertEqual(out, text)
+
+
+class SitePathFor(unittest.TestCase):
+    def test_agent_maps_to_reference_agents(self):
+        self.assertEqual(m.site_path_for("agents/pilot-planner.md"), "reference/agents/pilot-planner.md")
+
+    def test_skill_maps_to_reference_skills_stem(self):
+        self.assertEqual(m.site_path_for("skills/tdd/SKILL.md"), "reference/skills/tdd.md")
+
+    def test_context_lifecycle_returns_none(self):
+        self.assertIsNone(m.site_path_for("skills/context/lifecycle/state-schema.md"))
+
+    def test_tool_returns_none(self):
+        self.assertIsNone(m.site_path_for("tools/orchestrate-load.py"))
+
+
+class BuildCategoryIndex(unittest.TestCase):
+    def test_emits_h1_count_and_entries(self):
+        entries = [
+            ("pilot-planner.md", "새 기능 구현 시작 시 계획 수립."),
+            ("pilot-generator.md", "코드를 구현한다."),
+        ]
+        out = m.build_category_index("Agents", entries)
+        self.assertIn("# Agents", out)
+        self.assertIn("전체 2 항목", out)
+        self.assertIn("[`pilot-planner`](pilot-planner.md) — 새 기능 구현 시작 시 계획 수립.", out)
+
+    def test_skips_description_when_empty(self):
+        out = m.build_category_index("Tools", [("foo.md", "")])
+        self.assertIn("[`foo`](foo.md)", out)
+        # link 라인 자체에는 description em-dash 가 붙지 않아야 한다.
+        self.assertNotIn("[`foo`](foo.md) —", out)
 
 
 class StripWrapperQuote(unittest.TestCase):

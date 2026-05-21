@@ -6,19 +6,19 @@
 
 <div class="grid cards" markdown>
 
--   :material-account-cog:{ .lg .middle } __[Agents](agents/)__
+-   :material-account-cog:{ .lg .middle } __[Agents](agents/index.md)__
 
     ---
 
     `@pilot-planner` · `@pilot-planner-critic` · `@pilot-generator` · `@pilot-evaluator` · `@pilot-code-review` 의 호출 절차·책임 경계·금지 사항.
 
--   :material-slash-forward-box:{ .lg .middle } __[Skills](skills/)__
+-   :material-slash-forward-box:{ .lg .middle } __[Skills](skills/index.md)__
 
     ---
 
     `/pilot:*` 슬래시 커맨드 — `init`, `project`, `analyze`, `create-feature`, `focus`, `tdd`, `characterize`, `doctor`, `confl`, `slack`, `commit`, `pr`, `review`, `learn`, `issue`, `code-review-init`, `fix-review`.
 
--   :material-console:{ .lg .middle } __[Tools](tools/)__
+-   :material-console:{ .lg .middle } __[Tools](tools/index.md)__
 
     ---
 

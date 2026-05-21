@@ -56,6 +56,29 @@ GITHUB_BLOB_BASE = "https://github.com/radiostart/claude-plugins/blob/main/pilot
 _LINK_RE = re.compile(r"\]\(([^)\s]+)\)")
 _PLUGIN_ROOT_PREFIX = "${CLAUDE_PLUGIN_ROOT}/"
 
+# pilot/ 기준 path → site 의 reference/ 안 path 매핑.
+# 이 두 패턴에 매치되는 link 만 *site internal* 로 변환되고, 나머지는 GitHub URL 로 간다.
+_INTERNAL_AGENT_RE = re.compile(r"^agents/(pilot-[\w-]+)\.md$")
+_INTERNAL_SKILL_RE = re.compile(r"^skills/([\w-]+)/SKILL\.md$")
+
+
+def site_path_for(pilot_rel_path: str) -> str | None:
+    """pilot/ 기준 path 가 site 의 reference/ 안에 매핑되면 site path 반환, 아니면 None.
+
+    예:
+        agents/pilot-planner.md           → reference/agents/pilot-planner.md
+        skills/tdd/SKILL.md               → reference/skills/tdd.md
+        skills/context/lifecycle/foo.md   → None (사이트에 없음, GitHub URL 로 fallback)
+        tools/orchestrate-load.py         → None (tool 변환은 stem 기반이라 별도 매핑 — site internal 변환 대상 아님)
+    """
+    m = _INTERNAL_AGENT_RE.match(pilot_rel_path)
+    if m:
+        return f"reference/agents/{m.group(1)}.md"
+    m = _INTERNAL_SKILL_RE.match(pilot_rel_path)
+    if m:
+        return f"reference/skills/{m.group(1)}.md"
+    return None
+
 
 # ── 공통 파서 ─────────────────────────────────────────────────
 
@@ -78,34 +101,42 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
     return meta, body
 
 
-def rewrite_links(text: str, source_rel_dir: str) -> str:
-    """모든 markdown inline link 의 path 를 GitHub blob URL 로 변환.
+def rewrite_links(text: str, source_rel_dir: str, output_rel_dir: str) -> str:
+    """markdown inline link 를 site internal 또는 GitHub URL 로 재작성.
 
-    `source_rel_dir` 는 원본 파일의 pilot/ 기준 상대 디렉토리 (예: 'agents', 'skills/project').
-    SKILL.md 등은 원본 위치를 기준으로 `../X` 같은 상대 path 를 해석하므로 이 인자가 필요하다.
+    - `source_rel_dir`: 원본 파일의 pilot/ 기준 상대 디렉토리 (예: 'agents', 'skills/project').
+      SKILL.md 의 `../X` 같은 상대 link 를 해석할 때 base 로 사용.
+    - `output_rel_dir`: 생성될 site 페이지의 reference/ 기준 디렉토리 (예: 'agents', 'skills').
+      site internal link 의 상대 path 를 계산할 때 from 으로 사용.
 
-    변환 규칙:
-        ${CLAUDE_PLUGIN_ROOT}/Y       → GITHUB_BLOB_BASE/Y
-        외부 URL (http/https/mailto)  → 변경 없음
-        anchor `#fragment`            → 변경 없음
-        상대 path                     → source_rel_dir 기준 resolve → GITHUB_BLOB_BASE/{resolved}
-
-    site 내부 cross-link 로의 변환은 step 7 (README 슬림화 + cross-link 정책) 에서 점진 적용 예정.
+    변환 규칙 (우선순위 순):
+        외부 URL · anchor · mailto    → 변경 없음
+        site internal 매핑 가능        → reference/ 안의 상대 path (예: '../agents/pilot-planner.md')
+        pilot/ 안의 그 외 path        → GITHUB_BLOB_BASE/{pilot_path}
+        pilot/ 밖으로 나가는 상대     → 원본 유지 (사용자 검토용)
     """
 
     def _replace(match: re.Match[str]) -> str:
         link = match.group(1)
         if link.startswith(("http://", "https://", "#", "mailto:")):
             return match.group(0)
+
+        # pilot/ 기준 path 로 정규화.
         if link.startswith(_PLUGIN_ROOT_PREFIX):
-            target = link[len(_PLUGIN_ROOT_PREFIX) :]
-            return f"]({GITHUB_BLOB_BASE}/{target})"
-        # 상대 path — source_rel_dir 기준 resolve
-        resolved = posixpath.normpath(posixpath.join(source_rel_dir, link))
-        if resolved.startswith(".."):
-            # pilot/ 밖으로 나간 link — 보수적으로 원본 유지 (사용자 검토용)
-            return match.group(0)
-        return f"]({GITHUB_BLOB_BASE}/{resolved})"
+            pilot_path = link[len(_PLUGIN_ROOT_PREFIX) :]
+        else:
+            pilot_path = posixpath.normpath(posixpath.join(source_rel_dir, link))
+            if pilot_path.startswith(".."):
+                return match.group(0)
+
+        # 1) site internal 매핑 시도 — Reference 안의 agent / skill 페이지로.
+        site_path = site_path_for(pilot_path)
+        if site_path:
+            rel = posixpath.relpath(site_path, f"reference/{output_rel_dir}")
+            return f"]({rel})"
+
+        # 2) 그 외 → GitHub blob URL.
+        return f"]({GITHUB_BLOB_BASE}/{pilot_path})"
 
     return _LINK_RE.sub(_replace, text)
 
@@ -141,7 +172,11 @@ def transform_agent(src_path: Path) -> str:
     name = meta.get("name", src_path.stem)
     description = (meta.get("description") or "").strip()
     body_stripped = strip_wrapper_quote(body).lstrip("\n").rstrip() + "\n"
-    body_rewritten = rewrite_links(body_stripped, source_rel_dir=SRC_AGENTS_DIR)
+    body_rewritten = rewrite_links(
+        body_stripped,
+        source_rel_dir=SRC_AGENTS_DIR,
+        output_rel_dir="agents",
+    )
     desc_block = f"> {description}\n\n" if description else ""
     return f"# `@{name}`\n\n{desc_block}{body_rewritten}"
 
@@ -164,7 +199,11 @@ def transform_skill(src_dir: Path) -> str | None:
         while body_lines and body_lines[0].strip() == "":
             body_lines = body_lines[1:]
     body_final = "".join(body_lines)
-    body_rewritten = rewrite_links(body_final, source_rel_dir=f"{SRC_SKILLS_DIR}/{src_dir.name}")
+    body_rewritten = rewrite_links(
+        body_final,
+        source_rel_dir=f"{SRC_SKILLS_DIR}/{src_dir.name}",
+        output_rel_dir="skills",
+    )
     return f"# `/{name}`\n\n{desc_block}{body_rewritten}"
 
 
@@ -230,31 +269,78 @@ def transform_identity(yml_path: Path) -> str:
 # ── 빌드·검증 ─────────────────────────────────────────────────
 
 
+def build_category_index(title: str, entries: list[tuple[str, str]]) -> str:
+    """카테고리 index.md 생성. entries 는 (link_target_filename, description) 의 정렬된 리스트.
+
+    카드 link 가 디렉토리 자체로 가는 INFO warning 을 피하기 위한 진입 페이지 — 카테고리 안의 모든
+    항목을 알파벳 순으로 나열한다.
+    """
+    lines = [f"# {title}\n\n", f"전체 {len(entries)} 항목 — `pilot/` SSOT 에서 자동 추출.\n\n"]
+    for filename, description in entries:
+        display = filename[:-3] if filename.endswith(".md") else filename
+        if description:
+            lines.append(f"- [`{display}`]({filename}) — {description}\n")
+        else:
+            lines.append(f"- [`{display}`]({filename})\n")
+    return "".join(lines)
+
+
+def _extract_description(text: str) -> str:
+    """frontmatter description 추출 (`>` 또는 `|` block scalar 포함). 1 줄로 정리."""
+    meta, _ = parse_frontmatter(text)
+    desc = (meta.get("description") or "").strip()
+    # YAML block scalar 가 join 된 결과의 줄바꿈을 공백으로.
+    return " ".join(desc.split())
+
+
 def build(root: Path) -> dict[Path, str]:
-    """모든 generated 파일들의 (절대 경로 → 내용) 매핑. 순서: agents → skills → tools → identity."""
+    """모든 generated 파일들의 (절대 경로 → 내용) 매핑.
+
+    순서: agents → agents/index → skills → skills/index → tools → tools/index → identity.
+    """
     result: dict[Path, str] = {}
 
     agents_src = root / SRC_AGENTS_DIR
     agents_out = root / OUT_AGENTS_DIR
+    agent_entries: list[tuple[str, str]] = []
     if agents_src.is_dir():
         for f in sorted(agents_src.glob("*.md")):
             result[agents_out / f.name] = transform_agent(f)
+            agent_entries.append((f.name, _extract_description(f.read_text(encoding="utf-8"))))
+    if agent_entries:
+        result[agents_out / "index.md"] = build_category_index("Agents", agent_entries)
 
     skills_src = root / SRC_SKILLS_DIR
     skills_out = root / OUT_SKILLS_DIR
+    skill_entries: list[tuple[str, str]] = []
     if skills_src.is_dir():
         for d in sorted(p for p in skills_src.iterdir() if p.is_dir()):
             content = transform_skill(d)
             if content is not None:
                 result[skills_out / f"{d.name}.md"] = content
+                skill_md = d / "SKILL.md"
+                skill_entries.append((f"{d.name}.md", _extract_description(skill_md.read_text(encoding="utf-8"))))
+    if skill_entries:
+        result[skills_out / "index.md"] = build_category_index("Skills", skill_entries)
 
     tools_src = root / SRC_TOOLS_DIR
     tools_out = root / OUT_TOOLS_DIR
+    tool_entries: list[tuple[str, str]] = []
     if tools_src.is_dir():
         for f in sorted(tools_src.glob("*.py")):
             content = transform_tool(f)
             if content is not None:
                 result[tools_out / f"{f.stem}.md"] = content
+                # tool 은 module docstring 첫 줄을 description 으로 사용.
+                try:
+                    tree = ast.parse(f.read_text(encoding="utf-8"))
+                    doc = (ast.get_docstring(tree) or "").strip()
+                    first_line = doc.splitlines()[0] if doc else ""
+                except (OSError, SyntaxError):
+                    first_line = ""
+                tool_entries.append((f"{f.stem}.md", first_line))
+    if tool_entries:
+        result[tools_out / "index.md"] = build_category_index("Tools", tool_entries)
 
     identity_src = root / SRC_IDENTITY
     if identity_src.is_file():

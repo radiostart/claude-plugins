@@ -216,7 +216,7 @@ trivial 한 변경에서는 critic 을 건너뛰고 바로 `@pilot-generator` �
 **자주 함께 쓰는 작업:**
 
 - How-to: [TDD 모드 활성화](../how-to/tdd-mode.md) · [Critic 활용](../how-to/critic-review.md) · [Doctor 진단·마이그레이션](../how-to/doctor-migration.md)
-- Reference: [에이전트](../reference/agents/) · [스킬](../reference/skills/) · [도구](../reference/tools/)
+- Reference: [에이전트](../reference/agents/index.md) · [스킬](../reference/skills/index.md) · [도구](../reference/tools/index.md)
 - Explanation: [에이전트 흐름](../explanation/agent-flow.md) · [모드](../explanation/modes.md)
 
 !!! note "cross-domain 시나리오"
