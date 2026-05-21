@@ -59,6 +59,48 @@ class ParseFrontmatter(unittest.TestCase):
         self.assertEqual(meta, {})
 
 
+class RewriteLinks(unittest.TestCase):
+    GITHUB = m.GITHUB_BLOB_BASE
+
+    def test_plugin_root_prefix_becomes_github_url(self):
+        text = "see [planner](${CLAUDE_PLUGIN_ROOT}/agents/pilot-planner.md) for details."
+        out = m.rewrite_links(text, source_rel_dir="agents")
+        self.assertIn(f"({self.GITHUB}/agents/pilot-planner.md)", out)
+
+    def test_relative_skill_link_resolves_via_source_dir(self):
+        # skills/project/SKILL.md 안의 `../analyze/SKILL.md` → pilot/skills/analyze/SKILL.md
+        text = "see [analyze](../analyze/SKILL.md)."
+        out = m.rewrite_links(text, source_rel_dir="skills/project")
+        self.assertIn(f"({self.GITHUB}/skills/analyze/SKILL.md)", out)
+
+    def test_relative_to_context_resolves(self):
+        text = "[guide](../context/lifecycle/state-schema.md)"
+        out = m.rewrite_links(text, source_rel_dir="skills/project")
+        self.assertIn(f"({self.GITHUB}/skills/context/lifecycle/state-schema.md)", out)
+
+    def test_external_url_unchanged(self):
+        text = "[gh](https://github.com/foo/bar) and [http](http://example.com)"
+        out = m.rewrite_links(text, source_rel_dir="agents")
+        self.assertEqual(out, text)
+
+    def test_anchor_unchanged(self):
+        text = "[section](#some-anchor)"
+        out = m.rewrite_links(text, source_rel_dir="agents")
+        self.assertEqual(out, text)
+
+    def test_link_escaping_pilot_root_preserves_original(self):
+        # `..` 가 pilot/ 밖으로 나가는 경우 원본 유지 (사용자 검토용)
+        text = "[outside](../../README.md)"
+        out = m.rewrite_links(text, source_rel_dir="agents")
+        self.assertEqual(out, text)
+
+    def test_code_block_placeholder_untouched(self):
+        # markdown link 형식이 아닌 placeholder 는 손대지 않는다.
+        text = "환경 변수 `${CLAUDE_PLUGIN_ROOT}` 를 참조."
+        out = m.rewrite_links(text, source_rel_dir="agents")
+        self.assertEqual(out, text)
+
+
 class StripWrapperQuote(unittest.TestCase):
     def test_removes_leading_quote_block(self):
         body = "\n> wrapper 안내\n> 추가 줄\n\n실제 본문\n"

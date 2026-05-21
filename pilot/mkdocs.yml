@@ -8,19 +8,14 @@ edit_uri: edit/main/pilot/docs/
 docs_dir: docs
 site_dir: docs-site
 
-# 임시 exclude — 다음 step 에서 정리·이전·nav 통합하면서 풀린다:
+# 임시 exclude — 다음 step 에서 정리·이전하면서 풀린다:
 #   - PLAN-manual.md: SDLC 메타 산출물, 사이트 콘텐츠 아님 (영구 exclude)
 #   - getting-started.md: step 6 에서 tutorial/getting-started.md 로 이전
 #   - INTEGRATION-MOAI-ADK.md: step 4 에서 how-to/moai-adk-integration.md 로 이전
-#   - reference/{agents,skills,tools,identity.md}: step 2 의 docs_build.py 생성물, step 3 nav 통합 시 풀림
 exclude_docs: |
   PLAN-manual.md
   getting-started.md
   INTEGRATION-MOAI-ADK.md
-  reference/agents/
-  reference/skills/
-  reference/tools/
-  reference/identity.md
 
 theme:
   name: material
@@ -50,6 +45,7 @@ plugins:
   - search:
       lang: ko
       separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)'
+  - literate-nav        # reference/{agents,skills,tools}/ 를 자동 인덱싱 (docs_build.py 산출물)
   - mermaid2
 
 markdown_extensions:
@@ -84,6 +80,10 @@ nav:
       - how-to/index.md
   - Reference:
       - reference/index.md
+      - Agents: reference/agents/        # literate-nav 가 디렉토리 안 .md 파일을 알파벳 순 자동 인덱싱
+      - Skills: reference/skills/
+      - Tools: reference/tools/
+      - Identity SSOT: reference/identity.md
   - Explanation:
       - explanation/index.md
 

@@ -28,6 +28,8 @@ from __future__ import annotations
 
 import argparse
 import ast
+import posixpath
+import re
 import sys
 from pathlib import Path
 
@@ -50,6 +52,10 @@ TOOL_EXCLUDE_PREFIXES = ("_", "test_")
 # GitHub blob URL 의 base — repo_url 변경 시 단일 지점 갱신.
 GITHUB_BLOB_BASE = "https://github.com/radiostart/claude-plugins/blob/main/pilot"
 
+# 마크다운 inline link: `](path)` 의 path 부분. 외부 URL·anchor·mailto 는 건드리지 않는다.
+_LINK_RE = re.compile(r"\]\(([^)\s]+)\)")
+_PLUGIN_ROOT_PREFIX = "${CLAUDE_PLUGIN_ROOT}/"
+
 
 # ── 공통 파서 ─────────────────────────────────────────────────
 
@@ -70,6 +76,38 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
     if not isinstance(meta, dict):
         meta = {}
     return meta, body
+
+
+def rewrite_links(text: str, source_rel_dir: str) -> str:
+    """모든 markdown inline link 의 path 를 GitHub blob URL 로 변환.
+
+    `source_rel_dir` 는 원본 파일의 pilot/ 기준 상대 디렉토리 (예: 'agents', 'skills/project').
+    SKILL.md 등은 원본 위치를 기준으로 `../X` 같은 상대 path 를 해석하므로 이 인자가 필요하다.
+
+    변환 규칙:
+        ${CLAUDE_PLUGIN_ROOT}/Y       → GITHUB_BLOB_BASE/Y
+        외부 URL (http/https/mailto)  → 변경 없음
+        anchor `#fragment`            → 변경 없음
+        상대 path                     → source_rel_dir 기준 resolve → GITHUB_BLOB_BASE/{resolved}
+
+    site 내부 cross-link 로의 변환은 step 7 (README 슬림화 + cross-link 정책) 에서 점진 적용 예정.
+    """
+
+    def _replace(match: re.Match[str]) -> str:
+        link = match.group(1)
+        if link.startswith(("http://", "https://", "#", "mailto:")):
+            return match.group(0)
+        if link.startswith(_PLUGIN_ROOT_PREFIX):
+            target = link[len(_PLUGIN_ROOT_PREFIX) :]
+            return f"]({GITHUB_BLOB_BASE}/{target})"
+        # 상대 path — source_rel_dir 기준 resolve
+        resolved = posixpath.normpath(posixpath.join(source_rel_dir, link))
+        if resolved.startswith(".."):
+            # pilot/ 밖으로 나간 link — 보수적으로 원본 유지 (사용자 검토용)
+            return match.group(0)
+        return f"]({GITHUB_BLOB_BASE}/{resolved})"
+
+    return _LINK_RE.sub(_replace, text)
 
 
 def strip_wrapper_quote(body: str) -> str:
@@ -103,8 +141,9 @@ def transform_agent(src_path: Path) -> str:
     name = meta.get("name", src_path.stem)
     description = (meta.get("description") or "").strip()
     body_stripped = strip_wrapper_quote(body).lstrip("\n").rstrip() + "\n"
+    body_rewritten = rewrite_links(body_stripped, source_rel_dir=SRC_AGENTS_DIR)
     desc_block = f"> {description}\n\n" if description else ""
-    return f"# `@{name}`\n\n{desc_block}{body_stripped}"
+    return f"# `@{name}`\n\n{desc_block}{body_rewritten}"
 
 
 def transform_skill(src_dir: Path) -> str | None:
@@ -125,7 +164,8 @@ def transform_skill(src_dir: Path) -> str | None:
         while body_lines and body_lines[0].strip() == "":
             body_lines = body_lines[1:]
     body_final = "".join(body_lines)
-    return f"# `/{name}`\n\n{desc_block}{body_final}"
+    body_rewritten = rewrite_links(body_final, source_rel_dir=f"{SRC_SKILLS_DIR}/{src_dir.name}")
+    return f"# `/{name}`\n\n{desc_block}{body_rewritten}"
 
 
 def transform_tool(src_path: Path) -> str | None:
