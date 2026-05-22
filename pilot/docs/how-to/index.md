@@ -56,6 +56,12 @@
 
     의존하는 다른 도메인의 코드를 읽어 `context/` 의 도메인 문서를 새로 만든다.
 
+-   :material-pencil:{ .lg .middle } __[도메인 암묵지 기록](tacit-domain-knowledge.md)__
+
+    ---
+
+    learn 이 못 잡는 코드의 의도·비즈니스 맥락을 Claude 와 함께 끌어내 기록한다.
+
 -   :material-gavel:{ .lg .middle } __[도메인 규칙 작성](authoring-domain-rules.md)__
 
     ---

@@ -51,6 +51,6 @@ cat workspace/context/MANIFEST.md
 ## 다음 단계
 
 - :material-book-open-variant: Reference: [`/pilot:learn`](../reference/skills/learn.md) · [도메인 분류 — MANIFEST.md](https://github.com/radiostart/claude-plugins/blob/main/pilot/skills/context/INDEX.md)
-- :material-gavel: How-to: learn 은 *구조(scope)* 만 만든다 — 비즈니스 *규칙* 은 [도메인 규칙(rules) 작성](authoring-domain-rules.md) 으로 직접.
+- :material-pencil: How-to: learn 은 *구조* 만 만든다 — 코드의 의도·비즈니스 맥락은 [도메인 암묵지 기록하기](tacit-domain-knowledge.md) 로 직접 축적.
 - :material-tools: How-to: 외부 도메인 컨텍스트가 준비됐으면 [프롬프트로 feature 단건 추가](create-feature.md) 또는 [기획서로 features 일괄 생성](analyze-docs.md) 으로 진입.
 - :material-lightbulb-on: Explanation: pilot 의 도메인 컨텍스트 시스템 — [핵심 개념](../explanation/index.md).
