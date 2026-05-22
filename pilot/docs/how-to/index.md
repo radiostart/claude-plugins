@@ -117,15 +117,3 @@
     `workspace/context/pr.md` 로 PR 본문 컨벤션을 팀 규칙에 맞게 대체한다.
 
 </div>
-
-## 통합
-
-<div class="grid cards" markdown>
-
--   :material-link-variant:{ .lg .middle } __[MOAI-ADK 연동](moai-adk-integration.md)__
-
-    ---
-
-    MOAI-ADK SPEC-First TDD 흐름과 pilot 의 3-phase 에이전트 사이클을 함께 사용.
-
-</div>

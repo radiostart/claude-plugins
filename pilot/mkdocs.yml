@@ -99,8 +99,6 @@ nav:
           - Confluence 동기화: how-to/confluence-sync.md
           - Slack 알림 설정: how-to/slack-notify.md
           - PR 컨벤션 설정: how-to/pr-conventions.md
-      - 통합:
-          - MOAI-ADK 연동: how-to/moai-adk-integration.md
   - Reference:
       - reference/index.md
       - Agents: reference/agents/        # literate-nav 가 디렉토리 안 .md 파일을 알파벳 순 자동 인덱싱
