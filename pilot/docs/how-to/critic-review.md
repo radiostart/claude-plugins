@@ -1,7 +1,7 @@
 # Critic 활용 — Plan adversarial 검증
 
 !!! info "한 줄 요약"
-    `@pilot-planner-critic` 으로 planner 가 만든 `plan.md` 를 반론 시각에서 챌린지 → `.plan.critic.md` 에 결과 기록 → planner 재호출이 합의 표를 채우는 1.5-pass 흐름. v0.4.0 신규.
+    `@pilot-planner-critic` 으로 planner 가 만든 `plan.md` 를 반론 시각에서 챌린지 → `.plan.critic.md` 에 결과 기록 → planner 재호출이 합의 표를 채우는 1.5-pass 흐름. v0.5.0 신규.
 
 ## 전제
 

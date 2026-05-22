@@ -8,8 +8,8 @@
 
 | 차이 | 의미 | 사용자 조치 |
 |---|---|---|
-| **patch** (`0.4.0 → 0.4.1`) | 버그 수정·문서 변경. wrapper 계약·schema 변경 없음 | 없음. `orchestrate-load.py` 가 silent 통과 |
-| **minor** (`0.3.x → 0.4.0`) | 새 기능 추가 (예: `@pilot-planner-critic` 도입). wrapper 계약 가능. schema 는 backward-compatible | hints 에 WARN 출력 — `/pilot:analyze --regen-agents` 권장 |
+| **patch** (`0.5.0 → 0.5.1`) | 버그 수정·문서 변경. wrapper 계약·schema 변경 없음 | 없음. `orchestrate-load.py` 가 silent 통과 |
+| **minor** (`0.4.x → 0.5.0`) | 새 기능 추가 (예: `@pilot-planner-critic` 도입). wrapper 계약 가능. schema 는 backward-compatible | hints 에 WARN 출력 — `/pilot:analyze --regen-agents` 권장 |
 | **major** (`0.x → 1.0`) | 호환성 깨짐. schema 마이그레이션 필요할 수도 | `/pilot:doctor --fix` 가 마이그레이션 안내 |
 
 `orchestrate-load.py` 는 `state.plugin_version` 과 *현재 실행 플러그인 버전* 을 비교해서 위 표대로 hint 를 띄웁니다.

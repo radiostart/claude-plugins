@@ -168,7 +168,7 @@ plan 파일 (`features/01-user-email-field.plan.md`) 이 생성되면 1차 목�
 
 ---
 
-## Step 6: plan 검증 (`@pilot-planner-critic`) — v0.4.0 신규
+## Step 6: plan 검증 (`@pilot-planner-critic`) — v0.5.0 신규
 
 ```
 @pilot-planner-critic

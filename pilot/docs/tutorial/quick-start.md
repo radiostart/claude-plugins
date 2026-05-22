@@ -45,7 +45,7 @@ schema: v1.2
 analyzed: false
 tdd: false
 domain: my-domain
-plugin_version: "0.4.0"
+plugin_version: "0.5.0"
 ```
 
 ## 3. 첫 feature 추가 + plan 작성
