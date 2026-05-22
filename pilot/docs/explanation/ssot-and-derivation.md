@@ -40,7 +40,7 @@ pilot 에서 *어디가 single source of truth (SSOT) 인지* 와 *무엇이 그
 
 | Derived 파일 | SSOT 출처 | 갱신 트리거 |
 |---|---|---|
-| `pilot/README.md` 의 에이전트·스킬 표 | `agents/`·`skills/` | 수동 (사용자가 SSOT 변경 시) |
+| `pilot/README.md` (설치·부트스트랩 요약 + 문서 맵) | 본 매뉴얼 사이트 | 수동 (사이트 구조 변경 시) |
 | **본 매뉴얼 사이트 `pilot/docs/reference/`** | `agents/`·`skills/`·`tools/`·`identity.yml` | `pilot/tools/docs_build.py` 자동 |
 | `project.md` 의 `[analyze-managed]` 영역 | `features/NN-*.md` + 사용자 프롬프트 | `/pilot:analyze` · `/pilot:create-feature` 자동 |
 | `prompts/*.md` 의 *기능별 사전 확인 사항* | `features/NN-*.md` | `/pilot:analyze --regen-agents` 자동 |
