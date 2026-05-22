@@ -24,7 +24,7 @@ hide:
 
     ---
 
-    설치부터 첫 plan 까지 — pilot 의 한 사이클을 직접 돌려보면서 워크플로우의 모양을 익힙니다.
+    설치부터 첫 plan 까지 — pilot 의 한 사이클을 직접 돌려보면서 워크플로우의 흐름을 익힙니다.
 
     [:octicons-arrow-right-24: Quick Start](tutorial/quick-start.md)
 
