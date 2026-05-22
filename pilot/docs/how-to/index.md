@@ -56,6 +56,12 @@
 
     의존하는 다른 도메인의 코드를 읽어 `context/` 의 도메인 문서를 새로 만든다.
 
+-   :material-gavel:{ .lg .middle } __[도메인 규칙 작성](authoring-domain-rules.md)__
+
+    ---
+
+    learn 이 못 잡는 비즈니스 규칙을 직접 정리하고 MANIFEST 에 연결한다.
+
 </div>
 
 ## 운영

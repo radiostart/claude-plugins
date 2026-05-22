@@ -32,8 +32,8 @@
     - `{domain}/` 폴더 + 여러 `*.md` (복잡하면)
 - `workspace/context/MANIFEST.md` 의 `## 도메인 분류` 표에 새 행 추가.
 
-!!! warning "추측 금지"
-    learn 은 *코드에 적힌 것만* file:line 인용으로 정리한다. 추론으로 채우지 않는다 — 비어 있는 항목은 사용자가 채우거나 별도 사이클로.
+!!! warning "추측 금지 — 비즈니스 규칙은 추출되지 않는다"
+    learn 은 *코드에 적힌 것만* file:line 인용으로 정리한다. 추론으로 채우지 않는다. 특히 *비즈니스 규칙·정책* (환불 조건·상태 전환 의도 등) 은 자동 추출되지 않으므로 [도메인 규칙(rules) 작성](authoring-domain-rules.md) 으로 직접 정리한다.
 
 ### 2. 결과 검토
 
@@ -51,5 +51,6 @@ cat workspace/context/MANIFEST.md
 ## 다음 단계
 
 - :material-book-open-variant: Reference: [`/pilot:learn`](../reference/skills/learn.md) · [도메인 분류 — MANIFEST.md](https://github.com/radiostart/claude-plugins/blob/main/pilot/skills/context/INDEX.md)
+- :material-gavel: How-to: learn 은 *구조(scope)* 만 만든다 — 비즈니스 *규칙* 은 [도메인 규칙(rules) 작성](authoring-domain-rules.md) 으로 직접.
 - :material-tools: How-to: 외부 도메인 컨텍스트가 준비됐으면 [프롬프트로 feature 단건 추가](create-feature.md) 또는 [기획서로 features 일괄 생성](analyze-docs.md) 으로 진입.
 - :material-lightbulb-on: Explanation: pilot 의 도메인 컨텍스트 시스템 — [핵심 개념](../explanation/index.md).
