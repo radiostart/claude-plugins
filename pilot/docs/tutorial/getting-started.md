@@ -3,7 +3,7 @@
 이 가이드는 더미 저장소 `_input/python-sample/` 를 따라 *init → learn → project → create-feature → planner → critic* 의 한 사이클을 직접 돈다. 끝에 선택 Step 으로 **Characterize 모드** 도 짚는다.
 
 !!! tip "더 짧은 경로"
-    "이게 뭔지 모양만 보고 싶다" 면 [Quick Start](quick-start.md) 가 적합하다 — 3 명령으로 첫 plan 까지. 본 가이드는 *실제 프로젝트에 도입하려는* 사용자 대상.
+    "pilot 이 어떤 도구인지 빠르게 보고 싶다" 면 [Quick Start](quick-start.md) 가 적합하다 — 3 명령으로 첫 plan 까지. 본 가이드는 *실제 프로젝트에 도입하려는* 사용자 대상.
 
 ---
 
@@ -190,10 +190,10 @@ trivial 한 변경에서는 critic 을 건너뛰고 바로 `@pilot-generator` �
 
 ## Step 7 (선택): Characterize 모드 — 레거시 코드 안전망
 
-여기까지가 표준 사이클이다. 실무에서 자주 쓰는 모드를 하나 더 짚는다 — **Characterize 모드** 는 *테스트 없는 기존 코드* 를 리팩터하기 전에, 그 코드의 *현재 동작* 을 테스트로 고정해 안전망을 만든다.
+지금까지 Step 4~6 은 모드를 켜지 않은 *표준* 사이클이었다. 실무에서 자주 쓰는 모드를 하나 더 짚는다 — **Characterize 모드** 는 *테스트 없는 기존 코드* 를 리팩터하기 전에, 그 코드의 *현재 동작* 을 테스트로 고정해 안전망을 만든다.
 
-!!! note "건너뛰어도 되는 Step"
-    신규 기능을 만드는 중이라면 이 Step 은 지나쳐도 된다. 테스트 없는 레거시 코드를 손볼 일이 생기면 그때 돌아오면 된다.
+!!! warning "이 Step 의 *순서* — planner 보다 먼저 켠다"
+    Characterize 는 *모드* 라서 `@pilot-planner` 를 부르기 **전** 에 켜야 한다. 대상이 레거시 코드였다면 이 가이드의 **Step 5(첫 plan) 자리에서** Characterize 를 먼저 켜고 들어갔을 것이다. 아래는 그 분기를 새 feature 로 따로 체험한다 — *모드 켜기 → create-feature → planner* 순서다. 신규 기능만 만든다면 이 Step 은 건너뛰어도 된다.
 
 ### 모드 켜기
 
