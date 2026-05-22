@@ -1,35 +1,35 @@
-# 언어 컨벤션 공급
+# 언어 컨벤션 설정
 
 !!! info "한 줄 요약"
-    플러그인은 *언어 중립* 코드 정책만 내장한다. 프로젝트의 언어·프레임워크 고유 관행과 검증 케이스는 워크스페이스가 `conventions_doc`·`conventions_evals` 로 공급하고, `config.md` 가 그 경로를 선언한다.
+    플러그인은 기본적으로 *언어 중립적*인 코드 정책만 내장하고 있습니다. 프로젝트의 언어 및 프레임워크 고유 컨벤션과 검증 케이스는 워크스페이스가 `conventions_doc` 및 `conventions_evals` 파일을 통해 공급하며, `config.md` 에서 해당 경로를 선언하여 활성화합니다.
 
-## 왜 공급해야 하나
+## 컨벤션 공급의 필요성
 
-플러그인이 제공하는 것은 **언어 불문 공통 원칙** 뿐이다:
+플러그인이 기본 제공하는 것은 **언어에 무관한 공통 원칙**뿐입니다:
 
-- `coding.md` — 코드 생성 메타 정책 (수정 최소화·시그니처 보존·우선순위 사다리).
-- `evals/coding.json` — 공통 검증 케이스 (현재 `existing-code-modification` 1 건).
+- `coding.md`: 코드 생성 메타 정책 (수정 최소화, 시그니처 보존, 우선순위 사다리 등)
+- `evals/coding.json`: 공통 검증 케이스 (현재 `existing-code-modification` 1건)
 
-Ruby/Rails 매크로, Kotlin 코루틴 규약, 레이어 책임 같은 *언어·프레임워크 고유 관행* 은 플러그인이 가정하지 않는다 — 워크스페이스가 채운다. 안 채우면 generator 가 기존 코드 패턴만 보고 추론하게 된다.
+Ruby/Rails의 관례적 매크로, Kotlin의 코루틴 설계 규약, 레이어 패턴의 역할 책무와 같이 *특정 언어나 프레임워크에 특화된 고유 관행*은 플러그인이 미리 가정하지 않고 워크스페이스 정의에 위임합니다. 정의가 누락될 경우 generator 는 기존 코드의 패턴을 단순히 답습하여 추론을 실행하게 됩니다.
 
-## 전제
+## 전제 조건
 
-- `/pilot:init` 으로 `workspace/context/config.md` 가 있다 ([워크스페이스 설정](workspace-config.md)).
+- `/pilot:init` 을 실행하여 `workspace/context/config.md` 파일이 존재해야 합니다 ([워크스페이스 설정](workspace-config.md) 참고).
 
-## 절차
+## 작업 절차
 
-### 1. 관행 문서 작성 — `conventions_doc`
+### 1. 관행 문서 작성 (`conventions_doc`)
 
-언어·프레임워크 관행을 산문으로 정리한다 (예: `workspace/context/conventions.md`):
+언어 및 프레임워크의 코딩 컨벤션을 텍스트 형식으로 작성합니다 (예: `workspace/context/conventions.md`):
 
-- 레이어 책임 — 컨트롤러/서비스/모델이 각각 무엇을 하나.
-- 네이밍·매크로·관용구.
-- 테스트 프레임워크 문법·Mock 패턴.
-- 피해야 할 안티패턴.
+- **레이어 역할 책무**: 컨트롤러, 서비스, 모델 레이어의 명확한 역할 정의
+- **명명 규칙/매크로/관용구**
+- **테스트 프레임워크 문법 및 Mock 패턴**
+- **금지해야 할 안티패턴**
 
-### 2. 검증 케이스 작성 — `conventions_evals`
+### 2. 검증 케이스 정의 (`conventions_evals`)
 
-코드 작성 후 generator 가 체크리스트로 쓰는 케이스를 JSON 으로 정리한다:
+코드가 완성된 후 generator 가 자가 진단 체크리스트로 활용할 검증 케이스를 JSON 형식으로 기술합니다:
 
 ```json
 {
@@ -46,30 +46,30 @@ Ruby/Rails 매크로, Kotlin 코루틴 규약, 레이어 책임 같은 *언어·
 }
 ```
 
-이 케이스는 플러그인 공통 케이스에 **append** 되며, 같은 `id` 는 프로젝트 것이 **override** 한다.
+이 케이스들은 플러그인의 공통 케이스 뒤에 **append** 되며, 동일한 `id` 를 선언할 경우 프로젝트의 정의로 **override** 됩니다.
 
-### 3. config.md 에 경로 선언
+### 3. config.md 에 파일 경로 연동
 
-`workspace/context/config.md` 의 `## 언어·도구 기본값` 표에 두 경로를 적는다:
+`workspace/context/config.md` 의 `## 언어·도구 기본값` 표에 두 설정 경로를 명시합니다:
 
 | 키 | 값 |
 |---|---|
 | `conventions_doc` | `context/conventions.md` |
 | `conventions_evals` | `context/evals/conventions.json` |
 
-선언하면 `@pilot-generator` 가 컨텍스트 로드 시 두 파일을 자동으로 읽는다. **선언만 하고 실제 파일을 안 만들면 안 된다** — 지정한 경로에 파일이 있어야 한다.
+경로가 정상적으로 선언되면 `@pilot-generator` 가 컨텍스트를 로드할 때 두 파일을 찾아 자동으로 분석합니다. **선언한 경로에 실제 파일이 존재하지 않으면 에러가 발생하므로**, 반드시 지정한 경로에 파일을 생성해 두어야 합니다.
 
 ## 우선순위
 
-구현 판단이 충돌하면 generator 는 이 순서로 해결한다:
+코드 구현 방향에 판단 충돌이 발생할 경우, generator 는 다음 우선순위에 따라 가중치를 둡니다:
 
-1. 프로젝트 `prompts/generator.md` 의 명시 규칙
-2. `context/rules/{domain}.md` 의 비즈니스 규칙
-3. `conventions_doc` 의 언어·프레임워크 관행
-4. 기존 코드 패턴 (참조만 — 비표준 패턴은 답습하지 않음)
+1. 프로젝트 내 `prompts/generator.md` 에 기재된 명시적 규칙
+2. `context/rules/{domain}.md` 에 작성된 비즈니스 규칙
+3. `conventions_doc` 으로 주입된 언어/프레임워크 관행
+4. 기존 제품 코드의 구현 패턴 (참조용으로만 활용하며 비표준 패턴은 답습하지 않음)
 
 ## 다음 단계
 
-- :material-file-cog: How-to: [워크스페이스 설정 (config.md)](workspace-config.md) — `conventions_doc`·`conventions_evals` 키 선언.
-- :material-gavel: How-to: [도메인 규칙 작성](authoring-domain-rules.md) — *비즈니스* 규칙 (관행과는 다른 축).
+- :material-file-cog: How-to: [워크스페이스 설정](workspace-config.md) — `conventions_doc` 및 `conventions_evals` 키 설정 방법.
+- :material-gavel: How-to: [도메인 규칙 작성](authoring-domain-rules.md) — 비즈니스 도메인 관점의 정책 수립 방법.
 - :material-book-open-variant: Reference: [`/pilot:doctor`](../reference/skills/doctor.md)

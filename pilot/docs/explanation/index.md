@@ -1,6 +1,6 @@
 # Explanation
 
-*왜* pilot 이 이런 구조인지 — 철학·아키텍처·트레이드오프. 무엇을 *해야 하는지* (How-to) 또는 정확한 값 (Reference) 이 아니라, *어떤 사고 모델로 설계됐는지*.
+pilot의 구조 설계 배경과 철학, 아키텍처, 트레이드오프를 설명합니다. 구체적인 작업 방법(How-to)이나 명세(Reference)보다는 설계에 반영된 멘탈 모델(Mental Model)을 다룹니다.
 
 ## 시작점
 
@@ -10,7 +10,7 @@
 
     ---
 
-    pilot 이 해결하는 문제 — "메인 대화의 의도가 subagent 에게 안 전달되는" 단절 · 도메인 지식을 코드가 아니라 SSOT 메타구조에 두는 이유.
+    pilot이 해결하고자 하는 문제 — 메인 대화의 의도가 subagent에게 온전히 전달되지 않는 단절 현상을 해결하고, 도메인 지식을 코드가 아닌 SSOT 메타 구조로 관리해야 하는 이유를 다룹니다.
 
 </div>
 
@@ -22,13 +22,13 @@
 
     ---
 
-    planner → critic → generator → evaluator 의 명시 호출 사이클. 네 에이전트의 역할·관점 분리와 critic 의 1.5-pass 위치.
+    planner → critic → generator → evaluator로 이어지는 명시적 호출 cycle을 설명합니다. 4개 agent의 역할 및 관점 분리, 그리고 critic의 1.5-pass 구조를 다룹니다.
 
 -   :material-folder-multiple:{ .lg .middle } __[Workspace 레이아웃](workspace-layout.md)__
 
     ---
 
-    `STATE.md` · `context/` · `projects/{P}/` 의 역할 분리. 왜 *한 워크스페이스에 활성 프로젝트 1 개* 가 강제되는지.
+    `STATE.md`, `context/`, `projects/{P}/` 디렉토리 구조의 역할 분리를 설명합니다. 왜 하나의 workspace 내에서 단 하나의 active project만 실행되도록 강제되는지 설명합니다.
 
 </div>
 
@@ -40,13 +40,13 @@
 
     ---
 
-    `.agent-state.yml` 의 `tdd`·`mode` 값에 따른 진입 분기. 각 모드의 plan-schema 차이.
+    `.agent-state.yml` 설정의 `tdd`, `mode` 값에 따른 진입 분기와 각 mode별 plan-schema의 차이를 비교합니다.
 
 -   :material-magnify-scan:{ .lg .middle } __[Drift Protocol](drift-protocol.md)__
 
     ---
 
-    `workspace/` 의 도메인 지식이 실제 코드와 어긋났을 때 누가 (planner / generator / evaluator) 어떻게 복구하는지.
+    `workspace/` 내 도메인 지식과 실제 구현 코드가 어긋났을 때, 각 agent(planner / generator / evaluator)가 이를 어떻게 감지하고 동기화(drift protocol)하는지 설명합니다.
 
 </div>
 
@@ -58,12 +58,12 @@
 
     ---
 
-    `skills/`·`agents/`·`tools/`·`identity.yml` 이 SSOT, README 와 본 사이트는 derived. drift 감지 메커니즘.
+    `skills/`, `agents/`, `tools/`, `identity.yml`을 SSOT로 정의하고, README 및 이 문서 사이트가 어떻게 파생(derived)되는지와 drift 감지 메커니즘을 다룹니다.
 
 -   :material-tag-arrow-up:{ .lg .middle } __[릴리스 · 업그레이드](release-and-upgrade.md)__
 
     ---
 
-    schema 마이그레이션 정책 · wrapper 계약 호환성 · `plugin_version` 비교의 의미.
+    schema migration 정책, wrapper contract 호환성, `plugin_version` 비교의 의미를 다룹니다.
 
 </div>

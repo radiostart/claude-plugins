@@ -1,56 +1,56 @@
-# 외부 도메인 부트스트랩 (`/pilot:learn`)
+# 외부 도메인 연동 (`/pilot:learn`)
 
 !!! info "한 줄 요약"
-    의존하는 *다른 도메인* 의 코드를 진입점부터 N 단계까지 따라가 `workspace/context/{domain}.md` (또는 `{domain}/` 폴더) 를 새로 만든다. `/pilot:analyze` 가 docs → features 라면, `/pilot:learn` 은 *코드 → context* 의 짝.
+    의존성이 있는 다른 도메인의 코드를 진입점부터 N단계까지 추적 분석하여 `workspace/context/{domain}.md` 파일(혹은 `{domain}/` 폴더)을 생성합니다. `/pilot:analyze` 가 기획서(docs)를 기능(features)으로 분할하는 도구라면, `/pilot:learn` 은 코드를 컨텍스트(context)로 변환하는 도구입니다.
 
-## 전제
+## 전제 조건
 
-- 활성 프로젝트가 있다.
-- 만질 feature 가 현재 프로젝트 도메인 외의 코드를 *참조* 한다 (예: `coupon_service` feature 가 `auth_service` 를 호출).
-- 진입점이 명확하다 — 단일 파일·폴더·클래스명.
+- 활성화된 project가 존재해야 합니다.
+- 다루려는 feature가 현재 프로젝트 도메인 외부의 코드를 참조하고 있어야 합니다 (예: `coupon_service` 구현을 위해 `auth_service` 코드를 참조해야 하는 경우).
+- 분석을 시작할 명확한 진입점(특정 파일, 폴더, 클래스명 등)을 알고 있어야 합니다.
 
-## 절차
+## 작업 절차
 
-### 1. 진입점 지정해서 호출
+### 1. 진입점을 지정하여 learn 실행
 
 ```bash
 /pilot:learn app/services/auth/
 ```
 
-또는 단일 파일:
+또는 단일 파일을 지정할 수도 있습니다:
 
 ```bash
 /pilot:learn app/services/external/coupon_request_service.rb
 ```
 
-수행하는 일:
+이 명령은 다음 작업을 수행합니다:
 
-- 진입점 코드 정적 분석 — 메서드·라우트·상태값·검증 규칙 추출.
-- 의존성을 N 단계 (기본 2) 까지 follow — 호출되는 다른 클래스·모듈도 같이 스캔.
-- 코드 양·구조에 따라:
-    - 단일 `{domain}.md` (가벼우면)
-    - `{domain}/` 폴더 + 여러 `*.md` (복잡하면)
-- `workspace/context/MANIFEST.md` 의 `## 도메인 분류` 표에 새 행 추가.
+- 진입점 코드에 대한 정적 분석을 실행하여 메소드, 라우트, 상태값, 검증 규칙 등을 추출합니다.
+- 지정된 N단계(기본값 2단계)까지 의존성 코드를 추적하여 호출되는 연계 클래스 및 모듈을 스캔합니다.
+- 코드의 규모와 구조적 복잡도에 따라 컨텍스트를 분할 저장합니다:
+    - 단일 `{domain}.md` 파일 (규모가 작고 단순한 경우)
+    - `{domain}/` 디렉터리 및 다중 `*.md` 파일 (복잡도가 높은 경우)
+- `workspace/context/MANIFEST.md` 의 `## 도메인 분류` 표에 새 도메인 정보를 추가 등록합니다.
 
-!!! warning "추측 금지 — 비즈니스 규칙은 추출되지 않는다"
-    learn 은 *코드에 적힌 것만* file:line 인용으로 정리한다. 추론으로 채우지 않는다. 특히 *비즈니스 규칙·정책* (환불 조건·상태 전환 의도 등) 은 자동 추출되지 않으므로 [도메인 규칙(rules) 작성](authoring-domain-rules.md) 으로 직접 정리한다.
+!!! warning "추측 배제 — 비즈니스 규칙 미추출"
+    `learn` 은 코드로 명시된 팩트 정보만을 `file:line` 인용 형태로 수집합니다. AI가 추론을 통해 주관적인 판단을 내리지 않습니다. 따라서 환불의 성격이나 상태 전이의 비즈니스적 맥락 같은 **비즈니스 정책 및 규칙**은 자동으로 채워지지 않으므로, [도메인 규칙 작성](authoring-domain-rules.md) 가이드를 참고하여 직접 보완해야 합니다.
 
-### 2. 결과 검토
+### 2. 생성된 컨텍스트 검토
 
 ```bash
 ls workspace/context/
 cat workspace/context/MANIFEST.md
 ```
 
-도메인 진입 파일의 정확도를 훑고, 누락이 있으면 직접 보강 또는 추가 진입점으로 재호출.
+수출된 도메인 진입점의 정보가 정확한지 훑어봅니다. 누락된 부분이 발견되면 직접 보강하거나, 추가 진입점을 지정하여 learn 명령을 재실행합니다.
 
-### 3. 다음 사이클에 자동 반영
+### 3. 다음 cycle 진행 시 자동 연동
 
-이제 planner 가 호출되면 `orchestrate-load.py` 가 MANIFEST 에서 본 feature 의 도메인을 매칭해 *새로 만든 컨텍스트 진입 파일* 을 자동 Read 한다. 별도 설정 불필요.
+이후 planner 가 호출되면 `orchestrate-load.py` 가 `MANIFEST.md` 설정을 판별하여, 작업 대상 feature에 속하는 도메인의 **컨텍스트 진입 파일을 에이전트에게 자동으로 로드**합니다. 사용자가 매번 컨텍스트 파일을 주입할 필요가 없습니다.
 
 ## 다음 단계
 
 - :material-book-open-variant: Reference: [`/pilot:learn`](../reference/skills/learn.md) · [도메인 분류 — MANIFEST.md](https://github.com/radiostart/claude-plugins/blob/main/pilot/skills/context/INDEX.md)
-- :material-pencil: How-to: learn 은 *구조* 만 만든다 — 코드의 의도·비즈니스 맥락은 [도메인 암묵지 기록하기](tacit-domain-knowledge.md) 로 직접 축적.
-- :material-tools: How-to: 외부 도메인 컨텍스트가 준비됐으면 [프롬프트로 feature 단건 추가](create-feature.md) 또는 [기획서로 features 일괄 생성](analyze-docs.md) 으로 진입.
-- :material-lightbulb-on: Explanation: pilot 의 도메인 컨텍스트 시스템 — [핵심 개념](../explanation/index.md).
+- :material-pencil: How-to: learn 명령은 구조적 사실만 기계적으로 정리합니다. 코드에 숨겨진 기획 의도나 비즈니스 맥락은 [도메인 암묵지 기록](tacit-domain-knowledge.md) 가이드를 참고하여 명문화하십시오.
+- :material-tools: How-to: 연관 도메인 컨텍스트 준비가 끝났다면 [feature 단건 추가](create-feature.md) 또는 [기획서 기반 feature 일괄 생성](analyze-docs.md)으로 넘어가 실제 구현 작업을 착수하십시오.
+- :material-lightbulb-on: Explanation: pilot의 도메인 컨텍스트 시스템에 대한 상세 내용은 [핵심 개념](../explanation/index.md)을 참고하십시오.

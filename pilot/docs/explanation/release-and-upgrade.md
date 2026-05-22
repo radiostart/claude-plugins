@@ -1,30 +1,30 @@
 # 릴리스 · 업그레이드
 
-플러그인 (`pilot/`) 이 진화할 때 사용자 워크스페이스 (`workspace/`) 가 어떻게 따라가는지의 정책.
+plugin(`pilot/`) 업데이트 시 사용자 workspace(`workspace/`)를 동기화하고 관리하는 정책을 다룹니다.
 
 ## semver 와 wrapper 계약
 
-`pilot/.claude-plugin/plugin.json` 의 `version` 은 semver 를 따릅니다:
+`pilot/.claude-plugin/plugin.json`에 기재된 `version` 정보는 SemVer(Semantic Versioning) 규칙을 따릅니다:
 
-| 차이 | 의미 | 사용자 조치 |
+| 구분 | 의미 | 사용자 조치 |
 |---|---|---|
-| **patch** (`0.5.0 → 0.5.1`) | 버그 수정·문서 변경. wrapper 계약·schema 변경 없음 | 없음. `orchestrate-load.py` 가 silent 통과 |
-| **minor** (`0.4.x → 0.5.0`) | 새 기능 추가 (예: `@pilot-planner-critic` 도입). wrapper 계약 가능. schema 는 backward-compatible | hints 에 WARN 출력 — `/pilot:analyze --regen-agents` 권장 |
-| **major** (`0.x → 1.0`) | 호환성 깨짐. schema 마이그레이션 필요할 수도 | `/pilot:doctor --fix` 가 마이그레이션 안내 |
+| **patch** (`0.5.0 → 0.5.1`) | bug fix, 문서 수정 등 wrapper contract나 schema의 변경이 없는 경우 | 없음. `orchestrate-load.py` 실행 시 경고 없이 silent하게 통과 |
+| **minor** (`0.4.x → 0.5.0`) | 신규 기능 추가(예: `@pilot-planner-critic` 도입) 및 wrapper contract 변경 가능성 존재. schema는 backward-compatible함 | hints에 경고(WARN) 출력 — `/pilot:analyze --regen-agents` 실행 권장 |
+| **major** (`0.x → 1.0`) | 하위 호환성 차단 및 schema migration 필요성 존재 | `/pilot:doctor --fix` 실행을 통한 migration 가이드 제공 |
 
-`orchestrate-load.py` 는 `state.plugin_version` 과 *현재 실행 플러그인 버전* 을 비교해서 위 표대로 hint 를 띄웁니다.
+`orchestrate-load.py`는 현재 `state.plugin_version` 설정값과 실행 중인 plugin 버전을 비교하여 알맞은 hint를 제공합니다.
 
 ## schema 버전 (`.agent-state.yml`)
 
-플러그인 `version` 과 *별개* 로 `schema:` 필드가 있습니다. schema 가 바뀌어야 하는 경우 (예: 새 필수 필드 추가) 만 증가:
+plugin의 `version`과는 별개로 `.agent-state.yml` 내에 `schema` 필드가 정의되어 있습니다. 해당 schema의 구조가 변경되는 경우(예: 필수 필드 추가)에만 순차적으로 증가합니다:
 
-| schema | 도입 시 | 변경점 |
+| schema | 도입 버전 | 주요 변경 사항 |
 |---|---|---|
-| `v1.0` | 초기 | 기본 필드 (`analyzed`·`tdd`·`domain`) |
-| `v1.1` | 0.2.x | `plugin_version` 필드 추가 (optional) |
+| `v1.0` | 초기 | 기본 필드 구성 (`analyzed`, `tdd`, `domain`) |
+| `v1.1` | 0.2.x | `plugin_version` 필드 추가 (선택 사항) |
 | `v1.2` | 0.3.x | `mode` 필드 (`null` 또는 `"characterize"`) 추가 |
 
-지원 schema 는 `orchestrate-load.py` 의 `SUPPORTED_SCHEMAS` 가 SSOT. 그 외 버전은 *명시적으로 거부* — 사용자에게 마이그레이션 안내 메시지 출력 후 exit.
+지원 가능한 schema 버전 정보는 `orchestrate-load.py` 내 `SUPPORTED_SCHEMAS` 변수가 SSOT(Single Source of Truth) 역할을 수행합니다. 지원 범위를 벗어나는 버전은 실행이 차단되며, 사용자에게 migration 안내 메시지를 제공하고 즉시 프로세스를 종료(exit)합니다.
 
 ## 마이그레이션 흐름
 
@@ -35,7 +35,7 @@ flowchart TD
     Load --> SchemaCheck{schema 가<br/>SUPPORTED 안에?}
 
     SchemaCheck -->|예| VerCheck{plugin_version<br/>차이?}
-    SchemaCheck -->|아니오| Reject["error: schema 미지원<br/>→ 사용자에게 doctor --fix 안내"]
+    SchemaCheck -->|아니오| Reject["error: 지원하지 않는 schema 버전<br/>→ 사용자에게 doctor --fix 안내"]
 
     VerCheck -->|patch| Silent[silent 통과]
     VerCheck -->|minor| Warn["hints 에 WARN<br/>'--regen-agents 권장'"]
@@ -47,36 +47,36 @@ flowchart TD
     Migrate --> Load
 ```
 
-`doctor --fix` 의 마이그레이션은:
+`/pilot:doctor --fix` 명령을 통한 migration은 다음과 같이 동작합니다:
 
-- 누락된 필수 필드를 안전한 default 로 채움 (`mode: null`·`plugin_version: "{현재}"`).
-- 기존 값은 보존 — 마이그레이션은 *추가만*, 기존 필드 의미 변경은 별도 release note 에서 안내.
-- `.agent-state.yml.bak-v{이전}` 백업.
+- 누락된 필수 필드를 안전한 default 값으로 보충합니다 (`mode: null`, `plugin_version: "{현재버전}"`).
+- 기존 설정값은 유실 없이 보존합니다. migration 프로세스는 필드 추가 및 보완만 수행하며, 기존 필드의 의미적 변경이 수반될 경우 release note에 가이드를 상세히 안내합니다.
+- `.agent-state.yml.bak-v{이전}` 형태로 설정 백업 파일을 생성합니다.
 
-## wrapper 계약의 호환성
+## wrapper contract의 호환성
 
-minor upgrade 의 *wrapper 계약 변경 가능성* 이 무엇을 의미하는지:
+minor upgrade 시 wrapper contract의 호환성 변경이 의미하는 바는 다음과 같습니다:
 
-- planner / critic / generator / evaluator wrapper 의 *step 절차* 가 바뀔 수 있음 (예: critic 도입 시 planner step 8 안내문 변경).
-- `prompts/*.md` 의 사전 확인 사항 양식이 바뀔 수 있음.
-- `--regen-agents` 가 위 둘을 *현재 플러그인 버전 기준* 으로 재생성. 사용자 작성 영역은 보존.
+- planner / critic / generator / evaluator 각 wrapper의 동작 step 절차가 변경될 수 있습니다 (예: critic 도입 시 planner step 8의 안내 메시지 갱신).
+- `prompts/*.md` 파일의 사전 확인 사항(pre-check) 양식이 갱신될 수 있습니다.
+- `--regen-agents` option은 위의 항목들을 현재 설치된 plugin 버전을 기준으로 다시 생성하되, 사용자가 수동 작성한 영역은 손실 없이 보존합니다.
 
-호환성이 깨지면 (drop 또는 의미 변경) major 로 분류, release note 에 마이그레이션 가이드 명시.
+하위 호환성이 완전히 차단되거나(drop) 의미적 정의가 변경될 경우 major version을 변경하고, release note에 migration 가이드를 명시합니다.
 
-## release 시 사용자 흐름
+## Release 시 사용자 Workflow
 
-1. 플러그인이 새 버전으로 캐시 갱신 (Claude Code 의 marketplace 또는 수동 `pip`·`git pull`).
-2. 새 세션 시작 → `orchestrate-load.py` 가 `plugin_version` 차이 감지 → hints 에 WARN.
-3. 사용자가 `/pilot:doctor` 실행 → 정합성·schema 확인.
-4. 필요하면 `/pilot:doctor --fix` 또는 `/pilot:analyze --regen-agents`.
-5. 작업 재개.
+1. plugin 패키지가 새 버전으로 업데이트됩니다 (Claude Code Marketplace 또는 수동 `pip` / `git pull` 실행).
+2. 새로운 session 시작 → `orchestrate-load.py`가 `plugin_version` 불일치 감지 → hints에 경고(WARN) 주입.
+3. 사용자가 `/pilot:doctor` 명령 실행 → 전체 정합성 및 schema 버전 점검.
+4. 필요 시 `/pilot:doctor --fix` 또는 `/pilot:analyze --regen-agents` 명령 실행.
+5. 작업을 재개합니다.
 
 ## CHANGELOG
 
-본 사이트의 [`reference`](../reference/index.md) 와 GitHub release notes 가 변경사항의 SSOT. minor 이상 변경 시 *어떤 SSOT 가 바뀌었는지* 를 명시 — 사용자가 그 SSOT 를 derived 파일에서 어떻게 갱신할지 안내합니다.
+본 문서 사이트의 [Reference](../reference/index.md) 및 GitHub Release Note가 모든 변경사항의 SSOT입니다. minor version 이상의 변경이 발생하면 수정 대상이 된 SSOT 정보를 밝히고, 사용자가 이를 derived 파일에 어떻게 동기화할 수 있는지 가이드를 함께 제공합니다.
 
-## 다음
+## 다음 단계
 
-- [SSOT 와 derived](ssot-and-derivation.md) — 어느 derived 파일이 어떻게 자동 갱신되는지.
-- How-to: [Doctor 진단·마이그레이션](../how-to/doctor-migration.md) — 실제 마이그레이션 실행.
-- Reference: [`/pilot:doctor`](../reference/skills/doctor.md) · [`state-schema.md`](https://github.com/radiostart/claude-plugins/blob/main/pilot/skills/context/lifecycle/state-schema.md).
+- [SSOT와 Derived](ssot-and-derivation.md): 데이터 및 문서의 SSOT 기준과 파생 관계
+- How-to: [Doctor 진단·마이그레이션](../how-to/doctor-migration.md) — 실제 마이그레이션 실행 및 진단 흐름
+- Reference: [`/pilot:doctor`](../reference/skills/doctor.md) · [`state-schema.md`](https://github.com/radiostart/claude-plugins/blob/main/pilot/skills/context/lifecycle/state-schema.md)

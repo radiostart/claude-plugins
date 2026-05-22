@@ -1,14 +1,14 @@
 # Critic 활용 — Plan adversarial 검증
 
 !!! info "한 줄 요약"
-    `@pilot-planner-critic` 으로 planner 가 만든 `plan.md` 를 반론 시각에서 챌린지 → `.plan.critic.md` 에 결과 기록 → planner 재호출이 합의 표를 채우는 1.5-pass 흐름.
+    `@pilot-planner-critic`을 활용하여 planner가 수립한 `plan.md`를 비판적 관점에서 검증하고, `.plan.critic.md`에 결과를 기록한 뒤, planner를 재호출하여 합의 표를 작성하는 1.5-pass review flow입니다.
 
-## 전제
+## 전제 조건
 
-- planner 가 한 번 실행되어 `features/NN-{slug}.plan.md` 가 이미 작성돼 있다.
-- 변경 영향이 크거나 가정이 많은 feature — trivial 변경에는 critic 을 건너뛰는 게 옳다 (사용자 판단).
+- planner가 최소 1회 실행되어 `features/NN-{slug}.plan.md` 파일이 이미 작성되어 있어야 합니다.
+- 변경 영향 범위가 크거나 확인해야 할 전제 조건이 많은 feature 작업에 권장됩니다. 단순한(trivial) 수정 작업 시에는 사용자의 판단에 따라 critic 단계를 생략할 수 있습니다.
 
-## 절차
+## 작업 절차
 
 ### 1. critic 호출
 
@@ -16,26 +16,26 @@
 @pilot-planner-critic
 ```
 
-planner 와 같은 컨텍스트 (orchestrate-load) 위에서 정반대 관점으로 동작한다 — planner 가 *설계* 라면 critic 은 *반론·결함 찾기*. 5 카테고리 — `premise` · `scope` · `edge-case` · `alternative` · `risk` — 로 챌린지를 만들고:
+planner와 동일한 context(`orchestrate-load.py`로 로드됨)를 공유하며, 상반된 관점에서 동작합니다. planner가 *설계*를 담당한다면, critic은 *반론 및 잠재적 결함 발굴*을 수행합니다. `premise`, `scope`, `edge-case`, `alternative`, `risk` 등 5가지 카테고리로 피드백을 구성하여 다음 파일에 결과를 기록합니다:
 
 ```
 features/NN-{slug}.plan.critic.md
 ```
 
-에 기록한다. 각 챌린지에 `severity` (`blocking` · `suggestion` · `nit`) 와 plan 인용·제안이 붙는다.
+각 피드백에는 중요도(`severity`: `blocking`, `suggestion`, `nit`), plan 내 인용구, 그리고 개선 제안이 포함됩니다.
 
-!!! tip "critic 의 책임 경계"
-    critic 은 *plan/코드를 직접 수정하지 않는다*. 결함은 planner 가 재호출되어 수정한다. 이 분리가 사용자가 *중간에 의장 역할* 을 하게 만드는 핵심.
+!!! tip "critic의 책임 경계"
+    critic은 *plan이나 code를 직접 수정하지 않습니다*. 지적된 결함은 planner가 다시 호출될 때 반영되어 수정됩니다. 이러한 역할 분리를 통해 사용자가 중재자(의장) 역할을 주도적으로 수행할 수 있게 됩니다.
 
 ### 2. critic 결과 검토 후 결정
 
-critic 출력은 3 가지만 보고한다:
+critic은 실행 후 다음 3가지 항목 위주로 보고합니다:
 
 - 작성한 파일 경로
-- blocking · suggestion · nit 개수
-- 다음 권장 (`blocking ≥ 1` 이면 planner 재호출 권장, 0 이면 generator 진행 가능)
+- `blocking`, `suggestion`, `nit` 등 피드백의 유형별 개수
+- 다음 추천 단계 (`blocking >= 1`인 경우 planner 재호출 권장, `blocking`이 없는 경우 generator 호출 가능)
 
-사용자가 `.plan.critic.md` 를 열어 챌린지를 검토하고 — 또는 `/pilot:focus "C1·C3 만 반영, C2 무시"` 로 다음 호출에 명시 지시.
+사용자는 `.plan.critic.md` 파일을 열어 피드백 목록을 직접 검토합니다. 필요한 경우 `/pilot:focus "C1, C3 피드백만 반영하고 C2는 무시"` 형태로 후속 지시사항을 명시하여 planner 재호출 시 반영되도록 주입합니다.
 
 ### 3. planner 재호출 (수정 라운드)
 
@@ -43,25 +43,25 @@ critic 출력은 3 가지만 보고한다:
 @pilot-planner
 ```
 
-planner 가 `.plan.critic.md` 가 이미 존재함을 감지하면:
+planner가 `.plan.critic.md` 파일의 존재를 감지하면 다음과 같이 처리합니다:
 
-- 챌린지 항목을 모두 검토하고 plan.md 수정.
-- `.plan.critic.md` 의 `## 합의` 표를 각 `C#` 별로 `accepted | rejected | deferred` + 짧은 메모로 채운다 (강제 — 빈 표 그대로 두면 generator 단계로 넘어가지 않는다).
+- 제기된 피드백 항목들을 모두 검토하여 `plan.md` 내용을 보강합니다.
+- `.plan.critic.md` 파일 내 `## 합의` 표의 각 피드백 ID(`C#`) 항목에 `accepted | rejected | deferred` 상태와 간략한 조치 내역(메모)을 기록합니다 (이 합의 표를 작성하지 않거나 빈 상태로 두면 generator 단계 실행이 허용되지 않습니다).
 
 ### 4. 반복 (필요 시)
 
-수렴이 안 되면 critic → planner 라운드를 다시 돈다:
+피드백이 수렴되지 않는 경우, 다음과 같이 critic → planner cycle을 다시 반복해 진행할 수 있습니다:
 
 ```
-@pilot-planner-critic   # 새 plan.md 에 대한 새 챌린지 — .plan.critic.md 덮어쓰기
+@pilot-planner-critic   # 수정된 plan.md를 바탕으로 새로운 피드백 수집 (기존 .plan.critic.md 파일이 오버라이트됩니다)
 ```
 
 !!! warning "라운드가 3 회를 넘기면"
-    같은 카테고리의 챌린지가 반복된다면 plan 이 아니라 *원본 feature.md 가 모호하다* 는 신호. critic 라운드를 더 도는 대신 `features/NN-{slug}.md` 를 손보세요.
+    동일한 유형의 피드백이 계속 반복된다면 plan의 구조적 결함이 아니라 *기획 명세 자체가 모호함*을 뜻합니다. critic cycle을 반복하기보다 `features/NN-{slug}.md` 파일의 사양을 명확히 보완하십시오.
 
-### 5. generator 로 진행
+### 5. generator 단계로 진행
 
-합의 표가 채워지고 blocking 이 없으면:
+피드백 합의 표 작성이 완료되고 해결되지 않은 blocking 이슈가 없다면:
 
 ```
 @pilot-generator
@@ -71,4 +71,4 @@ planner 가 `.plan.critic.md` 가 이미 존재함을 감지하면:
 
 - :material-book-open-variant: Reference: [`@pilot-planner-critic`](../reference/agents/pilot-planner-critic.md) · [Identity SSOT](../reference/identity.md)
 - :material-lightbulb-on: Explanation: [에이전트 흐름 — planner ↔ critic 의 책임 분리](../explanation/index.md)
-- :material-tools: How-to: critic 챌린지에 사용자 의도가 따로 있으면 [Focus 로 방향 조정](focus-direction.md) 와 같이 쓰면 됩니다.
+- :material-tools: How-to: critic 피드백에 대해 사용자의 명확한 반영 가이드를 전달하려면 [Focus로 방향 조정](focus-direction.md) 스킬을 함께 활용하십시오.

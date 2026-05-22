@@ -1,8 +1,8 @@
 # How-to
 
-작업별 레시피. *어떻게* 특정 일을 처리하는지에 답합니다. 모든 페이지는 같은 구조 — **한 줄 요약 → 전제 → 절차 → 다음 단계** — 라 인지 부하 없이 스캔 가능합니다.
+작업별 recipe를 제공합니다. 특정 작업을 수행하는 세부 절차와 팁을 담고 있습니다. 모든 문서는 일관된 구조(**한 줄 요약 → 전제 조건 → 작업 절차 → 다음 단계**)를 따르고 있어 인지적 부하 없이 필요한 정보를 빠르게 스캔할 수 있습니다.
 
-개념 설명이 필요하면 [Explanation](../explanation/index.md), 정확한 값이 필요하면 [Reference](../reference/index.md) 로 가세요.
+동작 원리와 개념에 대한 이해가 필요하다면 [Explanation](../explanation/index.md), 구체적인 상세 스펙이 궁금하다면 [Reference](../reference/index.md)를 참고하세요.
 
 ## 개발 워크플로우
 
@@ -12,31 +12,31 @@
 
     ---
 
-    Red→Green→Refactor 강제. 테스트 작성 누락을 막고 planner 가 실패 테스트를 먼저 만들도록.
+    Red→Green→Refactor 개발 cycle을 강제하여 test 누락을 방지하고, planner가 실패하는 test를 먼저 정의하도록 유도합니다.
 
 -   :material-history:{ .lg .middle } __[Characterize 모드](characterize-mode.md)__
 
     ---
 
-    레거시 코드의 *현재 동작* 을 테스트로 포착. 구현 변경 없이 안전망 먼저.
+    레거시 code의 *현재 동작 방식*을 test 코드로 작성하여 안전망을 확보합니다. 실제 구현 변경을 수반하지 않는 안전한 검증 방식입니다.
 
 -   :material-shield-alert:{ .lg .middle } __[Critic 활용](critic-review.md)__
 
     ---
 
-    `@pilot-planner-critic` 으로 plan 을 adversarial 검증 후 합의 표를 채우는 1.5-pass 흐름.
+    `@pilot-planner-critic`을 통해 plan을 비판적 관점에서 검증하고 피드백 합의 표를 채우는 1.5-pass review flow를 다룹니다.
 
 -   :material-code-tags-check:{ .lg .middle } __[코드 리뷰 (PR 전)](code-review.md)__
 
     ---
 
-    `@pilot-code-review` 가 git diff 를 품질 검토 → 결함별 재진입 라우팅 제시.
+    `@pilot-code-review`가 git diff를 분석해 코드 품질을 검토하고, 결함 발견 시 재진입할 최적의 routing 단계를 가이드합니다.
 
 -   :material-target:{ .lg .middle } __[Focus 로 방향 조정](focus-direction.md)__
 
     ---
 
-    메인 대화의 결정 (예: "소프트 딜리트 빼자") 을 다음 subagent 호출에 명시 전달.
+    메인 대화 도중 이루어진 의사결정(예: '소프트 딜리트는 제외')을 다음 subagent 호출 시 명시적으로 주입하고 추적합니다.
 
 </div>
 
@@ -48,43 +48,43 @@
 
     ---
 
-    `docs/` 의 PM 기획서를 feature 단위로 분할해 `features/NN-*.md` 일괄 생성.
+    `docs/` 디렉토리에 작성된 PM 기획서를 세부 feature 단위로 분할하여 `features/NN-*.md` 형식의 명세 파일들을 일괄 생성합니다.
 
 -   :material-file-plus:{ .lg .middle } __[프롬프트로 feature 단건 추가](create-feature.md)__
 
     ---
 
-    docs 없이 한 줄 프롬프트로 단일 feature 명세를 만든다.
+    별도의 문서 없이 한 줄의 prompt 지시만을 바탕으로 단일 feature 명세를 생성합니다.
 
--   :material-magnify-scan:{ .lg .middle } __[외부 도메인 부트스트랩](cross-domain-learn.md)__
+-   :material-magnify-scan:{ .lg .middle } __[외부 도메인 연동](cross-domain-learn.md)__
 
     ---
 
-    의존하는 다른 도메인의 코드를 읽어 `context/` 의 도메인 문서를 새로 만든다.
+    의존 관계에 있는 다른 도메인의 구현 코드를 분석하여 `context/` 경로에 새로운 도메인 문서를 구성합니다.
 
 -   :material-pencil:{ .lg .middle } __[도메인 암묵지 기록](tacit-domain-knowledge.md)__
 
     ---
 
-    learn 이 못 잡는 코드의 의도·비즈니스 맥락을 Claude 와 함께 끌어내 기록한다.
+    자동 분석 도구(learn)가 파악하기 어려운 구현 의도나 비즈니스 context를 에이전트와의 대화를 통해 발굴하고 문서화합니다.
 
 -   :material-gavel:{ .lg .middle } __[도메인 규칙 작성](authoring-domain-rules.md)__
 
     ---
 
-    learn 이 못 잡는 비즈니스 규칙을 직접 정리하고 MANIFEST 에 연결한다.
+    자동 분석 도구(learn)가 놓치기 쉬운 비즈니스 규칙을 사용자가 직접 기술하고 `MANIFEST.md`에 매핑합니다.
 
--   :material-file-cog:{ .lg .middle } __[워크스페이스 설정 (config.md)](workspace-config.md)__
+-   :material-file-cog:{ .lg .middle } __[워크스페이스 설정](workspace-config.md)__
 
     ---
 
-    `config.md` 의 고정 스키마 — 언어·도구 기본값·Ignore·훅 상수를 채운다.
+    `config.md` 설정 파일에 필수 정보(언어, tool 기본값, ignore 대상, hook 상수 등)를 정의합니다.
 
 -   :material-code-braces:{ .lg .middle } __[언어 컨벤션 공급](language-conventions.md)__
 
     ---
 
-    언어·프레임워크 관행과 검증 케이스를 `conventions_doc`·`conventions_evals` 로 공급한다.
+    사용 중인 언어 및 framework의 개발 규칙과 검증 케이스를 각각 `conventions_doc`과 `conventions_evals` 영역에 정의하여 반영합니다.
 
 </div>
 
@@ -96,24 +96,24 @@
 
     ---
 
-    `.agent-state.yml` schema v1.1 → v1.2 등 자동 마이그레이션 + 정합성 검사.
+    `.agent-state.yml` 설정 파일의 schema 버전 자동 migration(예: v1.1 → v1.2) 및 구조 정합성을 검사합니다.
 
 -   :material-cloud-sync:{ .lg .middle } __[Confluence 동기화](confluence-sync.md)__
 
     ---
 
-    원격 Confluence 페이지를 `docs/` 로 fetch · 검색 · 일괄 가져오기.
+    원격 Confluence 페이지를 조회 및 검색하여 `docs/` 디렉토리로 동기화(fetch)하고 다운로드합니다.
 
 -   :material-bell-ring:{ .lg .middle } __[Slack 알림 설정](slack-notify.md)__
 
     ---
 
-    프로젝트별 채널로 작업 완료·승인 요청 이벤트 전송.
+    project 단위로 설정된 Slack 채널에 작업 완료 및 승인 요청 알림 이벤트를 전송합니다.
 
 -   :material-source-pull:{ .lg .middle } __[PR 컨벤션 설정](pr-conventions.md)__
 
     ---
 
-    `workspace/context/pr.md` 로 PR 본문 컨벤션을 팀 규칙에 맞게 대체한다.
+    `workspace/context/pr.md` 설정을 활용하여 PR(Pull Request) 본문 작성 규칙을 소속 팀의 규칙에 맞춰 커스터마이징합니다.
 
 </div>

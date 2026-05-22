@@ -1,44 +1,48 @@
 # Quick Start
 
-설치된 pilot 으로 *첫 plan* 까지 가는 가장 짧은 경로입니다. 3 명령으로 끝납니다.
+설치된 Pilot을 사용하여 첫 Plan을 작성하기까지의 가장 빠른 경로입니다. 단 3개의 명령어만으로 완료됩니다.
 
-!!! info "전제"
-    - Claude Code 가 설치되어 있고 `pilot@radiostart-plugins` 가 등록돼 있다.
-    - 작업할 코드 저장소에서 Claude Code 를 띄운 상태이다.
+!!! info "전제 조건"
+    - Claude Code가 설치되어 있고, `pilot@radiostart-plugins`가 등록되어 있어야 합니다.
+    - 대상 소스 코드 저장소에서 Claude Code를 실행한 상태여야 합니다.
 
-## 1. 워크스페이스 초기화
+---
+
+## 1. workspace 초기화
 
 ```bash
 /pilot:init
 ```
 
-대화형 wizard 가 실행되어 `workspace/` 디렉토리를 만듭니다.
+대화형 wizard가 실행되어 `workspace/` 디렉터리를 생성합니다.
 
 ```
 workspace/
-├── STATE.md                       # "활성 프로젝트" 표 (현재 비어있음)
+├── STATE.md                       # 활성 project 목록 (초기에는 비어 있음)
 └── context/
-    ├── MANIFEST.md                # 도메인 진입 파일 색인
-    ├── config.md                  # 언어·도구 기본값
-    └── shared/                    # identity·instincts·guardrails SSOT
+    ├── MANIFEST.md                # 도메인 진입 파일 색인 (인덱스)
+    ├── config.md                  # 언어 및 도구 기본 설정
+    └── shared/                    # identity, instincts, guardrails에 대한 SSOT
 ```
 
-wizard 는 언어(Ruby/Python/TypeScript 등)를 묻고 그 답을 `config.md` 에 기록합니다. 한 번만 실행하면 됩니다.
+wizard가 사용 언어(Ruby, Python, TypeScript 등)를 묻고, 선택된 결과를 `config.md`에 기록합니다. 최초 한 번만 실행하면 됩니다.
 
-## 2. 첫 프로젝트 생성
+---
+
+## 2. 첫 project 생성
 
 ```bash
 /pilot:project MyFirstFeature
 ```
 
-`workspace/projects/MyFirstFeature/` 가 만들어지고 `STATE.md` 가 갱신되어 이 프로젝트가 *활성* 상태가 됩니다.
+`workspace/projects/MyFirstFeature/` 디렉터리가 생성되고, `STATE.md` 파일이 갱신되면서 해당 project가 **활성(Active)** 상태가 됩니다.
 
-이 단계에서 wizard 가 묻는 것:
+이 단계에서 wizard가 다음 사항들을 묻습니다.
 
-- **도메인** — 이 프로젝트가 만지는 코드의 도메인 (예: `coupon_service`, `auth`, `billing`).
-- **TDD 모드** 여부 — Red→Green→Refactor 강제 여부 (기본: `false`).
+- **도메인(domain):** 이 project에서 다룰 대상 소스 코드의 도메인 영역 (예: `coupon_service`, `auth`, `billing`).
+- **TDD 모드 여부:** Red → Green → Refactor 절차의 강제 적용 여부 (기본값: `false`).
 
-답한 결과는 `.agent-state.yml` 에 기록됩니다:
+선택한 답변은 `.agent-state.yml` 파일에 기록됩니다.
 
 ```yaml
 schema: v1.2
@@ -48,41 +52,45 @@ domain: my-domain
 plugin_version: "0.5.0"
 ```
 
-## 3. 첫 feature 추가 + plan 작성
+---
 
-feature 명세를 한 줄로 추가합니다:
+## 3. 첫 feature 추가 및 Plan 작성
+
+새로운 feature 명세를 한 줄 명령어로 추가합니다.
 
 ```bash
 /pilot:create-feature "사용자 프로필 이메일 필드 추가"
 ```
 
-`features/01-user-profile-email-field.md` 가 prompt-origin 템플릿으로 생성되고, `project.md` 와 `prompts/planner.md` 가 자동 동기화됩니다.
+`features/01-user-profile-email-field.md` 파일이 템플릿 형태로 생성되며, `project.md` 및 `prompts/planner.md`가 자동으로 동기화됩니다.
 
-이제 planner 를 호출합니다 — `@` 로 subagent 명시 호출:
+이제 Planner를 호출합니다. Claude Code의 `@` 기능을 활용하여 지정된 Agent를 명시적으로 호출합니다.
 
 ```
 @pilot-planner
 ```
 
-planner 가 `workspace/` 컨텍스트를 로드하고, feature 명세를 읽어 *구현 계획* 을 작성합니다:
+Planner가 workspace context를 로딩하고, feature 명세를 분석하여 **구현 계획(Plan)**을 수립합니다.
 
 ```
 features/01-user-profile-email-field.plan.md
 ```
 
-확인 후 다음 중 하나를 호출합니다:
+생성된 Plan을 검토한 후, 목적에 맞게 다음 중 하나의 Agent를 호출합니다.
 
-- `@pilot-planner-critic` — 권장. plan 을 챌린지해 `.plan.critic.md` 에 기록.
-- `@pilot-generator` — critic 을 건너뛰고 바로 구현 (trivial 변경에서만).
+- `@pilot-planner-critic` (권장): 설계의 허점을 역으로 검증하여 `.plan.critic.md` 파일에 기록합니다.
+- `@pilot-generator`: Critic 검증 단계를 생략하고 즉시 코드를 구현합니다. (매우 단순하고 명확한 변경 사항인 경우에만 권장)
+
+---
 
 ## 다음 단계
 
-- :material-tools: How-to:
-    - [Critic 활용 — planner 결과를 반론 검증](../how-to/index.md)
-    - [TDD 모드 활성화](../how-to/index.md)
-- :material-book-open-variant: Reference:
-    - [에이전트 — pilot-planner / -critic / -generator / -evaluator](../reference/index.md)
-    - [스킬 — `/pilot:*` 13 종](../reference/index.md)
+- :material-tools: **How-to:**
+    - [Critic 활용 (Planner 설계 교차 검증)](../how-to/critic-review.md)
+    - [TDD 모드 활성화](../how-to/tdd-mode.md)
+- :material-book-open-variant: **Reference:**
+    - [에이전트 (pilot-planner / -critic / -generator / -evaluator)](../reference/index.md)
+    - [스킬 (`/pilot:*` 13종)](../reference/index.md)
 
-!!! tip "막혔다면"
-    `/pilot:doctor` 가 `workspace/` 무결성과 schema 버전을 점검하고 마이그레이션 안내를 띄웁니다.
+!!! tip "문제 해결"
+    진행 과정 중 오류가 발생하거나 막히는 경우, `/pilot:doctor` 명령어를 실행하십시오. workspace의 무결성과 schema 버전을 확인하여 문제 진단 및 마이그레이션 안내를 제공합니다.
