@@ -1,9 +1,9 @@
-# Pilot 시작하기 — Deep Walkthrough (30 분)
+# Pilot 시작하기 — Deep Walkthrough
 
-이 가이드는 더미 저장소 `_input/python-sample/` 를 따라 *init → learn → project → create-feature → planner → critic* 의 한 사이클을 직접 돈다. 약 30 분 소요.
+이 가이드는 더미 저장소 `_input/python-sample/` 를 따라 *init → learn → project → create-feature → planner → critic* 의 한 사이클을 직접 돈다.
 
 !!! tip "더 짧은 경로"
-    "이게 뭔지 모양만 보고 싶다" 면 [Quick Start (5 분)](quick-start.md) 가 적합하다 — 3 명령으로 첫 plan 까지. 본 가이드는 *실제 프로젝트에 도입하려는* 사용자 대상.
+    "이게 뭔지 모양만 보고 싶다" 면 [Quick Start](quick-start.md) 가 적합하다 — 3 명령으로 첫 plan 까지. 본 가이드는 *실제 프로젝트에 도입하려는* 사용자 대상.
 
 ---
 
@@ -306,18 +306,3 @@ pilot-update    # 또는: /plugin update pilot@claude-plugins
 
 `workspace/projects/{PROJECT}/project.md` 의 `## 에이전트 간 전달사항` 섹션에서
 orchestrate-load 관련 항목도 확인한다.
-
----
-
-## 예상 소요
-
-| Step | 작업 | 예상 소요 |
-|------|------|-----------|
-| 1 | `/pilot:init` | 30초 ~ 1분 |
-| 2 | `/pilot:learn` (Phase 2 확인 포함) | 1 ~ 2 분 |
-| 3 | `/pilot:project` | 20초 |
-| 4 | `/pilot:create-feature` | 30초 |
-| 5 | `@pilot-planner` | 1 ~ 2 분 |
-| 6 | `@pilot-planner-critic` | 1 ~ 2 분 |
-
-합계 약 5 ~ 10 분의 실 작업 + Step 5·6 검토 + Troubleshooting 확인 시간을 포함해 *30 분* 정도 예산. 처음 사용 시 wizard 응답·도메인 매핑·feature 명세 보강에 시간이 더 들 수 있다.

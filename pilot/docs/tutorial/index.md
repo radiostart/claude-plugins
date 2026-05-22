@@ -2,10 +2,10 @@
 
 처음이라면 여기서 시작합니다. 두 가지 경로가 있습니다:
 
-| 경로 | 소요 | 다루는 범위 | 추천 대상 |
-|---|---|---|---|
-| [**Quick Start (5 분)**](quick-start.md) | 5 분 | 설치 → 첫 project → 첫 plan, 3 명령 | "이게 뭔지 모양만 보고 싶다" |
-| [**Deep Walkthrough (30 분)**](getting-started.md) | 30 분 | init → learn → project → create-feature → planner → critic 사이클 + Troubleshooting | "실제 프로젝트에 도입하려고 한다" |
+| 경로 | 다루는 범위 | 추천 대상 |
+|---|---|---|
+| [**Quick Start**](quick-start.md) | 설치 → 첫 project → 첫 plan, 3 명령 | "이게 뭔지 모양만 보고 싶다" |
+| [**Deep Walkthrough**](getting-started.md) | init → learn → project → create-feature → planner → critic 사이클 + Troubleshooting | "실제 프로젝트에 도입하려고 한다" |
 
 ## 어디로 가야 할까
 

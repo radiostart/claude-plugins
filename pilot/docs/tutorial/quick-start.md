@@ -1,4 +1,4 @@
-# Quick Start (5 분)
+# Quick Start
 
 설치된 pilot 으로 *첫 plan* 까지 가는 가장 짧은 경로입니다. 3 명령으로 끝납니다.
 

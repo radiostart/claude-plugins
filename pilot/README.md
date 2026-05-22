@@ -92,8 +92,8 @@ workspace/
 /pilot:commit
 ```
 
-각 에이전트는 사용자가 **명시 호출**한다 — 자동 파이프라인이 아니라 phase 사이 개입 가능한 흐름이다. 5 분 /
-30 분 두 갈래의 따라하기는 [Tutorial](https://radiostart.github.io/claude-plugins/tutorial/quick-start/) 참조.
+각 에이전트는 사용자가 **명시 호출**한다 — 자동 파이프라인이 아니라 phase 사이 개입 가능한 흐름이다. 두 갈래의
+따라하기는 [Tutorial](https://radiostart.github.io/claude-plugins/tutorial/quick-start/) 참조.
 
 ---
 

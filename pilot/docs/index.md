@@ -26,9 +26,9 @@ hide:
 
     설치부터 첫 plan 까지 — pilot 의 한 사이클을 직접 돌려보면서 워크플로우의 모양을 익힙니다.
 
-    [:octicons-arrow-right-24: 5 분 Quick Start](tutorial/quick-start.md)
+    [:octicons-arrow-right-24: Quick Start](tutorial/quick-start.md)
 
-    [:octicons-arrow-right-24: 30 분 Deep Walkthrough](tutorial/index.md)
+    [:octicons-arrow-right-24: Deep Walkthrough](tutorial/index.md)
 
 </div>
 
