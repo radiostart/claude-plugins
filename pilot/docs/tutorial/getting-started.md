@@ -1,6 +1,6 @@
 # Pilot 시작하기 — Deep Walkthrough
 
-이 가이드는 더미 저장소 `_input/python-sample/` 를 따라 *init → learn → project → create-feature → planner → critic* 의 한 사이클을 직접 돈다.
+이 가이드는 더미 저장소 `_input/python-sample/` 를 따라 *init → learn → project → create-feature → planner → critic* 의 한 사이클을 직접 돈다. 끝에 선택 Step 으로 **Characterize 모드** 도 짚는다.
 
 !!! tip "더 짧은 경로"
     "이게 뭔지 모양만 보고 싶다" 면 [Quick Start](quick-start.md) 가 적합하다 — 3 명령으로 첫 plan 까지. 본 가이드는 *실제 프로젝트에 도입하려는* 사용자 대상.
@@ -185,6 +185,55 @@ features/01-user-email-field.plan.critic.md
 **critic 의 책임 경계** — plan/코드를 *직접 수정하지 않는다*. 챌린지 검토 후 사용자가 어떤 항목을 채택할지 결정하고 `@pilot-planner` 재호출이 합의 표를 채운다. 자세히는 [Critic 활용 How-to](../how-to/critic-review.md) 참조.
 
 trivial 한 변경에서는 critic 을 건너뛰고 바로 `@pilot-generator` 로 가도 된다 — 다만 *생략은 항상 사용자 결정*.
+
+---
+
+## Step 7 (선택): Characterize 모드 — 레거시 코드 안전망
+
+여기까지가 표준 사이클이다. 실무에서 자주 쓰는 모드를 하나 더 짚는다 — **Characterize 모드** 는 *테스트 없는 기존 코드* 를 리팩터하기 전에, 그 코드의 *현재 동작* 을 테스트로 고정해 안전망을 만든다.
+
+!!! note "건너뛰어도 되는 Step"
+    신규 기능을 만드는 중이라면 이 Step 은 지나쳐도 된다. 테스트 없는 레거시 코드를 손볼 일이 생기면 그때 돌아오면 된다.
+
+### 모드 켜기
+
+```
+/pilot:characterize
+```
+
+**기대 출력:**
+
+```
+characterize 모드 ON.
+
+- mode: characterize
+- tdd: false
+
+이후 @pilot-planner / @pilot-generator / @pilot-evaluator 호출 시 characterize.md 절차가 적용됩니다.
+```
+
+`.agent-state.yml` 에 `mode: characterize` 가 기록된다. 이후 **같은 에이전트들** 을 그대로 호출하지만 산출물이 달라진다.
+
+### 포착용 feature 추가 후 planner 실행
+
+```
+/pilot:create-feature "main.py 의 현재 출력 동작 포착"
+@pilot-planner
+```
+
+Step 5 와 비교하면 — 같은 planner 인데 자유 형식 plan 이 아니라 **Characterization Contract** (입력 / 현재 출력=빈칸 / 관찰된 사이드 이펙트) 형식으로 나온다. "현재 출력" 은 planner 가 예측하지 않고 비워 두며, 다음 단계의 `@pilot-generator` 가 코드를 실제로 실행해 채운다.
+
+이후 `@pilot-generator` (소스 미수정 + 테스트 작성) → `@pilot-evaluator` (소스 미수정·테스트 검증) 로 사이클을 마치면 `main.py` 의 현재 동작이 테스트로 고정된다.
+
+### 모드 끄기
+
+```
+/pilot:characterize off
+```
+
+안전망이 확보되면 모드를 해제하고 표준(또는 TDD) 사이클로 돌아가 본격 리팩터를 진행한다.
+
+> 시작 시점 판단·전체 절차는 [Characterize 모드 How-to](../how-to/characterize-mode.md) 에 자세히 있다.
 
 ---
 
