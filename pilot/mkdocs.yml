@@ -84,6 +84,7 @@ nav:
           - TDD 모드 활성화: how-to/tdd-mode.md
           - Characterize 모드: how-to/characterize-mode.md
           - Critic 활용: how-to/critic-review.md
+          - 코드 리뷰 (PR 전): how-to/code-review.md
           - Focus 로 방향 조정: how-to/focus-direction.md
       - 컨텍스트 관리:
           - 기획서로 features 일괄 생성: how-to/analyze-docs.md
@@ -92,10 +93,12 @@ nav:
           - 도메인 암묵지 기록: how-to/tacit-domain-knowledge.md
           - 도메인 규칙 작성: how-to/authoring-domain-rules.md
           - 워크스페이스 설정 (config.md): how-to/workspace-config.md
+          - 언어 컨벤션 공급: how-to/language-conventions.md
       - 운영:
           - Doctor 진단·마이그레이션: how-to/doctor-migration.md
           - Confluence 동기화: how-to/confluence-sync.md
           - Slack 알림 설정: how-to/slack-notify.md
+          - PR 컨벤션 설정: how-to/pr-conventions.md
       - 통합:
           - MOAI-ADK 연동: how-to/moai-adk-integration.md
   - Reference:

@@ -71,4 +71,5 @@
 
 - :material-book-open-variant: Reference: [`/pilot:doctor`](../reference/skills/doctor.md) — config.md 정합성 점검.
 - :material-gavel: How-to: [도메인 규칙 작성](authoring-domain-rules.md) — `config.md` 가 *설정*, `MANIFEST.md`+도메인 문서가 *지식*.
+- :material-code-braces: How-to: [언어 컨벤션 공급](language-conventions.md) — `conventions_doc`·`conventions_evals` 작성법.
 - :material-lightbulb-on: Explanation: [Workspace 레이아웃](../explanation/workspace-layout.md) — `context/` 가 어떻게 구성되는지.

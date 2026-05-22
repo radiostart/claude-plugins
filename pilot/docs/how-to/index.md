@@ -26,6 +26,12 @@
 
     `@pilot-planner-critic` 으로 plan 을 adversarial 검증 후 합의 표를 채우는 1.5-pass 흐름.
 
+-   :material-code-tags-check:{ .lg .middle } __[코드 리뷰 (PR 전)](code-review.md)__
+
+    ---
+
+    `@pilot-code-review` 가 git diff 를 품질 검토 → 결함별 재진입 라우팅 제시.
+
 -   :material-target:{ .lg .middle } __[Focus 로 방향 조정](focus-direction.md)__
 
     ---
@@ -74,6 +80,12 @@
 
     `config.md` 의 고정 스키마 — 언어·도구 기본값·Ignore·훅 상수를 채운다.
 
+-   :material-code-braces:{ .lg .middle } __[언어 컨벤션 공급](language-conventions.md)__
+
+    ---
+
+    언어·프레임워크 관행과 검증 케이스를 `conventions_doc`·`conventions_evals` 로 공급한다.
+
 </div>
 
 ## 운영
@@ -97,6 +109,12 @@
     ---
 
     프로젝트별 채널로 작업 완료·승인 요청 이벤트 전송.
+
+-   :material-source-pull:{ .lg .middle } __[PR 컨벤션 설정](pr-conventions.md)__
+
+    ---
+
+    `workspace/context/pr.md` 로 PR 본문 컨벤션을 팀 규칙에 맞게 대체한다.
 
 </div>
 
