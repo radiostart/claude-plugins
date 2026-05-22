@@ -28,7 +28,7 @@ hide:
 
     [:octicons-arrow-right-24: Quick Start](tutorial/quick-start.md)
 
-    [:octicons-arrow-right-24: Deep Walkthrough](tutorial/index.md)
+    [:octicons-arrow-right-24: Deep Walkthrough](tutorial/getting-started.md)
 
 </div>
 
