@@ -1,0 +1,64 @@
+name: docs
+
+# pilot 매뉴얼 사이트 (MkDocs Material) 빌드·배포.
+# - PR: docs_build.py 로 reference/ 재생성 후 `mkdocs build --strict` 로 깨진 링크·nav 검증.
+# - main push: 동일 검증 + `mkdocs gh-deploy` 로 gh-pages 브랜치에 배포.
+# reference/ 산출물은 gitignored — 빌드 시점에 docs_build.py 가 SSOT 에서 생성한다.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pilot/docs/**'
+      - 'pilot/skills/**'
+      - 'pilot/agents/**'
+      - 'pilot/tools/**'
+      - 'pilot/mkdocs.yml'
+      - 'pilot/docs-requirements.txt'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'pilot/docs/**'
+      - 'pilot/skills/**'
+      - 'pilot/agents/**'
+      - 'pilot/tools/**'
+      - 'pilot/mkdocs.yml'
+      - 'pilot/docs-requirements.txt'
+      - '.github/workflows/docs.yml'
+
+permissions:
+  contents: write   # mkdocs gh-deploy 의 gh-pages 브랜치 push 용
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 의존성 설치
+        run: pip install -r pilot/docs-requirements.txt
+
+      - name: reference 페이지 생성 (SSOT → docs/reference/)
+        run: python3 pilot/tools/docs_build.py
+
+      - name: 사이트 빌드 검증 (PR — strict)
+        if: github.event_name == 'pull_request'
+        run: mkdocs build --strict --config-file pilot/mkdocs.yml
+
+      - name: git identity 설정 (배포용)
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: GitHub Pages 배포 (main push)
+        if: github.event_name == 'push'
+        run: mkdocs gh-deploy --strict --force --config-file pilot/mkdocs.yml

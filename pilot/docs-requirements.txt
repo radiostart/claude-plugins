@@ -1,0 +1,5 @@
+# pilot 매뉴얼 사이트 빌드 의존성 — 로컬(`pip install -r pilot/docs-requirements.txt`)·CI 공용.
+# mkdocs · pymdown-extensions · PyYAML 은 mkdocs-material 의 transitive 의존성으로 함께 설치된다.
+mkdocs-material==9.7.6
+mkdocs-mermaid2-plugin==1.2.3
+mkdocs-literate-nav==0.6.3
