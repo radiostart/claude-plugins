@@ -1,7 +1,7 @@
 # Critic 활용 — Plan adversarial 검증
 
 !!! info "한 줄 요약"
-    `@pilot-planner-critic` 으로 planner 가 만든 `plan.md` 를 red-team 시각에서 챌린지 → `.plan.critic.md` 에 결과 기록 → planner 재호출이 합의 표를 채우는 1.5-pass 흐름. v0.4.0 신규.
+    `@pilot-planner-critic` 으로 planner 가 만든 `plan.md` 를 반론 시각에서 챌린지 → `.plan.critic.md` 에 결과 기록 → planner 재호출이 합의 표를 채우는 1.5-pass 흐름. v0.4.0 신규.
 
 ## 전제
 
@@ -16,7 +16,7 @@
 @pilot-planner-critic
 ```
 
-planner 와 같은 컨텍스트 (orchestrate-load) 위에서 페르소나만 정반대 (architect → red-team). 5 카테고리 — `premise` · `scope` · `edge-case` · `alternative` · `risk` — 로 챌린지를 만들고:
+planner 와 같은 컨텍스트 (orchestrate-load) 위에서 정반대 관점으로 동작한다 — planner 가 *설계* 라면 critic 은 *반론·결함 찾기*. 5 카테고리 — `premise` · `scope` · `edge-case` · `alternative` · `risk` — 로 챌린지를 만들고:
 
 ```
 features/NN-{slug}.plan.critic.md
@@ -69,6 +69,6 @@ planner 가 `.plan.critic.md` 가 이미 존재함을 감지하면:
 
 ## 다음 단계
 
-- :material-book-open-variant: Reference: [`@pilot-planner-critic`](../reference/agents/pilot-planner-critic.md) · [페르소나 `personas.planner-critic`](../reference/identity.md)
+- :material-book-open-variant: Reference: [`@pilot-planner-critic`](../reference/agents/pilot-planner-critic.md) · [Identity SSOT](../reference/identity.md)
 - :material-lightbulb-on: Explanation: [에이전트 흐름 — planner ↔ critic 의 책임 분리](../explanation/index.md)
 - :material-tools: How-to: critic 챌린지에 사용자 의도가 따로 있으면 [Focus 로 방향 조정](focus-direction.md) 와 같이 쓰면 됩니다.

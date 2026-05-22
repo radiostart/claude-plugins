@@ -8,10 +8,10 @@ pilot 에서 *어디가 single source of truth (SSOT) 인지* 와 *무엇이 그
 
 | SSOT 파일 | 무엇의 진실 |
 |---|---|
-| `pilot/agents/*.md` | wrapper 에이전트의 절차·페르소나·tools 권한 |
+| `pilot/agents/*.md` | wrapper 에이전트의 절차·역할·tools 권한 |
 | `pilot/skills/*/SKILL.md` | 슬래시 커맨드의 동작 정의 |
 | `pilot/tools/*.py` | 보조 CLI 의 구현 |
-| `pilot/skills/context/shared/identity.yml` | 에이전트 계약 (`output`·`min_evidence`) + 페르소나 (`archetype`·`voice`·`phrasing`·`forbid`) |
+| `pilot/skills/context/shared/identity.yml` | 에이전트 계약 (`output`·`min_evidence`) + 에이전트별 역할·톤 정의 (`archetype`·`voice`·`phrasing`·`forbid`) |
 | `pilot/skills/context/lifecycle/{state,plan}-schema.md` | `.agent-state.yml` 과 `plan.md` 의 형식 계약 |
 | `pilot/skills/context/lifecycle/drift-protocol.md` | drift 대응 규약 |
 

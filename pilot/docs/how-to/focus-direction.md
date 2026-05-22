@@ -47,4 +47,4 @@ planner → critic → generator → evaluator 사이클이 끝나고 focus 가 
 
 - :material-book-open-variant: Reference: [`/pilot:focus`](../reference/skills/focus.md)
 - :material-tools: How-to: critic 결과를 검토하고 다음 planner 에 "C1·C3 만 반영" 같이 지시할 때 자주 함께 쓴다 — [Critic 활용](critic-review.md).
-- :material-lightbulb-on: Explanation: focus 가 해결하는 *메인 대화 단절* 문제는 [에이전트 시스템 — 페르소나 분리](../explanation/index.md) 에서.
+- :material-lightbulb-on: Explanation: focus 가 해결하는 *메인 대화 단절* 문제는 [에이전트 시스템 — 역할 분리](../explanation/index.md) 에서.

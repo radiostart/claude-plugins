@@ -22,7 +22,7 @@
 
     ---
 
-    planner → critic → generator → evaluator 의 명시 호출 사이클. 페르소나 (`architect`·`red-team`·`craftsman`·`auditor`) 의 책임 분리와 critic 의 1.5-pass 위치.
+    planner → critic → generator → evaluator 의 명시 호출 사이클. 네 에이전트의 역할·관점 분리와 critic 의 1.5-pass 위치.
 
 -   :material-folder-multiple:{ .lg .middle } __[Workspace 레이아웃](workspace-layout.md)__
 

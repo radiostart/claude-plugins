@@ -174,7 +174,7 @@ plan 파일 (`features/01-user-email-field.plan.md`) 이 생성되면 1차 목�
 @pilot-planner-critic
 ```
 
-planner 와 같은 컨텍스트 위에서 페르소나만 정반대 (architect → red-team) 로 동작한다. 5 카테고리 — `premise` · `scope` · `edge-case` · `alternative` · `risk` — 로 챌린지를 만들고:
+planner 와 같은 컨텍스트 위에서 정반대 관점으로 동작한다 — planner 가 *설계* 라면 critic 은 *반론·결함 찾기*. 5 카테고리 — `premise` · `scope` · `edge-case` · `alternative` · `risk` — 로 챌린지를 만들고:
 
 ```
 features/01-user-email-field.plan.critic.md

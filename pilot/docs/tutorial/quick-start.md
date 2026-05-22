@@ -78,7 +78,7 @@ features/01-user-profile-email-field.plan.md
 ## 다음 단계
 
 - :material-tools: How-to:
-    - [Critic 활용 — planner 결과를 red-team 검증](../how-to/index.md)
+    - [Critic 활용 — planner 결과를 반론 검증](../how-to/index.md)
     - [TDD 모드 활성화](../how-to/index.md)
 - :material-book-open-variant: Reference:
     - [에이전트 — pilot-planner / -critic / -generator / -evaluator](../reference/index.md)

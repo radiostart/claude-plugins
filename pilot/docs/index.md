@@ -9,7 +9,7 @@ hide:
 도메인 지식 기반 에이전트 워크플로우 플러그인 — Claude Code 안에서 *plan → critic → generate → evaluate* 의 명시적 사이클로 복잡한 프로젝트를 진행합니다.
 
 !!! tip "v0.4.0 highlights"
-    - `@pilot-planner-critic` 추가 — planner 의 plan 을 red-team 시각으로 챌린지하는 adversarial 1.5-pass 리뷰
+    - `@pilot-planner-critic` 추가 — planner 의 plan 을 반론 시각으로 챌린지하는 adversarial 1.5-pass 리뷰
     - doctor 마이그레이션·진단 강화 (schema v1.1 → v1.2 자동 업그레이드)
     - init wizard contract 보강
     - 자세한 변경사항: [Explanation → 릴리스](explanation/index.md)
@@ -56,7 +56,7 @@ hide:
 
     ---
 
-    *왜 이렇게 동작하는지* — 페르소나, drift-protocol, SSOT 와 derived 의 경계.
+    *왜 이렇게 동작하는지* — 에이전트 역할 분리, drift-protocol, SSOT 와 derived 의 경계.
 
     [:octicons-arrow-right-24: Explanation 목록](explanation/index.md)
 
