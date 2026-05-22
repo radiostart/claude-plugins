@@ -62,6 +62,12 @@
 
     learn 이 못 잡는 비즈니스 규칙을 직접 정리하고 MANIFEST 에 연결한다.
 
+-   :material-file-cog:{ .lg .middle } __[워크스페이스 설정 (config.md)](workspace-config.md)__
+
+    ---
+
+    `config.md` 의 고정 스키마 — 언어·도구 기본값·Ignore·훅 상수를 채운다.
+
 </div>
 
 ## 운영

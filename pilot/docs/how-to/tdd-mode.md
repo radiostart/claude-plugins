@@ -6,7 +6,7 @@
 ## 전제
 
 - 활성 프로젝트가 있다 (`workspace/STATE.md` 에 "진행중" 1 개).
-- 프로젝트의 `config.md` 또는 `project.md` 에 `test_command` 가 정의돼 있다 (예: `bundle exec rspec`).
+- 프로젝트의 `config.md` 또는 `project.md` 에 `test_command` 가 정의돼 있다 ([워크스페이스 설정](workspace-config.md) 참조).
 - 신규 프로젝트라면 TDD 로 *시작* 하는 게 더 깔끔 — `/pilot:project --tdd` 를 사용하고 본 how-to 는 건너뛴다.
 
 ## 절차

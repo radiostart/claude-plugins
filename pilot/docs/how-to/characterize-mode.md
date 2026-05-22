@@ -6,7 +6,7 @@
 ## 전제
 
 - 활성 프로젝트가 있고 대상 도메인의 코드가 이미 존재한다 (신규 기능이 아닌 *기존 동작 보존* 작업).
-- `config.md` 에 `test_command` · `source_root` 가 정의돼 있다.
+- `config.md` 에 `test_command` · `source_root` 가 정의돼 있다 ([워크스페이스 설정](workspace-config.md) 참조).
 - 신규 기능이거나 테스트 부재 코드를 *처음 작성* 하는 거라면 [TDD 모드](tdd-mode.md) 가 맞다.
 
 ## 절차
