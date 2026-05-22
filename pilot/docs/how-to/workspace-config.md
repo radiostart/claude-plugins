@@ -24,7 +24,7 @@
 |---|---|---|
 | `language` | `ruby` · `kotlin` · `typescript` | 프로젝트 주 언어 (hint) |
 | `test_command` | `bundle exec rspec` · `./gradlew test --tests` | 테스트 러너 — evaluator 가 변경 테스트 실행 |
-| `source_root` | `app/` · `src/main/` | 소스 루트 — characterize 잠금·scope-guard 기준 |
+| `source_root` | `app/` · `src/main/` | 소스 루트 — characterize 수정 금지 범위·scope-guard 기준 |
 | `test_path_convention` | `spec/**/*_spec.rb` | 테스트 파일 경로 규약 |
 | `conventions_doc` | `context/conventions.md` | 언어·프레임워크 관행 문서 — generator 가 자동 로드 |
 | `conventions_evals` | `context/evals/conventions.json` | 언어별 검증 케이스 JSON — generator 가 자동 로드 |
