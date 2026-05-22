@@ -9,22 +9,7 @@
 
 ## 사전 준비
 
-### gstack 설치 확인
-
-pilot 은 gstack 이 설치된 환경에서만 동작한다 (CLAUDE.md `gstack (REQUIRED)` 룰).
-
-```bash
-test -d ~/.claude/skills/gstack/bin && echo "OK" || echo "MISSING"
-```
-
-`MISSING` 이면 아래 절차로 설치 후 Claude Code 재시작:
-
-```bash
-git clone --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack
-cd ~/.claude/skills/gstack && ./setup --team
-```
-
-### 더미 저장소 복사
+이 가이드는 더미 저장소를 복사해 따라간다 — 플러그인 캐시의 샘플을 작업 디렉터리로 옮긴다:
 
 ```bash
 # ${CLAUDE_PLUGIN_ROOT} = 플러그인 캐시 경로 (echo $CLAUDE_PLUGIN_ROOT 로 확인)
