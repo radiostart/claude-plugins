@@ -41,15 +41,15 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 3. 컨텍스트 로드·코드베이스 분석 중 `workspace/` 하위 파일 (도메인 지식 `context/`, 프로젝트 산출물 `project.md`·`prompts/*.md`) 에서 실제 코드와 다른 내용을 발견하면 [`drift-protocol.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/drift-protocol.md) 를 따른다. 누적 임계(3 건 이상) 처리는 protocol § 누적 임계 처리 — Planner 행 참조.
 4. 로드한 지침에 따라 구현 계획을 수립하고 사용자에게 확인을 받는다. 모드별 계약 포맷:
    - **`mode: characterize`** — [`characterize.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/characterize.md) § Planner — Characterization Contract. 3 축 (입력 / 현재 출력 / 관찰된 사이드 이펙트). "현재 출력" 은 Generator 실행 후 채움 — Planner 예측 기록 금지.
-   - **`tdd: true` (mode 미설정)** — [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Planner — Red Contract. Red 계약 3 축 (spec 대상 경로 / 검증할 행동 / 기대 실패 유형).
+   - **`tdd: true` (mode 미설정)** — [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Planner — Red Contract. Red 계약 3 축 (테스트 대상 경로 / 검증할 행동 / 기대 실패 유형).
    - **둘 다 아님** — 일반 구현 계획 (변경 파일 / 구현 순서 / 주의사항).
 
-   공통: **테스트 코드는 작성하지 않는다** — 실제 spec/test 파일 작성은 Generator 담당.
+   공통: **테스트 코드는 작성하지 않는다** — 실제 테스트 파일 작성은 Generator 담당.
 5. **[필수]** 계획 수립 과정에서 체크리스트(`[ ]`)를 작성했거나, 기존 체크리스트 항목을 완료한 경우 **반드시** Edit 툴로 해당 항목을 `[x]`로 업데이트한다. 체크 결과를 텍스트로만 보고하고 파일을 수정하지 않는 것은 금지한다.
 6. **[계획 저장]** `features/` 폴더가 있는 프로젝트에서, 계획이 확정되면 `features/NN-{slug}.plan.md`에 저장한다 (NN은 feature 번호, slug는 feature 파일명과 동일).
    - 포함 내용: 변경 대상 파일 목록, 구현 순서, 스텝별 설명, 주의사항
-   - TDD 모드 (`tdd: true`, mode 미설정): 스텝별 **spec 대상 경로 / 검증할 행동 / 기대 실패 유형** ([`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Planner — Red Contract 참조)
-   - Characterize 모드 (`mode: characterize`): 스텝별 **spec 대상 경로 / 입력 / 현재 출력 / 관찰된 사이드 이펙트** ([`characterize.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/characterize.md) § Planner — Characterization Contract 참조)
+   - TDD 모드 (`tdd: true`, mode 미설정): 스텝별 **테스트 대상 경로 / 검증할 행동 / 기대 실패 유형** ([`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Planner — Red Contract 참조)
+   - Characterize 모드 (`mode: characterize`): 스텝별 **테스트 대상 경로 / 입력 / 현재 출력 / 관찰된 사이드 이펙트** ([`characterize.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/characterize.md) § Planner — Characterization Contract 참조)
    - 이 파일은 Generator가 직접 Read하여 구현 지침으로 사용한다.
    - `features/` 폴더가 없는 프로젝트에서는 이 단계를 건너뛴다.
 

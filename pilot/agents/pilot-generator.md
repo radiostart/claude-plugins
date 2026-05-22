@@ -49,11 +49,11 @@ tools: Read, Glob, Grep, Edit, Write, Bash
    ```
 
 3. 로드한 지침에 따라 코드를 구현한다. 모드별 절차:
-   - **`mode: characterize`** — [`characterize.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/characterize.md) § Generator — Capture 절차. plan 의 3 축 (입력 / 현재 출력 / 관찰된 사이드 이펙트) 을 읽고 **현재 코드 수정 없이** 실행해 spec 으로 포착. **[필수 게이트] `{source_root}` 수정 절대 금지** — `git diff --stat {source_root}` 이 비어있어야 함. 1 줄이라도 수정됐으면 `git checkout {source_root}` 로 원복 후 처음부터. 테스트 계층 (`workspace/context/config.md` 의 `test_path_convention` 경로 및 그 하위 픽스처·헬퍼) 수정은 허용. 각 스텝에 `[Captured]` 증거 4 라인을 `.plan.md` 에 기록.
+   - **`mode: characterize`** — [`characterize.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/characterize.md) § Generator — Capture 절차. plan 의 3 축 (입력 / 현재 출력 / 관찰된 사이드 이펙트) 을 읽고 **현재 코드 수정 없이** 실행해 테스트로 포착. **[필수 게이트] `{source_root}` 수정 절대 금지** — `git diff --stat {source_root}` 이 비어있어야 함. 1 줄이라도 수정됐으면 `git checkout {source_root}` 로 원복 후 처음부터. 테스트 계층 (`workspace/context/config.md` 의 `test_path_convention` 경로 및 그 하위 픽스처·헬퍼) 수정은 허용. 각 스텝에 `[Captured]` 증거 4 라인을 `.plan.md` 에 기록.
    - **`tdd: true` (mode 미설정)** — [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Generator — Red + Green + Refactor 절차를 따른다:
-     - plan 파일의 **Red 계약** (spec 대상 경로 / 검증할 행동 / 기대 실패 유형) 을 읽고 **Red 테스트 작성 → 실패 확인 → Green → Refactor** 를 스텝별로 순환.
+     - plan 파일의 **Red 계약** (테스트 대상 경로 / 검증할 행동 / 기대 실패 유형) 을 읽고 **Red 테스트 작성 → 실패 확인 → Green → Refactor** 를 스텝별로 순환.
      - 각 스텝에 `[Red] 실패 메시지·유형`, `[Green] 통과 시각`, `[Refactor] 수정 내역` 증거를 **Edit 으로 `.plan.md` 에 기록** (텍스트 보고만 금지).
-     - **인프라 오류** (`SyntaxError`·`LoadError`·fixture/factory 미정의·테스트 러너 부팅 실패 등 — 언어별 양상은 `conventions_doc` 참조) 가 Red 에서 발견되면 **테스트 대상이 아니라 인프라** (fixture·helper·프레임워크 부팅 설정) 를 수정한 뒤 Red 를 재실행.
+     - **인프라 오류** (`SyntaxError`·`LoadError`·픽스처 미정의·테스트 러너 부팅 실패 등 — 언어별 양상은 `conventions_doc` 참조) 가 Red 에서 발견되면 **테스트 대상이 아니라 인프라** (픽스처·헬퍼·프레임워크 부팅 설정) 를 수정한 뒤 Red 를 재실행.
      - 완료 게이트: `{source_root}` 하위 1 개 이상 수정 + 직전 `{test_command} {file}` 전체 통과 + 모든 스텝 `[Red] + [Green]` 증거 기록. 조건 미충족 시 종료하지 않는다.
    - **둘 다 아님** — 일반 구현 (plan.md 의 변경 파일 · 구현 순서 · 주의사항 기반).
 4. **[필수]** 구현 과정에서 체크리스트(`[ ]`)를 작성했거나, 기존 체크리스트 항목(planner가 작성한 변경 파일 목록 등)을 완료한 경우 **반드시** Edit 툴로 해당 항목을 `[x]`로 업데이트한다. 체크 결과를 텍스트로만 보고하고 파일을 수정하지 않는 것은 금지한다.

@@ -30,7 +30,7 @@ flowchart TD
 
 | 차원 | Standard | TDD | Characterize |
 |---|---|---|---|
-| **Planner 산출물** | `plan.md` 자유 형식 | Red Contract — *spec 대상 / 검증할 행동 / 기대 실패 유형* | Characterization Contract — *입력 / 현재 출력(placeholder) / 관찰된 사이드 이펙트* |
+| **Planner 산출물** | `plan.md` 자유 형식 | Red Contract — *테스트 대상 / 검증할 행동 / 기대 실패 유형* | Characterization Contract — *입력 / 현재 출력(placeholder) / 관찰된 사이드 이펙트* |
 | **Generator 행동** | 구현 작성 | 실패 테스트 작성 후 *최소 구현* | `{source_root}` 잠금. **테스트만 추가**, 실제 실행으로 "현재 출력" 측정 |
 | **Evaluator 검증** | 요구사항 충족 + 패턴 일관성 | 변경 관련 테스트만 실행 (`{test_command} {paths}`) | 추가된 테스트가 *현재 동작을 그대로 확인* 하는지 |
 | **plan-validate 강제** | 자유 (doc-level 만 검증) | `### 스텝 목록` 필수, 스텝별 3 라벨 의무 | `### 스텝 목록 (Characterization Contract)` 필수, 스텝별 4 라벨 의무 |

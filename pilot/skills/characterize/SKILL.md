@@ -2,12 +2,12 @@
 name: characterize
 description: >-
   Characterization test 모드로 전환/복귀한다. 기존 레거시 코드의 현재 동작을
-  spec 으로 포착하기 위한 모드. 구현 변경 없음 (`{source_root}` 잠금). 리팩터는 별도 사이클.
+  테스트로 포착하기 위한 모드. 구현 변경 없음 (`{source_root}` 잠금). 리팩터는 별도 사이클.
 ---
 
 # /pilot:characterize
 
-레거시 코드의 **현재 동작을 포착** 하는 characterization spec 을 추가하는 모드로 전환한다. 구현 변경 없이 spec 만 추가하여, 이후 리팩터를 안전하게 진행할 발판을 만든다.
+레거시 코드의 **현재 동작을 포착** 하는 characterization 테스트를 추가하는 모드로 전환한다. 구현 변경 없이 테스트만 추가하여, 이후 리팩터를 안전하게 진행할 발판을 만든다.
 
 상세 절차: [`characterize.md`](../context/modes/characterize.md).
 

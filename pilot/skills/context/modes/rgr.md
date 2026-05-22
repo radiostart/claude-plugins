@@ -72,7 +72,7 @@ Generator 가 Red 를 실제로 작성·실행한 뒤 각 스텝에 [Red] / [Gre
 
 ### 경계 규칙
 
-- 테스트 프레임워크 문법·factories·fixtures·helpers 를 **몰라도 작성 가능** 해야 함. 알면 기술해도 되지만 **테스트 대상 경로 이외의 인프라 파일명 명시 금지** (Generator 가 판단).
+- 테스트 프레임워크 문법·픽스처·헬퍼를 **몰라도 작성 가능** 해야 함. 알면 기술해도 되지만 **테스트 대상 경로 이외의 인프라 파일명 명시 금지** (Generator 가 판단).
 - 스텝 계약이 모호하면 Generator 가 Red 재설계를 요구할 수 있음 (Evaluator 가 반려 경로 확보).
 
 ## Generator — Red + Green + Refactor
@@ -93,7 +93,7 @@ Planner 가 남긴 `.plan.md` 의 스텝 계약을 이행한다. **Red 작성 �
 3. `{test_command} {file}` 실행 — 실패 확인
    - **fail-fast 사용 금지**. Red 단계에선 모든 테스트의 실패·오류 유형을 끝까지 확인해야 한다. 첫 실패에서 끊으면 뒤쪽 테스트의 구문 오류 등이 묻힌다
    - 실패 메시지가 **구현 미완성** 징후인지 확인 (예: `NoMethodError`, `expected X got Y`, `undefined method`, `AssertionError: method X not found` — 언어별 양상은 `conventions_doc` 참조)
-   - **인프라 오류** (`SyntaxError`, `LoadError`, factory·fixture 미정의, 테스트 러너 부팅 실패 등) 가 나오면 **테스트 대상이 아니라 인프라를 수정** 한다
+   - **인프라 오류** (`SyntaxError`, `LoadError`, 픽스처 미정의, 테스트 러너 부팅 실패 등) 가 나오면 **테스트 대상이 아니라 인프라를 수정** 한다
 4. **[필수 게이트]** `.plan.md` 해당 스텝에 Red 증거 기록. 없으면 Green 으로 넘어가지 않는다:
 
    ```markdown
@@ -142,7 +142,7 @@ Planner 가 남긴 `.plan.md` 의 스텝 계약을 이행한다. **Red 작성 �
    - 관련 테스트가 여러 개면 한 줄에 나열해 한 번에 실행
 2. **Red 증거 검증** — `.plan.md` 의 **모든 스텝** 에 `[Red]` / `[Green]` 증거가 기록되어 있는지 확인:
    - **증거 누락** → Generator 에 TDD 사이클 재수행 요청 (반려)
-   - **실패 유형이 "인프라 오류"** 로 기록된 스텝 → Generator 에 Red 재작성 요청 (factory·helper 수정 후 실제 구현 미완 실패로 재확인해야 함)
+   - **실패 유형이 "인프라 오류"** 로 기록된 스텝 → Generator 에 Red 재작성 요청 (픽스처·헬퍼 수정 후 실제 구현 미완 실패로 재확인해야 함)
    - **실패 메시지 타당성 점검** — 기록된 실패 메시지가 `기대 실패 유형` 과 일치하는지, 정말 "미구현" 징후인지 사람 판단으로 점검. 예: `NoMethodError` 인데 서비스가 이미 존재하면 Red 가 엉뚱한 대상일 수 있음
 3. 실패 항목 있으면 원인 보고 (수정은 Generator 에 재요청)
 4. 신규 프로덕션 코드에 대응하는 테스트 파일 존재 여부 확인

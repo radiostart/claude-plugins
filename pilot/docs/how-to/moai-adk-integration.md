@@ -36,7 +36,7 @@
 ### 시나리오 2: 큰 레거시 + 부분 refactor
 
 ```
-1. /pilot:characterize {레거시 모듈}  →  현재 동작 spec 포착
+1. /pilot:characterize {레거시 모듈}  →  현재 동작 테스트 포착
 2. moai-adk 의 DDD cycle (ANALYZE-PRESERVE-IMPROVE)  →  behavior preservation 으로 refactor
 ```
 

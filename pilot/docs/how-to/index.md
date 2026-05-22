@@ -12,13 +12,13 @@
 
     ---
 
-    Red→Green→Refactor 강제. spec 작성 누락을 막고 planner 가 실패 테스트를 먼저 만들도록.
+    Red→Green→Refactor 강제. 테스트 작성 누락을 막고 planner 가 실패 테스트를 먼저 만들도록.
 
 -   :material-history:{ .lg .middle } __[Characterize 모드](characterize-mode.md)__
 
     ---
 
-    레거시 코드의 *현재 동작* 을 spec 으로 포착. 구현 변경 없이 안전망 먼저.
+    레거시 코드의 *현재 동작* 을 테스트로 포착. 구현 변경 없이 안전망 먼저.
 
 -   :material-shield-alert:{ .lg .middle } __[Critic 활용](critic-review.md)__
 

@@ -1,6 +1,6 @@
 # Characterization Test 정책
 
-레거시 코드의 **현재 동작** 을 포착해 spec 으로 고정하는 모드. 안전하게 리팩터할 발판을 만들기 위한 단계. `rgr.md` (TDD Red-Green-Refactor) 와 병렬 존재.
+레거시 코드의 **현재 동작** 을 포착해 테스트로 고정하는 모드. 안전하게 리팩터할 발판을 만들기 위한 단계. `rgr.md` (TDD Red-Green-Refactor) 와 병렬 존재.
 
 > **언어 중립 규약:** `{test_command}`·`{source_root}`·`{test_path_convention}` 토큰은 [`rgr.md`](rgr.md) 상단 규약과 동일하게 `workspace/context/config.md` `## 언어·도구 기본값` 에서 해석. 언어별 테스트 프레임워크 관행은 `conventions_doc` 문서를 우선 따른다.
 
@@ -8,7 +8,7 @@
 
 - `.agent-state.yml` 의 `mode: characterize` 가 활성화된 프로젝트·사이클에서만 적용.
 - `tdd: true` 와 `mode: characterize` 가 동시 설정된 경우 **characterize 가 우선** (Red 계약 대신 Characterization Contract 사용).
-- **구현 변경 없음** — spec 만 추가. 리팩터는 characterization spec 이 녹색인 상태에서 **별도 사이클** 로 진행.
+- **구현 변경 없음** — 테스트만 추가. 리팩터는 characterization 테스트가 녹색인 상태에서 **별도 사이클** 로 진행.
 - Planner → Generator → Evaluator 흐름 유지.
 
 ## 역할 분담
@@ -16,7 +16,7 @@
 | 에이전트 | 역할 | 건드리는 파일 |
 | --- | --- | --- |
 | Planner | 포착 대상 분할 + **Characterization Contract 작성** (테스트 코드 X) | `features/NN-{slug}.plan.md` |
-| Generator | **현재 동작 실행·기록** (테스트 디렉터리·factories 만 추가) + 증거 기록 | 테스트 계층 + `.plan.md` (**`{source_root}` 절대 금지**) |
+| Generator | **현재 동작 실행·기록** (테스트 디렉터리·픽스처만 추가) + 증거 기록 | 테스트 계층 + `.plan.md` (**`{source_root}` 절대 금지**) |
 | Evaluator | **`{source_root}` 미수정 검증** + 테스트 pass + 3 축 일치 확인 | 읽기 전용 + `{test_command}` + `git diff` |
 
 ## 스텝 단위
@@ -24,7 +24,7 @@
 Planner 가 포착 대상을 분할하는 기준:
 
 - 단일 진입점 (메서드·엔드포인트·CLI 명령) 1 개 또는 관련 경로 묶음
-- 이미 작성된 다른 characterization spec 이 독립적으로 pass 하는 단위
+- 이미 작성된 다른 characterization 테스트가 독립적으로 pass 하는 단위
 - 사이드 이펙트 경계가 명확한 단위 (DB 테이블·로그 파일·외부 API 호출 범위)
 
 ## Planner — Characterization Contract
@@ -56,7 +56,7 @@ Generator 가 현재 동작 실행 후 각 스텝에 `[Captured]` 증거 라인�
 
 ### 경계 규칙
 
-- 테스트 프레임워크 문법·factories·fixtures 를 **몰라도 작성 가능**. Generator 가 실제 값 채워 넣음.
+- 테스트 프레임워크 문법·픽스처·헬퍼를 **몰라도 작성 가능**. Generator 가 실제 값 채워 넣음.
 - Planner 가 "현재 출력" 을 **예측해서 기록하지 말 것**. 실제 실행한 Generator 만 기록.
 - 탐지 불가 사이드 이펙트를 전부 나열할 필요 없음. "가능성 있는 영역" 표시만으로 충분 — Evaluator 가 실행 중 추가 발견 시 계약 갱신 요구.
 
@@ -73,7 +73,7 @@ Planner 가 남긴 `.plan.md` 의 3 축 계약을 이행한다. **`{source_root}
 3. 실제 관찰된 입력·출력·사이드 이펙트를 테스트 assertion 으로 기록
    - 파일명은 대상 소스 파일과 1:1 매칭 (`{test_path_convention}`)
    - 일반 TDD 테스트와 구분되도록 "characterization" 그룹으로 묶음 (언어별 그룹핑 문법은 `conventions_doc`)
-4. `{test_command} {file}` — 통과 확인. **인프라 오류 시 factory·helper·부팅 설정 수정은 허용** (테스트 계층). `{source_root}` 수정은 절대 금지.
+4. `{test_command} {file}` — 통과 확인. **인프라 오류 시 픽스처·헬퍼·부팅 설정 수정은 허용** (테스트 계층). `{source_root}` 수정은 절대 금지.
 5. **[필수 게이트] `{source_root}` 미수정 검증** — `git diff --stat {source_root}` 이 비어있어야 함. 1 줄이라도 변경됐으면 **`git checkout {source_root}`** 로 원복 후 처음부터
 6. **[필수 게이트] `.plan.md` 증거 기록** — 해당 스텝에 아래 라인 추가:
 
@@ -108,11 +108,11 @@ Planner 가 남긴 `.plan.md` 의 3 축 계약을 이행한다. **`{source_root}
 
 ## 사후 리팩터 사이클
 
-Characterization spec 이 녹색인 상태에서 **별도 feature 또는 mode 전환** (`mode: null` → `tdd: true` 등) 으로 리팩터 진행.
+Characterization 테스트가 녹색인 상태에서 **별도 feature 또는 mode 전환** (`mode: null` → `tdd: true` 등) 으로 리팩터 진행.
 
-리팩터 중 characterization spec 이 깨지면:
+리팩터 중 characterization 테스트가 깨지면:
 
-- **의도된 동작 변경** — 계약을 업데이트하고 spec 수정. 커밋 메시지에 근거 명시.
+- **의도된 동작 변경** — 계약을 업데이트하고 테스트 수정. 커밋 메시지에 근거 명시.
 - **의도하지 않은 회귀** — 리팩터 롤백.
 
 ## 탐지 불가 사이드 이펙트 전제

@@ -107,7 +107,7 @@
 
 ```markdown
 > **TDD 모드**: Red 작성·실패 확인 → Green (최소 구현) → Refactor 를 한 컨텍스트에서 순환한다.
-> Planner 가 남긴 `.plan.md` 의 Red 계약을 따라 spec 을 직접 작성·실행한다. 각 스텝의 `[Red][Green][Refactor]` 증거를 `.plan.md` 에 Edit 로 기록 (텍스트 보고만 금지). 상세 절차는 [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) 의 `Generator — Red + Green + Refactor` 절을 따른다 (래퍼가 자동 로드).
+> Planner 가 남긴 `.plan.md` 의 Red 계약을 따라 테스트를 직접 작성·실행한다. 각 스텝의 `[Red][Green][Refactor]` 증거를 `.plan.md` 에 Edit 로 기록 (텍스트 보고만 금지). 상세 절차는 [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) 의 `Generator — Red + Green + Refactor` 절을 따른다 (래퍼가 자동 로드).
 ```
 
 ---

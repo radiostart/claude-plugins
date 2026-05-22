@@ -14,7 +14,7 @@ AI 가 필요한 지식만 효율적으로 load 하며 작업하게 한다. 플�
 제공하고, 도메인 지식 (비즈니스 규칙·파일 경로·상태값) 은 소비 프로젝트의 `workspace/context/` 에서
 사용자가 직접 관리한다.
 
-- **L1 — 도메인 지식 외부화:** `/pilot:learn` 이 코드 → `workspace/context/{domain}/` 산출, `/pilot:characterize` 가 레거시 동작을 spec 으로 포착.
+- **L1 — 도메인 지식 외부화:** `/pilot:learn` 이 코드 → `workspace/context/{domain}/` 산출, `/pilot:characterize` 가 레거시 동작을 테스트로 포착.
 - **L2 — 프로젝트 단위 작업 틀:** 1 workspace / N projects, 같은 도메인 지식 공유.
 - **L3 — 결정 trace + 자동 마이그레이션:** 설계 결정 문서 + `.agent-state.yml` schema 자동 주입.
 

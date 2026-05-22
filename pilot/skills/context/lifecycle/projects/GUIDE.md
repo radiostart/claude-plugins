@@ -236,7 +236,7 @@ projects/{PROJECT}/
 - `## 프로젝트 고유 항목` — **pre-analyze 상태에선 빈 상태**. analyze 실행 시 features/ 의 비즈니스 규칙·예외 케이스를 체크리스트로 주입.
 - `## 일관성` / `## 테스트` — 언어 컨벤션·공통 테스트 체크 (템플릿에 기본 항목 포함).
 
-> **TDD 모드**일 때: `/pilot:tdd` 가 파일 상단에 `## TDD 테스트 실행` 앵커를 추가한다 — 변경 관련 spec 실행 절차는 [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) 참조.
+> **TDD 모드**일 때: `/pilot:tdd` 가 파일 상단에 `## TDD 테스트 실행` 앵커를 추가한다 — 변경 관련 테스트 실행 절차는 [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) 참조.
 
 ---
 

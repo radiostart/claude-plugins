@@ -19,7 +19,7 @@ tools: Read, Glob, Grep, Bash, Write, Edit
 
 - **본다**: `features/NN-{slug}.md` (요구사항) · `features/NN-{slug}.plan.md` (planner 산출물) · `prompts/planner.md` 의 기준 · 도메인 컨텍스트.
 - **만든다**: `features/NN-{slug}.plan.critic.md` 1 개 (챌린지 항목 리스트).
-- **하지 않는다**: 코드 수정 · plan.md 수정 · 새 plan 작성 · spec/test 파일 작성. plan.md 의 결함은 planner 가 재호출되어 고친다.
+- **하지 않는다**: 코드 수정 · plan.md 수정 · 새 plan 작성 · 테스트 파일 작성. plan.md 의 결함은 planner 가 재호출되어 고친다.
 
 ## 절차
 
@@ -117,7 +117,7 @@ tools: Read, Glob, Grep, Bash, Write, Edit
 7. **[금지]**
    - plan.md 를 직접 수정하지 않는다.
    - 코드를 수정하지 않는다.
-   - 새 spec/test 를 작성하지 않는다.
+   - 새 테스트를 작성하지 않는다.
    - critic 결과를 evaluator 가 보장한 것처럼 단정하지 않는다 (evaluator 와 책임 분리: critic 은 *사전* 검토, evaluator 는 *사후* 검증).
 
 ---
