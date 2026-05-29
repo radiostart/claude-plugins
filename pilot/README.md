@@ -95,6 +95,8 @@ workspace/
 각 에이전트는 사용자가 **명시 호출**한다 — 자동 파이프라인이 아니라 phase 사이 개입 가능한 흐름이다. 두 갈래의
 따라하기는 [Tutorial](https://radiostart.github.io/claude-plugins/tutorial/quick-start/) 참조.
 
+> 저위험·소규모 feature 의 호출 마찰을 줄이고 싶으면 `/pilot:autopilot NN` (감독형 자율 모드) 으로 위 4-에이전트 흐름을 자동 순차 진행할 수 있다 — critic blocking·재시도 소진 등 hard-stop 신호에 걸리면 즉시 사람에게 제어를 반환한다. opt-in 예외 모드이며 기본은 수동 호출이다.
+
 ---
 
 ## 문서

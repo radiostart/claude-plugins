@@ -69,6 +69,23 @@ critic은 작성된 `plan.md`를 검토하되, 이를 직접 수정하지 않습
 
 자동화된 pipeline이 아닌 각 phase 사이에 사용자가 유연하게 개입할 수 있습니다. 진행 방향이 잘못되었다면 즉시 중단하고 설정을 조정할 수 있습니다.
 
+## 예외 — autopilot (감독형 자율 모드)
+
+위 수동 흐름이 기본이지만, 저위험·소규모 feature 에서는 4-에이전트 호출을 매번 직접 하는 마찰이 큽니다. `/pilot:autopilot NN` 은 **이미 명세가 존재하는 단일 feature** 에 한해 planner → critic → generator → evaluator 를 자동 순차 진행하는 **opt-in 예외 모드**입니다.
+
+자동이라고 해서 사람을 흐름에서 배제하지 않습니다 — 위험 신호(hard-stop)에 걸리면 즉시 멈추고 제어를 사용자에게 반환합니다:
+
+| hard-stop 신호 | 의미 |
+|---|---|
+| `plan-validate` 실패 | plan.md 형식 계약 위반 — generator 로 넘기지 않음 |
+| critic `blocking` 챌린지 | blocking 은 auto-accept 하지 않음 — 사람 판단 필요 |
+| 재시도 소진 | evaluator `NOT_READY` 가 generator 재진입 1회 후에도 지속 |
+| 신호 파싱 실패 | critic·evaluator 산출물을 신뢰성 있게 읽지 못함 — 추측 없이 멈춤 |
+
+핵심 설계는 **오케스트레이터가 도메인 판단을 하지 않는다**는 것입니다. "이 챌린지가 타당한가"는 critic·planner 가, "요구사항을 충족했나"는 evaluator 가 판단하고, autopilot 은 그들이 내놓은 신호(enum)만 읽어 다음 단계로 전이합니다. 자동 모드에서도 critic 은 항상 실행되며, suggestion/nit 만 있을 때만 planner 가 자동 반영하고 blocking 이 하나라도 있으면 멈춥니다. 모든 자동 결정은 `features/NN-{slug}.auto.md` 감사 로그에 남아 사후 검증이 가능합니다.
+
+상세 절차·재개 동작은 [Reference → `/autopilot`](../reference/skills/autopilot.md) 참조.
+
 ## 다음 단계
 
 - [모드 — Standard / TDD / Characterize](modes.md): `.agent-state.yml` 설정(`tdd`, `mode`)에 따른 4개 agent의 역할 확장 방식
