@@ -1,5 +1,5 @@
 ---
-name: auto
+name: autopilot
 description: >-
   이미 생성된 단일 feature 를 planner→critic→generator→evaluator 로
   자동 순차 진행하는 감독형 자율 모드. hard-stop 신호(plan-validate 실패·
@@ -8,7 +8,7 @@ description: >-
   생성·명세 작업은 `/pilot:create-feature`·`/pilot:analyze` 가 담당한다.
 ---
 
-# /pilot:auto
+# /pilot:autopilot
 
 이미 명세가 존재하는 **단일 feature** 를 자동 순차 진행한다. 기본 흐름은
 사용자가 각 에이전트를 명시 호출하는 것이고, 이 스킬은 그 마찰을 줄이는
@@ -19,8 +19,8 @@ description: >-
 **사용 예:**
 
 ```
-/pilot:auto 03
-/pilot:auto 3
+/pilot:autopilot 03
+/pilot:autopilot 3
 ```
 
 ---
@@ -32,7 +32,7 @@ description: >-
 - P1: `{PROJECT}` 획득. 실패 시 [messages.md](../context/shared/messages.md) 의
   `workspace_missing` / `no_active_project` 출력 후 종료.
 
-`$ARGUMENTS` 가 비어있으면 **"feature 번호를 입력하세요. 예: `/pilot:auto 03`"**
+`$ARGUMENTS` 가 비어있으면 **"feature 번호를 입력하세요. 예: `/pilot:autopilot 03`"**
 안내 후 종료.
 
 `{NN}` = 입력 번호를 2자리 zero-pad (예: `3` → `03`).
@@ -170,7 +170,7 @@ auto-pilot 중단: {NN}-{slug}
 마지막 단계: {phase}
 사람 판단 필요: {항목}
 
-수정 후 `/pilot:auto {NN}` 으로 재개할 수 있습니다.
+수정 후 `/pilot:autopilot {NN}` 으로 재개할 수 있습니다.
 로그: features/{NN}-{slug}.auto.md
 ```
 

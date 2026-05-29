@@ -82,7 +82,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
      2. critic 이 불필요하다고 판단되면 (예: 1~2 줄 수준 trivial 변경) **사용자에게 "`@pilot-planner-critic` 을 건너뛰고 바로 `@pilot-generator` 로 갈까요?" 라고 먼저 묻고**, 사용자가 명시 동의한 경우에만 generator 로 진행한다.
    - critic 을 거치지 않고 `@pilot-generator` 를 곧바로 자동 호출하는 것은 금지한다 — skip 은 항상 사용자 결정이다.
 
-> 예외: `/pilot:auto` (감독형 자율 모드) 는 이 흐름을 자동 순차 진행하되, critic blocking·재시도 소진 등 hard-stop 신호에 걸리면 사람에게 제어를 반환한다. 자동 모드에서도 critic 은 항상 실행되며 blocking 챌린지는 auto-accept 하지 않는다.
+> 예외: `/pilot:autopilot` (감독형 자율 모드) 는 이 흐름을 자동 순차 진행하되, critic blocking·재시도 소진 등 hard-stop 신호에 걸리면 사람에게 제어를 반환한다. 자동 모드에서도 critic 은 항상 실행되며 blocking 챌린지는 auto-accept 하지 않는다.
 
    사용자 선택 후 흐름은 `@pilot-planner-critic → (필요 시) @pilot-planner 재호출 → @pilot-generator → @pilot-evaluator`.
 

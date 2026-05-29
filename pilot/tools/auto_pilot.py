@@ -2,7 +2,7 @@
 """
 pilot auto_pilot — 감독형 자율 오케스트레이터의 전이 결정 로직.
 
-`/pilot:auto` 스킬이 각 에이전트(planner / critic / generator / evaluator)를
+`/pilot:autopilot` 스킬이 각 에이전트(planner / critic / generator / evaluator)를
 순차 호출하는 사이, 각 에이전트가 남긴 머신리더블 신호를 읽어 다음 액션을
 결정한다. 이 모듈은 *판단하지 않는다* — 신호의 enum 값만 보고 전이한다.
 
