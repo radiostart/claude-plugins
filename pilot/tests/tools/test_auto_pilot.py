@@ -6,6 +6,11 @@ tools/auto_pilot.py 단위 테스트.
 """
 
 import importlib.util
+import json
+import os
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -18,13 +23,13 @@ def _load_mod():
     spec = importlib.util.spec_from_file_location("auto_pilot_mod", TOOL_PATH)
     module = importlib.util.module_from_spec(spec)
     # Python 3.13: register in sys.modules before exec so @dataclass can resolve __module__
-    import sys as _sys
-    _sys.modules["auto_pilot_mod"] = module
+    sys.modules["auto_pilot_mod"] = module
     spec.loader.exec_module(module)
     return module
 
 
 m = _load_mod()
+
 
 CRITIC_WITH_BLOCKING = """# Plan Critic — #3 사용자 삭제
 
@@ -76,6 +81,47 @@ CRITIC_NO_CHALLENGES = """# Plan Critic — #3 사용자 삭제
 CRITIC_MALFORMED = """# 잘못된 파일
 
 제목만 있고 챌린지 섹션도 severity 라벨도 통과 문구도 없는 내용.
+"""
+
+EVAL_READY = """## VERIFICATION REPORT
+
+- status: READY
+- feature: #3 사용자 삭제
+- mode: standard
+- gates:
+  - requirements: pass
+  - tdd_evidence: skip
+  - capture_lockdown: skip
+  - test_run: skip
+  - scope: pass
+  - drift: none
+- metrics:
+  - files_changed: 4
+- issues_to_fix:
+  - none
+- next: PR 준비
+"""
+
+EVAL_NOT_READY = """## VERIFICATION REPORT
+
+- status: NOT_READY
+- feature: #3 사용자 삭제
+- mode: standard
+- gates:
+  - requirements: fail
+  - tdd_evidence: skip
+  - capture_lockdown: skip
+  - test_run: skip
+  - scope: pass
+  - drift: none
+- metrics:
+  - files_changed: 4
+- issues_to_fix:
+  - [blocking] soft-delete 누락 — order_service.rb
+- next: generator 재진입
+"""
+
+EVAL_NO_REPORT = """구현은 끝났습니다. 보고서 블록을 빼먹었습니다.
 """
 
 
@@ -143,118 +189,15 @@ class TestParseCriticSeverities(unittest.TestCase):
         result = m.parse_critic_severities(CRITIC_MALFORMED)
         self.assertIsNone(result)
 
-
-CRITIC_WITH_BLOCKING = """# Plan Critic — #3 사용자 삭제
-
-> 입력 plan: `features/03-user-deletion.plan.md`
-
-## 챌린지
-
-### C1 — soft-delete 누락
-
-- **severity**: blocking
-- **category**: risk
-- **plan 인용**: 단계 #2
-- **챌린지**: soft-delete 누락
-- **제안**: archived_at 추가
-
-### C2 — 과한 단계
-
-- **severity**: suggestion
-- **category**: scope
-- **plan 인용**: 단계 #4
-- **챌린지**: 과한 단계
-- **제안**: 병합
-"""
-
-CRITIC_SUGGESTION_NIT = """# Plan Critic — #3 사용자 삭제
-
-## 챌린지
-
-### C1 — 대안 제안
-
-- **severity**: suggestion
-- **category**: alternative
-
-### C2 — 사소한 정확성
-
-- **severity**: nit
-- **category**: scope
-"""
-
-CRITIC_NO_CHALLENGES = """# Plan Critic — #3 사용자 삭제
-
-> 입력 plan: `features/03-user-deletion.plan.md`
-
-## 챌린지
-
-검출된 결함 없음. plan 통과.
-"""
-
-CRITIC_MALFORMED = """# 잘못된 파일
-
-제목만 있고 챌린지 섹션도 severity 라벨도 통과 문구도 없는 내용.
-"""
-
-
-class TestParseCriticSeverities(unittest.TestCase):
-    def test_extracts_blocking_and_suggestion(self):
-        result = m.parse_critic_severities(CRITIC_WITH_BLOCKING)
-        self.assertEqual(sorted(result), ["blocking", "suggestion"])
-
-    def test_suggestion_nit_only(self):
-        result = m.parse_critic_severities(CRITIC_SUGGESTION_NIT)
-        self.assertEqual(sorted(result), ["nit", "suggestion"])
-
-    def test_no_challenges_returns_empty_list(self):
-        result = m.parse_critic_severities(CRITIC_NO_CHALLENGES)
-        self.assertEqual(result, [])
-
-    def test_malformed_returns_none(self):
-        result = m.parse_critic_severities(CRITIC_MALFORMED)
-        self.assertIsNone(result)
-
-
-EVAL_READY = """## VERIFICATION REPORT
-
-- status: READY
-- feature: #3 사용자 삭제
-- mode: standard
-- gates:
-  - requirements: pass
-  - tdd_evidence: skip
-  - capture_lockdown: skip
-  - test_run: skip
-  - scope: pass
-  - drift: none
-- metrics:
-  - files_changed: 4
-- issues_to_fix:
-  - none
-- next: PR 준비
-"""
-
-EVAL_NOT_READY = """## VERIFICATION REPORT
-
-- status: NOT_READY
-- feature: #3 사용자 삭제
-- mode: standard
-- gates:
-  - requirements: fail
-  - tdd_evidence: skip
-  - capture_lockdown: skip
-  - test_run: skip
-  - scope: pass
-  - drift: none
-- metrics:
-  - files_changed: 4
-- issues_to_fix:
-  - [blocking] soft-delete 누락 — order_service.rb
-- next: generator 재진입
-"""
-
-EVAL_NO_REPORT = """구현은 끝났습니다. 보고서 블록을 빼먹었습니다.
-"""
+    def test_pass_marker_does_not_mask_real_severities(self):
+        # 통과 문구가 본문에 끼어 있어도 severity 라벨이 있으면 0건 처리하지 않는다.
+        text = (
+            "## 챌린지\n\n"
+            "- **severity**: blocking\n"
+            "- **제안**: 이대로면 plan 통과 못 함\n"
+        )
+        result = m.parse_critic_severities(text)
+        self.assertEqual(result, ["blocking"])
 
 
 class TestParseEvaluatorStatus(unittest.TestCase):

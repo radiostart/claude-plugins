@@ -75,6 +75,41 @@ def parse_critic_severities(text: str):
     return severities
 
 
+_THIS_DIR = Path(__file__).resolve().parent
+
+
+def _load_report_lint():
+    """tools/verify-report-lint.py 를 동적 로드 (하이픈 파일명)."""
+    import importlib.util
+
+    path = _THIS_DIR / "verify-report-lint.py"
+    spec = importlib.util.spec_from_file_location("verify_report_lint_mod", path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["verify_report_lint_mod"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def parse_evaluator_status(text: str):
+    """evaluator 출력 텍스트에서 VERIFICATION REPORT status 를 추출한다.
+
+    기존 verify-report-lint.py 의 검증된 파서를 재사용한다 (REPORT 파싱 중복 금지).
+
+    Returns:
+        "READY" | "NOT_READY"  — 정상 파싱
+        None                   — REPORT 블록 부재 또는 status 부재/이상 (상위에서 hard-stop)
+    """
+    lint = _load_report_lint()
+    block = lint.extract_report_block(text)
+    if block is None:
+        return None
+    parsed = lint.parse_report(block)
+    status = parsed.get("status")
+    if status not in ("READY", "NOT_READY"):
+        return None
+    return status
+
+
 def decide_next(phase: str, signal: dict) -> Action:
     """phase 의 산출 신호를 받아 다음 액션을 결정한다 (순수 함수)."""
     if phase == "planner":
