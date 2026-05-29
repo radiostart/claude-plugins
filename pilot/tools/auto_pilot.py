@@ -56,8 +56,10 @@ def parse_critic_severities(text: str):
     headers = _CHALLENGE_HEADER_RE.findall(text)
     sev_matches = _SEVERITY_LINE_RE.findall(text)
 
-    # 명시적 "결함 없음" 통과 문구가 있고 챌린지 헤더가 없으면 0건으로 인정.
-    if _PASS_MARKER_RE.search(text) and not headers:
+    # 명시적 "결함 없음" 통과 문구가 있고 챌린지 헤더도 severity 라벨도 없으면
+    # 0건으로 인정. severity 라벨이 존재하면 통과 문구가 본문 어딘가에 끼어
+    # 있더라도 0건 처리하지 않고 아래 정상 파싱 경로로 흘려보낸다 (오탐 방지).
+    if _PASS_MARKER_RE.search(text) and not headers and not sev_matches:
         return []
 
     # 챌린지 헤더도 severity 라벨도 통과 문구도 없으면 형식 미상 → None

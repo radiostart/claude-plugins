@@ -126,7 +126,9 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase evaluator \
   --report-file {REPORT_PATH} --retries-used {R}
 ```
 
-`{R}` = 지금까지 generator 재진입 횟수 (최초 0).
+`{R}` = 지금까지 generator 재진입 횟수 (최초 0). **재시도(`kind=retry`)로
+generator 에 재진입할 때마다 `{R}` 을 반드시 1 증가시킨다** — 증가시키지 않으면
+재시도 상한(MAX_RETRIES=1)이 동작하지 않아 무한 루프에 빠진다.
 
 - `kind=done` (READY) → ✅ 완료. 로그에 기록 후 사람에게 보고.
 - `kind=retry` (NOT_READY, 재시도 잔여) → `{R}` 을 1 증가시키고 3번(generator)
