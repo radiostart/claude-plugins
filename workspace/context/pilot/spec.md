@@ -58,11 +58,11 @@ Confluence 기획서 fetch / 검색 (`pilot/skills/confl/SKILL.md:9`).
 - **8 단계 프로세스**:
   1. **대상 파일 결정** — `--force` 없으면 `> source:` 로 분석 완료된 원본 스킵 (`pilot/skills/analyze/SKILL.md:59-65`).
   2. **원본 읽기** — 파일 크기 분기: 소형 (≤50KB) 전체 Read·중형 H2 단위 (limit 150)·대형 (>150KB) targeted Read (limit **80**, 표 많은 문서 보수). 25k rejection 시 `limit` **1/3 축소** (`pilot/skills/analyze/SKILL.md:88-105`).
-  3. **분할** — H2 섹션 = 기능 단위. 번호 패턴 (`#N`·`N.`·`N)`) 검출 (`pilot/skills/analyze/SKILL.md:107-156`). 각 기능에서 추출: `요구사항` (조건·트리거·기대결과), `상태 전환`, `비즈니스 규칙`, `예외 케이스` + `> source:` 메타.
-  4. **저장** — `workspace/projects/{PROJECT}/features/{NN}-{slug}.md`. 배치 Write (3~5 개 단위 권장) (`pilot/skills/analyze/SKILL.md:158-164`).
-  5. **project.md 갱신** — 도메인 결정 → `## 목표` 체크리스트 + `## 관련 파일` 표 (Routes/Models/Services 를 `scope/{domain}.md` 에서 추출) (`pilot/skills/analyze/SKILL.md:166-228`).
-  6. **prompts/ 갱신** — `references/prompts-update.md` 절차 + `.agent-state.yml.analyzed: true` (`pilot/skills/analyze/SKILL.md:230-234`).
-  7. **자가 검증** — `references/self-verify.md` 4 항목 (커버리지·구조·정합성·추측 혐의) (`pilot/skills/analyze/SKILL.md:236-240`).
+  3. **분할** — H2 섹션 = 기능 단위. 번호 패턴 (`#N`·`N.`·`N)`) 검출 (`pilot/skills/analyze/SKILL.md:89-123`). 각 기능에서 추출: `요구사항` (조건·트리거·기대결과), `상태 전환`, `비즈니스 규칙`, `예외 케이스` + `> source:` 메타.
+  4. **저장** — `workspace/projects/{PROJECT}/features/{NN}-{slug}.md`. 배치 Write (3~5 개 단위 권장) (`pilot/skills/analyze/SKILL.md:124-132`).
+  5. **project.md 갱신** — 도메인 결정 → `## 목표` 체크리스트 + `## 관련 파일` 표 (Routes/Models/Services 를 `scope/{domain}.md` 에서 추출) (`pilot/skills/analyze/SKILL.md:133-176`).
+  6. **prompts/ 갱신** — `references/prompts-update.md` 절차 + `.agent-state.yml.analyzed: true` (`pilot/skills/analyze/SKILL.md:177-180`).
+  7. **자가 검증** — `references/self-verify.md` 4 항목 (커버리지·구조·정합성·추측 혐의) (`pilot/skills/analyze/SKILL.md:181-184`).
   8. **결과 출력** (`pilot/skills/analyze/SKILL.md:242-263`).
 - **추측 금지** — 원본에 없는 내용 추가 금지. 한 번 추측 들어가면 후속 prompts/·planner/·generator 가 모두 잘못된 사실 기반 동작 (`pilot/skills/analyze/SKILL.md:153`).
 

@@ -9,9 +9,10 @@
 git clone https://github.com/radiostart/claude-plugins.git
 cd claude-plugins
 
-# 2. 테스트 환경 확인 (Python 3.11+ 권장, pytest 필요)
+# 2. 테스트 환경 확인 (Python 3.11+ 권장. pytest 없이도 unittest 직접 실행 가능)
 pytest pilot/tests/ -q --ignore=pilot/tests/tools/test_confluence.py
-# → 107 passed 가 나오면 정상 (build-plugin v1 으로 +14: integrity 7 / migration 7)
+# 또는: for f in pilot/tests/tools/test_*.py; do python3 "$f" || break; done
+# → 전부 통과하면 정상 (테스트 파일 20 개, 2026-06-10 기준)
 
 # 3. (선택) Confluence 사용 시 의존성
 pip install requests beautifulsoup4
@@ -27,20 +28,19 @@ EOF
 ## 현재 상태 (origin/main)
 
 ```
-f72ecd1 chore(workspace): build-plugin 프로젝트 메타 + workspace/context 산출물
-8fc664c chore(gitignore): .slack.env + .claude/worktrees/ 보호 패턴 추가
-6d1f2e0 docs(readme): config.md 언어 패턴 example block (#01 짝)
-164fda3 feat(doctor): config 정합성 검증 + v0.1→v0.2 자동 마이그레이션 (#04 + #05)
-b40bd3d feat(project): project.md H3 동적 생성 + SSOT 분리 (#03)
-6ce4e6d feat(analyze): scope 카테고리 외부화 + create-feature 인용 동기화 (#02)
-fbc69a6 feat(learn): 언어 패턴 외부화 + default 표 폐지 (#01, D10)
-bc1ce77 test(fixtures): v0.1.0 회귀 골든 픽스처 인프라 (#00 0a)
-917fa7b require gstack for AI-assisted work
-2d15506 docs: HANDOFF.md — 다른 환경 인계용
+7365466 fix(pilot): 컨텍스트 배선·characterize 잠금 보완
+cabe36e docs(pilot): autopilot 매뉴얼 반영 (skills reference·agent-flow·README)
+af98e9e refactor(pilot): auto 스킬을 autopilot 으로 개명
+faaa210 Merge feat/pilot-auto: /pilot:auto 감독형 자율 오케스트레이터
+cb20cfc fix(pilot): auto_pilot evaluator 파서 누락·테스트 import 누락 복구
 ```
 
-build-plugin 프로젝트 v1 작업 (pilot 플러그인 범용화) 5/6 features 완료.
-테스트 107/107 통과 (#04 +7, #05 +7). clean working tree.
+build-plugin 프로젝트 목표 17/17 완료 (v0.3.0 milestone 포함), 플러그인
+릴리스 v0.5.0 (tag `pilot-v0.5.0`). 전달사항 잔여 항목 0 건 (2026-06-10 정리).
+테스트 20 파일 전부 통과 (`python3 pilot/tests/tools/test_*.py` 개별 실행).
+
+> 아래 "v1 완료 사항" 이후의 이력 (v0.3.0 cross-domain, v0.4.0 autopilot,
+> v0.5.0, 컨텍스트 배선 보완) 은 git log 와 매뉴얼 사이트가 정본이다.
 
 ## v1 (build-plugin 프로젝트) 완료 사항
 
