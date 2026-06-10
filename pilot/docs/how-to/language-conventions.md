@@ -29,7 +29,7 @@ Ruby/Rails의 관례적 매크로, Kotlin의 코루틴 설계 규약, 레이어 
 
 ### 2. 검증 케이스 정의 (`conventions_evals`)
 
-코드가 완성된 후 generator 가 자가 진단 체크리스트로 활용할 검증 케이스를 JSON 형식으로 기술합니다:
+코드가 완성된 후 generator 가 자가 진단 체크리스트로 활용할 검증 케이스를 JSON 형식으로 기술합니다 (generator 의 자가 진단과 별개로 evaluator 도 같은 케이스로 독립 검증합니다):
 
 ```json
 {
@@ -57,7 +57,7 @@ Ruby/Rails의 관례적 매크로, Kotlin의 코루틴 설계 규약, 레이어 
 | `conventions_doc` | `context/conventions.md` |
 | `conventions_evals` | `context/evals/conventions.json` |
 
-경로가 정상적으로 선언되면 `@pilot-generator` 가 컨텍스트를 로드할 때 두 파일을 찾아 자동으로 분석합니다. **선언한 경로에 실제 파일이 존재하지 않으면 에러가 발생하므로**, 반드시 지정한 경로에 파일을 생성해 두어야 합니다.
+경로가 정상적으로 선언되면 `@pilot-generator` 와 `@pilot-evaluator` 가 컨텍스트를 로드할 때 두 파일을 찾아 자동으로 분석합니다. **선언한 경로에 실제 파일이 존재하지 않으면 에러가 발생하므로**, 반드시 지정한 경로에 파일을 생성해 두어야 합니다.
 
 ## 우선순위
 

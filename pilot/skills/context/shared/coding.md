@@ -2,7 +2,7 @@
 
 이 문서는 **언어·프레임워크 불문 공통 원칙**만 담는다. Ruby/Rails·Kotlin·Java 등 언어별 구체 관행 (네이밍·매크로·테스트 문법·레이어 규칙) 은 **프로젝트가 제공하는 `conventions_doc`** 을 우선 따른다.
 
-> `conventions_doc` 경로는 `workspace/context/config.md` 의 `## 언어·도구 기본값` 표에 선언. 래퍼 (`orchestrate-load.py`) 가 generator phase 에서 자동 로드한다.
+> `conventions_doc` 경로는 `workspace/context/config.md` 의 `## 언어·도구 기본값` 표에 선언. 래퍼 (`orchestrate-load.py`) 가 generator·evaluator phase 에서 자동 로드한다 — Generator 는 작성 시 자기 검사에, Evaluator 는 독립 검증에 사용.
 
 ## 우선순위 사다리
 

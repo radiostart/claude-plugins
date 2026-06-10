@@ -35,7 +35,7 @@ Characterize 모드는 *characterization test* 를 작성하여 해결합니다.
 
 ### 구현 코드를 보존해야 하는 이유
 
-안전망을 구축하는 과정에서 `{source_root}` 아래의 코드를 수정하지 않는 것이 신뢰성을 담보하는 핵심입니다. 안전망 작성 도중 구현 코드를 함께 변경해 버리면, test가 포착한 대상이 기존 동작인지 아니면 방금 수정한 동작인지 모호해집니다. 구현에 전혀 손대지 않아야만 "이 test들이 변경 이전의 원본 동작을 보장한다"는 사실을 확보할 수 있습니다. Generator가 test 헬퍼나 fixture 등의 test layer 코드를 변경하는 것은 허용되지만, `{source_root}` 내부의 제품 코드는 단 한 줄도 수정해서는 안 되며, 이는 Evaluator가 `git diff`를 통해 엄격하게 강제합니다.
+안전망을 구축하는 과정에서 `{source_root}` 아래의 코드를 수정하지 않는 것이 신뢰성을 담보하는 핵심입니다. 안전망 작성 도중 구현 코드를 함께 변경해 버리면, test가 포착한 대상이 기존 동작인지 아니면 방금 수정한 동작인지 모호해집니다. 구현에 전혀 손대지 않아야만 "이 test들이 변경 이전의 원본 동작을 보장한다"는 사실을 확보할 수 있습니다. Generator가 test 헬퍼나 fixture 등의 test layer 코드를 변경하는 것은 허용되지만, `{source_root}` 내부의 제품 코드는 단 한 줄도 수정해서는 안 됩니다. 이 잠금은 이중으로 강제됩니다 — `scope-guard.sh` 훅이 Edit/Write 시도 시점에 `{source_root}` 하위 수정을 사전 차단하고 (`test_path_convention` 경로는 허용), Evaluator가 `git diff`를 통해 사후 재검증합니다.
 
 ## 언제 사용하는가
 

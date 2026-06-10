@@ -52,5 +52,5 @@ description: >-
 ## 주의
 
 - `tdd: true` 와 `mode: characterize` 가 **동시 설정** 된 경우 characterize 가 우선 적용된다 (Red 계약 대신 Characterization Contract).
-- Characterization 사이클 중 `{source_root}` 수정은 Evaluator 가 반려한다. 리팩터가 필요하면 먼저 `/pilot:characterize off` 로 복귀.
+- Characterization 사이클 중 `{source_root}` 수정은 `scope-guard.sh` 훅이 Edit/Write 시점에 차단하고, Evaluator 가 `git diff` 로 재검증한다. 리팩터가 필요하면 먼저 `/pilot:characterize off` 로 복귀.
 - 정본 절차는 [`characterize.md`](../context/modes/characterize.md). 본 스킬은 **상태 전환 명령** 일 뿐 절차 정의가 아니다.

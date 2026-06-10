@@ -6,7 +6,7 @@
   - requirements: pass
   - tdd_evidence: pass — (잘못! standard 모드에선 skip 이어야 함)
   - capture_lockdown: skip
-  - test_run: pass — (잘못! standard 모드에선 skip 이어야 함)
+  - test_run: pass — bundle exec rspec (standard 에서 test_run 은 무제약 — 위반 아님)
   - scope: pass
   - drift: none
 - metrics:

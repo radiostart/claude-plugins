@@ -64,6 +64,10 @@ Generator 가 현재 동작 실행 후 각 스텝에 `[Captured]` 증거 라인�
 
 Planner 가 남긴 `.plan.md` 의 3 축 계약을 이행한다. **`{source_root}` 수정 절대 금지**.
 
+> 잠금은 이중 강제: `hooks/scope-guard.sh` 가 Edit/Write 시도 시점에 `{source_root}` 하위를
+> 사전 차단하고 (`test_path_convention` 경로는 허용), Evaluator 가 `git diff --stat` 으로
+> 사후 검증한다 (Bash 우회 수정 대비). 훅 차단 메시지를 만나면 우회하지 말고 테스트 계층으로 작업을 한정한다.
+
 ### 절차
 
 1. plan 파일의 스텝 계약 Read — 테스트 대상 경로, 입력, 사이드 이펙트 목록 확인

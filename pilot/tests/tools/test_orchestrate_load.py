@@ -213,6 +213,57 @@ class ReadFocus(unittest.TestCase):
         self.assertEqual(m.read_focus(p), "소프트 딜리트 빼줘")
 
 
+class ParseManifestDomainFiles(unittest.TestCase):
+    def _write(self, body: str) -> Path:
+        f = tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8")
+        f.write(body)
+        f.close()
+        return Path(f.name)
+
+    def test_single_row_entry(self):
+        p = self._write(
+            "## 도메인 분류\n\n"
+            "| 도메인 | 진입 파일 | 설명 |\n"
+            "| --- | --- | --- |\n"
+            "| orders | `orders.md` | 주문 |\n"
+        )
+        self.assertEqual(m.parse_manifest_domain_files(p, "orders"), ["orders.md"])
+
+    def test_multiple_rows_all_returned(self):
+        """같은 도메인의 행이 여러 개면 표 순서대로 전부 반환."""
+        p = self._write(
+            "## 도메인 분류\n\n"
+            "| 도메인 | 진입 파일 | 설명 |\n"
+            "| --- | --- | --- |\n"
+            "| orders | `orders/index.md` | 개요 |\n"
+            "| orders | `orders/states.md` | 상태 전이 |\n"
+            "| payments | `payments.md` | 결제 |\n"
+        )
+        self.assertEqual(
+            m.parse_manifest_domain_files(p, "orders"),
+            ["orders/index.md", "orders/states.md"],
+        )
+
+    def test_duplicate_entries_deduped(self):
+        p = self._write(
+            "## 도메인 분류\n\n"
+            "| orders | `orders.md` | a |\n"
+            "| orders | `orders.md` | b |\n"
+        )
+        self.assertEqual(m.parse_manifest_domain_files(p, "orders"), ["orders.md"])
+
+    def test_workspace_context_prefix_stripped(self):
+        p = self._write(
+            "## 도메인 분류\n\n"
+            "| orders | `workspace/context/orders.md` | 주문 |\n"
+        )
+        self.assertEqual(m.parse_manifest_domain_files(p, "orders"), ["orders.md"])
+
+    def test_no_match_returns_empty(self):
+        p = self._write("## 도메인 분류\n\n| payments | `payments.md` | 결제 |\n")
+        self.assertEqual(m.parse_manifest_domain_files(p, "orders"), [])
+
+
 class BuildLoadPlanIntegration(unittest.TestCase):
     """build_load_plan 통합 — 실제 workspace 디렉토리 트리 만들고 호출."""
 
@@ -274,6 +325,70 @@ class BuildLoadPlanIntegration(unittest.TestCase):
                 domain=None, tdd=False, phase="generator",
             )
             self.assertTrue(any("coding.md" in f for f in files))
+
+    def _ws_with_conventions(self, td: str) -> Path:
+        """conventions_doc/evals 가 선언되고 실제 파일도 존재하는 workspace."""
+        ws = Path(td)
+        (ws / "context" / "evals").mkdir(parents=True)
+        (ws / "context" / "config.md").write_text(
+            "## 언어·도구 기본값\n\n"
+            "| `conventions_doc` | `context/conventions.md` | x |\n"
+            "| `conventions_evals` | `context/evals/conventions.json` | x |\n",
+            encoding="utf-8",
+        )
+        (ws / "context" / "conventions.md").write_text("# 관행\n", encoding="utf-8")
+        (ws / "context" / "evals" / "conventions.json").write_text("{}", encoding="utf-8")
+        (ws / "projects" / "P").mkdir(parents=True)
+        return ws
+
+    def test_generator_phase_loads_conventions_files(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws_with_conventions(td)
+            files, _, _ = m.build_load_plan(
+                workspace=ws, project="P",
+                domain=None, tdd=False, phase="generator",
+            )
+            self.assertIn("workspace/context/conventions.md", files)
+            self.assertIn("workspace/context/evals/conventions.json", files)
+
+    def test_evaluator_phase_loads_conventions_files(self):
+        """evaluator 도 generator 와 같은 conventions 파일로 독립 검증한다."""
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws_with_conventions(td)
+            files, _, _ = m.build_load_plan(
+                workspace=ws, project="P",
+                domain=None, tdd=False, phase="evaluator",
+            )
+            self.assertIn("workspace/context/conventions.md", files)
+            self.assertIn("workspace/context/evals/conventions.json", files)
+
+    def test_evaluator_declared_but_missing_conventions_hints(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            (ws / "context").mkdir(parents=True)
+            (ws / "context" / "config.md").write_text(
+                "## 언어·도구 기본값\n\n"
+                "| `conventions_doc` | `context/conventions.md` | x |\n",
+                encoding="utf-8",
+            )
+            (ws / "projects" / "P").mkdir(parents=True)
+            files, hints, _ = m.build_load_plan(
+                workspace=ws, project="P",
+                domain=None, tdd=False, phase="evaluator",
+            )
+            self.assertNotIn("workspace/context/conventions.md", files)
+            self.assertTrue(any("conventions_doc" in h and "파일 없음" in h for h in hints))
+
+    def test_planner_phase_skips_conventions_files(self):
+        """planner 는 conventions 자동 로드 대상이 아니다 (generator·evaluator 전용)."""
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws_with_conventions(td)
+            files, _, _ = m.build_load_plan(
+                workspace=ws, project="P",
+                domain=None, tdd=False, phase="planner",
+            )
+            self.assertNotIn("workspace/context/conventions.md", files)
+            self.assertNotIn("workspace/context/evals/conventions.json", files)
 
     def test_tdd_true_loads_rgr_md(self):
         with tempfile.TemporaryDirectory() as td:

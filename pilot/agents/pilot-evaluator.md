@@ -48,8 +48,8 @@ tools: Read, Glob, Grep, Edit, Bash
        - 증거 누락 → Generator 에 **TDD 사이클 재수행 요청** (반려).
        - `[Red] 실패 유형: 인프라 오류` 로 기록된 스텝 → Generator 에 **Red 재작성 요청** (인프라 수정 후 구현 미완 실패로 재확인).
        - 실패 메시지 타당성 점검 — `기대 실패 유형` 과 일치하는지, 정말 미구현 징후인지 사람 판단.
-   - **둘 다 아님** — 테스트 자동 실행 없음. 요구사항 체크리스트 검토만.
-3. 로드한 지침에 따라 검토를 수행한다.
+   - **둘 다 아님 (표준 모드)** — orchestrate-load 의 `config.test_command` 가 설정돼 있으면 **이번 변경 관련 테스트를 실행**한다 (`{test_command} {관련 테스트 경로}`). 실패 시 Generator 에 재요청. `test_command` 미설정 (테스트 없는 레거시) 이면 요구사항 체크리스트 검토만 수행하고 REPORT 의 `test_run` 은 `skip`.
+3. 로드한 지침에 따라 검토를 수행한다. `files_to_read` 로 `conventions_doc` / `conventions_evals` 가 로드된 경우 **언어별 검증 케이스를 검토 항목에 포함**한다 — merge 규칙은 [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md) § 검증 (플러그인 공통 evals 에 프로젝트 evals 가 append, 동일 id override). Generator 의 자기 검사와 별개로 독립 수행하며, 위반은 `issues_to_fix` 에 기록하고 `requirements` gate 판정 근거에 반영한다.
 4. **[필수]** 검토가 끝나면 **반드시** Edit 툴로 `workspace/projects/{PROJECT}/prompts/evaluator.md`의 **모든** 체크리스트 항목을 검토 결과에 따라 `[x]`(통과) / `[ ]`(미통과)로 업데이트한다. 검토 결과를 텍스트로만 보고하고 체크박스를 수정하지 않는 것은 금지한다.
 5. 전 항목 통과 시 Edit 툴로 `workspace/projects/{PROJECT}/project.md`의 해당 목표를 `[x]`로 변경한다.
 6. **[전달사항]** 다음 feature에 영향을 줄 수 있는 사항이 있으면, `project.md`의 `## 에이전트 간 전달사항` 섹션에 항목을 추가한다. 해당 섹션이 없으면 생성한다.
@@ -67,7 +67,7 @@ tools: Read, Glob, Grep, Edit, Bash
      - requirements:     pass | fail — {근거 경로:라인 or feature 파일 섹션}
      - tdd_evidence:     pass | fail | skip — {.plan.md 스텝 범위, tdd:false & mode≠characterize 면 skip}
      - capture_lockdown: pass | fail | skip — {mode:characterize 에서 git diff --stat {source_root} 결과, 그 외 skip}
-     - test_run:         pass | fail | skip — {명령 + exit code, tdd:false & mode≠characterize 면 skip}
+     - test_run:         pass | fail | skip — {명령 + exit code, test_command 미설정 시에만 skip}
      - scope:            pass | fail — {.focus.md 범위 내}
      - drift:            none | detected — {drift-protocol A/B, detected 시 보고 링크. 3건 이상이면 `(count: N) — 일괄 정리 권장` 첨부}
    - metrics:

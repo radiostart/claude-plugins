@@ -130,11 +130,20 @@ class ValidateRules(unittest.TestCase):
         codes = [v.code for v in violations]
         self.assertIn("mode_gate_mismatch", codes)
 
+    def test_valid_standard_with_test_run(self):
+        """standard 모드에서도 test_command 설정 시 test_run: pass 가 합법."""
+        text = (FIXTURES / "valid" / "06-ready-standard-with-tests.md").read_text(encoding="utf-8")
+        violations, present = self._lint(text)
+        self.assertTrue(present)
+        errs = [v for v in violations if v.severity == m.Violation.SEVERITY_ERROR]
+        self.assertEqual(errs, [], msg=f"errors: {[v.message for v in errs]}")
+
     def test_invalid_mode_standard(self):
         text = (FIXTURES / "invalid" / "05-mode-gate-mismatch-standard.md").read_text(encoding="utf-8")
         violations, _ = self._lint(text)
         codes = [v.code for v in violations]
-        self.assertEqual(codes.count("mode_gate_mismatch"), 2)
+        # tdd_evidence: pass 만 위반 — test_run 은 standard 에서 무제약 (skip|pass|fail)
+        self.assertEqual(codes.count("mode_gate_mismatch"), 1)
 
     def test_invalid_enum_values(self):
         text = (FIXTURES / "invalid" / "06-invalid-enum-values.md").read_text(encoding="utf-8")

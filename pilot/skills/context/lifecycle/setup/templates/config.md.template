@@ -49,8 +49,8 @@
 | `source_root` | `app/` · `src/main/` 등 | 소스 루트. characterize 모드의 잠금 대상 · scope-guard 기준 |
 | `test_path_convention` | 예: `spec/**/*_spec.rb`, `src/test/kotlin/**/*Test.kt` | 테스트 파일 경로 규약 |
 | `test_framework_hints` | 자유 텍스트 | 프레임워크 특이사항 (예: `RSpec 3.x, shared_examples 사용`) |
-| `conventions_doc` | 예: `context/conventions.md` | 언어·프레임워크 관행 산문 문서 경로. generator phase 가 자동 로드 |
-| `conventions_evals` | 예: `context/evals/conventions.json` | 언어·프레임워크별 검증 케이스 JSON 경로. generator phase 가 자동 로드 |
+| `conventions_doc` | 예: `context/conventions.md` | 언어·프레임워크 관행 산문 문서 경로. generator·evaluator phase 가 자동 로드 |
+| `conventions_evals` | 예: `context/evals/conventions.json` | 언어·프레임워크별 검증 케이스 JSON 경로. generator·evaluator phase 가 자동 로드 |
 | `pr_default_base` | 예: `develop` · `main` | `/pilot:pr` 의 base branch default. `.agent-state.yml` 의 `pr_base_branch` 부재 시 사용. 미선언 시 하드 fallback `develop` |
 
 ## 설정

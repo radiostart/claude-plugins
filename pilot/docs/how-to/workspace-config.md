@@ -26,8 +26,8 @@
 | `test_command` | `bundle exec rspec`, `./gradlew test --tests` | 테스트 러너 실행 명령 (evaluator 가 변경분 검증 테스트 시 활용) |
 | `source_root` | `app/`, `src/main/` | 제품 소스 디렉터리 루트 (characterize 수정 금지 범위 및 scope-guard 필터링 기준) |
 | `test_path_convention` | `spec/**/*_spec.rb` | 프로젝트 내 테스트 파일 경로 생성 규칙 |
-| `conventions_doc` | `context/conventions.md` | 언어/프레임워크 코딩 컨벤션 문서 경로 (generator 가 자동 로드) |
-| `conventions_evals` | `context/evals/conventions.json` | 언어별 검증 케이스 정의 JSON 파일 경로 (generator 가 자동 로드) |
+| `conventions_doc` | `context/conventions.md` | 언어/프레임워크 코딩 컨벤션 문서 경로 (generator·evaluator 가 자동 로드) |
+| `conventions_evals` | `context/evals/conventions.json` | 언어별 검증 케이스 정의 JSON 파일 경로 (generator·evaluator 가 자동 로드) |
 | `pr_default_base` | `develop`, `main` | `/pilot:pr` 실행 시 대상 base branch default 설정 |
 
 그 외 선택 가능한 키: `test_command_fail_fast` (Red 단계 시 빠른 실패 지원), `coverage_command`, `lint_command`, `test_framework_hints` 등.

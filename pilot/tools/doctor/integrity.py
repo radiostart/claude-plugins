@@ -873,6 +873,68 @@ def _parse_md_tables_in_section(text: str, section_header: str) -> list[list[lis
     return tables
 
 
+CONVENTION_KEYS = ("conventions_doc", "conventions_evals")
+
+
+def check_conventions_paths(workspace: Path, project: str | None) -> list[Result]:
+    """config.md `## 언어·도구 기본값` 이 선언한 conventions_doc·conventions_evals 경로 실존 검사.
+
+    선언됐는데 파일이 없으면 WARN — generator/evaluator 호출 시점에야 발견되는
+    silent 갭을 doctor 가 조기 경고한다. 미선언 키는 결과 없음 (기능 미사용).
+    project 지정 시 project.md 제한사항 override 를 병합해 최종 경로를 검사한다
+    (orchestrate-load 와 동일 우선순위).
+    """
+    results: list[Result] = []
+    declared: dict[str, str] = {}
+
+    config_md = workspace / "context" / "config.md"
+    if config_md.is_file():
+        try:
+            text = config_md.read_text(encoding="utf-8")
+        except Exception:
+            return results  # 읽기 실패는 check_workspace_config_sections 가 보고
+        for table in _parse_md_tables_in_section(text, "## 언어·도구 기본값"):
+            for row in table:
+                if len(row) < 2:
+                    continue
+                key = row[0].strip().strip("`").strip()
+                value = row[1].strip().strip("`").strip()
+                if key in CONVENTION_KEYS and value and value != "값":
+                    declared[key] = value
+
+    if project:
+        project_md = workspace / "projects" / project / "project.md"
+        if project_md.is_file():
+            try:
+                ptext = project_md.read_text(encoding="utf-8")
+            except Exception:
+                ptext = ""
+            m = re.search(r"##\s*제한사항([\s\S]*?)(?:\n##\s|\Z)", ptext)
+            if m:
+                for line in m.group(1).splitlines():
+                    row = re.match(
+                        r"^\s*-\s*\*?\*?([a-z_]+)\*?\*?\s*:\s*`?([^`\n]+?)`?\s*$",
+                        line,
+                    )
+                    if row and row.group(1) in CONVENTION_KEYS:
+                        declared[row.group(1)] = row.group(2).strip()
+
+    for key, rel in declared.items():
+        rel_norm = rel.lstrip("/")
+        if rel_norm.startswith("workspace/"):
+            rel_norm = rel_norm[len("workspace/"):]
+        if not (workspace / rel_norm).is_file():
+            results.append(
+                Result(
+                    Result.WARN,
+                    "conventions",
+                    f"{key}={rel} 로 선언됐으나 파일 없음 — generator·evaluator 의 언어별 가드가 비활성",
+                    f"workspace/{rel_norm} 생성 또는 config.md 선언 제거",
+                )
+            )
+    return results
+
+
 def check_workspace_config_sections(config_path: Path) -> list[Result]:
     """workspace/context/config.md 의 신규 섹션 (## learn 언어 패턴, ## scope 카테고리) 정합성 검증.
 
@@ -2014,6 +2076,13 @@ def run_integrity_check(workspace: Path, project: str | None, fix: bool) -> int:
 
     # Project
     project = project or determine_active_project(workspace)
+
+    # conventions_doc/evals 선언-실존 검사 (workspace 선언 + project override 병합)
+    conv_results = check_conventions_paths(workspace, project)
+    for r in conv_results:
+        print(r.render())
+    all_results.extend(conv_results)
+
     if not project:
         print(
             f"\n{YELLOW}활성 프로젝트 없음 — 프로젝트 체크 건너뜀 "

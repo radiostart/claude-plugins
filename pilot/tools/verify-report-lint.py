@@ -53,7 +53,7 @@ GATE_ENUMS: dict[str, set[str]] = {
 REQUIRED_GATES = list(GATE_ENUMS.keys())
 
 # mode 별 gate 의 강제 skip 여부 (skip 이면 must be skip, none/detected 도 OK)
-# True = must be skip, False = must NOT be skip
+# True = must be skip, False = must NOT be skip. dict 에 없는 gate 는 무제약.
 MODE_GATE_SKIP_RULES: dict[str, dict[str, bool]] = {
     "characterize": {
         "tdd_evidence": False,     # [Captured] 검증으로 pass|fail
@@ -68,7 +68,7 @@ MODE_GATE_SKIP_RULES: dict[str, dict[str, bool]] = {
     "standard": {
         "tdd_evidence": True,      # skip
         "capture_lockdown": True,  # skip
-        "test_run": True,          # skip (수기 시나리오로 대체)
+        # test_run 무제약 — test_command 설정 시 pass|fail, 미설정 시 skip
     },
 }
 

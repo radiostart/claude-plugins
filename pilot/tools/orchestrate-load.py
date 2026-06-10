@@ -255,6 +255,9 @@ def parse_manifest_domain_files(manifest_md: Path, domain: str) -> list[str]:
     backtick·공백 허용). MANIFEST 가 자유 형식이라 best-effort — 매칭 실패 시
     빈 리스트 반환 (호출자가 graceful degrade).
 
+    도메인이 일치하는 **모든 행**을 표 순서대로 반환한다 (중복 제거).
+    한 도메인이 여러 진입 파일을 등록할 수 있다 (예: 개요 + 상태 전이표).
+
     반환: workspace/context/ 기준 상대 경로 리스트 (예: `["orders.md"]`,
     `["payments/index.md"]`). 절대경로·workspace/context/ 접두는 제거.
     """
@@ -269,7 +272,8 @@ def parse_manifest_domain_files(manifest_md: Path, domain: str) -> list[str]:
     if not m:
         return []
     section = m.group(1)
-    # 표 행에서 도메인 일치하는 행 찾기
+    # 표 행에서 도메인 일치하는 행 모두 수집
+    entries: list[str] = []
     for line in section.splitlines():
         row = re.match(
             r"^\|\s*`?([^`|\s]+)`?\s*\|\s*`?([^`|]+?)`?\s*\|", line
@@ -288,8 +292,9 @@ def parse_manifest_domain_files(manifest_md: Path, domain: str) -> list[str]:
             entry = entry[len("workspace/context/"):]
         elif entry.startswith("context/"):
             entry = entry[len("context/"):]
-        return [entry]
-    return []
+        if entry not in entries:
+            entries.append(entry)
+    return entries
 
 
 def read_focus(focus_md: Path) -> str | None:
@@ -348,7 +353,7 @@ def build_load_plan(
       `workspace/context/config.md` → `project.md` 제한사항 (프로젝트 override).
     지원 키는 `LANG_KEYS` 참조.
     `conventions_doc` / `conventions_evals` 는 workspace-상대 경로이며
-    generator phase 에서 존재 시 자동으로 `files_to_read` 에 추가된다.
+    generator·evaluator phase 에서 존재 시 자동으로 `files_to_read` 에 추가된다.
     """
     files: list[str] = []
     hints: list[str] = []
@@ -429,9 +434,12 @@ def build_load_plan(
     else:
         hints.append("도메인 판정 실패 — 도메인 컨텍스트 로드 skip. 사용자 확인 필요.")
 
-    # 6) generator 만 coding.md (플러그인 언어중립판) + workspace conventions_doc/evals (언어별)
+    # 6) generator 만 coding.md (플러그인 언어중립판).
+    #    conventions_doc/evals (언어별) 는 generator (자기 검사) 와
+    #    evaluator (독립 검증) 가 같은 파일을 본다 — 생성자 자기 인증 방지.
     if phase == "generator":
         files.append(f"{plugin_root()}/skills/context/shared/coding.md")
+    if phase in ("generator", "evaluator"):
         for key in ("conventions_doc", "conventions_evals"):
             rel = config.get(key)
             if not rel:
