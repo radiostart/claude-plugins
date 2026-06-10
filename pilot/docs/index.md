@@ -8,11 +8,10 @@ hide:
 
 도메인 지식 기반의 agent workflow 플러그인입니다. Claude Code 내에서 *plan → critic → generate → evaluate*의 명시적 cycle로 project를 진행합니다.
 
-!!! tip "v0.6.0 highlights"
-    - `@pilot-evaluator` 독립 검증 강화 — `conventions_doc`/`conventions_evals` 를 evaluator 도 자동 로드, 표준 모드에서 `test_command` 설정 시 변경 관련 테스트 실행
-    - characterize 모드 `{source_root}` 잠금 이중화 — scope-guard 훅이 Edit/Write 시점에 사전 차단 (evaluator `git diff` 사후 검증과 병행)
-    - doctor: conventions 선언-실존 불일치 WARN 추가 · MANIFEST 도메인 분류 다중 진입 파일 지원
-    - generator 의 `project.md` 목표 체크박스 수정 금지 명문화 (evaluator 단독 권한)
+!!! tip "v0.7.0 highlights"
+    - **cross-domain 경계 계약** — `/pilot:learn --boundary B --from A` 가 외부 도메인 B 전체 대신 A 가 호출하는 표면만 `boundaries/{A}--{B}.md` 로 추출 (접점 비례 비용)
+    - 경계 문서 자동 로드 — orchestrate-load 가 활성 도메인의 정방향·역방향 경계 계약을 에이전트에 자동 주입, 미학습 외부 의존은 boundary 처방 힌트로 안내
+    - doctor: 외부 도메인 reference 의 경계 부분 커버 상태 표시
     - 상세 변경사항: [Explanation → Release Note](explanation/index.md)
 
 ---
