@@ -92,7 +92,61 @@ Phase 2 에서 누적된 외부 클래스 목록을 처리한다.
 
   | 추정 도메인 | 클래스 (개수) | 추천 후속 학습 |
   | --- | --- | --- |
-  | {추정 도메인} | {Class1}, {Class2}... ({N}) | `/pilot:learn {추천 경로}` (auto) |
+  | {추정 도메인} | {Class1}, {Class2}... ({N}) | `/pilot:learn {추천 경로}` 또는 `/pilot:learn --boundary {추정 도메인} --from {domain}` (auto) |
   ```
 
+  - 추천 컬럼은 두 경로를 함께 제시한다 — 전체 학습 (`/pilot:learn {추천 경로}`) 과 경계만 학습 (`--boundary`). 경로 자동 추정 실패 시 전체 학습 안내는 `(경로 자동 추정 실패 — 사용자 직접 지정)` 으로 대체하되 boundary 안내는 유지.
+
 > **A2 runtime fallback**: 추정 도메인 추출 전체 실패 시 → 섹션 작성 skip + `[WARN] 외부 도메인 reference 추출 실패 — 수동 관리 권장` 1 줄. learn 본 작업은 정상 종료.
+
+---
+
+## Boundary 모드 — 호출 표면 추출 (`--boundary {B} --from {A}`)
+
+SKILL.md § Boundary 모드의 상세 절차. Phase 2 의 detect 와 Phase 3 의 transaction nesting 알고리즘을 재사용한다.
+
+### 1. 호출처 수집
+
+- `{A}` 의 소스 파일 목록 확보: MANIFEST `## 도메인 분류` 의 `{A}` 진입 파일이 인용하는 `file:line` 경로들 + 해당 파일들에 Phase 2 의존성 추적 패턴 적용 (depth 1).
+- 그 파일들에서 `{B}` namespace reference 를 Grep (예: `<B의 CamelCase>::`). `## learn 외부 도메인 ignore 패턴` 동일 적용.
+- **호출처 0 건** → "경계 없음: {A} 는 {B} 를 직접 호출하지 않음" 보고 후 종료. 파일을 생성하지 않는다.
+
+### 2. 표면 추출
+
+- 각 호출처 라인 ±10 줄 Read — 호출 메서드·인자 형태·반환값 사용 방식 수집.
+- `{B}` 의 정의 파일 탐색: `app/{models,services,controllers}/{B}/` 패턴 Glob (Phase 5 추천 경로와 동일 휴리스틱). 발견 시 **호출된 심볼의 시그니처·관련 상태값만** Targeted Read (Phase 3 의 Grep 패턴 재사용). 미발견 시 호출부 사용 형태만으로 기록하고 `정의 (B)` 컬럼은 `(미확인)`.
+- transaction nesting: Phase 3 알고리즘을 호출처 파일에 적용, `{B}` receiver 만 캡처.
+
+### 3. 산출 형식 — `workspace/context/boundaries/{A}--{B}.md`
+
+본문 ≤ 150 줄. 추측 금지 — 모든 행에 `file:line` 인용. 파일명 구분자는 `--` 고정 (도메인명은 sanitize 로 `--` 미포함 보장).
+
+```markdown
+# 경계 계약: {A} → {B}
+
+> `/pilot:learn --boundary` 생성. {A} 가 실제 호출하는 {B} 표면만 기록 — {B} 전체 학습이 아니다.
+> 전체 학습: `/pilot:learn {B 추천 경로}` (완료 시 본 문서보다 도메인 산출물이 우선)
+
+## 호출 표면
+
+| {B} 심볼 | 사용 형태 (인자 → 반환) | 호출처 ({A}) | 정의 ({B}) |
+| --- | --- | --- | --- |
+
+## 상태값·상수 (관찰된 것만)
+
+## 트랜잭션 중첩 (해당 시)
+
+| 본 도메인 entry | 외부 도메인 영향 | 변경 type | file:line |
+
+## 미해결 (코드만으로 불명)
+
+- (없음) 또는 전체 learn·사용자 확인이 필요한 항목
+```
+
+### 4. 색인·idempotency
+
+- MANIFEST `## 외부 도메인 reference` 표에 `{B}` 행이 있으면 추천 컬럼 끝에 ` · 경계: {A}--{B}.md` 표기를 추가한다. **행을 제거하지 않는다** — 행 제거는 전체 learn 완료의 신호다 (Phase 5 idempotency).
+- 같은 `{A}--{B}` 재실행 시 파일 전체 재생성 (diff 모드 없음 — 본 스킬 공통 제약).
+- 로드는 orchestrate-load 의 boundaries 글롭이 담당 — MANIFEST 도메인 분류에 등록하지 않는다.
+
+> **A2 runtime fallback**: 표면 추출 중 심볼 정의 탐색 실패·namespace 판별 실패는 해당 항목을 `미해결` 섹션으로 내리고 진행. abort 하지 않는다.

@@ -297,6 +297,41 @@ def parse_manifest_domain_files(manifest_md: Path, domain: str) -> list[str]:
     return entries
 
 
+def parse_manifest_external_refs(manifest_md: Path) -> list[tuple[str, str]]:
+    """MANIFEST `## 외부 도메인 reference` 표에서 (추정 도메인, 클래스 목록 문자열) 추출.
+
+    헤더 서픽스 (예: "(learn 미완료)") 허용. learn 이 학습 완료 도메인 행을 제거하므로
+    반환 목록 = 아직 학습되지 않은 외부 의존. 매칭 실패 시 빈 리스트 (graceful).
+    """
+    if not manifest_md.is_file():
+        return []
+    try:
+        text = manifest_md.read_text(encoding="utf-8")
+    except Exception:
+        return []
+    m = re.search(
+        r"^##\s*외부\s*도메인\s*reference[^\n]*\n([\s\S]*?)(?:\n##\s|\Z)", text, re.M
+    )
+    if not m:
+        return []
+    refs: list[tuple[str, str]] = []
+    for line in m.group(1).splitlines():
+        row = re.match(r"^\|\s*`?([^`|\s]+)`?\s*\|\s*([^|]+?)\s*\|", line)
+        if not row:
+            continue
+        dom = row.group(1).strip()
+        classes = row.group(2).strip()
+        # 헤더 행("추정 도메인" → 공백 전 "추정")·구분선 행 제외
+        if dom == "추정" or set(dom) <= {"-", ":"}:
+            continue
+        refs.append((dom, classes))
+    return refs
+
+
+# 경계 계약 문서 로드 상한 — 초과분은 hint 로 안내 (토큰 경제)
+MAX_BOUNDARY_DOCS = 6
+
+
 def read_focus(focus_md: Path) -> str | None:
     """.focus.md 의 본문 (첫 # 헤더 제외) 반환. 없으면 None."""
     if not focus_md.is_file():
@@ -433,6 +468,47 @@ def build_load_plan(
             )
     else:
         hints.append("도메인 판정 실패 — 도메인 컨텍스트 로드 skip. 사용자 확인 필요.")
+
+    # 5) cross-domain — 경계 계약 문서(boundaries/) 로드 + 외부 도메인 reference 힌트
+    #    정방향({domain}--B: 내가 호출하는 표면) 과 역방향(B--{domain}: 남이 나를
+    #    호출하는 표면 — 영향 분석용) 모두 로드한다. 문서는 호출 표면만 담아 작게 유지.
+    if domain:
+        bdir = workspace / "context" / "boundaries"
+        matched: list[Path] = []
+        if bdir.is_dir():
+            matched = sorted(
+                p
+                for p in bdir.glob("*.md")
+                if p.name.startswith(f"{domain}--") or p.stem.endswith(f"--{domain}")
+            )
+            for p in matched[:MAX_BOUNDARY_DOCS]:
+                files.append(f"workspace/context/boundaries/{p.name}")
+                hints.append(f"경계 계약 로드: boundaries/{p.name}")
+            if len(matched) > MAX_BOUNDARY_DOCS:
+                hints.append(
+                    f"경계 계약 {len(matched)}건 중 {MAX_BOUNDARY_DOCS}건만 로드 — "
+                    "나머지는 필요 시 수동 Read"
+                )
+        covered = {p.name for p in matched}
+        ext_refs = parse_manifest_external_refs(manifest_abs)
+        shown = 0
+        for ext_domain, classes in ext_refs:
+            if ext_domain == domain:
+                continue
+            if f"{domain}--{ext_domain}.md" in covered:
+                continue  # 경계 계약 문서가 이미 커버
+            if shown >= 3:
+                hints.append(
+                    f"외부 도메인 reference 총 {len(ext_refs)}건 — "
+                    "MANIFEST `## 외부 도메인 reference` 표 참조"
+                )
+                break
+            hints.append(
+                f"미학습 외부 도메인 의존: {ext_domain} ({classes}) — "
+                f"경계만 필요하면 `/pilot:learn --boundary {ext_domain} --from {domain}`, "
+                "전체 학습은 표의 추천 명령 참조"
+            )
+            shown += 1
 
     # 6) generator 만 coding.md (플러그인 언어중립판).
     #    conventions_doc/evals (언어별) 는 generator (자기 검사) 와

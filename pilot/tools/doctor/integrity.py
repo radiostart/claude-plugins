@@ -1278,11 +1278,15 @@ def check_workspace_external_domain_section(manifest_path: Path) -> list[Result]
             if row and len(row) >= 1:
                 learned_domains.add(row[0].strip().lower())
 
+    boundaries_dir = manifest_path.parent / "boundaries"
+
     for row in ext_table[1:]:  # 헤더 제외
         if not row or len(row) < 1:
             continue
         estimated_domain = row[0].strip().lower()
-        if estimated_domain and estimated_domain in learned_domains:
+        if not estimated_domain:
+            continue
+        if estimated_domain in learned_domains:
             results.append(
                 Result(
                     Result.INFO,
@@ -1290,6 +1294,22 @@ def check_workspace_external_domain_section(manifest_path: Path) -> list[Result]
                     f"## 외부 도메인 reference 표: '{estimated_domain}' 은 이미 ## 도메인 분류 에 등록됨 — 해당 행 제거 권장 (idempotency)",
                 )
             )
+            continue
+        # 경계 계약 문서 (boundaries/{A}--{B}.md) 가 있으면 호출 표면은 커버된 상태
+        if boundaries_dir.is_dir():
+            covered = sorted(boundaries_dir.glob(f"*--{estimated_domain}.md"))
+            if covered:
+                names = ", ".join(p.name for p in covered)
+                results.append(
+                    Result(
+                        Result.INFO,
+                        "context/MANIFEST.md",
+                        (
+                            f"'{estimated_domain}' 은 경계 계약 문서로 부분 커버됨 ({names}) "
+                            "— 호출 표면만 학습된 상태, 전체 learn 시 행이 제거됨"
+                        ),
+                    )
+                )
 
     return results
 

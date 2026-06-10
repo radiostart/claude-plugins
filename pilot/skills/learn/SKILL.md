@@ -7,7 +7,9 @@ description: >-
   읽어 컨텍스트를 만든다. 의존성을 N 단계까지 따라가며 파일 분류·정적
   추출(메서드·라우트·상태값·검증 규칙) 후 코드의 자연스러운 모양에
   맞춘 `{domain}.md` 또는 `{domain}/` 폴더를 생성하고 MANIFEST.md 색인을
-  갱신한다. 추측 금지 — 코드에 적힌 것만 file:line 인용으로 정리한다.
+  갱신한다. `--boundary B --from A` 는 외부 도메인 B 전체 대신 A 가 호출하는
+  표면만 `boundaries/{A}--{B}.md` 로 포착한다 (cross-domain 경량 학습).
+  추측 금지 — 코드에 적힌 것만 file:line 인용으로 정리한다.
 ---
 
 # /pilot:learn
@@ -21,9 +23,9 @@ description: >-
 
 대상: $ARGUMENTS
 
-**사용 예:** `/pilot:learn app/controllers/api/<entity>s_controller.rb` · `/pilot:learn app/services/<domain>/ --depth 1 --force`
+**사용 예:** `/pilot:learn app/controllers/api/<entity>s_controller.rb` · `/pilot:learn app/services/<domain>/ --depth 1 --force` · `/pilot:learn --boundary schoice --from wms`
 
-**옵션:** `{entry-point}` (필수) · `--domain NAME` · `--depth N` (기본 2) · `--force`.
+**옵션:** `{entry-point}` (필수 — 단, `--boundary` 모드에선 생략) · `--domain NAME` · `--depth N` (기본 2) · `--force` · `--boundary B --from A` (경계 계약 모드 — 아래 별도 섹션).
 
 ---
 
@@ -162,6 +164,26 @@ MANIFEST 자유 형식 — **기존 정의가 있으면 그에 따르고, 없을
 5. doctor 실행: `python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace`.
 
 6. **결과 출력** — `learn 완료: {domain}` + 생성된 파일 목록 (`workspace/context/{domain}/*.md`, 각 NN 줄) + 읽은/발견/제외 파일 수 + MANIFEST 갱신 1 줄 + doctor 결과 + 다음 단계 안내 (`파일 검토` · `/pilot:project {프로젝트명}` · `/pilot:learn {다른 진입점} --domain {domain}`).
+
+---
+
+## Boundary 모드 — `--boundary {B} --from {A}`
+
+외부 도메인 `{B}` 를 전체 학습하지 않고, **학습된 도메인 `{A}` 가 실제 호출하는 `{B}` 의 표면만** 포착해 `workspace/context/boundaries/{A}--{B}.md` 를 생성한다. cross-domain feature 에서 `{B}` 전체 learn 의 경량 대안 — 비용은 O(접점 크기), spec 작성에 필요한 정보 대부분은 접점에 있다.
+
+**전제 검증:**
+
+- `{A}` 가 MANIFEST `## 도메인 분류` 에 등록돼 있어야 한다. 미등록이면 에러 + `/pilot:learn {진입점}` 안내 후 종료.
+- `--from` 생략 시 활성 프로젝트 `.agent-state.yml` 의 `domain` 사용. 그것도 없으면 사용자 질의.
+- `{A}`·`{B}` sanitize 는 Phase 1 과 동일 (영숫자·하이픈·언더스코어, 소문자화).
+
+**절차** — Phase 2 (외부 reference detect)·Phase 3 (transaction nesting) 알고리즘을 재사용한 3 단계. 상세: [`references/cross-domain.md`](references/cross-domain.md) § Boundary 모드.
+
+1. **호출처 수집** — `{A}` 소스에서 `{B}` namespace reference Grep (ignore 패턴 동일 적용). 0 건이면 "경계 없음" 보고 후 종료 — 파일 생성 안 함.
+2. **표면 추출** — 호출처 ±10 줄 Read 로 사용 형태 수집 + `{B}` 정의 파일은 **호출된 심볼만** Targeted Read. 전체 학습 금지.
+3. **생성 + 색인** — `boundaries/{A}--{B}.md` Write (본문 ≤ 150 줄) → MANIFEST 외부 reference 표의 `{B}` 행 추천 컬럼에 ` · 경계: {A}--{B}.md` 표기 (행 제거 금지 — 전체 learn 완료가 아님) → doctor 실행.
+
+**로드 배선** — orchestrate-load 가 활성 도메인 기준 `boundaries/{domain}--*.md` (정방향: 내가 호출하는 표면) 와 `*--{domain}.md` (역방향: 남이 나를 호출하는 표면 — 영향 분석) 를 자동 로드한다. 별도 MANIFEST 등록 불필요.
 
 ---
 

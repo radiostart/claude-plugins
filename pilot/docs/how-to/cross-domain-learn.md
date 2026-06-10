@@ -48,6 +48,21 @@ cat workspace/context/MANIFEST.md
 
 이후 planner 가 호출되면 `orchestrate-load.py` 가 `MANIFEST.md` 설정을 판별하여, 작업 대상 feature에 속하는 도메인의 **컨텍스트 진입 파일을 에이전트에게 자동으로 로드**합니다. 사용자가 매번 컨텍스트 파일을 주입할 필요가 없습니다.
 
+## 경량 대안 — 경계 계약 모드 (`--boundary`)
+
+외부 도메인 전체를 학습하기엔 비용이 크고, 실제로 필요한 것은 **내 도메인이 호출하는 표면**뿐인 경우가 많습니다. 이때는 boundary 모드를 사용합니다:
+
+```bash
+/pilot:learn --boundary schoice --from wms
+```
+
+이 명령은 `wms` 가 실제 호출하는 `schoice` 의 클래스·메서드 시그니처, 관찰된 상태값, 트랜잭션 중첩만 추출해 `workspace/context/boundaries/wms--schoice.md` 를 생성합니다. 전체 learn 대비 비용이 접점 크기에 비례하며, feature spec 작성에 필요한 정보 대부분을 커버합니다.
+
+생성된 경계 문서는 별도 등록 없이 자동으로 로드됩니다 — `orchestrate-load.py` 가 활성 도메인 기준 **정방향**(`{domain}--*.md`: 내가 호출하는 표면)과 **역방향**(`*--{domain}.md`: 다른 도메인이 나를 호출하는 표면 — 영향 분석용)을 모두 적재합니다. 미학습 외부 의존이 MANIFEST 에 기록돼 있으면 planner 호출 시 boundary 모드 처방이 힌트로 안내됩니다.
+
+!!! tip "전체 learn vs boundary"
+    경계 문서는 부분 커버입니다 — MANIFEST 의 `## 외부 도메인 reference` 행은 유지되며, 이후 해당 도메인을 전체 learn 하면 행이 제거되고 도메인 산출물이 경계 문서보다 우선합니다.
+
 ## 다음 단계
 
 - :material-book-open-variant: Reference: [`/pilot:learn`](../reference/skills/learn.md) · [도메인 분류 — MANIFEST.md](https://github.com/radiostart/claude-plugins/blob/main/pilot/skills/context/INDEX.md)

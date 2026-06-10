@@ -14,6 +14,7 @@ pilot/tools/doctor/integrity.py 의 check_workspace_external_domain_section 단�
 
 import importlib.util
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -99,6 +100,35 @@ class ExternalDomainInfoStaleRow(unittest.TestCase):
         info_messages = " ".join(r.message for r in infos)
         has_keyword = any(kw in info_messages for kw in ["이미", "등록됨", "학습됨"])
         self.assertTrue(has_keyword, f"stale row INFO 메시지에 관련 키워드 없음: {info_messages}")
+
+
+class ExternalDomainBoundaryCovered(unittest.TestCase):
+    """외부 reference 행의 도메인에 경계 계약 문서(boundaries/*--{B}.md)가 있으면 INFO."""
+
+    def test_info_boundary_covered(self):
+        with tempfile.TemporaryDirectory() as td:
+            ctx = Path(td) / "context"
+            (ctx / "boundaries").mkdir(parents=True)
+            (ctx / "boundaries" / "orders--schoice.md").write_text(
+                "# 경계: orders → schoice\n", encoding="utf-8"
+            )
+            (ctx / "MANIFEST.md").write_text(
+                "## 도메인 분류\n\n"
+                "| 도메인 | 진입 파일 | 설명 |\n"
+                "| --- | --- | --- |\n"
+                "| orders | `orders.md` | 주문 |\n\n"
+                "## 외부 도메인 reference (learn 미완료)\n\n"
+                "| 추정 도메인 | 클래스 (개수) | 추천 후속 학습 |\n"
+                "| --- | --- | --- |\n"
+                "| schoice | Schoice::Order (1) | `/pilot:learn app/models/schoice/` (auto) |\n",
+                encoding="utf-8",
+            )
+            results = doctor.check_workspace_external_domain_section(ctx / "MANIFEST.md")
+            errors = [r for r in results if r.level == "ERROR"]
+            self.assertEqual(errors, [], f"ERROR 없어야 함: {[r.message for r in errors]}")
+            info_messages = " ".join(r.message for r in results if r.level == "INFO")
+            self.assertIn("경계 계약", info_messages)
+            self.assertIn("schoice", info_messages)
 
 
 if __name__ == "__main__":

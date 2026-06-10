@@ -264,6 +264,38 @@ class ParseManifestDomainFiles(unittest.TestCase):
         self.assertEqual(m.parse_manifest_domain_files(p, "orders"), [])
 
 
+class ParseManifestExternalRefs(unittest.TestCase):
+    def _write(self, body: str) -> Path:
+        f = tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8")
+        f.write(body)
+        f.close()
+        return Path(f.name)
+
+    def test_extracts_rows(self):
+        p = self._write(
+            "## 외부 도메인 reference (learn 미완료)\n\n"
+            "| 추정 도메인 | 클래스 (개수) | 추천 후속 학습 |\n"
+            "| --- | --- | --- |\n"
+            "| schoice | Schoice::Order, Schoice::Box (2) | `/pilot:learn app/models/schoice/` (auto) |\n"
+            "| billing | Billing::Invoice (1) | `/pilot:learn app/services/billing/` (auto) |\n"
+        )
+        refs = m.parse_manifest_external_refs(p)
+        self.assertEqual([r[0] for r in refs], ["schoice", "billing"])
+        self.assertIn("Schoice::Order", refs[0][1])
+
+    def test_no_section_returns_empty(self):
+        p = self._write("## 도메인 분류\n\n| orders | `orders.md` | x |\n")
+        self.assertEqual(m.parse_manifest_external_refs(p), [])
+
+    def test_header_row_skipped(self):
+        p = self._write(
+            "## 외부 도메인 reference\n\n"
+            "| 추정 도메인 | 클래스 (개수) | 추천 후속 학습 |\n"
+            "| --- | --- | --- |\n"
+        )
+        self.assertEqual(m.parse_manifest_external_refs(p), [])
+
+
 class BuildLoadPlanIntegration(unittest.TestCase):
     """build_load_plan 통합 — 실제 workspace 디렉토리 트리 만들고 호출."""
 
@@ -389,6 +421,69 @@ class BuildLoadPlanIntegration(unittest.TestCase):
             )
             self.assertNotIn("workspace/context/conventions.md", files)
             self.assertNotIn("workspace/context/evals/conventions.json", files)
+
+    def _ws_with_boundaries(self, td: str) -> Path:
+        """boundaries/ 경계 계약 문서가 있는 workspace (활성 도메인 orders)."""
+        ws = Path(td)
+        (ws / "context" / "boundaries").mkdir(parents=True)
+        (ws / "context" / "boundaries" / "orders--payments.md").write_text(
+            "# 경계: orders → payments\n", encoding="utf-8"
+        )
+        (ws / "context" / "boundaries" / "shipping--orders.md").write_text(
+            "# 경계: shipping → orders\n", encoding="utf-8"
+        )
+        (ws / "context" / "boundaries" / "shipping--billing.md").write_text(
+            "# 경계: shipping → billing\n", encoding="utf-8"
+        )
+        (ws / "projects" / "P").mkdir(parents=True)
+        return ws
+
+    def test_boundary_docs_loaded_both_directions(self):
+        """domain=orders 면 orders--*.md (정방향) 와 *--orders.md (역방향) 만 로드."""
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws_with_boundaries(td)
+            files, hints, _ = m.build_load_plan(
+                workspace=ws, project="P",
+                domain="orders", tdd=False, phase="planner",
+            )
+            self.assertIn("workspace/context/boundaries/orders--payments.md", files)
+            self.assertIn("workspace/context/boundaries/shipping--orders.md", files)
+            self.assertNotIn("workspace/context/boundaries/shipping--billing.md", files)
+            self.assertTrue(any("경계 계약" in h for h in hints))
+
+    def test_no_boundaries_dir_silent(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            (ws / "projects" / "P").mkdir(parents=True)
+            files, _, _ = m.build_load_plan(
+                workspace=ws, project="P",
+                domain="orders", tdd=False, phase="planner",
+            )
+            self.assertFalse(any("boundaries" in f for f in files))
+
+    def test_external_refs_hint_with_boundary_prescription(self):
+        """MANIFEST 외부 도메인 reference 행 → 미학습 안내 + boundary learn 처방 hint."""
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            (ws / "context").mkdir(parents=True)
+            (ws / "context" / "MANIFEST.md").write_text(
+                "## 도메인 분류\n\n"
+                "| orders | `orders.md` | 주문 |\n\n"
+                "## 외부 도메인 reference (learn 미완료)\n\n"
+                "| 추정 도메인 | 클래스 (개수) | 추천 후속 학습 |\n"
+                "| --- | --- | --- |\n"
+                "| schoice | Schoice::Order (1) | `/pilot:learn app/models/schoice/` (auto) |\n",
+                encoding="utf-8",
+            )
+            (ws / "context" / "orders.md").write_text("# orders\n", encoding="utf-8")
+            (ws / "projects" / "P").mkdir(parents=True)
+            _, hints, _ = m.build_load_plan(
+                workspace=ws, project="P",
+                domain="orders", tdd=False, phase="planner",
+            )
+            joined = " ".join(hints)
+            self.assertIn("schoice", joined)
+            self.assertIn("--boundary", joined)
 
     def test_tdd_true_loads_rgr_md(self):
         with tempfile.TemporaryDirectory() as td:
