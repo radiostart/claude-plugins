@@ -8,10 +8,11 @@ hide:
 
 도메인 지식 기반의 agent workflow 플러그인입니다. Claude Code 내에서 *plan → critic → generate → evaluate*의 명시적 cycle로 project를 진행합니다.
 
-!!! tip "v0.5.0 highlights"
-    - `@pilot-planner-critic` 추가 — planner의 plan을 비판적 관점에서 검증하는 adversarial 1.5-pass review 제공
-    - doctor migration 및 진단 기능 강화 (schema v1.1 → v1.2 자동 upgrade)
-    - init wizard contract 보강
+!!! tip "v0.6.0 highlights"
+    - `@pilot-evaluator` 독립 검증 강화 — `conventions_doc`/`conventions_evals` 를 evaluator 도 자동 로드, 표준 모드에서 `test_command` 설정 시 변경 관련 테스트 실행
+    - characterize 모드 `{source_root}` 잠금 이중화 — scope-guard 훅이 Edit/Write 시점에 사전 차단 (evaluator `git diff` 사후 검증과 병행)
+    - doctor: conventions 선언-실존 불일치 WARN 추가 · MANIFEST 도메인 분류 다중 진입 파일 지원
+    - generator 의 `project.md` 목표 체크박스 수정 금지 명문화 (evaluator 단독 권한)
     - 상세 변경사항: [Explanation → Release Note](explanation/index.md)
 
 ---
