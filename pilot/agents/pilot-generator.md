@@ -57,6 +57,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
      - 완료 게이트: `{source_root}` 하위 1 개 이상 수정 + 직전 `{test_command} {file}` 전체 통과 + 모든 스텝 `[Red] + [Green]` 증거 기록. 조건 미충족 시 종료하지 않는다.
    - **둘 다 아님** — 일반 구현 (plan.md 의 변경 파일 · 구현 순서 · 주의사항 기반).
 4. **[필수]** 구현 과정에서 체크리스트(`[ ]`)를 작성했거나, 기존 체크리스트 항목(planner가 작성한 변경 파일 목록 등)을 완료한 경우 **반드시** Edit 툴로 해당 항목을 `[x]`로 업데이트한다. 체크 결과를 텍스트로만 보고하고 파일을 수정하지 않는 것은 금지한다.
+   - **예외 — `project.md` 의 `## 목표` 체크박스는 수정 금지.** 목표 `[x]` 처리는 요구사항 검증을 마친 Evaluator 의 단독 권한이다 (evaluator wrapper step 5). Generator 는 `.plan.md`·features/ 체크리스트와 코드만 다룬다.
 5. 구현 완료 후 evaluator를 자동으로 실행하지 않는다. **"`@pilot-evaluator`를 호출해 검토를 진행하세요."** 라고 안내하고 종료한다.
 
 ---
