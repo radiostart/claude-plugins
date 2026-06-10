@@ -27,8 +27,9 @@
 | 경로 | 역할 |
 | --- | --- |
 | `workspace/context/MANIFEST.md` | 도메인 지식 진입점. 플러그인이 항상 로드 + `## 도메인 분류` 표 자동 파싱하여 도메인 진입 파일 추가 로드 |
+| `workspace/context/boundaries/{A}--{B}.md` | cross-domain 경계 계약 (`/pilot:learn --boundary` 산출). orchestrate-load 가 활성 도메인 기준 정방향(`{domain}--*`)·역방향(`*--{domain}`) 글롭으로 자동 로드 — **고정 컨벤션** |
 
-`workspace/context/` 하위의 폴더 구조·파일명은 **자유** — `scope/`, `rules/`, `enums/`, sub-domain 폴더 등 워크스페이스가 자유롭게 결정. 플러그인은 MANIFEST 만 알고, 그 외 파일은 MANIFEST 가 가리키는 경로를 따라 로드한다.
+그 외 `workspace/context/` 하위의 폴더 구조·파일명은 **자유** — `scope/`, `rules/`, `enums/`, sub-domain 폴더 등 워크스페이스가 자유롭게 결정. 플러그인이 직접 아는 경로는 위 표의 `MANIFEST.md` 와 `boundaries/` 뿐이고, 그 외 파일은 MANIFEST 가 가리키는 경로를 따라 로드한다.
 
 에이전트·스킬은 **탐색·코드 수정 전에 MANIFEST.md 를 먼저 로드**하고, 도메인이 결정되면 MANIFEST 가 가리키는 진입 파일·하위 파일을 읽는다. 플러그인은 언어 컨벤션(`coding.md`), TDD 도구(`rgr.md`), 커밋·메시지 규약(`commit.md`, `messages.md`) 같은 메커니즘 자원만 보유한다.
 

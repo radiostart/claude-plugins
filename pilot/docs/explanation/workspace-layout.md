@@ -18,9 +18,11 @@ graph TD
     CTX_MANIFEST["MANIFEST.md<br/>(도메인 색인)"]
     CTX_CONFIG["config.md<br/>(언어·도구 기본값)"]
     CTX_DOMAINS["{domain}.md 또는 {domain}/<br/>(/pilot:learn 결과)"]
+    CTX_BOUNDARIES["boundaries/{A}--{B}.md<br/>(/pilot:learn --boundary 경계 계약)"]
     CTX --> CTX_MANIFEST
     CTX --> CTX_CONFIG
     CTX --> CTX_DOMAINS
+    CTX --> CTX_BOUNDARIES
 
     P1["{ActiveProject}/"]
     P2["{ArchivedProject}/"]
