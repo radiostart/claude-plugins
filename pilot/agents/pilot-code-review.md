@@ -46,7 +46,11 @@ tools: Read, Glob, Grep, Bash
      - `feature` — feature 명세 자체의 누락·오류가 결함의 원인 (스펙 빈틈)
      - `planner` — 설계·구조 결함 (책임 분리, 의존성 방향, 잘못된 추상화)
      - `generator` — 구현 수준 결함 (로직 버그, 패턴 미준수, 누락된 처리)
-     - `local` — 국소·단순 수정 (네이밍, nit)
+     - `trivial` — 국소·단순 수정 (네이밍, import, 매직넘버, nit)
+     - `new-feature` — 스펙에 없는 신규 요구 (본 변경 의도와 분리되어야 할 별도 기능) — feature 명세 신설 후 사이클
+     - `dismiss` — evaluator 책임 영역·오탐·의도된 trade-off
+   - 라우팅이 모호하면 보수적으로 상향한다 (trivial→generator→planner→feature).
+   - 요구사항 충족 판정 영역 finding 은 `dismiss` 로 분류하고 사유에 "evaluator 책임 영역" 을 명시한다.
    - 변경분 밖의 기존 코드는 지적하지 않는다.
 
 6. **[필수] CODE REVIEW REPORT 출력** — 메시지 끝에 아래 블록을 붙인다. 코드는 수정하지 않는다.
@@ -59,21 +63,23 @@ tools: Read, Glob, Grep, Bash
    - findings:
      - [blocking] {요약} — {file:line}
        개선안: {...}
-       재진입: generator | planner | feature | local
+       재진입: generator | planner | feature | trivial | new-feature | dismiss
      - [suggestion] {요약} — {file:line}
        개선안: {...}
        재진입: ...
      - [nit] {요약} — {file:line}
    - routing:
-     - feature 단계부터: #{finding 번호}… | none
-     - planner 부터: #{finding 번호}… | none
-     - generator 부터: #{finding 번호}… | none
-     - 로컬 수정: #{finding 번호}… | none
+     - full-cycle 후보 — feature 부터: #{finding 번호}… | none
+     - full-cycle 후보 — planner 부터: #{finding 번호}… | none
+     - one-shot 묶음 — generator 1회: #{finding 번호}… | none
+     - trivial 일괄 커밋 — 직접 Edit 후 1 commit: #{finding 번호}… | none
+     - new-feature — `/pilot:create-feature`: #{finding 번호}… | none
+     - dismiss — 사유 기록·룰 보강: #{finding 번호}… | none
    - 다음: 위 라우팅 중 선택해 주세요
    ```
 
-   - 결함이 없으면 `findings:` 를 `- none`, `routing:` 4행을 모두 `none`, `summary` 를 `blocking 0 · suggestion 0 · nit 0` 으로 출력.
-   - 사용자가 라우팅을 선택하면 해당 단계 진입을 안내한다 (`feature` → `features/NN-{slug}.md` 수정 후 사이클 재실행, `planner`/`generator` → 해당 에이전트 재호출, `local` → 즉시 수정). 에이전트가 코드를 직접 고치지 않는다.
+   - 결함이 없으면 `findings:` 를 `- none`, `routing:` 6행을 모두 `none`, `summary` 를 `blocking 0 · suggestion 0 · nit 0` 으로 출력.
+   - 사용자가 라우팅을 선택하면 해당 단계 진입을 안내한다 (`feature` → `features/NN-{slug}.md` 수정 후 사이클 재실행, `planner`/`generator` → 해당 에이전트 재호출, `trivial` → 직접 Edit 후 묶어 1 commit — `/pilot:commit` 권장, `new-feature` → `/pilot:create-feature "{지시문}"` 으로 feature 명세 신설 후 사이클, `dismiss` → 사유 기록 또는 `workspace/context/review/{lang}.md` 보강). 에이전트가 코드를 직접 고치지 않는다.
 
 ---
 
