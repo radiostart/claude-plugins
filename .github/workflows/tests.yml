@@ -1,0 +1,44 @@
+name: tests
+
+# pilot Python tools 단위 테스트 실행.
+# - tests/ 에 __init__.py 가 없으므로 반드시 working-directory: pilot 에서
+#   상대 경로로 discover 해야 한다 (절대경로 디스커버리는 실패).
+# - test_scope_guard.py 가 hooks/scope-guard.sh 를 서브프로세스로 검증하므로
+#   트리거 paths 에 pilot/hooks/** 포함.
+# - tools/docs_build.py 의 `import yaml` 때문에 pyyaml 설치 필요.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pilot/tools/**'
+      - 'pilot/tests/**'
+      - 'pilot/hooks/**'
+      - '.github/workflows/tests.yml'
+  pull_request:
+    paths:
+      - 'pilot/tools/**'
+      - 'pilot/tests/**'
+      - 'pilot/hooks/**'
+      - '.github/workflows/tests.yml'
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: 의존성 설치
+        run: pip install pyyaml
+
+      - name: 단위 테스트 실행
+        working-directory: pilot
+        run: python3 -m unittest discover -s tests/tools -v
