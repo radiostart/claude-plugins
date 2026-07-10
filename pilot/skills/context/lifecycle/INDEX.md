@@ -41,7 +41,7 @@ lifecycle/
 ├── state-schema.md                       # .agent-state.yml v1.2 스키마
 ├── projects/
 │   ├── GUIDE.md                          # 프로젝트 생애주기 운영 가이드
-│   ├── agents-scaffold-notes.md          # prompts/*.md 구조 메타 노트
+│   ├── prompts-scaffold-notes.md         # prompts/*.md 구조 메타 노트
 │   └── example/                          # 신규 프로젝트 템플릿
 │       ├── project.md
 │       └── prompts/{planner,generator,evaluator}.md

@@ -9,7 +9,7 @@
 # 예외 (통과):
 #   - Edit 도구 (splice 방식 — 안전)
 #   - 신규 파일 생성 (대상 경로에 파일 없음)
-#   - .prompts.bak/ · .agents.bak/ · .bak.* 경로 (백업물)
+#   - .prompts.bak/ · .bak.* 경로 (백업물)
 #   - 프로젝트 폴더 외부 경로
 #
 # 명시 우회: PILOT_PROTECT_BYPASS=1 환경변수 (의도적 destructive 시).
@@ -32,11 +32,10 @@ check_path() {
 
   # 백업 경로는 통과
   [[ "$rel_path" == *".prompts.bak/"* ]] && return 0
-  [[ "$rel_path" == *".agents.bak/"* ]] && return 0
   [[ "$rel_path" == *".bak."* ]] && return 0
 
-  # workspace/projects/*/ 하위만 검사
-  [[ ! "$rel_path" =~ ^workspace/projects/[^/]+/ ]] && return 0
+  # workspace/projects/*/ 하위 + 프로젝트 폴더 자체(trailing slash 없는 rm -rf 등) 검사
+  [[ ! "$rel_path" =~ ^workspace/projects/[^/]+(/|$) ]] && return 0
 
   # 절대 경로 정규화
   local abs_path

@@ -10,34 +10,50 @@ scope/{domain}.md 가 업데이트됐거나 features 가 여러 개 추가돼 `p
 2. 5 단계 — `project.md` 관련 파일 표 재기입
 3. 6-1 / 6-2 / 6-3 — prompts/*.md 재작성
 4. 6-4 — `.agent-state.yml` 의 `analyzed_at`, `last_analyzed_features` 갱신
-5. **post-regen 검증 (필수)** — 아래 "중복 감지" 참조. doctor 돌려 중복 섹션 WARN 확인
+5. **post-regen 검증 (필수)** — 아래 "post-regen 검증" 참조. regen-verify 로 보존 영역 확인 + doctor 돌려 중복 섹션 WARN 확인
 6. 7 단계 — 분석 품질 자가 검증 중 **7-2, 7-3 만** 수행 (7-1 커버리지·7-4 추측 혐의는 docs 재변환이 없으므로 제외)
 7. 8 단계 — 결과 출력 (백업 경로 + WARN 여부 포함)
 
-기존 수동 편집 영역 (planner 의 `## 플래닝 프로세스` 하위 등) 은 보존한다. 섹션별 보존 규칙은 [`agents-update.md`](agents-update.md) 의 6-1 / 6-2 / 6-3 참조.
+기존 수동 편집 영역 (planner 의 `## 플래닝 프로세스` 하위 등) 은 보존한다. 섹션별 보존 규칙은 [`prompts-update.md`](prompts-update.md) 의 6-1 / 6-2 / 6-3 참조.
 
 ---
 
 ## 백업 단계
 
-regen 은 사용자 수동 편집을 의도치 않게 덮어쓸 위험이 있어 항상 백업을 선행한다 (복구·수동 머지 대비). 아래 Bash 로 기존 agents 폴더를 복사한다:
+regen 은 사용자 수동 편집을 의도치 않게 덮어쓸 위험이 있어 항상 백업을 선행한다 (복구·수동 머지 대비). 아래 Bash 로 기존 prompts 폴더를 복사한다:
 
 ```bash
 TS=$(date -u +%Y-%m-%dT%H-%M-%S)
 PROJ=workspace/projects/{PROJECT}
-mkdir -p ${PROJ}/.agents.bak/${TS}
+mkdir -p ${PROJ}/.prompts.bak/${TS}
 cp -R ${PROJ}/prompts/. ${PROJ}/.prompts.bak/${TS}/
 ```
 
-실행 후 사용자에게 백업 경로 (`workspace/projects/{PROJECT}/.agents.bak/{timestamp}/`) 를 알린다. regen 결과가 예상과 다르면 이 경로에서 원본을 복원할 수 있다.
+실행 후 사용자에게 백업 경로 (`workspace/projects/{PROJECT}/.prompts.bak/{timestamp}/`) 를 알린다. regen 결과가 예상과 다르면 이 경로에서 원본을 복원할 수 있다.
 
-`.agents.bak/` 는 `.gitignore` 권장 (로컬 복구용).
+`.prompts.bak/` 는 `.gitignore` 권장 (로컬 복구용).
 
 ---
 
-## 중복 감지
+## post-regen 검증
 
-regen 완료 후 doctor 를 실행해 중복 H2 섹션을 감지한다:
+regen 완료 후 두 검증을 순서대로 실행한다. 역할 구분 — **regen-verify** 는 non-managed (사용자 수동 편집) 섹션 보존 검증을, **doctor** 는 중복 H2 섹션 감지를 담당한다.
+
+### 1) regen-verify — 보존 영역 검증
+
+백업 단계의 `.prompts.bak/{timestamp}/` 와 현재 `prompts/` 의 non-managed 섹션을 비교한다:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/tools/regen-verify.py \
+  --before workspace/projects/{PROJECT}/.prompts.bak/{timestamp}/ \
+  --after  workspace/projects/{PROJECT}/prompts/
+```
+
+exit 0 = 보존 영역 변경 없음 (안전) / 1 = 보존 영역 변경 감지 — 보고된 변경 라인을 사용자에게 알리고 백업에서 수동 머지 필요 여부를 확인 / 2 = 입력 오류 (디렉터리 없음 등). `--json` 으로 JSON 출력 가능.
+
+### 2) doctor — 중복 감지
+
+doctor 를 실행해 중복 H2 섹션을 감지한다:
 
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace --project {PROJECT}
