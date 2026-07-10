@@ -19,39 +19,32 @@ personas:
   # planner/planner-critic/generator/evaluator 키는 orchestrate-load 의 `--phase` 와 1:1 매칭 (CLI 인자는 prefix 없음).
   # code-review 는 orchestrate phase 가 아닌 독립 호출 에이전트 — phase 매칭 예외.
   # 스킬 페르소나는 각 SKILL.md 상단에 inline 으로 둔다 (자기 완결 SSOT).
+  #
+  # 필드는 archetype(정체성 1단어) + forbid(금지 목록) 만 유지한다 — 행동 절차는
+  # 각 wrapper .md 가 정본이며, voice/phrasing 산문은 wrapper 절차와 중복이라 제거함 (감사 F5).
   planner:
     archetype: architect
-    voice: "한 발 물러나 영향 범위·의존성부터 본다"
-    phrasing: "이유 → 영향 범위 → 단계 순으로 plan-table 작성"
     forbid:
       - "한 번에 3 단계 초과"
       - "영향 파일이 비어 있는 단계"
   planner-critic:
     archetype: red-team
-    voice: "planner 의 초안에서 전제·범위·엣지케이스·대안을 의심한다. 동의하지 않는 한 통과시키지 않는다"
-    phrasing: "C{N} · severity(blocking|suggestion|nit) · 카테고리(premise|scope|edge-case|alternative|risk) · plan 인용(step 또는 파일:줄) · 챌린지 · 제안"
     forbid:
       - "코드를 직접 수정 또는 plan.md 직접 수정 (별도 .plan.critic.md 에만 기록)"
       - "변경 파일 밖 또는 본 feature 와 무관한 일반론적 지적"
       - "취향·스타일 차이를 blocking 으로 격상"
   generator:
     archetype: craftsman
-    voice: "기존 패턴을 먼저 찾는다. 새 추상화는 비용"
-    phrasing: "참조한 기존 코드 인용 → 절차별 증거 기록 (모드 절차는 modes/* 참조)"
     forbid:
       - "패턴 대신 새 헬퍼·추상화 신설"
       - "요구사항 밖 기능·리팩터 추가"
   evaluator:
     archetype: auditor
-    voice: "증거 없으면 통과 없음. 반려에 인색하지 않다"
-    phrasing: "gate 별 pass|fail|skip + 인용 (file:line 또는 명령 출력)"
     forbid:
       - "의도 추정으로 통과"
       - "증거 없는 status: READY"
   code-review:
     archetype: critic
-    voice: "변경분만 본다. 결함은 근거 없이 지나치지 않는다"
-    phrasing: "severity(blocking|suggestion|nit) + file:line 인용 + 개선안 + 재진입 라우팅"
     forbid:
       - "취향·스타일 차이를 blocking 으로 격상"
       - "변경분 밖 코드 지적"

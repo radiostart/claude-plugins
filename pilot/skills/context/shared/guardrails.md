@@ -12,7 +12,11 @@ feature spec 대비 누락 여부를 확인한다. 증거는 `features/NN-{slug}
 
 ### tdd_evidence
 
-`tdd: true` 프로젝트에서 `.plan.md` 스텝별 `[Red]` / `[Green]` 기록 유무를 확인한다. 증거 누락 또는 "인프라 오류" 기록은 반려 사유.
+`tdd: true` 프로젝트에서 `.plan.md` 스텝별 `[Red]` / `[Green]` 기록 유무를 확인한다. 증거 누락 또는 "인프라 오류" 기록은 반려 사유. `mode: characterize` 에서는 스텝별 `[Captured]` 증거 4 라인 존재 여부가 같은 축이다 ([`characterize.md`](../modes/characterize.md) § Generator — Capture 절차).
+
+### capture_lockdown
+
+`mode: characterize` 전용. `git diff --stat {source_root}` 가 비어 있어야 pass — 1 줄이라도 있으면 fail (Generator 원복·재작업). 상세: [`characterize.md`](../modes/characterize.md) § Evaluator — Snapshot 검증. 다른 모드에서는 skip.
 
 ### test_run
 
@@ -27,6 +31,10 @@ feature spec 대비 누락 여부를 확인한다. 증거는 `features/NN-{slug}
 `workspace/context/` 또는 프로젝트 산출물이 실제와 다름을 발견했을 때 drift-protocol 발동 여부. 증거는 보고 이력과 사용자 승인 기록.
 
 ---
+
+## SSOT — 기록은 Edit 으로
+
+체크·증거·합의 결과는 텍스트 보고가 아니라 **Edit 으로 파일에 기록**한다 — 서브에이전트 간 인수인계의 SSOT 는 대화가 아니라 파일 상태다 (체크박스 `[x]`, `.plan.md` 증거, `.plan.critic.md` 합의 표 모두 해당).
 
 ## SSOT — REPORT vs 체크박스
 

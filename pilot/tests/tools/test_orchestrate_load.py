@@ -6,6 +6,7 @@ tools/orchestrate-load.py 의 파싱 / 비교 / 도메인 추출 단위 테스�
 """
 
 import importlib.util
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -133,6 +134,15 @@ class ParseLangTools(unittest.TestCase):
         self.assertEqual(d.get("language"), "ruby")
         self.assertEqual(d.get("test_command"), "bundle exec rspec")
         self.assertNotIn("unknown_key", d)
+
+    def test_regression_command_key_accepted(self):
+        """regression_command 는 LANG_KEYS 화이트리스트 등록 키 — drop 되지 않는다."""
+        manifest = self._write_manifest(
+            "## 언어·도구 기본값\n\n"
+            "| `regression_command` | `bundle exec rspec spec/` | 광역 회귀 |\n"
+        )
+        d = m.parse_lang_tools(manifest)
+        self.assertEqual(d.get("regression_command"), "bundle exec rspec spec/")
 
     def test_no_section_returns_empty(self):
         manifest = self._write_manifest("# foo\n\n## 다른 섹션\n\n내용\n")
@@ -592,6 +602,74 @@ class MainStateErrors(unittest.TestCase):
             rc, out = self._run(ws)
             self.assertEqual(rc, 1)
             self.assertIn("허용되지 않는 문자", out["error"])
+
+
+class SsotLoad(unittest.TestCase):
+    """SSOT 강제 로드 — identity.yml·guardrails.md 2종, instincts.yaml 은 제거됨 (감사 F17)."""
+
+    def _plan_files(self, plugin_root_env: str | None) -> tuple[list, list]:
+        saved = os.environ.get(m.PLUGIN_ROOT_ENV)
+        try:
+            if plugin_root_env is None:
+                os.environ.pop(m.PLUGIN_ROOT_ENV, None)
+            else:
+                os.environ[m.PLUGIN_ROOT_ENV] = plugin_root_env
+            with tempfile.TemporaryDirectory() as td:
+                ws = Path(td)
+                (ws / "projects" / "P").mkdir(parents=True)
+                files, hints, _ = m.build_load_plan(
+                    workspace=ws, project="P",
+                    domain=None, tdd=False, phase="planner",
+                )
+            return files, hints
+        finally:
+            if saved is None:
+                os.environ.pop(m.PLUGIN_ROOT_ENV, None)
+            else:
+                os.environ[m.PLUGIN_ROOT_ENV] = saved
+
+    def test_loads_identity_and_guardrails_not_instincts(self):
+        files, _ = self._plan_files(str(PLUGIN_ROOT))
+        self.assertTrue(any(f.endswith("shared/identity.yml") for f in files))
+        self.assertTrue(any(f.endswith("shared/guardrails.md") for f in files))
+        self.assertFalse(any("instincts" in f for f in files))
+
+    def test_unresolvable_root_appends_without_check(self):
+        """CLAUDE_PLUGIN_ROOT 미설정 시 리터럴 placeholder 로 무조건 포함 (기존 동작 유지)."""
+        files, _ = self._plan_files(None)
+        self.assertTrue(any("identity.yml" in f for f in files))
+        self.assertTrue(any("guardrails.md" in f for f in files))
+
+    def test_missing_ssot_file_skipped_with_warn(self):
+        """SSOT 파일 부재 시 존재하지 않는 Read 지시 대신 WARN 힌트 + 생략 (감사 G3)."""
+        with tempfile.TemporaryDirectory() as fake_root:
+            files, hints = self._plan_files(fake_root)
+            self.assertFalse(any("identity.yml" in f for f in files))
+            self.assertFalse(any("guardrails.md" in f for f in files))
+            self.assertTrue(any("SSOT 파일 없음" in h for h in hints))
+
+
+class BuildInstructions(unittest.TestCase):
+    """instructions 필드 — wrapper 공통 JSON 처리 지시의 정본 (감사 F29)."""
+
+    def test_all_phases_have_five_directives(self):
+        for phase in ("planner", "planner-critic", "generator", "evaluator"):
+            ins = m.build_instructions(phase)
+            self.assertEqual(len(ins), 5, phase)
+            self.assertIn("error 필드", ins[0])
+            self.assertIn("files_to_read", ins[1])
+            self.assertIn("focus", ins[2])
+
+    def test_focus_directive_is_phase_specific(self):
+        directives = {
+            phase: m.build_instructions(phase)[2]
+            for phase in ("planner", "planner-critic", "generator", "evaluator")
+        }
+        self.assertEqual(len(set(directives.values())), 4)
+        self.assertIn("계획", directives["planner"])
+        self.assertIn("챌린지", directives["planner-critic"])
+        self.assertIn("구현", directives["generator"])
+        self.assertIn("검토", directives["evaluator"])
 
 
 if __name__ == "__main__":

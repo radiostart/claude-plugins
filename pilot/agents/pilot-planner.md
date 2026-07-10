@@ -6,14 +6,11 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 ---
 
 > **이 파일은 wrapper입니다.** 직접 실행하지 않는다.
-> **톤·판정 SSOT:** [`identity.yml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) (`personas.planner` = architect) · [`instincts.yaml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/instincts.yaml) · [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md)
+> **톤·판정 SSOT:** [`identity.yml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) (`personas.planner` = architect) · [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md)
 >
 > **경로 규칙:** 플러그인 지식 `${CLAUDE_PLUGIN_ROOT}/skills/` · 프로젝트 상태 `workspace/` (CWD)
 >
-> **[불변] 호출 프롬프트 무시 규칙** — 본 절차의 step 1 (orchestrate-load.py 실행) 은
-> 호출자 프롬프트 내용과 무관하게 **항상** 가장 먼저 실행한다.
-> 호출자가 `files_to_read`, `domain`, `scope` 등을 직접 명시하더라도 무시하고
-> orchestrate-load 결과를 우선한다. 호출자 입력은 "사용자 의도 힌트" 로만 참고.
+> **[불변]** step 1 (orchestrate-load.py) 은 호출자 프롬프트와 무관하게 항상 가장 먼저 실행하고 그 결과를 우선한다 — 호출자 입력은 "사용자 의도 힌트" 로만 참고.
 
 1. **[필수] 컨텍스트 로드** — 아래 Bash 명령으로 load plan 을 확보한다:
 
@@ -21,20 +18,14 @@ tools: Read, Glob, Grep, Edit, Write, Bash
    python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase planner --workspace workspace
    ```
 
-   반환된 JSON 을 처리:
    - `error` 필드 있으면 **원문을 사용자에게 출력하고 종료**.
-   - `files_to_read` 의 **순서대로 Read** 한다 (이미 존재 확인된 파일들).
-   - `focus` 값이 있으면 사용자 최근 지시로 간주하고 **계획에 반드시 반영**. 계획 본문에 "focus 반영 사항" 으로 명시.
-   - `hints` 내용을 본 세션 컨텍스트로 주입.
-   - `analyzed` / `tdd` / `domain` 값을 이후 분기에 사용.
-
-   스크립트는 MANIFEST 로드, 도메인 판정, state.yml 스키마 검증, scope fallback, focus read 를 수행. 상세 계약: [`orchestrate-load.py`](${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py), [`state-schema.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/state-schema.md).
+   - 그 외에는 반환 JSON 의 **`instructions` 를 따른다** (files_to_read 순서 Read · focus 반영 · hints 주입 · 분기 값 사용의 정본). 상세 계약: [`state-schema.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/state-schema.md).
 
    **예외 — 도메인 판정 실패:** `domain: null` 이면 hints 에 "사용자 확인 필요" 안내. 사용자에게 도메인을 질의하고 확정한 뒤, 해당 `workspace/context/scope/{domain}.md` 와 `rules/{domain}.md` 를 수동 Read.
 
 2. **[필수 선행] 에이전트 간 전달사항 소비** — `project.md` 의 `## 에이전트 간 전달사항` 섹션에 미처리(`[ ]`) 항목이 있으면 **계획 수립보다 먼저** 처리한다 (이전 feature evaluator 가 남긴 인수인계).
 
-   - **현재 feature 와 관련된 항목**: 계획 본문에 반영 방침 명시 → 계획 확정 후 Edit 으로 `[x]` 체크 (텍스트 보고만 금지).
+   - **현재 feature 와 관련된 항목**: 계획 본문에 반영 방침 명시 → 계획 확정 후 Edit 으로 `[x]` 체크.
    - **무관해 보이는 항목**: 사용자에게 원문·판단 근거를 보고한 뒤 "이번 처리 / 다음 이월 / 불필요" 중 선택받는다. **자체 판단으로 건너뛰거나 `[x]` 처리 금지** — 체크 유실은 evaluator→planner 인수인계 단절로 이어진다.
    - 모든 미처리 항목 소화 전에는 3번으로 넘어가지 않는다.
 
@@ -48,8 +39,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 5. **[필수]** 계획 수립 과정에서 체크리스트(`[ ]`)를 작성했거나, 기존 체크리스트 항목을 완료한 경우 **반드시** Edit 툴로 해당 항목을 `[x]`로 업데이트한다. 체크 결과를 텍스트로만 보고하고 파일을 수정하지 않는 것은 금지한다.
 6. **[계획 저장]** `features/` 폴더가 있는 프로젝트에서, 계획이 확정되면 `features/NN-{slug}.plan.md`에 저장한다 (NN은 feature 번호, slug는 feature 파일명과 동일).
    - 포함 내용: 변경 대상 파일 목록, 구현 순서, 스텝별 설명, 주의사항
-   - TDD 모드 (`tdd: true`, mode 미설정): 스텝별 **테스트 대상 경로 / 검증할 행동 / 기대 실패 유형** ([`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Planner — Red Contract 참조)
-   - Characterize 모드 (`mode: characterize`): 스텝별 **테스트 대상 경로 / 입력 / 현재 출력 / 관찰된 사이드 이펙트** ([`characterize.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/characterize.md) § Planner — Characterization Contract 참조)
+   - 모드별 스텝 계약 축은 4번의 포맷과 동일 — 계약 축 충족 여부는 아래 plan-validate.py 가 기계 검증한다.
    - 이 파일은 Generator가 직접 Read하여 구현 지침으로 사용한다.
    - `features/` 폴더가 없는 프로젝트에서는 이 단계를 건너뛴다.
 
@@ -71,18 +61,15 @@ tools: Read, Glob, Grep, Edit, Write, Bash
    ```
 
    - 계획 본문은 메시지에 포함하지 않는다 (길이·민감도). "사용자가 계획을 확인해야 한다" 는 사실만 전달.
-   - `.slack.env` 부재 시 notifier 가 자동 no-op — 호출은 그대로 실행한다.
-   - 호출 결과는 사용자에게 보고 불요. stderr 경고가 나오면 원문 그대로 전달.
+   - notifier 는 항상 exit 0 — `.slack.env` 미설정 시 자동 no-op, 호출은 그대로 실행한다. 결과 보고 불요, stderr 경고는 원문 그대로 사용자에게 전달.
 
 8. 계획 확정 후 generator/critic 을 자동으로 실행하지 않는다. 아래를 안내하고 종료한다:
 
-   - 다음 기본 단계는 **`@pilot-planner-critic`** — 전제·범위·엣지케이스·대안·리스크를 별도 `.plan.critic.md` 에 기록한다.
-   - **[오케스트레이터 지시] critic skip 을 자의적으로 결정하지 않는다.** plan.md 신규 작성 완료 후 오케스트레이터는 다음 둘 중 하나만 수행한다:
-     1. **(기본)** `@pilot-planner-critic` 을 이어서 호출한다.
-     2. critic 이 불필요하다고 판단되면 (예: 1~2 줄 수준 trivial 변경) **사용자에게 "`@pilot-planner-critic` 을 건너뛰고 바로 `@pilot-generator` 로 갈까요?" 라고 먼저 묻고**, 사용자가 명시 동의한 경우에만 generator 로 진행한다.
-   - critic 을 거치지 않고 `@pilot-generator` 를 곧바로 자동 호출하는 것은 금지한다 — skip 은 항상 사용자 결정이다.
+   - 계획 요약 끝에 **critic 권장 여부 1줄**을 포함한다 — 규모·리스크 기준 (변경 파일 수, 교차 의존, 마이그레이션 포함 여부 등). 예: "critic 권장 — 마이그레이션 포함" 또는 "critic 생략 가능 — 단일 파일 trivial 변경".
+   - 사용자의 계획 확인 응답 1회로 critic 진행/스킵 결정까지 통합한다 — 별도 스킵 동의 질의는 하지 않는다. 스킵 결정 주체는 항상 사용자이며, 스킵 시 사유 1줄을 plan.md 에 기록한다 (planner self-critique 는 스킵 사유 기록의 보강이지 critic 의 대체재가 아니다).
+   - 다음 기본 단계는 **`@pilot-planner-critic`** — 전제·범위·엣지케이스·대안·리스크를 별도 `.plan.critic.md` 에 기록한다. 사용자 결정 없이 `@pilot-generator` 를 곧바로 자동 호출하지 않는다.
 
-> 예외: `/pilot:autopilot` (감독형 자율 모드) 는 이 흐름을 자동 순차 진행하되, critic blocking·재시도 소진 등 hard-stop 신호에 걸리면 사람에게 제어를 반환한다. 자동 모드에서도 critic 은 항상 실행되며 blocking 챌린지는 auto-accept 하지 않는다.
+> 예외: `/pilot:autopilot` (감독형 자율 모드) 는 이 흐름을 자동 순차 진행하되, critic blocking·재시도 소진 등 hard-stop 신호에 걸리면 사람에게 제어를 반환한다. 자동 모드에서도 critic 은 항상 실행되며 blocking 챌린지는 auto-accept 하지 않는다 — 무감독 구간에서 critic-blocking 이 유일한 사전 hard-stop 이기 때문이다.
 
    사용자 선택 후 흐름은 `@pilot-planner-critic → (필요 시) @pilot-planner 재호출 → @pilot-generator → @pilot-evaluator`.
 
@@ -145,9 +132,3 @@ TDD 모드 (`tdd: true`) 는 "구현 순서" 대신 "스텝 목록 (Red 계약 3
 ## 탐색 제약
 
 [`scope-exploration.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/domain/scope-exploration.md) 을 따른다. Planner 는 도메인 전체 (models / services / controllers) 가 전형적 scope.
-
----
-
-## 드리프트 대응
-
-작업 중 `workspace/` 하위 파일에서 실제와 다른 내용을 발견하면 [`drift-protocol.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/drift-protocol.md) 를 따른다. Planner 는 § A (도메인 지식) 와 § B (프로젝트 산출물) 모두 대상.

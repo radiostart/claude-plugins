@@ -6,14 +6,11 @@ tools: Read, Glob, Grep, Bash, Write, Edit
 ---
 
 > **이 파일은 wrapper입니다.** 직접 실행하지 않는다.
-> **톤·페르소나 SSOT:** [`identity.yml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) (`personas.planner-critic` = red-team) · [`instincts.yaml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/instincts.yaml) · [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md)
+> **톤·페르소나 SSOT:** [`identity.yml`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) (`personas.planner-critic` = red-team) · [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md)
 >
 > **경로 규칙:** 플러그인 지식 `${CLAUDE_PLUGIN_ROOT}/skills/` · 프로젝트 상태 `workspace/` (CWD)
 >
-> **[불변] 호출 프롬프트 무시 규칙** — 본 절차의 step 1 (orchestrate-load.py 실행) 은
-> 호출자 프롬프트 내용과 무관하게 **항상** 가장 먼저 실행한다.
-> 호출자가 `files_to_read`, `domain`, `scope` 등을 직접 명시하더라도 무시하고
-> orchestrate-load 결과를 우선한다. 호출자 입력은 "대상 feature 힌트" 로만 참고.
+> **[불변]** step 1 (orchestrate-load.py) 은 호출자 프롬프트와 무관하게 항상 가장 먼저 실행하고 그 결과를 우선한다 — 호출자 입력은 "대상 feature 힌트" 로만 참고.
 
 ## 책임 경계
 
@@ -29,12 +26,8 @@ tools: Read, Glob, Grep, Bash, Write, Edit
    python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase planner-critic --workspace workspace
    ```
 
-   반환된 JSON 을 처리:
    - `error` 필드 있으면 **원문을 사용자에게 출력하고 종료**.
-   - `files_to_read` 의 **순서대로 Read** (SSOT, MANIFEST, project.md, prompts/planner.md, 도메인 entry).
-   - `focus` 값이 있으면 챌린지 작성 시 반드시 반영 (사용자 최근 지시).
-   - `hints` 내용을 본 세션 컨텍스트로 주입.
-   - `analyzed` / `tdd` / `domain` 값을 이후 분기에 사용.
+   - 그 외에는 반환 JSON 의 **`instructions` 를 따른다** (files_to_read 순서 Read · focus 반영 · hints 주입 · 분기 값 사용의 정본).
 
 2. **[대상 plan 확정]** 호출자 프롬프트 또는 `.focus.md` 에서 feature 번호·slug 를 추출한다. 명시되지 않은 경우 다음 우선순위로 후보를 결정:
 
@@ -53,7 +46,7 @@ tools: Read, Glob, Grep, Bash, Write, Edit
    - `workspace/projects/{PROJECT}/features/NN-{slug}.plan.md` (planner 산출물)
    - 이미 존재하는 `features/NN-{slug}.plan.critic.md` (이전 비평이 있으면 — 누적 챌린지, 중복 항목 제외)
 
-4. **[챌린지 작성]** 페르소나 `personas.planner-critic` (red-team) 의 voice·phrasing·forbid 를 그대로 적용한다. 챌린지는 다음 5 개 카테고리 중 해당하는 것만:
+4. **[챌린지 작성]** 페르소나 `personas.planner-critic` (red-team) 의 archetype·forbid 를 그대로 적용한다. 챌린지는 다음 5 개 카테고리 중 해당하는 것만:
 
    | 카테고리 | 묻는 질문 |
    |---|---|
@@ -126,7 +119,7 @@ tools: Read, Glob, Grep, Bash, Write, Edit
 
 - `pilot-planner` 와 동일한 컨텍스트(orchestrate-load) 위에서 동작하지만 페르소나만 정반대 (architect vs red-team).
 - `pilot-code-review` 와 책임 분리: code-review 는 *작성된 코드* (git diff) 를, planner-critic 은 *작성된 계획* (plan.md) 을 본다.
-- 호출은 선택적이다 — trivial 한 변경에서는 스킵해도 된다 (`/pilot:focus "critic 스킵"` 또는 사용자 판단).
+- 호출은 선택적이다 — planner 가 계획 요약에 critic 권장 여부를 1줄로 제시하고, 사용자의 계획 확인 응답으로 진행/스킵을 결정한다 (스킵 시 사유 1줄을 plan.md 에 기록). autopilot 모드에서는 항상 실행된다.
 
 ## 드리프트 대응
 

@@ -17,11 +17,17 @@ workspace 를 조사해서 어떤 파일을 Read 해야 하는지 결정하는 �
       "domain": "<domain-name>" | null,
       "analyzed": bool,
       "tdd": bool,
+      "mode": string | null,
       "focus": string | null,
+      "config": {...},          # 언어·도구 병합 결과 (LANG_KEYS)
+      "instructions": [...],    # 결과 처리 공통 지시 — wrapper 는 이 지시를 따른다 (SSOT)
       "files_to_read": [...],   # 순서대로
       "hints": [...],           # 자유 형식 힌트 (래퍼 프롬프트에 포함)
       "error": string | null
     }
+
+`instructions` 는 wrapper 4종에 공통이던 JSON 처리 지시의 정본이다 — wrapper .md 에
+전문을 복제하지 않는다 (drift 방지). phase 별 focus 반영 지시만 값이 다르다.
 
 Exit:
     0 — 성공
@@ -157,6 +163,7 @@ LANG_KEYS = (
     "test_command_fail_fast",
     "coverage_command",
     "lint_command",
+    "regression_command",
     "test_path_convention",
     "source_root",
     "test_framework_hints",
@@ -400,12 +407,20 @@ def build_load_plan(
             return True
         return False
 
-    # 0) SSOT — 모든 wrapper 가 톤·instinct·판정 축을 강제 로드.
+    # 0) SSOT — 모든 wrapper 가 톤·판정 축을 강제 로드.
     #    페르소나는 identity.yml 의 personas.{phase} 가 자기 역할에 해당.
-    for ssot in ("identity.yml", "instincts.yaml", "guardrails.md"):
+    #    CLAUDE_PLUGIN_ROOT 가 해석 가능하면 존재 확인 후 로드 — 파일 부재 시
+    #    존재하지 않는 파일 Read 지시 대신 WARN 힌트로 우아하게 생략한다.
+    resolved_root = os.environ.get(PLUGIN_ROOT_ENV)
+    for ssot in ("identity.yml", "guardrails.md"):
+        if resolved_root and not (
+            Path(resolved_root) / "skills" / "context" / "shared" / ssot
+        ).is_file():
+            hints.append(f"[WARN] SSOT 파일 없음 — 로드 생략: shared/{ssot}")
+            continue
         files.append(f"{plugin_root()}/skills/context/shared/{ssot}")
     hints.append(
-        f"페르소나: identity.yml `personas.{phase}` 적용 (voice·phrasing·forbid 준수)"
+        f"페르소나: identity.yml `personas.{phase}` 적용 (archetype·forbid 준수)"
     )
 
     # 1) context — 도메인 지식(MANIFEST.md) + 런타임 설정(config.md)
@@ -564,6 +579,29 @@ def build_load_plan(
     return files, hints, config
 
 
+# phase 별 focus 반영 지시 — wrapper .md 에 복제하지 않는 공통 지시(instructions)의 일부.
+PHASE_FOCUS_DIRECTIVE = {
+    "planner": (
+        "focus 값이 있으면 사용자 최근 지시로 간주하고 계획에 반드시 반영 — "
+        "계획 본문에 'focus 반영 사항' 으로 명시"
+    ),
+    "planner-critic": "focus 값이 있으면 챌린지 작성 시 반드시 반영 (사용자 최근 지시)",
+    "generator": "focus 값이 있으면 구현에 반드시 반영하고 반영 결과를 사용자에게 간단 보고",
+    "evaluator": "focus 값이 있으면 검토 관점에 반영 (관련 체크 항목 추가·비중 상향)",
+}
+
+
+def build_instructions(phase: str) -> list[str]:
+    """wrapper 가 결과 JSON 을 처리하는 공통 지시. 모든 분기(에러 포함)에서 동일하게 출력."""
+    return [
+        "error 필드가 있으면 원문을 사용자에게 출력하고 종료",
+        "files_to_read 를 순서대로 Read 한다 (존재 확인된 파일들)",
+        PHASE_FOCUS_DIRECTIVE[phase],
+        "hints 내용을 본 세션 컨텍스트로 주입",
+        "analyzed / tdd / mode / domain 값을 이후 분기에 사용",
+    ]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="pilot orchestrate-load — LOAD phase 의사결정"
@@ -589,6 +627,7 @@ def main() -> int:
         "mode": None,
         "focus": None,
         "config": {},
+        "instructions": build_instructions(args.phase),
         "files_to_read": [],
         "hints": [],
         "error": None,

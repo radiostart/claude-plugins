@@ -27,7 +27,7 @@
 
 ### B. `workspace/projects/{PROJECT}/` — 프로젝트 산출물
 
-적용: `project.md`, `prompts/generator.md`, `prompts/evaluator.md`. **Planner 전용** — 계획 수립 전 코드베이스 분석 중 내용 (클래스명·상태값·경로 등) 이 실제와 다름을 발견하면 공통 원칙 1-3 을 따라 수정한다.
+적용: `project.md`, `prompts/generator.md`, `prompts/evaluator.md`. **수정 주체는 Planner 전용** — 계획 수립 전 코드베이스 분석 중 내용 (클래스명·상태값·경로 등) 이 실제와 다름을 발견하면 공통 원칙 1-3 을 따라 수정한다. Planner-Critic 은 챌린지 중 § B 대상의 드리프트를 **감지·보고만** 한다 (수정은 Planner 재호출로).
 
 `prompts/planner.md` 자체도 동일 대상이지만, 수정 시 다음 Planner 실행에 영향을 주므로 변경 범위를 한 번 더 점검한다.
 
@@ -38,6 +38,7 @@
 | 에이전트 | 발견 시점 | 대상 |
 | --- | --- | --- |
 | Planner | 1단계 컨텍스트 로드 직후 ~ 계획 수립 전 | A + B |
+| Planner-Critic | plan 챌린지 중 전제·인용 검증 시 | A + B (감지·보고만 — 수정은 Planner) |
 | Generator | 구현 중 참조 파일 로드 시 | A |
 | Evaluator | 검토 중 규칙 위반·누락 발견 시 | A |
 
