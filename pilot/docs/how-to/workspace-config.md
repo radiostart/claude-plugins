@@ -30,7 +30,9 @@
 | `conventions_evals` | `context/evals/conventions.json` | 언어별 검증 케이스 정의 JSON 파일 경로 (generator·evaluator 가 자동 로드) |
 | `pr_default_base` | `develop`, `main` | `/pilot:pr` 실행 시 대상 base branch default 설정 |
 
-그 외 선택 가능한 키: `test_command_fail_fast` (Red 단계 시 빠른 실패 지원), `coverage_command`, `lint_command`, `test_framework_hints` 등.
+그 외 선택 가능한 키: `test_command_fail_fast` (Red 단계 시 빠른 실패 지원), `coverage_command`, `lint_command`, `test_framework_hints`, `regression_command` 등.
+
+`regression_command` 는 레거시 광역 회귀 스위트(전체 또는 광범위 테스트) 실행 명령입니다. `/pilot:pr` 진입 전 1회만 실행되는 soft gate 로 사용되며, **evaluator 는 이 키를 사용하지 않습니다** — 사이클 단위 전체 스위트 실행은 비용 원칙상 금지입니다 (`rgr.md` 의 비용 근거 참고).
 
 ### 2. `## Ignore` 섹션 설정 — 탐색 배제 및 수정 통제
 

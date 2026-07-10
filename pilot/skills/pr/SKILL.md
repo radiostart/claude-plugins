@@ -81,15 +81,19 @@ git ls-remote --exit-code origin <base>
 
 1. **변경 확인** — `git status`, `git log <base>..HEAD --oneline`, `git diff <base>...HEAD --stat` 으로 PR 에 포함될 변경 범위 확인.
 2. **uncommitted 차단** — staged·unstaged 변경이 있으면 "`/pilot:commit` 으로 먼저 커밋하세요" 안내 후 종료.
-3. **upstream push** — 현재 브랜치가 origin 에 없거나 ahead 면 `git push -u origin <branch>`.
-4. **PR 본문 초안** — pr.md (팀/플러그인) 의 본문 구조에 따라 작성.
+3. **광역 회귀 (soft gate)** — `workspace/context/config.md` 의 `regression_command` 가 설정돼 있으면 PR 생성 전 1회 실행한다.
+   - 통과 → 다음 단계 진행.
+   - 실패 → 실패 결과 요약을 사용자에게 보여주고 PR 생성 진행 여부를 확인받는다 (soft gate — 자동 차단하지 않음).
+   - 미설정 → skip. INFO 1줄: "레거시 원거리 회귀 감지는 config.md 의 `regression_command` 설정을 권장합니다."
+4. **upstream push** — 현재 브랜치가 origin 에 없거나 ahead 면 `git push -u origin <branch>`.
+5. **PR 본문 초안** — pr.md (팀/플러그인) 의 본문 구조에 따라 작성.
    - 변경 요약은 `git log <base>..HEAD` 의 커밋 메시지를 1차 재료로 사용.
    - 프로젝트 컨텍스트 주입: `project.md` 의 목표·완료 체크리스트 → Summary, features/*.md 링크 → Notes, docs/ Confluence URL → Why.
    - Q1~Q6 형식이 팀 pr.md 에 있으면 그 형식 사용.
-5. **사용자 확인** — 제목·본문·base·head 를 보여주고 승인 받음. 수정 요청 시 한 라운드 반영.
-6. **PR 생성** — `gh pr create --base <base> --head <branch> --title <title> --body <body>` (HEREDOC 사용).
-7. **state 갱신** — base 가 명시 입력이면 `pr_base_branch` 를 .agent-state.yml 에 기록 (Enter=default 면 미저장).
-8. **Slack 알림** — `.slack.env` 활성 + `SLACK_EVENTS` 에 `pr` 포함 (default: 포함) 시 PR URL 을 채널로 전송. 호출:
+6. **사용자 확인** — 제목·본문·base·head 를 보여주고 승인 받음. 수정 요청 시 한 라운드 반영.
+7. **PR 생성** — `gh pr create --base <base> --head <branch> --title <title> --body <body>` (HEREDOC 사용).
+8. **state 갱신** — base 가 명시 입력이면 `pr_base_branch` 를 .agent-state.yml 에 기록 (Enter=default 면 미저장).
+9. **Slack 알림** — `.slack.env` 활성 + `SLACK_EVENTS` 에 `pr` 포함 (default: 포함) 시 PR URL 을 채널로 전송. 호출:
 
    ```bash
    python3 ${CLAUDE_PLUGIN_ROOT}/tools/slack-notify.py \
@@ -98,7 +102,7 @@ git ls-remote --exit-code origin <base>
    ```
 
    `--no-slack` 플래그 시 skip. 전송 실패는 PR 생성을 차단하지 않음 (slack-notify 는 항상 exit 0).
-9. **완료 안내** — PR URL 을 사용자에게 출력.
+10. **완료 안내** — PR URL 을 사용자에게 출력.
 
 ---
 
