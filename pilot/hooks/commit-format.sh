@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # commit-format.sh
-# git commit -m 실행 시 커밋 메시지 형식을 검증한다. (commit.md 기준)
+# git commit -m 실행 시 커밋 메시지 형식을 검증한다. (규칙 SSOT: skills/context/shared/commit.md)
+# 한계: heredoc / -F 파일 방식 메시지는 추출 불가라 검증 없이 통과하고,
+# stderr 경고는 advisory (항상 exit 0) — 이 훅은 commit.md 준수를 돕는 보조 장치다.
 
 set -euo pipefail
 
@@ -28,8 +30,9 @@ TITLE_LEN=${#TITLE}
 
 # VALID_SCOPES 결정 순서:
 # 1. workspace/context/config.md 의 `## 설정` 표에 `commit_scopes` 행
-# 2. 부재 시 기본값 fallback
-DEFAULT_SCOPES="feat,fix,refactor,skills,chore,docs,test,wip"
+# 2. 부재 시 기본값 fallback — shared/commit.md 의 scope 표 4종 + 작성 원칙의 `wip` (commit.md 가 SSOT)
+#    ({기능명} 자유 scope 는 목록 검증 불가 — advisory 경고로만 노출됨)
+DEFAULT_SCOPES="feat,fix,refactor,skills,wip"
 VALID_SCOPES_CSV="$DEFAULT_SCOPES"
 
 CONFIG_FILE="workspace/context/config.md"

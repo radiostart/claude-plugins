@@ -2,19 +2,21 @@
 
 모든 스킬이 진입 전 수행하는 공통 준비 절차. 각 스킬 SKILL.md 는 본 문서를 참조하고 자신의 고유 로직만 기술한다.
 
+각 SKILL.md 는 "사전 확인: P-1, P0, P1 수행" 과 같이 **참조만** 한다. 절차 본문을 복제하지 않는다. 어떤 스킬이 어떤 P 를 수행하는지는 아래 **스킬별 P 절차 적용표**가 유일한 SSOT 다 — P 정의부는 절차 내용만 기술한다.
+
 ---
 
 ## P-1. TodoWrite 선로딩 (다단계 스킬 진입 시)
 
-3 단계 이상 수행하는 스킬(`project`, `issue`, `analyze`, `create-feature`)은 **첫 tool call 로 `ToolSearch select:TodoWrite` 를 수행**한다. 직후 단계 목록을 세워 사용자에게 게시하고 진행하며 갱신한다.
+3 단계 이상 수행하는 스킬은 **첫 tool call 로 `ToolSearch select:TodoWrite` 를 수행**한다. 직후 단계 목록을 세워 사용자에게 게시하고 진행하며 갱신한다.
 
 TodoWrite 는 deferred tool 이므로 ToolSearch 선로딩 없이 직접 호출하면 InputValidationError 가 발생한다. 중간에 시스템 리마인더를 받고서야 로드하는 상황을 방지한다.
 
-**미적용:** 단일 수행 스킬 (`commit`, `focus`, `doctor`, `init`, `confl`).
+**미적용:** 단일 수행 스킬 (3 단계 미만).
 
 ---
 
-## P0. 관련 메모 선조회 (모든 스킬 공통)
+## P0. 관련 메모 선조회
 
 `python3 ${CLAUDE_PLUGIN_ROOT}/tools/memory-hint.py "{PROJECT_OR_ARGS}" [KEYWORDS...]` 실행.
 
@@ -24,20 +26,14 @@ TodoWrite 는 deferred tool 이므로 ToolSearch 선로딩 없이 직접 호출�
 
 auto-memory (`~/.claude/projects/{slug(cwd)}/memory/`) 는 Claude Code harness 소유. 플러그인은 **Read 만** 수행하고 생성·수정·삭제 금지.
 
-**적용 스킬:** `project`, `issue`, `analyze`, `feature` (1차 릴리스).
-
 ---
 
-## P1. 활성 프로젝트 확인 (project 생성·이슈 모드 제외)
+## P1. 활성 프로젝트 확인
 
 `workspace/STATE.md` 를 Read 하여 `진행중` 행의 프로젝트명을 `{PROJECT}` 로 사용한다.
 
 - 진행중 행이 없으면 [messages.md](messages.md) 의 `no_active_project` 메시지를 출력하고 종료한다.
 - 진행중 행이 2개 이상이면 [messages.md](messages.md) 의 `state_corrupt` 메시지를 출력하고 종료한다.
-
-**적용 스킬:** `analyze`, `confl`, `tdd`, `commit`
-
-**미적용 스킬:** `project`, `issue` (자신이 STATE.md 를 갱신함)
 
 ---
 
@@ -52,8 +48,6 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 
 **원칙 — 이력은 git log 로.** `보류`·`완료` 행을 누적하지 않는다. 과거 작업 이력은 `git log workspace/STATE.md` 또는 `workspace/projects/*/` 폴더가 SSOT.
 
-**적용 스킬:** `project`, `issue`
-
 **갱신 전 사용자 확인:**
 
 기존 행이 삭제되는 경우 (다른 이름으로 교체될 때), 작업 내용이 여전히 유효하면 해당 프로젝트 폴더는 그대로 남으므로 나중에 `/pilot:project {이전이름}` 로 재활성화 가능. STATE.md 행 제거 = 폴더 삭제가 아님을 사용자가 오해할 수 있으면 한 줄 안내.
@@ -64,28 +58,35 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 
 [INDEX.md](../INDEX.md) 의 "도메인별 컨텍스트 로딩" 규칙에 따라 SCOPE, DOMAIN, ENUMS 를 선택적으로 로드한다.
 
-**적용 스킬:** `project`, `issue`
-
 ---
 
 ## 스킬별 P 절차 적용표
 
-| 스킬        | P-1 | P0 | P1 | P2 | P3 |
-| ----------- | --- | -- | -- | -- | -- |
-| `project`   | ✅  | ✅ |    | ✅ | ✅ |
-| `issue`     | ✅  | ✅ |    | ✅ | ✅ |
-| `init`      |     |    |    |    |    |
-| `analyze`   | ✅  | ✅ | ✅ |    |    |
-| `confl`     |     |    | ✅ |    |    |
-| `tdd`       |     |    | ✅ |    |    |
-| `doctor`    |     |    | ✅ |    |    |
-| `focus`     |     |    | ✅ |    |    |
-| `create-feature` | ✅ | ✅ | ✅ |    |    |
-| `commit`    |     |    |    |    |    |
+**이 표가 스킬별 P 절차 적용의 유일한 SSOT 다.** 각 SKILL.md 의 "사전 확인" 선언과 이 표가 어긋나면 둘 중 하나가 drift — doctor 점검 대상.
+
+| 스킬             | P-1 | P0 | P1 | P2 | P3 |
+| ---------------- | --- | -- | -- | -- | -- |
+| `project`        | ✅  | ✅ |    | ✅ | ✅ |
+| `issue`          | ✅  | ✅ |    | ✅ | ✅ |
+| `init`           |     |    |    |    |    |
+| `analyze`        | ✅  | ✅ | ✅ |    |    |
+| `confl`          |     |    | ✅ |    |    |
+| `tdd`            |     |    | ✅ |    |    |
+| `doctor`         |     |    |    |    |    |
+| `focus`          |     |    | ✅ |    |    |
+| `create-feature` | ✅  | ✅ | ✅ |    |    |
+| `commit`         |     |    | ✅ |    |    |
+| `learn`          | ✅  | ✅ |    |    |    |
+| `characterize`   |     |    | ✅ |    |    |
+| `autopilot`      |     |    | ✅ |    |    |
+| `pr`             | ✅  |    | ✅ |    |    |
+| `slack`          |     |    | ✅ |    |    |
 
 > `init` 은 workspace 가 없는 상태에서 실행되므로 P1 을 수행하지 않는다 (workspace/STATE.md 를 처음 생성하는 스킬).
-
-각 SKILL.md 는 "사전 확인: P-1, P0, P1 수행" 과 같이 참조만 한다. 절차 본문을 복제하지 않는다.
+>
+> `doctor` 는 P 절차를 수행하지 않는다 — doctor.py 가 워크스페이스·프로젝트 해석을 자체 수행한다.
+>
+> `learn` 은 workspace 부트스트랩 단계라 활성 프로젝트 없이 실행 가능 — P1 을 수행하지 않는다.
 
 ---
 

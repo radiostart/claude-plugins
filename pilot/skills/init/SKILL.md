@@ -73,7 +73,7 @@ wizard 가 활성화되면 아래 3 단계를 순서대로 실행한다. **어�
      - `표 헤더`: 해당 표의 컬럼 헤더 (쉼표 구분, 예: `엔드포인트, Method, 목적`).
    - 같은 `project.md 대상 H3` 가 여러 폴더에서 매핑되면 (예: services·workers·jobs → Services) 1 행만 남기고 dedupe.
    - 기존 행이 있으면 dedupe 병합.
-   - 후보 0건 → default 3 행 (Routes·Models·Services) 그대로 주입 + INFO 1줄.
+   - 후보 0건 → default 3 행 (Routes·Models·Services) 그대로 주입 + INFO 1줄. 주입 값 출처: [analyze/references/scope-sync.md](../analyze/references/scope-sync.md) 5-2 canonical 표.
 3. **Ignore baseline 주입** — `IGNORE_BASELINE` 상수의 10 패턴을 `workspace/context/config.md` 의 `## Ignore` 표 본문에 주입한다. 헤더: `| 패턴 | 사유 |`.
    - 기존 행이 있으면 dedupe 병합 (사용자 수동 추가 보존).
 

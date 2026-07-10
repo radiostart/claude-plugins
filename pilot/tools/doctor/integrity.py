@@ -1076,7 +1076,7 @@ def check_workspace_config_sections(config_path: Path) -> list[Result]:
             Result(
                 Result.INFO,
                 "context/config.md",
-                f"{SCOPE_SECTION} 미정의 — SKILL.md default 사용",
+                f"{SCOPE_SECTION} 미정의 — scope-sync.md default 사용",
             )
         )
     else:

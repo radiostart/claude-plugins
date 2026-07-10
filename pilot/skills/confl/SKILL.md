@@ -55,7 +55,7 @@ Confluence 페이지를 가져와 `docs/` 폴더에 저장한다. 내용은 컨�
 
 2. 명령 실패 시 에러 메시지를 그대로 사용자에게 전달한다 (환경변수 미설정 가이드 포함).
 3. 저장된 **파일 경로와 섹션 제목 목록만** 출력한다. 섹션 내용은 출력하지 않는다.
-4. [messages.md](../context/shared/messages.md) 의 `confl_saved` 를 출력한다.
+4. 다음 안내를 출력한다: "저장 완료. `/pilot:confl {검색어}` 로 필요한 섹션을 검색하세요."
 
 ---
 
@@ -72,7 +72,13 @@ Atlassian Rovo MCP 의 시맨틱 검색을 1차 경로로 사용하고, 실패·
    - `limit`: 5
 3. **결과 출력**:
    - 각 항목에 **`[source: rovo-mcp]` 태그**, 제목, `page_id`, 짧은 스니펫을 표시한다.
-   - 마지막에 [messages.md](../context/shared/messages.md) 의 `confl_search_source_rovo` 안내를 출력한다.
+   - 마지막에 다음 안내를 출력한다:
+
+     ```
+     [source: rovo-mcp] 검색 결과는 Atlassian Rovo MCP 가 반환한 시맨틱 매칭입니다.
+     원문 인용·정책 점검에는 `/pilot:confl {page_id}` 로 fetch 한 docs/ 파일을 근거로 사용하세요.
+     ```
+
    - 사용자가 원문이 필요하면 `/pilot:confl {page_id}` 로 fetch 하도록 유도한다 (자동 fetch 하지 않는다).
 4. **로컬 폴백** (MCP 미등록 / 호출 실패 / 결과 0건):
 
@@ -81,7 +87,14 @@ Atlassian Rovo MCP 의 시맨틱 검색을 1차 경로로 사용하고, 실패·
    ```
 
    - 매칭된 섹션만 출력하고 각 결과 끝에 **`[source: local]`** 태그를 붙인다.
-   - MCP 호출 실패로 인한 폴백이라면 [messages.md](../context/shared/messages.md) 의 `confl_mcp_unavailable` 을 함께 출력한다.
+   - MCP 호출 실패로 인한 폴백이라면 다음 안내를 함께 출력한다:
+
+     ```
+     Atlassian Rovo MCP 호출에 실패하여 로컬 docs/ 검색으로 폴백했습니다.
+     원인: {원인}
+     강제로 로컬만 사용하려면 `/pilot:confl {검색어} --local` 을 사용하세요.
+     ```
+
    - 결과가 없으면 [messages.md](../context/shared/messages.md) 의 `confl_no_match` 를 출력한다.
 
 ---

@@ -37,7 +37,7 @@
 
 ## STATE.md
 
-`workspace/STATE.md` (gitignore 대상, 로컬 전용)
+`workspace/STATE.md` — 추적 여부는 사용자 정책 (`.agent-state.yml` 과 동일 — [state-schema.md](lifecycle/state-schema.md) 참조). 로컬 전용 운영 권장
 
 ### 형식
 

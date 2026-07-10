@@ -10,6 +10,8 @@ description: >-
 
 운영 이슈 처리 모드를 활성화한다.
 
+> **경량 모드** — 이슈 모드는 4-에이전트 사이클(planner→generator→evaluator) 없이 **컨텍스트 로드 + 기록만** 제공한다. 사이클이 필요한 작업은 `/pilot:project` 를 사용한다.
+
 대상 이슈: $ARGUMENTS
 
 ## 사전 확인

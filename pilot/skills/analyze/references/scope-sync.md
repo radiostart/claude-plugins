@@ -41,11 +41,8 @@
 - H2 헤더 = `config.md` 의 `scope 헤더` 컬럼 값 그대로 (예: `## Routes`·`## Models`·`## Services`).
 - 표 헤더 = `config.md` 의 `표 헤더` 컬럼 값 (예: `엔드포인트, Method, 목적`).
 - 표 본문 행 추출 우선순위:
-  1. `workspace/context/{domain}/inventory.md` 의 역할 분류 표 (learn 산출) — 해당 카테고리 행 추출. `## Routes` → 역할 = `routes`, `## Models` → 역할 = `models`. 각 행에 `(file:line)` 인용 그대로 복사.
-  2. `workspace/context/{domain}/index.md` 본문의 매칭 표 (사용자 수동 정의 가능성).
-  3. 본문 추출 실패 → 표 헤더만 있는 빈 표 + `[INFO] scope/{domain}.md 표 본문 추출 실패 — 사용자 수동 채움 권장` 1 줄.
-
-> **wizard 인용 주입 SSOT** — `/pilot:init` wizard 가 작성한 `workspace/context/config.md` 의 `## learn 언어 패턴` 표 행이 inventory.md 산출 형식의 SSOT. 표 헤더 일치 시 그 행을 그대로 인용해 본문 추출 — wizard 결정과 analyze 산출 사이의 정합 보존.
+  1. `workspace/context/{domain}/index.md` 본문의 매칭 표 (사용자 수동 정의 가능성).
+  2. 본문 추출 실패 → 표 헤더만 있는 빈 표 + `[INFO] scope/{domain}.md 표 본문 추출 실패 — 사용자 수동 채움 권장` 1 줄.
 
 **idempotency:**
 
@@ -58,7 +55,6 @@
 
 - MANIFEST 진입파일 부재 → scope 파일 생성 skip + `[INFO] MANIFEST 진입 파일 없음 — scope 파일 생성 skip` 1 줄. 5-2 도 skip.
 - `config.md` 의 `## scope 카테고리` 빈 표 → default 매핑 사용 (Routes/Models/Services → Endpoints/Models/Services).
-- `inventory.md` 부재 → 1순위 실패. 2순위 (`index.md`) 또는 3순위 (빈 표 + INFO) 적용.
 - `scope 헤더` 컬럼 값이 `## ` prefix 미준수 → doctor 검증이 사전 차단 (ERROR). A2 fallback 으로 default 적용.
 
 ---
@@ -72,6 +68,7 @@
 로드한 `scope/{domain}.md` 의 매칭 H2 섹션 표를 추출해 project.md 의 `## 관련 파일` 표를 자동 기입한다.
 
 > default — `workspace/context/config.md` 의 `## scope 카테고리` 가 비어있을 때 사용.
+> **canonical** — 아래 3컬럼 표가 scope 카테고리 default 의 유일한 정본이다. analyze·project·init·create-feature·doctor 는 이 표를 참조하며 값을 복제하지 않는다.
 
 | scope 헤더 | project.md 대상 H3 | 표 헤더 |
 | --- | --- | --- |
@@ -124,6 +121,6 @@ features/ 갱신 시 기존 features/NN-*.md 파일의 `## Open Questions` 섹�
 3. 신규 features/NN-*.md 생성 시에는 `## Open Questions` 4 카테고리 섹션 + `- (없음)` 반드시 포함.
 4. `## Open Questions` 섹션이 아예 없는 기존 파일은 수정하지 않음 (doctor 가 INFO 로 안내).
 
-Open Questions 4 카테고리 분류 기준은 [`open-questions.md`](open-questions.md) 참조 (create-feature 와 공유).
+Open Questions 4 카테고리 분류 기준은 [`open-questions.md`](../../context/shared/open-questions.md) 참조 (create-feature 와 공유).
 
 > **A2 runtime fallback**: Open Questions 갱신 실패 시 → 해당 파일 skip, 분석 정상 진행.

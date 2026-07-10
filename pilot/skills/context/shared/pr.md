@@ -12,36 +12,10 @@ pilot 플러그인이 제공하는 **표준 PR 컨벤션 fallback**. 워크스�
 
 ---
 
-## 1. Base branch 정책 (자동 타겟팅)
+## 1. Base branch 정책
 
-PR 생성 시 base branch 결정 흐름:
-
-```
-/pilot:pr 진입
-├─ .agent-state.yml 의 pr_base_branch 존재
-│   └─ "타겟: <X> (저장됨). Enter=유지 / 입력=변경"
-│       ├─ Enter      → X 사용. state 갱신 없음
-│       └─ 새 입력    → state 갱신 + 새 값 사용
-└─ 부재
-    └─ "타겟 브랜치? (Enter=<default>)"
-        ├─ Enter      → config 의 pr_default_base 사용. state 미저장
-        └─ 입력       → state 에 pr_base_branch 기록 + 입력값 사용
-```
-
-### 관련 키
-
-| 위치 | 키 | 용도 |
-|---|---|---|
-| `.agent-state.yml` | `pr_base_branch` (optional) | 사용자가 명시 입력한 base. 부재 시 default 사용 |
-| `workspace/context/config.md` | `pr_default_base` | default base (예: `develop`, `main`). 미선언 시 하드 fallback `develop` |
-
-### 사전 검증
-
-PR 생성 직전 `git ls-remote --exit-code origin <base>` 로 remote 존재 확인. 없으면 WARN + 재질의.
-
-### Stale 감지 (doctor)
-
-`/pilot:doctor` 가 `pr_base_branch` 가 가리키는 브랜치의 remote 존재를 확인하여 사라졌으면 WARN.
+base branch 결정(결정 트리·remote 검증·stale 감지)은 `/pilot:pr` 스킬의 동작이다 — 메커니즘 SSOT: `skills/pr/SKILL.md`.
+키 스키마는 [`lifecycle/state-schema.md`](../lifecycle/state-schema.md), default 는 `workspace/context/config.md` 의 `pr_default_base`.
 
 ---
 

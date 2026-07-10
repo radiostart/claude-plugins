@@ -106,7 +106,7 @@ description: >-
 | state enum | `enum \|STATUSES =\|@Entity\|case class ` |
 | validation·guard | `validates \|@Valid\|require\|assert ` |
 
-25k 토큰 거부 시 `limit` 1/2 축소 재시도. 누적 ~50k 토큰 초과시 사용자 진행 여부 재확인.
+25k 토큰 거부 시 `limit` 1/2 축소 재시도 (소스 코드는 라인당 토큰 밀도가 낮아 1/2 로 충분 — analyze 의 표 중심 마크다운 1/3 규칙과 의도된 차이). 누적 ~50k 토큰 초과시 사용자 진행 여부 재확인.
 
 **추출 항목**: 파일 목적 (상단 docstring·주석) · public interface (시그니처·route·클래스·상속) · 의존성 · state enum · business rule · **cross-domain transaction nesting** (외부 namespace receiver만 capture — 상세: [`references/cross-domain.md`](references/cross-domain.md) Phase 3).
 
@@ -139,7 +139,7 @@ description: >-
 
 6. **충돌 처리** — `{domain}.md` 또는 `{domain}/` 이미 존재 시: `--force` 있으면 덮어쓰기, 없으면 3-way 질의 (`overwrite / sub-domain 추가 / 중단`).
 
-7. 승인 후 **batch Write** — 같은 turn 안에서 여러 Write tool_use 묶어 호출 (3~5 개 단위).
+7. 승인 후 **batch Write** — [coding.md](../context/shared/coding.md) `## 독립 파일 배치 작업` 절차를 따른다.
 
 ### Phase 5. MANIFEST.md 갱신 + doctor
 

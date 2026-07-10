@@ -53,8 +53,8 @@ description: >-
 
 검증:
 
-- `{PROJECT}` 가 비어있으면 [messages.md](../context/shared/messages.md) 의 `project_name_required` 출력 후 종료.
-- `{PROJECT}` 가 예약어(`example`, `workspace`, `STATE`, `context`)이면 [messages.md](../context/shared/messages.md) 의 `project_name_reserved` 출력 후 종료.
+- `{PROJECT}` 가 비어있으면 "프로젝트명을 입력해주세요. 예: `/pilot:project MyProject`" 출력 후 종료.
+- `{PROJECT}` 가 예약어(`example`, `workspace`, `STATE`, `context`)이면 "`{이름}` 은 예약어라 프로젝트명으로 사용할 수 없습니다. 다른 이름을 선택하세요. 예약어: example, workspace, STATE, context" 출력 후 종료.
 
 ### 2. 프로젝트 폴더 생성/로드
 
@@ -62,22 +62,9 @@ description: >-
 
 - **없으면**: [skills/context/lifecycle/projects/example/](../context/lifecycle/projects/example/) 의 파일 4종 (`project.md`, `prompts/planner.md`, `prompts/generator.md`, `prompts/evaluator.md`) 을 **그대로 복사**한 뒤 `{프로젝트명}` 토큰만 실제 프로젝트명으로 치환한다. **그 외 본문은 일절 재작성·요약·환각·도메인 예시 삽입 금지.**
 
-  > **치환 범위 (H1 헤더 정확 매칭)** — 토큰 치환은 다음 두 조건을 모두 만족하는 라인만 대상:
-  >
-  > - `^#\s+.*\{프로젝트명\}.*$` 정확 매칭 (단일 라인 H1 안 `{프로젝트명}` 토큰)
-  > - 코드블록 (` ``` `) 외부 위치
-  >
-  > **보존 대상 (치환 안 함):**
-  >
-  > - 가이드 주석 (`` > `{프로젝트명}` 토큰만 ... `` 같은 self-reference) — example template 의 스캐폴딩 설명용. 본문 prose 안 백틱 토큰은 보존.
-  > - 마크다운 코드블록 (` ``` `) 안의 `{프로젝트명}` — 예시 코드.
-  > - 표 본문 셀 안의 `{프로젝트명}` — 예시 행.
-  >
-  > **사용자 프로젝트명 sanitize** — `[a-zA-Z0-9가-힣\-_]` 외 문자 (예: `{`·`}`·정규식 메타) 포함 시 차단하고 사용자 질의 prompt. sanitize 통과 후 H1 치환 진행.
-  >
-  > **A2 runtime fallback** — H1 헤더에 `{프로젝트명}` 토큰 부재 (사용자가 이미 H1 직접 작성 등) → 치환 skip + `[INFO] {프로젝트명} 토큰 부재 — 치환 skip, 기존 H1 보존` 1 줄. abort 하지 않는다.
-  >
-  > **대상 파일 (4 종)** — 본 단계가 치환하는 파일은 `project.md` 1 + `prompts/{planner,generator,evaluator}.md` 3 = 총 4 종. 각 파일의 H1 1 회씩 치환 (`# {프로젝트명}` / `# Planner — {프로젝트명}` / `# Generator — {프로젝트명}` / `# Evaluator — {프로젝트명}`).
+  > **H1 치환 규칙** — example 4 종 복사 후 각 파일 H1 의 `{프로젝트명}` 토큰만 리터럴 치환한다 (파일당 1 회: `# {프로젝트명}` / `# Planner — {프로젝트명}` / `# Generator — {프로젝트명}` / `# Evaluator — {프로젝트명}`).
+  > 가이드 주석 등 본문은 불변 — H1 외 어떤 라인도 수정하지 않는다.
+  > **A2 runtime fallback** — H1 에 토큰 부재 (사용자가 이미 H1 직접 작성 등) → 치환 skip + `[INFO] {프로젝트명} 토큰 부재 — 치환 skip, 기존 H1 보존` 1 줄. abort 금지.
 
   - example 은 실구현 콘텐츠 없이 구조·세만틱 명시만 담긴 순수 템플릿이다. 본문의 `{…}` 플레이스홀더와 `_(analyze 실행 전 …)_` 같은 표식은 그대로 유지한다.
   - 섹션명·순서는 `/pilot:analyze` 주입 대상과 동기화되어 있다. 임의 변경 금지.
@@ -85,15 +72,9 @@ description: >-
   - 구조·섹션 의미에 대한 상세는 [GUIDE.md](../context/lifecycle/projects/GUIDE.md) 를 참조하되 **가이드 본문을 생성물에 복사하지 않는다** (가이드는 구조 참고용, example 이 실제 스캐폴딩 소스).
   - **신규 프로젝트의 `## 관련 파일` H3 동적 채움** — example 복사 직후 1 회만 수행. 재실행 시 기존 H3 보존.
 
-    > **config lookup**: `workspace/context/config.md` 의 `## scope 카테고리` 섹션을 Read. `project.md 대상 H3` 컬럼의 각 값에 대해 `workspace/projects/{PROJECT}/project.md` 의 `## 관련 파일` 안에 `### {대상 H3}` + 빈 표 (`표 헤더` 컬럼의 3 컬럼) 1 행 추가. config 비어있으면 SKILL.md default (아래 표) 사용. 잘못된 행은 stderr `[WARN] config.md ## scope 카테고리: {사유} — default 사용` 1 줄 후 default fallback (A2 runtime, abort 안 함).
+    > **config lookup**: `workspace/context/config.md` 의 `## scope 카테고리` 섹션을 Read. `project.md 대상 H3` 컬럼의 각 값에 대해 `workspace/projects/{PROJECT}/project.md` 의 `## 관련 파일` 안에 `### {대상 H3}` + 빈 표 (`표 헤더` 컬럼의 3 컬럼) 1 행 추가. config 비어있으면 scope-sync.md default 사용. 잘못된 행은 stderr `[WARN] config.md ## scope 카테고리: {사유} — default 사용` 1 줄 후 default fallback (A2 runtime, abort 안 함).
 
-    > default — `workspace/context/config.md` 의 `## scope 카테고리` 가 비어있을 때 사용. config 행이 있으면 그 행이 우선.
-
-    | 대상 H3 | 표 헤더 |
-    | --- | --- |
-    | Models | Class, DB, 목적 |
-    | Endpoints | 엔드포인트, Method, 목적 |
-    | Services | Class, 파일, 목적 |
+    > default 표는 [analyze/references/scope-sync.md](../analyze/references/scope-sync.md) 5-2 참조 (canonical). 이 단계는 그중 `project.md 대상 H3`·`표 헤더` 두 컬럼만 사용한다 (2컬럼 투영본). config 행이 있으면 그 행이 우선.
 
     **SSOT 분리:**
     - H3 헤더 = 본 단계가 1 회 생성. 재실행 시 기존 H3 보존 (덮어쓰기 금지).
@@ -156,9 +137,9 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/confluence.py fetch "{CONFL_URL}"
 
 사용자 선택에 따라 [../analyze/SKILL.md](../analyze/SKILL.md) 의 "분석 프로세스" 1~5단계를 실행한다. 건너뛰거나 분석 실패 시 8단계를 건너뛰고 9단계로 진행한다.
 
-### 8. project.md 및 prompts/ 갱신 (7단계에서 분석 수행 시만)
+### 8. prompts/ 갱신 및 자가 검증 (7단계에서 분석 수행 시만)
 
-[../analyze/SKILL.md](../analyze/SKILL.md) 의 "분석 프로세스" 6~7단계를 실행한다 (project.md 목표 동기화 + prompts/ 갱신).
+[../analyze/SKILL.md](../analyze/SKILL.md) 의 "분석 프로세스" 6~7단계를 실행한다 (prompts/ 갱신 + 분석 품질 자가 검증).
 
 ### 9. 무결성 검증 (자동)
 

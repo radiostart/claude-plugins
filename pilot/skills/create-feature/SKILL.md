@@ -26,8 +26,10 @@ description: >-
 
 ## 사전 확인
 
-[preamble.md](../context/shared/preamble.md) 의 **P1** 수행.
+[preamble.md](../context/shared/preamble.md) 의 **P-1, P0, P1** 수행.
 
+- P-1: TodoWrite 선로딩 (다단계 스킬).
+- P0: `{PROJECT}` 와 `$ARGUMENTS` 키워드로 memory-hint 실행. 출력된 메모를 Read 하여 과거 동일·유사 기능 이력 확인.
 - P1: `{PROJECT}` 획득. 실패 시 [messages.md](../context/shared/messages.md) 의 `workspace_missing` / `no_active_project` 출력 후 종료.
 
 `$ARGUMENTS` 가 비어있으면 **"기능 지시문을 입력하세요. 예: `/pilot:create-feature 정렬 기능 추가`"** 안내 후 종료.
@@ -105,21 +107,12 @@ feature spec 작성 후 MANIFEST 를 조회해 산출물 lookup 으로 답할 �
 
 ### 4. `project.md` 및 `prompts/*` 자동 갱신
 
-신규 feature 파일 생성 후 [../analyze/SKILL.md](../analyze/SKILL.md) 의 **"분석 프로세스" 5 ~ 6 단계** 를 그대로 수행한다 — 분석 소스가 docs/ 가 아니라 **현재 features/ 전체** 라는 점만 다르다.
+신규 feature 파일 생성 후 [../analyze/SKILL.md](../analyze/SKILL.md) 의 **"분석 프로세스" 5 ~ 6 단계** 를 그대로 수행한다 (도메인 결정·5-1·5-2·6-1~6-4 절차와 보존 규칙 모두 analyze 가 SSOT).
 
-수행 항목:
+analyze 와의 실제 차이는 2 가지뿐:
 
-- **도메인 결정** (5 단계 prelude). `.agent-state.yml.domain` 이 null 이면 analyze 와 동일한 우선순위로 후보 제시 후 사용자 확인 → state 에 기록. non-null 이면 그대로 사용 (재질의 금지).
-- **5-1. `## 목표` 갱신** — features 전체로 체크리스트 정렬 갱신. 기존 `[x]` 체크는 보존, 신규 feature 항목이 NN 순서에 추가된다.
-- **5-2. `## 관련 파일` 갱신** — `config.md` 의 `## scope 카테고리` (없으면 SKILL.md default) 매핑에 따라 `scope/{domain}.md` 의 해당 H2 표를 추출해 `## 관련 파일` 표 자동 기입. config lookup·A2 runtime fallback 상세는 [analyze/SKILL.md](../analyze/SKILL.md) 5-2 참조.
-- **6-1 ~ 6-3. prompts/\* 갱신** — `[analyze-managed]` 섹션을 features 전체 + scope 매칭 결과로 regen. `[analyze-managed]` 밖 사용자 수동 편집 영역 (`## 주의사항`·`## 구현 패턴` 등) 과 evaluator 의 `[x]` 체크는 보존.
-- **6-4. `.agent-state.yml` 갱신** — `analyzed: true`, `analyzed_at`, `last_analyzed_features` 기록. domain 이 이번에 처음 결정됐다면 함께 기록.
-
-**보존 규칙 요약** (analyze 와 동일):
-
-- 기존 features 의 `### {기능명}` 블록은 그대로 유지되고 신규 feature 의 블록만 추가된다 (NN 순).
+- 분석 소스가 docs/ 가 아니라 **현재 features/ 전체**다.
 - 첫 feature 추가 시 (`analyzed: false`) 는 example 템플릿 placeholder 가 features 기반 실내용으로 교체된다 (보존할 게 없음).
-- `[analyze-managed]` 안에 사용자가 수동으로 끼워 넣은 내용은 덮어써진다 (analyze 와 동일한 트레이드오프).
 
 ### 5. 무결성 검증 (자동)
 

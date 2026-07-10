@@ -82,7 +82,7 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
   | **중형** 50 ~ 150KB | 5k ~ 15k | H2 목차 + 섹션 단위 Read (limit 150) |
   | **대형** > 150KB | > 15k | 섹션 단위 targeted Read (limit **80** — 표 많은 문서 보수적 기본값) |
 
-- **Read rejection 발생 시 재시도 규칙**: `limit` 을 **1/3 로 축소** (1/2 는 대형 파일에서 재실패 확률 높음 — 실측). `offset` 유지.
+- **Read rejection 발생 시 재시도 규칙**: `limit` 을 **1/3 로 축소** (표 중심 마크다운은 라인당 토큰 밀도가 높아 1/3 — 1/2 는 대형 파일에서 재실패 확률 높음, 실측). `offset` 유지. learn 의 소스 코드 대상 1/2 규칙과는 의도된 차이.
 - **추측 금지 원칙 유지:** 읽지 않은 섹션은 features/ 생성 대상에서 제외. 전체 스캔하지 않았다면 **사용자에게 범위 보고** 후 확정.
 - 사용자가 "전체 분석" 을 요청했는데 파일이 대형이면 H2 목차 기반으로 모든 섹션을 순회하여 빠짐없이 커버.
 
@@ -128,7 +128,7 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
   - `NN`: 기능 번호 (2자리 zero-padding, 예: `12`, `13`)
   - `slug`: 기능명을 kebab-case로 변환 (한글 허용, 특수문자 제거, 최대 30자)
   - 예: `13-order-modal.md`, `19-receipt-list.md`
-- **배치 저장 (병렬 Write)** — features 파일은 서로 독립이므로, 동일 assistant turn 안에 여러 Write tool_use 를 묶어 호출한다. harness 가 병렬 실행한다. 실무상 **3~5 개 단위 묶음** 이 현실적 (파일당 사고 비용 > I/O 비용). 10 개 이상을 한 번에 묶으면 컨텍스트가 혼잡해지므로 분할 권장.
+- **배치 저장 (병렬 Write)** — features 파일은 서로 독립이므로 [coding.md](../context/shared/coding.md) `## 독립 파일 배치 작업` 절차를 따른다.
 
 ### 5. project.md 자동 갱신
 
@@ -158,13 +158,7 @@ features/ 생성 후 `project.md` 의 `## 목표` 와 `## 관련 파일` 을 자
 
 #### 5-2. `## 관련 파일` 갱신
 
-로드한 `scope/{domain}.md` 의 매칭 H2 섹션 표를 추출해 project.md 의 `## 관련 파일` 표를 자동 기입한다. 어떤 scope 헤더를 어떤 H3 로 기입할지는 `config.md` 의 `## scope 카테고리` 표가 결정하고, 비어있으면 아래 default 를 사용한다.
-
-| scope 헤더 | project.md 대상 H3 | 표 헤더 |
-| --- | --- | --- |
-| ## Routes | Endpoints | 엔드포인트, Method, 목적 |
-| ## Models | Models | Class, DB, 목적 |
-| ## Services | Services | Class, 파일, 목적 |
+로드한 `scope/{domain}.md` 의 매칭 H2 섹션 표를 추출해 project.md 의 `## 관련 파일` 표를 자동 기입한다. 어떤 scope 헤더를 어떤 H3 로 기입할지는 `config.md` 의 `## scope 카테고리` 표가 결정하고, 비어있으면 default 를 사용한다 — default 표는 [`references/scope-sync.md`](references/scope-sync.md) 5-2 참조 (canonical).
 
 **핵심 규칙** — features/ 에 명시적으로 언급된 모델·서비스·라우트는 빠뜨리지 않고 포함 (planner 영향 범위 누락 방지). scope 에 없지만 features/ 에 등장한 신규 대상은 `목적` 열 끝에 `(from features/NN-{slug})` 주석 붙여 추가. 기존 사용자 수동 기입 행은 보존하되 중복만 제거. 빈 행(`|  |  |  |`) 은 삭제.
 

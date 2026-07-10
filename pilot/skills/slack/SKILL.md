@@ -34,8 +34,7 @@ description: >-
 
 [preamble.md](../context/shared/preamble.md) 의 **P1** 수행.
 
-- P1 적용 안 함 (workspace 자체 초기화).
-- P2: 진행중 프로젝트 `{PROJECT}` 확인. 없으면 `no_active_project` 출력 후 종료.
+- P1: 진행중 프로젝트 `{PROJECT}` 획득. 없으면 [messages.md](../context/shared/messages.md) 의 `no_active_project` 출력 후 종료.
 
 `{PROJECT_DIR}` = `workspace/projects/{PROJECT}`.
 

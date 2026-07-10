@@ -6,27 +6,6 @@
 
 ---
 
-## 결정 흐름
-
-```
-                   ┌─ 총 추출량 (줄 수) ─┐
-                   │                     │
-              ≤ 200 줄                > 200 줄
-                   │                     │
-       단일 파일 ({domain}.md)            │
-                                ┌─ 코드 구조 ─┐
-                                │             │
-                       sub-domain 분리      평면적
-                       ({sub}/ 폴더 존재)
-                                │             │
-                  {domain}/{sub}.md     {domain}/ + 카테고리
-                                              ({domain}/routes.md
-                                               + services.md
-                                               + models.md)
-```
-
----
-
 ## 결정 표 (확장판)
 
 | 코드 형태 | 추천 구조 | 예시 |
@@ -67,9 +46,9 @@ MANIFEST.md 의 `## 도메인 분류` 행에 들어갈 "진입 파일" 은 사�
 
 ---
 
-## 코드베이스 크기별 예시
+## 예시 — 작은 코드베이스 (controller 1 + service 1 + model 1)
 
-### 작은 코드베이스 (controller 1 + service 1 + model 1)
+> 중형·대형 코드베이스는 결정 표의 해당 행을 그대로 적용한다 (별도 worked example 불필요 — 파일 크기 정책의 분할 우선순위가 초과분을 처리).
 
 ```
 app/
@@ -105,58 +84,6 @@ workspace/context/
 ## Models
 ### <Entity> (`app/models/<entity>.rb`)
 - 상태 enum: `<state_a>`·`<state_b>`·`<state_c>` (`app/models/<entity>.rb:8`)
-```
-
-### 중간 코드베이스 (Rails 표준 단일 도메인, 총 ~600 줄)
-
-```
-app/
-  controllers/api/<entity>s_controller.rb       (180 줄)
-  services/<entity>_create_service.rb           (120 줄)
-  services/<entity>_cancel_service.rb           (90 줄)
-  models/<entity>.rb                            (110 줄)
-  models/<entity>_item.rb                       (60 줄)
-config/routes.rb (`<domain>` 관련 라인만)
-```
-
-→ 출력:
-
-```
-workspace/context/<domain>/
-  index.md       (~70 줄 — 요약 + 링크)
-  routes.md      (~40 줄)
-  services.md    (~150 줄)
-  models.md      (~140 줄)
-```
-
-### 큰 코드베이스 (sub-domain 분리)
-
-```
-app/services/<domain>/
-  <sub_a>/                  (3 파일, 총 ~250 줄)
-  <sub_b>/                  (4 파일, 총 ~320 줄)
-  <sub_c>/                  (5 파일, 총 ~400 줄)
-  <domain>_service.rb       (orchestrator, 80 줄)
-```
-
-→ 출력:
-
-```
-workspace/context/<domain>/
-  index.md         (~80 줄 — 도메인 요약 + sub-domain 링크)
-  <sub_a>.md       (~150 줄)
-  <sub_b>.md       (~180 줄)
-  <sub_c>.md       (~200 줄)
-```
-
-→ 만약 `<sub_c>.md` 가 200 줄을 넘으면 추가 분할:
-
-```
-workspace/context/<domain>/
-  <sub_c>/
-    index.md       (~50 줄)
-    services.md    (~150 줄)
-    models.md      (~120 줄)
 ```
 
 ---
