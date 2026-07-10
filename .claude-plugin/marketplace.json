@@ -8,7 +8,7 @@
     {
       "name": "pilot",
       "source": "./pilot",
-      "description": "Domain-knowledge-driven agent workflow plugin for complex projects (planner → generator → evaluator)"
+      "description": "Domain-knowledge-driven agent workflow plugin for complex projects (pilot-planner → [pilot-planner-critic] → pilot-generator → pilot-evaluator) + pilot-code-review for pre-PR code review. /pilot:autopilot provides opt-in supervised autonomy for a single feature."
     }
   ]
 }

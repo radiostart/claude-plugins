@@ -60,7 +60,7 @@ pilot 내에서 *Single Source of Truth(SSOT)의 대상*과 *거기로부터 파
 |---|---|
 | (1) `[analyze-managed]` 영역의 수동 수정 | `/pilot:analyze` 실행 시 사용자 영역(마커 외부)은 보존하고 마커 내부만 덮어씁니다. |
 | (1) `prompts/*` 파일의 수동 수정 | `--regen-agents` 실행 시 기존 내용을 `.prompts.bak/` 디렉토리에 백업한 후 업데이트를 진행합니다. |
-| (2) Reference 재생성 누락 | PR(Pull Request) 검증 단계에서 CI가 `docs_build.py --check`를 실행하여 불일치 시 빌드를 fail 처리합니다. |
+| (2) Reference 재생성 누락 | `docs/reference/`는 gitignore 대상이며 CI가 문서 빌드 시점에 `docs_build.py`로 SSOT에서 매번 재생성하므로, reference drift는 구조적으로 발생하지 않습니다. |
 | (2) `context/` 파일과 구현 코드 간의 drift | [Drift Protocol](drift-protocol.md)에 따라 탐지, 기록 및 사용자 의사결정을 수행합니다. |
 
 ## "SSOT가 한국어" 정책

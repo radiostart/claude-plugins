@@ -67,9 +67,10 @@ graph TD
 
 | 파일 | 분류 | git tracked 여부 |
 |---|---|---|
-| `STATE.md` · `MANIFEST.md` · `config.md` | 영구 파일 | tracked |
+| `STATE.md` | 영구 파일 (세션 로컬 활성 프로젝트 표) | 추적 여부는 사용자 정책 (`.agent-state.yml` 과 동일 — state-schema.md 참조). 로컬 전용 운영 권장 |
+| `MANIFEST.md` · `config.md` | 영구 파일 | tracked |
 | `projects/{P}/project.md` · `prompts/*.md` · `features/NN-*.md` | 영구 파일 | tracked |
-| `.agent-state.yml` | 영구 파일 (machine-readable 상태) | tracked |
+| `.agent-state.yml` | 영구 파일 (machine-readable 상태) | 추적 여부는 사용자 정책 (state-schema.md — 공유가 필요하면 commit, 개인 전용이면 ignore) |
 | `features/NN-*.plan.md` · `.plan.critic.md` | 영구 파일 (작업 이력 기록) | tracked |
 | `.focus.md` | 일시 파일 (새로운 focus로 덮어쓰기 가능) | 프로젝트 정책에 따라 tracked 혹은 gitignored 설정 |
 | `.focus.history/` | 일시 파일 (자동 백업 아카이브) | 보통 gitignored 처리 |

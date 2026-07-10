@@ -18,7 +18,7 @@ planner → critic → generator → evaluator cycle과 **별개로 동작하는
 | `@pilot-planner-critic` | 작성된 설계 *계획* (`plan.md`) | generator 실행 전 |
 | **`@pilot-code-review`** | 작성된 *코드* (`git diff`) | PR 올리기 전 |
 | `@pilot-evaluator` | 요구사항 및 게이트 충족 여부 *판정* | cycle의 마지막 검증 단계 |
-| 공식 `/code-review` | GitHub PR | PR 생성 후 |
+| 내장 `/code-review` | 범용 정확성 검토 (로컬 diff 또는 GitHub PR) | 팀 규칙·routing이 필요 없는 리뷰 |
 
 ## 전제 조건
 
@@ -38,7 +38,7 @@ planner → critic → generator → evaluator cycle과 **별개로 동작하는
 - **특정 경로 지정** (예: `/pilot:review app/services/`): 해당 디렉터리 내의 변경사항만 검토
 - **Commit 범위 지정** (예: `/pilot:review HEAD~3..HEAD`): 해당 범위 내의 변경사항 검토
 
-실행이 완료되면 `CODE REVIEW REPORT`가 출력되며, 각 결함 항목에 `blocking`, `suggestion`, `nit` 중 하나의 severity와 함께 `file:line`, 개선안, 재진입 routing(`feature`, `planner`, `generator`, `local`)이 제공됩니다.
+실행이 완료되면 `CODE REVIEW REPORT`가 출력되며, 각 결함 항목에 `blocking`, `suggestion`, `nit` 중 하나의 severity와 함께 `file:line`, 개선안, 재진입 routing(`feature`, `planner`, `generator`, `trivial`, `new-feature`, `dismiss`)이 제공됩니다.
 
 ### 2. 언어별 리뷰 규칙(rule) 설정 (최초 1회)
 
@@ -59,24 +59,12 @@ planner → critic → generator → evaluator cycle과 **별개로 동작하는
 !!! tip "lint 자동 연동"
     `review/{lang}.md` 파일 상단에 `lint: {명령어}` 형식을 지정하면, 리뷰 시 해당 언어로 변경된 파일에 대해 lint 도구를 자동 실행하여 그 검출 결과를 findings 보고서에 통합해 보여줍니다. `lint:` 설정이 없으면 이 단계는 생략됩니다.
 
-### 3. 결함 수정 및 fix-review 연동
+### 3. 결함 수정
 
-```
-/pilot:fix-review
-```
-
-`CODE REVIEW REPORT` 의 findings 결과를 토대로 수정에 적합한 5가지 경로(routing)를 추천합니다 (추천 가이드만 제공하며, 자동으로 수정이 이루어지지는 않습니다):
-
-| 경로(routing) | 적용 기준 | 다음 단계 |
-|---|---|---|
-| `trivial` | 단일 파일 내의 단순/기계적 수정 | 직접 코드 편집 후 `/pilot:commit` 실행 |
-| `one-shot` | 단일 함수 내의 로직 변경 | `@pilot-generator` 1회 실행하여 반영 |
-| `full-cycle` | 여러 파일 연관 혹은 API 시그니처 변경 | `@pilot-planner` 를 통한 정식 설계 cycle 진입 |
-| `new-feature` | 별도 기능으로 완전히 분리되어야 하는 경우 | `/pilot:create-feature` 로 신규 작업 생성 |
-| `dismiss` | 의도된 설계이거나 규칙 자체의 갱신이 필요한 경우 | 판단 사유 기록 혹은 `review/{lang}.md` 파일 보강 |
+routing 및 수정 규모 분류는 `CODE REVIEW REPORT` 에 통합되어 있습니다. report 하단의 `routing` 요약 블록이 trivial 일괄 commit(직접 편집 후 `/pilot:commit`) · one-shot 묶음(`@pilot-generator` 1회 실행) · full-cycle 후보(`@pilot-planner` 부터 정식 cycle 진입) · `new-feature`(`/pilot:create-feature` 로 신규 작업 생성) · `dismiss`(판단 사유 기록 혹은 `review/{lang}.md` 파일 보강) 후보를 직접 안내하므로, 사용자는 원하는 경로를 선택해 진행하면 됩니다 (자동으로 수정이 이루어지지는 않습니다).
 
 ## 다음 단계
 
-- :material-book-open-variant: Reference: [`/pilot:review`](../reference/skills/review.md) · [`/pilot:code-review-init`](../reference/skills/code-review-init.md) · [`/pilot:fix-review`](../reference/skills/fix-review.md)
+- :material-book-open-variant: Reference: [`/pilot:review`](../reference/skills/review.md) · [`/pilot:code-review-init`](../reference/skills/code-review-init.md)
 - :material-lightbulb-on: Explanation: [에이전트 흐름](../explanation/agent-flow.md) — critic 과 code-review 의 역할 및 검토 범위 경계.
 - :material-shield-alert: How-to: [Critic 활용](critic-review.md) — *계획(Plan)* 수립 단계에서의 adversarial 검토 방법.

@@ -1,6 +1,6 @@
 # Reference
 
-에이전트·스킬·CLI·페르소나의 *정확한 값*. 본 섹션은 `pilot/agents/`·`pilot/skills/`·`pilot/tools/`·`pilot/skills/context/shared/identity.yml` 의 SSOT 에서 자동 추출됩니다 (`pilot/tools/docs_build.py`). drift 가 의심되면 `python3 pilot/tools/docs_build.py --check` 가 검증합니다.
+에이전트·스킬·CLI·페르소나의 *정확한 값*. 본 섹션은 `pilot/agents/`·`pilot/skills/`·`pilot/tools/`·`pilot/skills/context/shared/identity.yml` 의 SSOT 에서 자동 추출됩니다 (`pilot/tools/docs_build.py`). generated 파일은 gitignore 대상이며 CI 가 빌드 시점에 SSOT 에서 매번 재생성하므로 reference drift 는 구조적으로 발생하지 않습니다.
 
 ## 카테고리
 
@@ -16,19 +16,19 @@
 
     ---
 
-    `/pilot:*` 슬래시 커맨드 — `init`, `project`, `analyze`, `create-feature`, `focus`, `tdd`, `characterize`, `doctor`, `confl`, `slack`, `commit`, `pr`, `review`, `learn`, `issue`, `code-review-init`, `fix-review`.
+    `/pilot:*` 슬래시 커맨드 — `init`, `project`, `analyze`, `create-feature`, `focus`, `tdd`, `characterize`, `doctor`, `confl`, `slack`, `commit`, `pr`, `review`, `learn`, `issue`, `code-review-init`, `autopilot`.
 
 -   :material-console:{ .lg .middle } __[Tools](tools/index.md)__
 
     ---
 
-    `pilot/tools/*.py` 의 보조 CLI · 모듈 — `orchestrate-load`, `plan-validate`, `doctor`, `docs_build`, `init_detect`, `slack-notify`, `confluence`, `handoff-quality`, `regen-verify`, `verify-report-lint`, `memory-hint`.
+    `pilot/tools/*.py` 의 보조 CLI · 모듈 — `orchestrate-load`, `plan-validate`, `doctor`, `docs_build`, `init_detect`, `slack-notify`, `confluence`, `auto_pilot`, `regen-verify`, `verify-report-lint`, `memory-hint`.
 
 -   :material-fingerprint:{ .lg .middle } __[Identity SSOT](identity.md)__
 
     ---
 
-    `identity.yml` 의 에이전트 계약(`output`·`min_evidence`) 과 페르소나(`archetype`·`voice`·`phrasing`·`forbid`).
+    `identity.yml` 의 에이전트 계약(`output`·`min_evidence`) 과 페르소나(`archetype`·`forbid`).
 
 </div>
 

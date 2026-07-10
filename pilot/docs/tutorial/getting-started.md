@@ -78,8 +78,7 @@ Phase 2 — Inventory
 
 ```
 workspace/context/python-sample/
-├── index.md      # 도메인 요약 및 file:line 인용 표
-└── inventory.md  # 역할별 파일 분류 및 public interface 목록
+└── index.md      # 도메인 요약 및 file:line 인용 표
 ```
 
 ---

@@ -134,6 +134,7 @@ workspace/
 - `pilot/.claude-plugin/plugin.json` 의 `version` — 버전 SSOT
 - `pilot/mkdocs.yml` 의 `extra.version` — 불일치 시 `release.sh` 가 릴리스를 중단
 - `pilot/docs/index.md` 의 `v{version} highlights` 블록 — 제목·변경 내용 (patch 릴리스면 생략 가능)
+- 루트 `.claude-plugin/marketplace.json` 의 `description` — plugin.json description 변경 시 동기화
 
 그다음:
 

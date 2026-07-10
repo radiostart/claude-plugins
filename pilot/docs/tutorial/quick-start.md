@@ -21,11 +21,10 @@ workspace/
 ├── STATE.md                       # 활성 project 목록 (초기에는 비어 있음)
 └── context/
     ├── MANIFEST.md                # 도메인 진입 파일 색인 (인덱스)
-    ├── config.md                  # 언어 및 도구 기본 설정
-    └── shared/                    # identity, instincts, guardrails에 대한 SSOT
+    └── config.md                  # 언어 및 도구 기본 설정
 ```
 
-wizard가 사용 언어(Ruby, Python, TypeScript 등)를 묻고, 선택된 결과를 `config.md`에 기록합니다. 최초 한 번만 실행하면 됩니다.
+wizard가 사용 언어(Ruby, Python, TypeScript 등)를 자동 감지하여 그 결과를 `config.md`에 기록합니다. 최초 한 번만 실행하면 됩니다.
 
 ---
 
@@ -37,19 +36,17 @@ wizard가 사용 언어(Ruby, Python, TypeScript 등)를 묻고, 선택된 결�
 
 `workspace/projects/MyFirstFeature/` 디렉터리가 생성되고, `STATE.md` 파일이 갱신되면서 해당 project가 **활성(Active)** 상태가 됩니다.
 
-이 단계에서 wizard가 다음 사항들을 묻습니다.
+프로젝트 상태는 `.agent-state.yml` 파일에 기록됩니다.
 
-- **도메인(domain):** 이 project에서 다룰 대상 소스 코드의 도메인 영역 (예: `coupon_service`, `auth`, `billing`).
-- **TDD 모드 여부:** Red → Green → Refactor 절차의 강제 적용 여부 (기본값: `false`).
-
-선택한 답변은 `.agent-state.yml` 파일에 기록됩니다.
+- **도메인(domain):** 이 단계에서는 묻지 않습니다. 초기값은 `null`이며, `/pilot:analyze` 진입 시 사용자 확인을 거쳐 확정됩니다.
+- **TDD 모드:** `/pilot:project MyFirstFeature --tdd` 플래그로 활성화합니다 (기본값: `false`).
 
 ```yaml
 schema: v1.2
 analyzed: false
 tdd: false
-domain: my-domain
-plugin_version: "0.5.0"
+domain: null
+plugin_version: "{현재 플러그인 버전}"
 ```
 
 ---
@@ -90,7 +87,7 @@ features/01-user-profile-email-field.plan.md
     - [TDD 모드 활성화](../how-to/tdd-mode.md)
 - :material-book-open-variant: **Reference:**
     - [에이전트 (pilot-planner / -critic / -generator / -evaluator)](../reference/index.md)
-    - [스킬 (`/pilot:*` 13종)](../reference/index.md)
+    - [스킬 (`/pilot:*`)](../reference/index.md)
 
 !!! tip "문제 해결"
     진행 과정 중 오류가 발생하거나 막히는 경우, `/pilot:doctor` 명령어를 실행하십시오. workspace의 무결성과 schema 버전을 확인하여 문제 진단 및 마이그레이션 안내를 제공합니다.

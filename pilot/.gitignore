@@ -4,8 +4,11 @@
 # mkdocs build artifact
 docs-site/
 
-# docs_build.py 자동 추출 결과 (SSOT 는 agents/skills/tools/identity.yml — drift 는 CI --check 가 감지)
+# docs_build.py 자동 추출 결과 (SSOT 는 agents/skills/tools/identity.yml — CI 가 빌드 시점에 재생성하므로 drift 구조적으로 불가)
 docs/reference/agents/
 docs/reference/skills/
 docs/reference/tools/
 docs/reference/identity.md
+
+# pytest 캐시 (pytest 자체 .gitignore 로도 격리되지만 명시적 방어)
+.pytest_cache/
