@@ -19,6 +19,7 @@
 - [x] #03 `/pilot:project` 가 신규 폴더 생성 시 1 회 H3 동적 생성. 재실행 시 기존 H3 보존. config 비면 default H3 (Models/Endpoints/Services) 생성 (기존 거동).
 - [x] #04 doctor 가 신규 config 섹션 존재 시 스키마 검증 (컬럼 수·헤더 화이트리스트·`## ` prefix). D10 행 수 0 허용 (빈 표 → INFO 1 줄). 부재 시 INFO 1 줄, WARN 아님.
 - [x] #05 doctor `--fix` 가 v0.1.0→v0.2.0 업그레이드 감지 시 사용자 확인 (a/b/c) 후 v0.1.0 default 표 자동 주입 또는 거부 기록. interactive 환경 only — non-interactive 자동 미루기.
+- [x] #17 create-feature 3-ter · analyze 7.5 조건부 인터뷰 — unchecked Open Questions 존재 시에만 발동 (soft gate). 우선순위 (d)>(b)>(c)>(a), 상한 4/8, "나중에 결정" 항상 제공, 스킵 시 unchecked 유지 (무열화 degrade). 답변 spec 반영 + `- [x] {질문} → {답변 요약}` 체크. 산출물 대조 (scope lookup only, 코드 탐색 금지) 부재 심볼 → (a) 행 추가. scope 부재 시 대조 스킵 (A2). `--regen-agents` 미발동. 결과 요약 `인터뷰: 해소 N건 / 이월 M건` 라인. SSOT `context/shared/interview.md`. 에이전트·autopilot 무변경. (검증 2026-07-24: interview.md 7섹션 + 3-ter (create-feature SKILL.md:108-122) + 7.5 (analyze SKILL.md:179-189) + regen-mode.md item 6 + scope-sync.md 규칙 2 C1 키 + open-questions.md 상호 링크 + getting-started.md C6 시나리오. C1~C6 전건 실재, 링크 8건 해석 OK, doctor exit 0 · 0 ERROR, markdown-only (`.py` 변경 0), 회귀 픽스처 무변경)
 
 ---
 

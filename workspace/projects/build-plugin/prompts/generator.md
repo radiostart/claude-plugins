@@ -38,6 +38,9 @@
 | doctor 단위 테스트 | `pilot/tests/tools/test_doctor_integrity.py` (신규) | unittest + importlib.util, `test_doctor_slack.py` 패턴 답습 (#04) |
 | 워크스페이스 설정 | `workspace/context/config.md` | 신규 섹션 2 개 (`## learn 언어 패턴`, `## scope 카테고리`) (#01 #02) |
 | 회귀 픽스처 | `pilot/tests/fixtures/v0.1.0-baseline/` | v0.1.0 거동 캡처 + v1 검증 (#01~#04 공통) |
+| 인터뷰 규칙 SSOT | `pilot/skills/context/shared/interview.md` (신설) | 조건부 인터뷰 발동 조건·우선순위·상한·답변 반영 규칙 (#17) |
+| create-feature 스킬 본문 | `pilot/skills/create-feature/SKILL.md` | 3-bis 직후 3-ter 조건부 인터뷰 + 산출물 대조 단계 (#17) |
+| analyze 스킬 본문 | `pilot/skills/analyze/SKILL.md` | 7↔8 사이 7.5 일괄 질의 단계 (#17) |
 
 ---
 
