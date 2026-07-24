@@ -8,12 +8,10 @@ hide:
 
 도메인 지식 기반의 agent workflow 플러그인입니다. Claude Code 내에서 *plan → critic → generate → evaluate*의 명시적 cycle로 project를 진행합니다.
 
-!!! tip "v0.8.0 highlights"
-    - **구조 감사 전면 반영** — prose 반복 지시를 기계 계층으로 이관 (orchestrate-load 가 `instructions` 필드로 공통 지시 emit, instincts.yaml 폐지, 스킬·에이전트 순감 약 1,300줄) + 문서 드리프트 일괄 수리
-    - **광역 회귀 soft gate** — config.md `regression_command` 설정 시 `/pilot:pr` 진입 전 1회 실행, 레거시 원거리 파손을 PR 경계에서 포착
-    - **리뷰 축 통합** — fix-review 스킬 폐지, 재진입 라우팅이 pilot-code-review REPORT 에 통합 (`trivial`·`new-feature`·`dismiss` 어휘 추가)
-    - 테스트 CI 배선 + 링크·훅 테스트 신설 — protect-managed 의 `rm -rf` 우회 버그, regen 백업 경로 버그를 테스트가 발견·수정
-    - critic 흐름 간소화 — 별도 스킵 동의 질의 없이 계획 확인 응답 1회로 통합 (스킵 주체는 사용자 유지)
+!!! tip "v0.9.0 highlights"
+    - **조건부 인터뷰 (Open Questions 소비)** — `/pilot:create-feature`(3-ter)·`/pilot:analyze`(7.5) 가 spec 의 미해결 Open Questions 를 우선순위((d) 비즈니스 결정 우선)로 사용자에게 조건부 질의하고 답변을 spec 에 반영. 질문이 없으면 발동하지 않는 soft gate — 기존 흐름 무중단
+    - **경량 산출물 대조** — spec 심볼을 `scope/{domain}.md` 산출물과 lookup 대조해 부재 심볼을 (a) 질문으로 승격 (코드 탐색은 planner 몫으로 역할 분리 유지)
+    - 소비 규칙 SSOT `context/shared/interview.md` 신설 — 작성 규칙(open-questions.md)과 짝, 해소된 (b) 행 재개봉 방지 판정 키 명문화
     - 상세 변경사항: [Explanation → Release Note](explanation/index.md)
 
 ---
