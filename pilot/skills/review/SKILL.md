@@ -13,8 +13,6 @@ PR 생성 이전, 사이클 내부에서 작성된 코드를 품질 관점으로
 
 대상: $ARGUMENTS
 
----
-
 ## 동작
 
 1. **target 결정**
@@ -25,13 +23,9 @@ PR 생성 이전, 사이클 내부에서 작성된 코드를 품질 관점으로
 
 에이전트가 변경분을 수집해 언어별 규칙 + baseline 루브릭으로 리뷰하고 `CODE REVIEW REPORT` 를 출력한다. 코드는 수정하지 않으며, 결함마다 재진입 라우팅(feature/planner/generator/trivial/new-feature/dismiss)을 제시해 사용자가 선택한다. REPORT 의 routing 요약이 trivial 일괄 커밋·one-shot 묶음·full-cycle 후보까지 직접 안내한다. 상세 절차: [`pilot-code-review.md`](${CLAUDE_PLUGIN_ROOT}/agents/pilot-code-review.md).
 
----
-
 ## 언어별 규칙
 
 언어별 리뷰 규칙은 `workspace/context/review/{lang}.md` 에 둔다. 파일이 있는 언어는 그 규칙 + plugin baseline 이, 없는 언어는 baseline 만 적용된다. 작성 템플릿: [`review-rules-template.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/review-rules-template.md).
-
----
 
 ## 역할 경계
 

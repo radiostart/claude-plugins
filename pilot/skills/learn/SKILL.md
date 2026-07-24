@@ -27,15 +27,11 @@ description: >-
 
 **옵션:** `{entry-point}` (필수 — `--boundary` 모드는 생략) · `--domain NAME` · `--depth N`(기본 2) · `--force` · `--boundary B --from A`(경계 계약 모드).
 
----
-
 ## 사전 확인
 
 [preamble.md](../context/shared/preamble.md) 의 **P-1, P0** 수행. **P1 미적용** — 활성 프로젝트 없어도 실행 가능 (workspace 부트스트랩 단계, STATE.md 불변경). `workspace/` 자체가 없으면 [messages.md](../context/shared/messages.md) 의 `workspace_missing` 출력 후 종료.
 
 `workspace/context/config.md` 를 Read 하여 `Ignore` 패턴·`language`·`source_root` 확보 (없으면 경고 1줄 + 진행, fallback: 모든 파일 포함·진입 확장자로 언어 추론). 인자 파싱 후 `{entry-point}` 비어있음·경로 미존재·`--depth` 음수/비숫자면 에러 후 종료.
-
----
 
 ## 수행 절차
 
@@ -86,8 +82,6 @@ MANIFEST 자유 형식 — **기존 정의가 있으면 그에 따르고, 없을
 4. doctor 실행: `python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace`.
 5. **결과 출력** — `learn 완료: {domain}` + 생성 파일 목록 + 읽은/발견/제외 파일 수 + MANIFEST 갱신 1줄 + doctor 결과 + 다음 단계 안내.
 
----
-
 ## Boundary 모드 — `--boundary {B} --from {A}`
 
 `{B}` 전체 대신 **`{A}` 가 실제 호출하는 `{B}` 표면만** `boundaries/{A}--{B}.md` 로 포착 (O(접점 크기) 비용).
@@ -102,16 +96,12 @@ MANIFEST 자유 형식 — **기존 정의가 있으면 그에 따르고, 없을
 
 **로드 배선** — orchestrate-load 가 활성 도메인 기준 `boundaries/{domain}--*.md`(정방향)와 `*--{domain}.md`(역방향)를 자동 로드. 별도 MANIFEST 등록 불필요.
 
----
-
 ## 제약
 
 - 플러그인 v1 — 단일 언어·단일 진입점 가정. 멀티 언어 모노레포는 진입점을 나눠 호출.
 - **diff 모드 없음** — 갱신은 `--force` 또는 sub-domain 추가.
 - **출력 구조는 codebase 따라 자유** — `scope/{domain}.md` 강제 안 함. **MANIFEST.md 가 discovery contract**.
 - `scope/{domain}.md`·`rules/{domain}.md` 는 **사용자 커스텀 layer** — 이 스킬은 직접 생성하지 않는다.
-
----
 
 ## 참고
 

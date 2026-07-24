@@ -15,13 +15,9 @@ description: >-
 
 대상: $ARGUMENTS (기능 지시문 — 예: "지연 주문 UI 정렬 기능 — 기본 내림차순, 출고일 필터")
 
----
-
 ## 사전 확인
 
 [preamble.md](../context/shared/preamble.md) 의 **P-1, P0, P1** 수행. 실패 시 [messages.md](../context/shared/messages.md) 의 `workspace_missing`/`no_active_project` 출력 후 종료. `$ARGUMENTS` 가 비어있으면 안내 후 종료.
-
----
 
 ## 동작
 
@@ -67,15 +63,11 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace
 
 생성(`features/{NN}-{slug}.md`) + 갱신(project.md/prompts 3종/.agent-state.yml) + 검증 결과 + (3-ter 발동 시) `인터뷰: 해소 {N}건 / 이월 {M}건` + 다음 단계(`@pilot-planner` 호출) 안내.
 
----
-
 ## 제약
 
 - **이 스킬은 에이전트를 자동 호출하지 않는다.** Planner → Generator → Evaluator 흐름은 사용자가 각각 명시 호출. feature 시작점은 `@pilot-planner`.
 - **prompt-origin feature 는 `> source: prompt`** 로 표시 — `/pilot:analyze --force` 가 이 tag 를 감지해 덮어쓰기 승인을 받는다.
 - **docs 기반 feature 생성은 `/pilot:analyze`** 사용. 이 스킬은 docs 없이 단건 추가 용도.
-
----
 
 ## 참고
 

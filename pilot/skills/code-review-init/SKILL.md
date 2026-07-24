@@ -13,15 +13,11 @@ description: >-
 
 대상 언어: $ARGUMENTS
 
----
-
 ## 사전 확인
 
 1. `$ARGUMENTS` 첫 토큰을 `{lang}` 슬러그로 사용 (`python`/`typescript`/`ruby`/`java`/`go` 등). 비어있으면 `git ls-files | awk -F. '{print $NF}' | sort | uniq -c | sort -rn | head -5` 로 dominant 확장자를 감지해 슬러그 추론(`.py→python`·`.ts/.tsx→typescript`·`.rb→ruby` 등, 매칭 없으면 사용자 질의) 후 "**{추정 lang} 로 진행할까요?**" 확인.
 2. `workspace/context/` 없으면 [`messages.md`](../context/shared/messages.md) 의 `workspace_missing` 안내 후 종료.
 3. 대상 경로 `workspace/context/review/{lang}.md` (폴더 없으면 생성). **이미 존재하면 사용자 확인 없이 덮어쓰지 않는다** — "덮어쓰기 / 백업 후 새로 생성(`{경로}.bak.{timestamp}`) / 취소" 질의.
-
----
 
 ## 동작 — 시작 전략 3 종 (택 1 질의)
 
@@ -37,13 +33,9 @@ description: >-
 
 `git ls-files | grep -E '\.({lang 확장자})$' | head -50` 로 상위 파일 Read 해 컨벤션(logger·테스트 프레임워크·DI·ORM) 파악 → `review-rules-template.md` 형식에 발견 패턴 반영 → **미리보기 제시 후 "이대로 저장/수정 후 저장/취소" 질의** — **자동 저장 금지**, LLM 추측 기반 draft 임을 명시.
 
----
-
 ## 결과 출력
 
 생성 경로·전략·룰 섹션 수·유지된 프레임워크 섹션 + 다음 단계(본문 검토·편집 → `/pilot:review` 실행 시 자동 로드) 안내.
-
----
 
 ## Do-NOT
 
@@ -51,8 +43,6 @@ description: >-
 - 전략 C 결과를 자동 저장하지 않는다(반드시 미리보기 → 승인).
 - 생성된 룰의 정확성을 보증하지 않는다 — 사용자 책임(draft 도우미).
 - `workspace/` 외부 경로에 Write 금지.
-
----
 
 ## 호출 시점
 

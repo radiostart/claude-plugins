@@ -18,13 +18,9 @@ description: >-
 
 대상: $ARGUMENTS (`--clear` 로 제거)
 
----
-
 ## 사전 확인
 
 [preamble.md](../context/shared/preamble.md) 의 **P1** 수행. 실패 시 [messages.md](../context/shared/messages.md) 의 `workspace_missing`/`no_active_project` 출력 후 종료. `--clear` 도 지시문도 없는 빈 인자면 안내 후 종료.
-
----
 
 ## 경로 계약
 
@@ -48,8 +44,6 @@ description: >-
 ### 제거 모드 (`--clear`)
 
 `.focus.md` 없으면 "활성 focus 가 없습니다" 후 종료. 있으면 `.focus.history/{timestamp}.md` 로 이동 후 삭제 → "focus 제거됨 (아카이브됨: {경로})" 출력.
-
----
 
 ## 래퍼와의 상호작용
 

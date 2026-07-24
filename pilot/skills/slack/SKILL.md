@@ -17,8 +17,6 @@ description: >-
 | `status` | `.slack.env` 존재·필드·gitignore 보호 여부 요약 |
 | `disable` | 비활성화 방법 안내 (파일 직접 삭제 — Claude 가 rm 직접 실행 금지) |
 
----
-
 ## 사전 확인
 
 [preamble.md](../context/shared/preamble.md) 의 **P1** 수행. 실패 시 [messages.md](../context/shared/messages.md) 의 `no_active_project` 출력 후 종료. `{PROJECT_DIR}` = `workspace/projects/{PROJECT}`.
@@ -30,8 +28,6 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace 2>&1 | grep -E "\.gitign
 ```
 
 `[CRITICAL]` 출력 시 **즉시 중단** + 원문 그대로 전달 (사용자의 `git rm --cached` + webhook 재발급 선행 필요 — 이후 서브커맨드 수행 금지). `.gitignore secrets: 누락 패턴 자동 주입` 출력 시 "리포 루트 `.gitignore` 에 `.slack.env` 가 자동 추가됨, 커밋하세요" 안내.
-
----
 
 ## 수행 절차
 
@@ -64,8 +60,6 @@ stderr 가 비면 `slack.test_ok` 출력, 있으면 원문 + `slack.test_fail` �
 ### `disable`
 
 [messages.md](../context/shared/messages.md) 의 `slack.disable_hint` 를 `{프로젝트경로}` 치환해 출력. **Claude 가 직접 `rm` 을 실행하지 않는다** (destructive 조치는 사용자 확인 필요).
-
----
 
 ## 드리프트 대응
 

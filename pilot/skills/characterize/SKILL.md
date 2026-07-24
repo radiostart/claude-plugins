@@ -11,8 +11,6 @@ description: >-
 
 대상: $ARGUMENTS (`off` / 없음 = on)
 
----
-
 ## 사전 확인
 
 [preamble.md](../context/shared/preamble.md) 의 **P1** 수행. 실패 시 [messages.md](../context/shared/messages.md) 의 `workspace_missing`/`no_active_project` 출력 후 종료.

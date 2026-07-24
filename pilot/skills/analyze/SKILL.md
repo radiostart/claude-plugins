@@ -15,13 +15,9 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 
 대상: $ARGUMENTS
 
----
-
 ## 사전 확인
 
 [preamble.md](../context/shared/preamble.md) 의 **P-1, P0, P1** 수행 (실패 시 [messages.md](../context/shared/messages.md) 의 `workspace_missing`/`no_active_project` 출력 후 종료). `workspace/projects/{PROJECT}/docs/` 를 Glob 확인 — 없거나 `.md` 파일 없으면 `docs_missing` 출력 후 종료.
-
----
 
 ## 인자 판별
 
@@ -33,8 +29,6 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 | 없음 (빈 문자열) | 전체 분석 | docs/ 내 **모든** 원본 파일의 전체 내용 분석 |
 | 파일명 또는 page_id | 파일 지정 | 해당 파일만 분석 |
 | 그 외 텍스트 (키워드) | 필터 분석 | 섹션 제목·내용에서 키워드 매칭되는 부분만 추출 (관련 없는 섹션은 skip) |
-
----
 
 ## 분석 프로세스
 
@@ -89,8 +83,6 @@ scope 부재 + MANIFEST 진입파일에 매칭 H2 존재 시 자동 생성. 상�
 ### 8. 결과 출력
 
 `분석 완료: {원본 파일명}` + 생성된 features 목록 + `총 N개` + 갱신 파일(project.md/prompts/*.md/.agent-state.yml) + 검증 한 줄 + (7.5 발동 시) `인터뷰: 해소 N건 / 이월 M건` 줄. 해소 ≥1건이면 `[INFO] 인터뷰 답변이 spec 에 반영됨 — /pilot:analyze --regen-agents 권장` 추가.
-
----
 
 ## 참고
 

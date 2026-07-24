@@ -16,13 +16,9 @@ description: >-
 
 **사용 예:** `/pilot:project MyProject` · `/pilot:project MyProject --tdd` · `/pilot:project MyProject https://wiki.example.com/pages/12345 --tdd`
 
----
-
 ## 사전 확인
 
 [preamble.md](../context/shared/preamble.md) 의 **P-1, P0** 수행. P0 는 `{PROJECT}`·`{CONFL_URL}` 과 주변 키워드로 memory-hint 실행 후 출력 메모를 Read 하여 과거 이력 반영.
-
----
 
 ## 수행 절차
 

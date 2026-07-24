@@ -10,13 +10,9 @@ description: >-
 
 워크스페이스 구조를 일괄 생성한다.
 
----
-
 ## 사전 확인
 
 workspace 경로 = CWD 기준 `./workspace/`. 폴더 없으면 생성(`mkdir -p workspace/context`).
-
----
 
 ## 동작
 
@@ -44,13 +40,9 @@ workspace 경로 = CWD 기준 `./workspace/`. 폴더 없으면 생성(`mkdir -p 
 2. **scope 후보 감지** — `detect_scope_candidates(cwd_path)` 호출해 `## scope 카테고리` 표(scope 헤더/project.md 대상 H3/표 헤더 3컬럼 강제)에 주입. 같은 H3 가 여러 폴더에서 매핑되면 1행만 dedupe. 후보 0건 → default 3행(Routes/Models/Services, 출처: [scope-sync.md](../analyze/references/scope-sync.md) 5-2 canonical) + INFO.
 3. **Ignore baseline 주입** — `IGNORE_BASELINE` 10패턴을 `## Ignore` 표에 주입(기존 행 dedupe 병합).
 
----
-
 ## 결과 출력
 
 파일 상태(created/exists) 3종 + wizard 결과(언어 감지 N개·scope 후보 M개·Ignore baseline P개, skip 시 사유) + 다음 단계(`/pilot:project {프로젝트명}`) + 점진적으로 채울 항목(MANIFEST/config/rules·scope) 안내.
-
----
 
 ## 참고
 

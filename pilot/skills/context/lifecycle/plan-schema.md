@@ -27,7 +27,7 @@ Planner 가 작성하고 Generator 가 Read 하는 plan 파일의 **형식 계�
 
 ## standard 모드
 
-근거: [`agents/pilot-planner.md`:84-110](../../../agents/pilot-planner.md)
+근거: [`agents/pilot-planner.md`:64-88](../../../agents/pilot-planner.md)
 
 ### 필수 섹션
 

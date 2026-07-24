@@ -18,8 +18,6 @@ description: >-
 
 절차 SSOT 는 전 서브커맨드 공통으로 [tdd-activation.md](../context/modes/tdd-activation.md) — 아래는 진입 분기만 기술한다.
 
----
-
 ## /pilot:tdd on — 활성화
 
 `.agent-state.yml` 의 `tdd:` 가 이미 `true` 면 `[INFO] TDD 모드 이미 활성화 상태` 후 종료(idempotent). 아니면 [tdd-activation.md](../context/modes/tdd-activation.md) **§1-1b**(백업 마커 주입) → **§1~6**(활성화 본체, 각 단계 idempotent) 위임. 완료 후 갱신 파일(`.agent-state.yml`·`project.md`·`prompts/*`) 요약 출력.

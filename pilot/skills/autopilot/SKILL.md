@@ -14,8 +14,6 @@ description: >-
 
 대상: $ARGUMENTS (feature 번호 — 예: `03` 또는 `3`)
 
----
-
 ## 사전 확인
 
 [preamble.md](../context/shared/preamble.md) 의 **P1** 수행. 실패 시 [messages.md](../context/shared/messages.md) 의 `workspace_missing`/`no_active_project` 출력 후 종료.
@@ -23,8 +21,6 @@ description: >-
 `$ARGUMENTS` 비어있으면 안내 후 종료. `{NN}` = 입력 번호 2자리 zero-pad. `{FEAT}` = `features/{NN}-*.md`(`.plan.md`·`.plan.critic.md`·`.auto.md` 제외) — 없으면 "`/pilot:create-feature` 로 먼저 생성하세요" 후 종료(hard-stop: feature 부재). `{AUTO_LOG}` = `features/{NN}-{slug}.auto.md`.
 
 **재개 확인** — `{AUTO_LOG}` 존재 시 마지막 `## Run` 섹션의 마지막 줄(stop 사유 또는 ✅ DONE)을 읽고 **사용자 1회 확인** 없이는 진행하지 않는다(이미 DONE 이어도 동일: "재개/처음부터/취소" 3지선다). 부재 시 처음부터(planner) 시작 + 새 `## Run` 섹션.
-
----
 
 ## 자동 진행 절차
 
@@ -67,33 +63,20 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase evaluator --report-fil
 
 `kind=done`(READY) → ✅ 완료. `kind=retry`(NOT_READY, 재시도 잔여) → `{R}` +1 후 3번 재진입. `kind=stop`(reason=retry-exhausted|signal-parse) → **STOP**.
 
----
+## 감사 로그 · STOP 보고
 
-## 감사 로그 (`{AUTO_LOG}`)
+`{AUTO_LOG}` 에 매 전이마다 한 줄 append(단계 종료 즉시 — 중단돼도 흔적이 남도록). 새 실행은 새 `## Run N — {날짜}` 섹션. 필드: `[planner]`·`[critic]`·`[generator]`·`[evaluator]` 단계별 결과 + 최종 `✅ DONE` 또는 `❌ STOP: {사유} (hard-stop)` + 사람 판단 필요 항목.
 
-매 전이마다 `{AUTO_LOG}` 에 한 줄 append (해당 단계 종료 즉시 — 중단돼도 흔적이 남도록). 새 실행은 새 `## Run N — {날짜}` 섹션. 필드: `[planner]`·`[critic]`·`[generator]`·`[evaluator]` 단계별 결과 한 줄 + 최종 `✅ DONE` 또는 `❌ STOP: {사유} (hard-stop)` + 사람 판단 필요 항목(STOP 시).
-
----
-
-## STOP 시 사람에게 보고
-
-자동 진행이 멈추면 대상 feature·사유·마지막 단계·사람 판단 필요 항목·재개 명령(`/pilot:autopilot {NN}`)·로그 경로(`features/{NN}-{slug}.auto.md`)를 출력하고 **종료**한다(더 진행하지 않음).
-
----
+자동 진행이 멈추면 대상 feature·사유·마지막 단계·사람 판단 필요 항목·재개 명령(`/pilot:autopilot {NN}`)·로그 경로를 출력하고 **종료**한다(더 진행하지 않음).
 
 ## 제약
 
 - **opt-in 예외 모드** — 기본은 사용자 명시 호출. 위험 신호에 걸리면 항상 사람에게 제어 반환.
-- **스킬은 판단하지 않는다** — 모든 전이는 `auto_pilot.py` 가 신호 enum 을 보고 내린 `kind` 결정에 따른다.
-- **신호를 못 읽으면 멈춘다** — critic/evaluator 산출물 파싱 실패는 추측 없이 hard-stop(signal-parse).
+- **스킬은 판단하지 않는다** — 모든 전이는 `auto_pilot.py` 가 신호 enum 을 보고 내린 `kind` 결정에 따른다. **신호를 못 읽으면 멈춘다**(signal-parse).
 - **hard-stop 사유 enum**: plan-validate 실패 · critic-blocking · signal-parse · retry-exhausted · agent-error.
 - **재시도는 정확히 1회**, 항상 generator 재진입. plan 자체가 틀렸다면 2차 NOT_READY 로 사람에게 넘어간다.
 - **단일 feature 단위** — 다수 feature 연속 진행은 지원하지 않는다.
 
----
-
 ## 참고
 
-- `/pilot:create-feature` — 단일 feature 명세 생성 (선행 단계)
-- `/pilot:focus` — 진행 중 사용자 결정 전달
-- `@pilot-planner` 외 — 수동으로 각 단계 호출 (auto 를 쓰지 않을 때)
+`/pilot:create-feature` (선행 단계) · `/pilot:focus` (진행 중 사용자 결정 전달) · auto 를 쓰지 않을 때는 `@pilot-planner` 외 각 단계 수동 호출.
