@@ -19,15 +19,7 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 
 ## 사전 확인
 
-[preamble.md](../context/shared/preamble.md) 의 **P-1, P0, P1** 수행.
-
-- P-1: TodoWrite 선로딩 (다단계 스킬).
-- P0: `{PROJECT}` 와 `$ARGUMENTS` 키워드로 memory-hint 실행. 출력된 메모를 Read 하여 과거 분석·구현 이력 확인.
-- P1: `{PROJECT}` 획득. 실패 시 [messages.md](../context/shared/messages.md) 의 `workspace_missing` / `no_active_project` 출력 후 종료.
-
-추가: `workspace/projects/{PROJECT}/docs/` 폴더를 Glob 으로 확인한다.
-
-- 폴더가 없거나 `.md` 파일이 없으면 [messages.md](../context/shared/messages.md) 의 `docs_missing` 출력 후 종료.
+[preamble.md](../context/shared/preamble.md) 의 **P-1, P0, P1** 수행 (실패 시 [messages.md](../context/shared/messages.md) 의 `workspace_missing`/`no_active_project` 출력 후 종료). `workspace/projects/{PROJECT}/docs/` 를 Glob 확인 — 없거나 `.md` 파일 없으면 `docs_missing` 출력 후 종료.
 
 ---
 
@@ -37,19 +29,10 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 
 | 플래그 / 나머지 텍스트 | 모드 | 동작 |
 | ---------------------- | ---- | ---- |
-| `--regen-agents` (단독) | **재생성 전용** | docs/features 변화 여부와 무관하게 현재 features/ 기반으로 `prompts/*.md` 만 재작성. 상세: [`references/regen-mode.md`](references/regen-mode.md) |
+| `--regen-agents` (단독) | **재생성 전용** | docs/features 변화와 무관하게 현재 features/ 기반으로 `prompts/*.md` 만 재작성. [`references/regen-mode.md`](references/regen-mode.md) |
 | 없음 (빈 문자열) | 전체 분석 | docs/ 내 **모든** 원본 파일의 전체 내용 분석 |
 | 파일명 또는 page_id | 파일 지정 | 해당 파일만 분석 |
-| 그 외 텍스트 (키워드) | 필터 분석 | docs/ 전체 파일에서 **키워드 관련 기능만** 추출하여 분석 |
-
-### 필터 분석 모드
-
-기획서에는 여러 영역 (프론트엔드, API, 어드민 등) 의 기능이 혼재되어 있다.
-키워드가 주어지면 docs/ 전체 파일을 읽되, **키워드와 관련된 섹션만** 추출하여 features/ 파일을 생성한다.
-
-- 예: `/pilot:analyze <도메인 키워드>` → 해당 도메인 영역 기능만 분석
-- 키워드 매칭은 섹션 제목과 내용 모두에서 판단한다.
-- 관련 없는 섹션은 스킵한다.
+| 그 외 텍스트 (키워드) | 필터 분석 | 섹션 제목·내용에서 키워드 매칭되는 부분만 추출 (관련 없는 섹션은 skip) |
 
 ---
 
@@ -57,140 +40,55 @@ PM이 작성한 표 중심 기획서를 AI가 읽기 쉬운 형태로 변환한�
 
 ### 1. 대상 파일 결정
 
-- `workspace/projects/{PROJECT}/docs/*.md` 에서 원본 파일 목록을 수집한다.
-- `--force` 가 없으면: `features/` 폴더에 이미 분석 파일이 존재하는 원본은 스킵한다.
-  - 스킵 판단: features/ 파일 상단 `> source:` 메타데이터에 원본 파일명이 기록됨
-- 분석 대상이 없으면 [messages.md](../context/shared/messages.md) 의 `analyze_all_done` 출력 후 종료한다.
-
-#### `--force` 실행 시 prompt-origin 보호
-
-`--force` 는 기존 features/ 파일을 덮어쓸 수 있다. 그 전에 `> source: prompt` 태그를 Grep 으로 검색하여 prompt-origin features 가 있는지 확인하고 사용자에게 승인받는다 (1 건 이상 발견 시 경고 + y/n 질의, `n` 또는 미응답이면 종료). 상세 절차: [`references/scope-sync.md`](references/scope-sync.md) `--force prompt-origin 보호` 섹션.
+- `docs/*.md` 원본 목록 수집. `--force` 없으면 features/ 상단 `> source:` 메타데이터로 이미 분석된 원본을 스킵.
+- 분석 대상이 없으면 [messages.md](../context/shared/messages.md) 의 `analyze_all_done` 출력 후 종료.
+- **`--force` prompt-origin 보호**: `> source: prompt` 태그를 Grep 하여 1 건 이상이면 경고 + y/n 승인 게이트 (`n`/미응답 시 종료). 상세: [`references/scope-sync.md`](references/scope-sync.md) `--force prompt-origin 보호`.
 
 ### 2. 원본 파일 읽기
 
-- 대상 파일을 Read 툴로 로드한다.
-- **항상 먼저 수행 (default path, 실패 대응 아님)**:
-  1. `confluence.py fetch` 출력 또는 `wc -l {path}` 로 파일 크기·라인 수 확인.
-  2. Grep `^##+` 으로 전체 H2/H3 라인 번호 수집 (문서 구조 파악).
-  3. 사용자 필터 (다운로드된 docs 의 실제 H2 키워드 2~4개를 예시로 노출 후 사용자 선택) 또는 키워드 매칭으로 관심 H2 섹션 결정.
-  4. 각 관심 섹션을 **targeted Read**.
-- **파일 크기 분기** (Read 툴 25k 토큰 한도 대응 — 실전 기획서는 표가 많아 300KB 이상 빈번):
-
-  | 파일 크기 | 토큰 추정 | 권장 Read 전략 |
-  | --------- | --------- | -------------- |
-  | **소형** ≤ 50KB | ≤ 5k | 전체 1 회 Read 가능 |
-  | **중형** 50 ~ 150KB | 5k ~ 15k | H2 목차 + 섹션 단위 Read (limit 150) |
-  | **대형** > 150KB | > 15k | 섹션 단위 targeted Read (limit **80** — 표 많은 문서 보수적 기본값) |
-
-- **Read rejection 발생 시 재시도 규칙**: `limit` 을 **1/3 로 축소** (표 중심 마크다운은 라인당 토큰 밀도가 높아 1/3 — 1/2 는 대형 파일에서 재실패 확률 높음, 실측). `offset` 유지. learn 의 소스 코드 대상 1/2 규칙과는 의도된 차이.
-- **추측 금지 원칙 유지:** 읽지 않은 섹션은 features/ 생성 대상에서 제외. 전체 스캔하지 않았다면 **사용자에게 범위 보고** 후 확정.
-- 사용자가 "전체 분석" 을 요청했는데 파일이 대형이면 H2 목차 기반으로 모든 섹션을 순회하여 빠짐없이 커버.
+파일 크기에 따라 전체 Read(≤50KB) · H2 목차 + 섹션 단위 Read(50~150KB, limit 150) · 섹션 단위 targeted Read(>150KB, limit **80**) 로 나눠 읽는다. **Read rejection 시 limit 1/3 축소** (표 중심 문서 — learn 의 소스 코드 1/2 규칙과 의도된 차이). **추측 금지**: 읽지 않은 섹션은 생성 대상에서 제외하고, 전체 스캔하지 않았으면 사용자에게 범위 보고 후 확정.
 
 ### 3. 기능 분할 및 구조화
 
 **분할 기준:** H2(`##`) 섹션을 기능 단위로 인식. 번호 패턴(`#N`·`N.`·`N)`) 있으면 기능 번호로, 없으면 순차 부여.
 
-**각 기능 추출 템플릿:**
-
-```markdown
-# #{번호} {기능명}
-
-> source: {원본 docs 파일명}
-
-## 요구사항
-
-- **조건**: 동작 전제 조건
-- **트리거**: 사용자 액션 또는 시스템 이벤트
-- **기대결과**: 실행 후 예상 결과 (UI·데이터 변경·알림 등)
-
-## 상태 전환
-
-| 전환 전 | 전환 후 | 조건 | 처리 |
-| ------- | ------- | ---- | ---- |
-
-## 비즈니스 규칙
-- 검증·제약·계산 로직 목록. 원본 표는 표 형태 유지 가능.
-
-## 예외 케이스
-- 정상 흐름 외 케이스 + 조건·처리 방법.
-```
-
-**주의사항:**
-- 원본 표는 의미 해석해 서술형으로 풀되 상태 전환표 같은 경우는 표 유지.
-- 원본에 없는 내용 추측 금지 (한 번 추측이 들어가면 후속 prompts/·planner·generator 가 잘못된 사실 기반으로 동작).
-- Figma 등 디자인 참조 유지.
-- 하나의 H2 가 여러 기능 포함하면 기능별 분리.
+각 기능은 `# #{번호} {기능명}` + `> source: {원본 파일명}` + `## 요구사항`(조건/트리거/기대결과) + `## 상태 전환`(표) + `## 비즈니스 규칙` + `## 예외 케이스` 섹션으로 작성한다. 원본 표는 서술형으로 풀되 상태 전환표는 표 유지. **원본에 없는 내용 추측 금지** (한 번 추측이 들어가면 후속 prompts/·planner·generator 가 오염된다). 하나의 H2 가 여러 기능을 포함하면 기능별로 분리.
 
 ### 4. 파일 저장
 
-- 저장 경로: `workspace/projects/{PROJECT}/features/`
-- 기능 명세 파일명: `{NN}-{slug}.md`
-  - `NN`: 기능 번호 (2자리 zero-padding, 예: `12`, `13`)
-  - `slug`: 기능명을 kebab-case로 변환 (한글 허용, 특수문자 제거, 최대 30자)
-  - 예: `13-order-modal.md`, `19-receipt-list.md`
-- **배치 저장 (병렬 Write)** — features 파일은 서로 독립이므로 [coding.md](../context/shared/coding.md) `## 독립 파일 배치 작업` 절차를 따른다.
+`workspace/projects/{PROJECT}/features/{NN}-{slug}.md` (`NN` 2자리 zero-pad, `slug` kebab-case 최대 30자). 여러 파일은 [coding.md](../context/shared/coding.md) `## 독립 파일 배치 작업` 절차로 병렬 Write.
 
 ### 5. project.md 자동 갱신
 
-features/ 생성 후 `project.md` 의 `## 목표` 와 `## 관련 파일` 을 자동 동기화한다.
-
-**도메인 결정 (5-1, 5-2 공통 전제):** `.agent-state.yml.domain` 이 non-null 이면 그대로 사용 (이미 확정). null 이면 (a) project.md 제한사항 `- domain: {x}` 파싱 → (b) MANIFEST.md 도메인 분류 + 프로젝트명·features 키워드 매칭으로 후보 → (c) 사용자 질의 후 `.agent-state.yml.domain` 에 Edit 기록. 결정 후 `workspace/context/scope/{domain}.md` 를 Read. 자동 판정은 **후보 제시용** 만, 기록은 항상 사용자 확인 (한 번 잘못 기록되면 후속 분석 전부 오염).
+**도메인 결정 (5-1·5-2 공통 전제):** `.agent-state.yml.domain` 이 non-null 이면 그대로 사용. null 이면 (a) project.md 제한사항 파싱 → (b) MANIFEST 분류 + 키워드 매칭 후보 → (c) 사용자 질의 후 Edit 로 기록 (자동 판정은 후보 제시용만 — 기록은 항상 사용자 확인). 결정 후 `scope/{domain}.md` Read.
 
 #### 5-1. `## 목표` 갱신
 
-`project.md` 의 `## 목표` 섹션 (없으면 `## 에이전트 호출 흐름` 바로 앞에 생성) 을 features/ 목록 기준으로 갱신.
-
-- 신규 feature: `- [ ] {기능명} -> [상세](features/{NN}-{slug}.md)` 항목 추가.
-- `[x]` 로 완료 처리된 항목은 변경 안 함 (이미 끝난 일을 미완료로 돌리지 않음).
-- `--force` 재분석으로 대응 features/ 파일이 없어진 항목은 제거.
-- 항목 순서는 features/ NN 순서.
+신규 feature 는 `- [ ] {기능명} -> [상세](features/{NN}-{slug}.md)` 추가, `[x]` 완료 항목은 불변, `--force` 로 대응 파일이 사라진 항목은 제거. 순서는 features NN 순.
 
 #### 5-1.5. scope/{domain}.md 자동 생성
 
-5-2 진입 전 scope 파일 부재를 detect 하고 자동 생성한다.
-
-**트리거 조건 (둘 다 만족):**
-
-- `workspace/context/scope/{domain}.md` 부재 또는 빈 파일.
-- MANIFEST 진입파일 (`workspace/context/{domain}/index.md` 또는 `workspace/context/{domain}.md`) 에 `config.md` 의 `## scope 카테고리` `scope 헤더` 컬럼 값과 일치하는 H2 헤더 존재.
-
-본문 구성·idempotency·예외·A2 fallback 등 상세: [`references/scope-sync.md`](references/scope-sync.md) `5-1.5` 섹션.
+scope 부재 + MANIFEST 진입파일에 매칭 H2 존재 시 자동 생성. 상세(본문 구성·idempotency·예외·A2): [`references/scope-sync.md`](references/scope-sync.md) `5-1.5`.
 
 #### 5-2. `## 관련 파일` 갱신
 
-로드한 `scope/{domain}.md` 의 매칭 H2 섹션 표를 추출해 project.md 의 `## 관련 파일` 표를 자동 기입한다. 어떤 scope 헤더를 어떤 H3 로 기입할지는 `config.md` 의 `## scope 카테고리` 표가 결정하고, 비어있으면 default 를 사용한다 — default 표는 [`references/scope-sync.md`](references/scope-sync.md) 5-2 참조 (canonical).
-
-**핵심 규칙** — features/ 에 명시적으로 언급된 모델·서비스·라우트는 빠뜨리지 않고 포함 (planner 영향 범위 누락 방지). scope 에 없지만 features/ 에 등장한 신규 대상은 `목적` 열 끝에 `(from features/NN-{slug})` 주석 붙여 추가. 기존 사용자 수동 기입 행은 보존하되 중복만 제거. 빈 행(`|  |  |  |`) 은 삭제.
-
-config lookup·default fallback·프로세스 단계 상세: [`references/scope-sync.md`](references/scope-sync.md) `5-2` 섹션.
-
-**cross-domain 의존성 detect (#09)** — features/ 키워드와 scope/{domain}.md 매칭 시도 후 cover 되지 않는 외부 클래스/도메인을 MANIFEST 의 `## 외부 도메인 reference` 표에서 lookup. 매칭되면 INFO `[INFO] {외부 도메인} 의존성 감지 — 먼저 \`/pilot:learn {추천 경로}\` 권장` 출력 (재분석 권장 취지는 상세 문서 산문이 담당). 상세: [`references/scope-sync.md`](references/scope-sync.md).
-
-**Open Questions 섹션 보존 + 갱신 (#11)** — 기존 `## Open Questions` 섹션 보존 + cross-domain detect 결과는 `### (b) cross-domain 산출물 부재` 에 행 추가 + 신규 파일은 4 카테고리 + `- (없음)` 포함. 4 카테고리 분류 기준: [`../context/shared/open-questions.md`](../context/shared/open-questions.md). 상세 규칙: [`references/scope-sync.md`](references/scope-sync.md).
+`scope/{domain}.md` 매칭 H2 표를 추출해 project.md `## 관련 파일` 표를 채운다. **핵심 규칙** — features/ 에 명시된 모델·서비스·라우트는 누락 금지(from features/NN-{slug} 주석으로 신규 추가), 사용자 수동 행 보존(중복만 제거), 빈 행 삭제. config lookup·default·cross-domain detect(#09)·Open Questions 보존(#11) 상세: [`references/scope-sync.md`](references/scope-sync.md) `5-2`.
 
 ### 6. prompts/ 자동 갱신
 
-features/ 분석 결과로 `prompts/{planner,generator,evaluator}.md` 갱신 + `.agent-state.yml.analyzed: true` 게이트. 상세 (6-1 ~ 6-5): [`references/prompts-update.md`](references/prompts-update.md).
+`prompts/{planner,generator,evaluator}.md` 갱신 + `.agent-state.yml.analyzed: true` 게이트. 상세(6-1~6-5): [`references/prompts-update.md`](references/prompts-update.md).
 
 ### 7. 분석 품질 자가 검증
 
-6-5 (doctor) 완료 후 4 항목 (커버리지·구조·정합성·추측 혐의) 자가 점검. 상세 + 출력 형식: [`references/self-verify.md`](references/self-verify.md).
+6-5(doctor) 완료 후 4 항목(커버리지·구조·정합성·추측 혐의) 자가 점검. 상세+출력 형식: [`references/self-verify.md`](references/self-verify.md).
 
 ### 7.5 조건부 인터뷰 — 신규 features Open Questions 일괄 소비 (#17)
 
-대상은 **이번 실행에서 신규 생성된 features 만** — 기존 features 의 unchecked 항목은 대상이 아니다(`--regen-agents` 는 features 신규 생성이 없으므로 미발동 — 상세: [`references/regen-mode.md`](references/regen-mode.md)).
-
-**절차:**
-
-1. **산출물 대조** — 신규 features 각각의 spec 명시 심볼 ↔ `scope/{domain}.md` lookup. 5 단계에서 이미 Read 한 산출물을 재사용 — 추가 Read 불필요.
-2. **우선순위 정렬 + 일괄 질의** — 전체 신규 features 의 unchecked 항목을 (d) > (b) > (c) > (a) → 파일 NN 순으로 정렬, 최대 8 문항까지 일괄 질의.
-3. **답변 반영** — 해당 spec 섹션에 반영 후 `- [x] {원문} → {답변 요약}` 체크. 스킵 항목은 unchecked 유지.
-
-상세 규칙(행 파싱·상한 산술·미발동 컨텍스트 등): [`../context/shared/interview.md`](../context/shared/interview.md).
+대상은 **이번 실행에서 신규 생성된 features 만** (`--regen-agents` 는 신규 생성이 없으므로 미발동). 절차: (1) 산출물 대조 — 5 단계에서 이미 Read 한 `scope/{domain}.md` 재사용 (2) (d)>(b)>(c)>(a) 우선순위 + 파일 NN 순 정렬, 최대 8 문항 일괄 질의 (3) 답변 반영 후 `- [x] {원문} → {답변 요약}` 체크. 상세(행 파싱·상한 산술): [`../context/shared/interview.md`](../context/shared/interview.md).
 
 ### 8. 결과 출력
 
-`분석 완료: {원본 파일명}` + 생성된 features 목록 (`features/{NN}-{slug}.md — {기능명}`) + `총 N개` + 갱신 파일 (project.md / prompts/*.md / .agent-state.yml) + 검증 한 줄 + (7.5 발동 시) `인터뷰: 해소 N건 / 이월 M건` 줄. 해소 ≥ 1 건이면 `[INFO] 인터뷰 답변이 spec 에 반영됨 — prompts 최신화가 필요하면 /pilot:analyze --regen-agents 권장` 1 줄을 추가로 출력한다.
+`분석 완료: {원본 파일명}` + 생성된 features 목록 + `총 N개` + 갱신 파일(project.md/prompts/*.md/.agent-state.yml) + 검증 한 줄 + (7.5 발동 시) `인터뷰: 해소 N건 / 이월 M건` 줄. 해소 ≥1건이면 `[INFO] 인터뷰 답변이 spec 에 반영됨 — /pilot:analyze --regen-agents 권장` 추가.
 
 ---
 
@@ -199,4 +97,4 @@ features/ 분석 결과로 `prompts/{planner,generator,evaluator}.md` 갱신 + `
 - `features/` 파일은 프로젝트 에이전트(@pilot-planner, @pilot-generator)가 직접 Read하여 사용한다.
 - `docs/` 파일은 원본 보관용이며 `/pilot:confl` 커맨드를 통해서만 접근한다.
 - 분석 품질이 낮으면 `/pilot:analyze --force` 로 재분석할 수 있다.
-- TDD 모드에서는 @pilot-generator 가 `.plan.md` 의 Red 계약을 따라 실패 테스트를 작성한다 (Planner 는 Red 계약만 — 상세: [`rgr.md`](../context/modes/rgr.md)).
+- TDD 모드에서는 @pilot-generator 가 `.plan.md` 의 Red 계약을 따라 실패 테스트를 작성한다 (Planner 는 Red 계약만 — [`rgr.md`](../context/modes/rgr.md)).
