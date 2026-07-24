@@ -26,9 +26,11 @@
 
 성공 기준:
 
-1. 각 SKILL.md 100줄 이하 — 절차 나열 대신 원칙·불변 조건·게이트 중심 서술
-2. 지시 문서 총량(스킬+context+agents) 40% 이상 감축 → 약 2,500줄 이하
-3. tools/ Python 30% 이상 감축 (감사 결과로 최종 목표 확정)
+1. 각 SKILL.md 100줄 이하 — 절차 나열 대신 원칙·불변 조건·게이트 중심 서술.
+   agents/ 는 예외: 기계 파싱 계약 밀도가 높아 **계약 보존 우선** (감사 결정 4)
+2. 지시 문서 총량(스킬+context+agents) **30~35% 감축** → 약 2,900줄 이하
+   (감사 실측 기반으로 40%→30~35% 조정 — 감사 결정 3)
+3. tools/ Python 30% 이상 감축 (감사 확정: 스크립트 ~2,100 + 테스트 ~1,380줄)
 4. 동작 보존: pytest 전체 통과, `/pilot:doctor` 클린, 정비 완료 후 파이프라인
    1사이클 실완주(dogfooding)로 검증
 
@@ -54,6 +56,11 @@
 감사 승인 후 build-plugin 프로젝트에 3개 feature를 등록하고 각각 pilot
 파이프라인(@pilot-planner → @pilot-generator → @pilot-evaluator, 필요 시
 @pilot-planner-critic)으로 순차 실행한다.
+
+감사 승인 결과 (2026-07-24, [통합 보고서](../../audits/2026-07-24-pilot-consolidation-audit.md) § 4):
+삭제 범위 = 후보 전체(handoff-quality 4파일 + v0.1.0-baseline 하네스 +
+examples/code-review/README.md + 사람용 문서 3종) / schema.py = CI 복원 후 유지 /
+목표 30~35% / agents 는 계약 보존 우선.
 
 | 순서 | Feature | 내용 | 선행 이유 |
 |---|---|---|---|
