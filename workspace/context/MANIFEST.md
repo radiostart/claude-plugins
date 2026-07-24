@@ -27,5 +27,5 @@ _도메인 분류 — `/pilot:learn` 이 자동 갱신. 진입 파일은 `worksp
 
 | 도메인 | 진입 파일 | 설명 |
 | --- | --- | --- |
-| pilot | `pilot/index.md` | Claude Code 플러그인 — 14 개 슬래시 커맨드 스킬 (skills/ 만 학습, b1 좁히기) |
+| pilot | `pilot/index.md` | Claude Code 플러그인 — 17 개 슬래시 커맨드 스킬 (skills/ 만 학습, 2026-07-24 재학습) |
 

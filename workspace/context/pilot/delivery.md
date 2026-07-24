@@ -6,18 +6,13 @@
 
 ## `/pilot:commit`
 
-git 커밋 작성 (`pilot/skills/commit/SKILL.md:1-7`).
+git 커밋 작성 (`pilot/skills/commit/SKILL.md:1-8`).
 
 - **사전 확인**: P1 (`pilot/skills/commit/SKILL.md:10-12`).
 - **커밋 규칙 로드** (`pilot/skills/commit/SKILL.md:14-18`):
   - `${CLAUDE_PLUGIN_ROOT}/skills/context/shared/commit.md` 존재 시 Read.
   - 부재 시 fallback — scope 없이 한국어 제목 50자 이내.
-- **수행 절차** (`pilot/skills/commit/SKILL.md:20-26`):
-  1. `git status` 로 staged / unstaged 확인.
-  2. unstaged 있으면 파일별 나열 + 이번 커밋 포함 여부 사용자 질의 (commit.md 의 질의 형식 참고).
-  3. 응답에 따라 `git add`.
-  4. staged 변경 분석 → commit.md 규칙으로 메시지 초안.
-  5. 사용자 확인 받은 뒤 커밋 실행.
+- **수행** (`pilot/skills/commit/SKILL.md:20-22`): commit.md 의 **커밋 전 흐름**과 **커밋 메시지 규칙**을 그대로 따른다 — unstaged 파일이 있으면 포함 여부를 사용자에게 질의한 뒤, 메시지 초안을 사용자에게 확인받고 커밋 (fallback 시에도 동일).
 - **scope 허용 목록** — `workspace/context/config.md` 의 `commit_scopes` 가 `hooks/commit-format.sh` 의 SSOT.
 
 ---
@@ -45,24 +40,19 @@ git 커밋 작성 (`pilot/skills/commit/SKILL.md:1-7`).
             └─ 새 값 입력    → base = 입력값. state 신규 기록
   ```
 - **Remote 검증** (필수, `pilot/skills/pr/SKILL.md:67-77`): `git ls-remote --exit-code origin <base>`. 비 0 → 재질의 루프 (최대 3 회).
-- **수행 절차** (`pilot/skills/pr/SKILL.md:80-101`):
-  1. `git status`, `git log <base>..HEAD --oneline`, `git diff <base>...HEAD --stat` 으로 변경 확인.
+- **수행 절차** (`pilot/skills/pr/SKILL.md:80-105` — 10 단계):
+  1. **변경 확인** — `git status`, `git log <base>..HEAD --oneline`, `git diff <base>...HEAD --stat`.
   2. **uncommitted 차단** — staged·unstaged 있으면 "`/pilot:commit` 으로 먼저 커밋하세요" 안내 후 종료.
-  3. upstream push (필요 시 `git push -u origin <branch>`).
-  4. PR 본문 초안 — pr.md 본문 구조 + `git log` 커밋 메시지 + `project.md` 목표·체크리스트 + `features/*.md` 링크 + `docs/` Confluence URL.
-  5. 사용자 확인 (제목·본문·base·head). 수정 1 라운드.
-  6. `gh pr create --base <base> --head <branch> --title <title> --body <body>` (HEREDOC).
-  7. base 명시 입력이면 `.agent-state.yml.pr_base_branch` 에 기록.
-  8. **Slack 알림** — `.slack.env` 활성 + `SLACK_EVENTS` 에 `pr` 포함 (default: 포함) 시 PR URL 전송:
-     ```bash
-     python3 ${CLAUDE_PLUGIN_ROOT}/tools/slack-notify.py \
-       --event pr --workspace workspace \
-       --message "<title> — <pr_url>"
-     ```
-     `--no-slack` 으로 skip. 전송 실패는 PR 생성 차단 안 함.
-  9. PR URL 출력.
-- **옵션** (`pilot/skills/pr/SKILL.md:107-115`): `--draft` · `--base <branch>` · `--no-slack` · `--title "..."`.
-- **제약** (`pilot/skills/pr/SKILL.md:153-158`):
+  3. **광역 회귀 (soft gate)** (`:84-87`) — config.md 의 `regression_command` 설정 시 PR 생성 전 1회 실행. 실패 → 요약 제시 후 진행 여부 사용자 확인 (자동 차단 안 함). 미설정 → skip + 설정 권장 INFO 1줄.
+  4. **upstream push** (필요 시 `git push -u origin <branch>`).
+  5. **PR 본문 초안** — pr.md 본문 구조 + `git log` 커밋 메시지 + `project.md` 목표·체크리스트 → Summary, `features/*.md` 링크 → Notes, `docs/` Confluence URL → Why.
+  6. **사용자 확인** (제목·본문·base·head). 수정 1 라운드.
+  7. **PR 생성** — `gh pr create --base <base> --head <branch> --title <title> --body <body>` (HEREDOC).
+  8. **state 갱신** — base 명시 입력이면 `.agent-state.yml.pr_base_branch` 기록.
+  9. **Slack 알림** — `.slack.env` 활성 + `SLACK_EVENTS` 에 `pr` 포함 (default: 포함) 시 PR URL 전송 (`tools/slack-notify.py --event pr`). `--no-slack` 으로 skip. 전송 실패는 PR 생성 차단 안 함.
+  10. **완료 안내** — PR URL 출력.
+- **옵션** (`pilot/skills/pr/SKILL.md:109-119`): `--draft` · `--base <branch>` · `--no-slack` · `--title "..."`.
+- **제약** (`pilot/skills/pr/SKILL.md:157-164`):
   - 현재 브랜치 == base → 종료.
   - `gh` 미인증 → `gh auth login` 안내 후 종료.
   - `--no-verify` / hook 우회 금지.
