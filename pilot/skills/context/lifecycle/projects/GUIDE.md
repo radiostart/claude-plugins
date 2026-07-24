@@ -170,7 +170,7 @@ projects/{PROJECT}/
 **규칙**
 
 - 파일명은 `NN-{slug}.md` (두 자리 순번 + kebab-case 영문 슬러그). 순번은 구현/우선순위 순서.
-- 각 feature 파일은 다음 섹션을 포함한다: `## 개요`, `## 조건 / 트리거 / 기대결과`, `## 변경 대상`, `## 엣지 케이스`.
+- 각 feature 파일은 다음 섹션을 포함한다: `## 요구사항` (조건/트리거/기대결과), `## 상태 전환`, `## 비즈니스 규칙`, `## 예외 케이스`, `## Open Questions` (4 카테고리).
 - `project.md` 의 체크박스(`[ ]` / `[x]`) 는 feature 단위의 완료 상태를 나타낸다. Evaluator 가 feature 문서의 모든 요구사항 충족을 확인한 뒤 체크한다.
 - planner 는 feature 문서를 먼저 읽고 RGR 스텝으로 분할한다. feature 문서가 없으면 planner 가 생성하거나 사용자에게 확인한다.
 - `.plan.md` 파일은 Planner가 계획 확정 시 자동 생성한다. Generator가 구현 지침으로 Read하며, 수동 편집하지 않는다. `features/` 폴더가 없는 프로젝트에서는 생성하지 않는다.
@@ -205,7 +205,7 @@ projects/{PROJECT}/
 
 - `## 기능별 사전 확인 사항` — **pre-analyze 상태에선 빈 상태**. `/pilot:analyze` 가 feature 별 소항목 + 각 소항목 하위의 `**관련 파일 범위**` subsection (Routes/Models/Services) 을 자동 주입 (`[analyze-managed]` 영역). 래퍼의 pre/post-analyze 분기는 `.agent-state.yml` 의 `analyzed` 필드로 판정 — 위 "pre / post-analyze 게이트" 참조.
 
-> **플래닝 프로세스 공통 가이드** (요구사항 파악 → 영향 범위 분석 → 계획 출력 형식) 는 래퍼 (`.claude/agents/pilot-planner.md`) 가 제공한다. 프로젝트별 `prompts/planner.md` 는 프로젝트 고유 사전 확인 사항만 담는다 (공통 템플릿 반복 금지 — GUIDE "agent 파일 책임 경계" 원칙).
+> **플래닝 프로세스 공통 가이드** (요구사항 파악 → 영향 범위 분석 → 계획 출력 형식) 는 래퍼 (`${CLAUDE_PLUGIN_ROOT}/agents/pilot-planner.md`) 가 제공한다. 프로젝트별 `prompts/planner.md` 는 프로젝트 고유 사전 확인 사항만 담는다 (공통 템플릿 반복 금지 — GUIDE "agent 파일 책임 경계" 원칙).
 
 > **TDD 모드**일 때: `/pilot:tdd` 가 파일 말미에 Red 단계 앵커를 추가한다 (본 절차는 [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) 참조).
 

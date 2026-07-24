@@ -51,7 +51,7 @@
 3. 키워드를 MANIFEST 의 `## 도메인 분류` 표와 `## 외부 도메인 reference` 표 양쪽에서 lookup:
    - `## 외부 도메인 reference` 표에 매칭되는 도메인이 있으면:
      - `### (b) cross-domain 산출물 부재` 에 `- [ ] {외부 도메인} 산출물 부재 → \`/pilot:learn {추천 경로}\` 권장` 행 추가.
-     - INFO 1 줄: `[INFO] 이 feature 는 {외부 도메인} 의존성이 감지됨 — 먼저 \`/pilot:learn {추천 경로}\` 권장`.
+     - INFO 1 줄: `[INFO] {외부 도메인} 의존성 감지 — 먼저 \`/pilot:learn {추천 경로}\` 권장`.
    - 매칭 없음이지만 산출물로 cover 되지 않는 영역 (외부 시스템 API 등) 이 있으면 `### (c) 외부 시스템 spec 부재` 에 `- [ ] {외부 시스템} spec 별도 확보 필요` 행 추가.
 
 > **A2 runtime fallback**: MANIFEST lookup 실패 또는 키워드 추출 실패 시 → spec 진행 (abort 안 함). Open Questions 에는 4 카테고리 헤더 + `- (없음)` placeholder 만 기입. INFO 출력 안 함.

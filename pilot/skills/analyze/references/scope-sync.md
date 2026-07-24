@@ -104,8 +104,9 @@ features/ 키워드와 scope/{domain}.md 매칭 시도 후, cover 되지 않는 
 
 - 매칭되는 도메인 있으면:
   ```
-  [INFO] features/ 의 일부 영역이 {외부 도메인} 도메인에 의존 — `/pilot:learn {추천 경로}` 후 재분석 권장
+  [INFO] {외부 도메인} 의존성 감지 — 먼저 `/pilot:learn {추천 경로}` 권장
   ```
+  `/pilot:learn` 완료 후 `/pilot:analyze` 재실행을 권장한다 (INFO 문구는 create-feature 단건 detect 와 동일 — 재분석 권장 뉘앙스는 이 산문이 담당).
 - 표 부재 시 또는 매칭 없으면: 안내 없이 진행 (abort 안 함).
 
 > **A2 runtime fallback**: lookup 실패 시 → 분석 정상 진행, INFO 출력 안 함.

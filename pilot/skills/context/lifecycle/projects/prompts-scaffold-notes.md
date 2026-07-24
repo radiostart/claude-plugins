@@ -53,4 +53,4 @@
 | `generator.md` | `@pilot-generator` 래퍼 | `## 컨텍스트 로드`, `## 핵심 서비스/모델` (둘 다 analyze-managed) |
 | `evaluator.md` | `@pilot-evaluator` 래퍼 | `## 기능 완성도`, `## 프로젝트 고유 항목` (analyze-managed) |
 
-플래닝 공통 가이드는 래퍼 `.claude/agents/pilot-planner.md` 의 `## 플래닝 프로세스 (공통 가이드)` 섹션. 프로젝트 planner.md 에 복사 금지.
+플래닝 공통 가이드는 래퍼 `${CLAUDE_PLUGIN_ROOT}/agents/pilot-planner.md` 의 `## 플래닝 프로세스 (공통 가이드)` 섹션. 프로젝트 planner.md 에 복사 금지.

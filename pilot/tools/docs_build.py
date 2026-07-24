@@ -356,6 +356,32 @@ def write_files(files: dict[Path, str]) -> int:
     return len(files)
 
 
+# 정리 대상 3 개 카테고리 디렉터리. `docs/reference/index.md`(커밋본)·`identity.md` 는
+# 이 목록 밖이라 대상이 아니다.
+_STALE_CLEANUP_DIRS = (OUT_AGENTS_DIR, OUT_SKILLS_DIR, OUT_TOOLS_DIR)
+
+
+def cleanup_stale_outputs(root: Path, files: dict[Path, str]) -> int:
+    """이번 build 산출 집합에 없는 카테고리별 `*.md` 를 삭제하고 삭제 건수를 반환한다.
+
+    `docs/reference/{agents,skills,tools}/` 3 개 디렉터리만 스캔. 카테고리별
+    build 산출이 **1 건 이상일 때만** 그 디렉터리를 정리한다 — `--root` 가 부분
+    트리(예: 테스트 fixture root)를 가리켜 해당 카테고리 산출이 0 건일 때 기존
+    산출물을 일괄 오삭제하는 사고를 방지하기 위함.
+    """
+    removed = 0
+    for out_rel in _STALE_CLEANUP_DIRS:
+        out_dir = root / out_rel
+        produced = {p for p in files if p.parent == out_dir}
+        if not produced or not out_dir.is_dir():
+            continue
+        for existing in out_dir.glob("*.md"):
+            if existing not in produced:
+                existing.unlink()
+                removed += 1
+    return removed
+
+
 def check_files(files: dict[Path, str]) -> list[Path]:
     """디스크 상태가 generated 와 다른 경로 목록 반환 (없으면 [])."""
     diffs: list[Path] = []
@@ -413,6 +439,9 @@ def main(argv: list[str] | None = None) -> int:
 
     n = write_files(files)
     print(f"docs_build: wrote {n} files under {root / 'docs/reference'}", file=sys.stderr)
+    removed = cleanup_stale_outputs(root, files)
+    if removed:
+        print(f"docs_build: removed {removed} stale file(s)", file=sys.stderr)
     return 0
 
 

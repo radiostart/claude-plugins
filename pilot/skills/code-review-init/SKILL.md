@@ -28,7 +28,7 @@ description: >-
      사용자에게 "**{추정 lang} 로 진행할까요?**" 확인.
 
 2. 워크스페이스 확인:
-   - `workspace/context/` 디렉토리가 없으면 **"워크스페이스 미초기화. `/pilot:init` 먼저 실행하세요."** 안내 후 종료.
+   - `workspace/context/` 디렉토리가 없으면 [`messages.md`](../context/shared/messages.md) 의 `workspace_missing` 안내 후 종료.
 
 3. 대상 경로: `workspace/context/review/{lang}.md`. `workspace/context/review/` 가 없으면 생성한다.
 

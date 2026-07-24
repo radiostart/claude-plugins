@@ -264,6 +264,58 @@ class BuildIntegration(unittest.TestCase):
         self.assertEqual(set(diffs), set(files.keys()))
 
 
+class CleanupStaleOutputs(unittest.TestCase):
+    """docs_build 의 write 경로 정리 로직 (감사 축 1 § D-2, critic C4·C5)."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        shutil.copytree(FIXTURE_SOURCES, self.tmp / "root")
+        self.root = self.tmp / "root"
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_removes_stale_file_not_in_build_output(self):
+        files = m.build(self.root)
+        m.write_files(files)
+        stale = self.root / "docs" / "reference" / "skills" / "zzz-removed-skill.md"
+        stale.write_text("stale\n", encoding="utf-8")
+        removed = m.cleanup_stale_outputs(self.root, files)
+        self.assertEqual(removed, 1)
+        self.assertFalse(stale.exists())
+
+    def test_current_outputs_not_removed(self):
+        files = m.build(self.root)
+        m.write_files(files)
+        removed = m.cleanup_stale_outputs(self.root, files)
+        self.assertEqual(removed, 0)
+        for p in files:
+            self.assertTrue(p.exists())
+
+    def test_category_index_not_removed(self):
+        # 카테고리 index.md 는 build 산출 집합에 포함되므로 stale 판정에서 제외돼야 한다.
+        files = m.build(self.root)
+        m.write_files(files)
+        index_path = self.root / "docs" / "reference" / "skills" / "index.md"
+        self.assertIn(index_path, files)
+        m.cleanup_stale_outputs(self.root, files)
+        self.assertTrue(index_path.exists())
+
+    def test_empty_category_output_left_untouched(self):
+        # tools 소스를 제거해 이번 build 의 tools 산출을 0 건으로 만든다 (부분 트리 root 시뮬레이션).
+        shutil.rmtree(self.root / "tools")
+        files = m.build(self.root)
+        self.assertFalse(any(p.parent == self.root / m.OUT_TOOLS_DIR for p in files))
+        # 이전 build 잔재를 흉내낸 기존 산출물을 미리 심어둔다.
+        stale_tools_dir = self.root / "docs" / "reference" / "tools"
+        stale_tools_dir.mkdir(parents=True, exist_ok=True)
+        preexisting = stale_tools_dir / "sample_tool.md"
+        preexisting.write_text("preexisting\n", encoding="utf-8")
+        removed = m.cleanup_stale_outputs(self.root, files)
+        self.assertEqual(removed, 0)
+        self.assertTrue(preexisting.exists())
+
+
 class MainExitCodes(unittest.TestCase):
     def test_check_exits_1_on_missing(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -282,6 +334,17 @@ class MainExitCodes(unittest.TestCase):
     def test_missing_root_exits_1(self):
         exit_code = m.main(["--root", "/nonexistent/path/xxxx"])
         self.assertEqual(exit_code, 1)
+
+    def test_generate_removes_stale_output_end_to_end(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            shutil.copytree(FIXTURE_SOURCES, tmp_path / "root")
+            root = tmp_path / "root"
+            self.assertEqual(m.main(["--root", str(root)]), 0)
+            stale = root / "docs" / "reference" / "agents" / "zzz-removed-agent.md"
+            stale.write_text("stale\n", encoding="utf-8")
+            self.assertEqual(m.main(["--root", str(root)]), 0)
+            self.assertFalse(stale.exists())
 
 
 if __name__ == "__main__":

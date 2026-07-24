@@ -46,7 +46,7 @@ PR 컨벤션 로드 (PR 템플릿은 **레포지터리 단위** — 워크스페
 - **Test plan**: 변경 영역을 검증할 수동 체크 항목. 자동 생성 못 하면 `- [ ] 동작 확인` 한 줄.
 - 추가 섹션·라벨·assignee 미설정.
 
-`pr_default_base` 키 결정 — `workspace/context/config.md` 에 정의되어 있으면 그 값, 없으면 `workspace/context/config.md`, 둘 다 없으면 하드 fallback `develop`. (orchestrate-load 의 toolchain merge 와 동일 우선순위.)
+base branch 결정 순서 — `.agent-state.yml` 의 `pr_base_branch` → `workspace/context/config.md` 의 `pr_default_base` → 하드 fallback `develop`. (orchestrate-load 의 toolchain merge 와 동일 우선순위.)
 
 ---
 

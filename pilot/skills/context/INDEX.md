@@ -50,7 +50,7 @@
 ### 규칙
 
 - `진행중` 상태인 행은 **항상 1개만** 존재한다
-- `/pilot:project`, `/pilot:issue` 실행 시 기존 `진행중` 행을 모두 `보류`로 변경 후 새 행을 추가한다
+- `/pilot:project`, `/pilot:issue` 실행 시 테이블 본문 전체를 삭제 후 새 행 1개만 추가한다 (`보류`·`완료` 행 누적 금지 — 이력은 git log)
 - `진행중` 행이 없거나 2개 이상이면 비정상 상태 — 에이전트는 사용자에게 `/pilot:project` 또는 `/pilot:issue`로 활성화하도록 안내하고 종료한다
 
 ## 프로젝트 폴더 구조
@@ -63,7 +63,10 @@ projects/{PROJECT}/
 │   ├── generator.md    # 코드 구현 참조 (패턴, 서비스, 모델)
 │   └── evaluator.md    # 구현 검토 체크리스트
 ├── docs/               # 원본 기획서 (/pilot:confl fetch, 직접 Read 금지)
+│   └── {page_id}_{slug}.md
 ├── features/           # 분석된 기능 명세 (/pilot:analyze, 직접 Read 가능)
+│   ├── {NN}-{slug}.md       # 기능 명세
+│   └── {NN}-{slug}.plan.md  # 구현 계획 (Planner가 자동 생성, Generator가 참조)
 └── *.md                # 추가 문서 (screens.md, schema.md 등)
 ```
 
@@ -106,7 +109,7 @@ projects/{PROJECT}/features/
 - `/pilot:analyze` 커맨드로 docs/ 원본을 분석하여 생성한다.
 - `features/` 파일은 **직접 Read 가능**하다. 에이전트(@pilot-planner, @pilot-generator)가 요구사항 참조 시 사용한다.
 - `features/` 가 있으면 docs/ 대신 features/ 를 우선 참조한다.
-- TDD 모드에서는 @pilot-planner 가 Red 단계에서 `feature.md` 를 직접 읽어 실패 테스트를 작성한다.
+- TDD 모드에서는 @pilot-planner 는 스텝별 Red 계약만 남기고, 실패 테스트 작성 (Red) 은 @pilot-generator 가 수행한다.
 
 ## 에이전트
 
@@ -114,9 +117,9 @@ projects/{PROJECT}/features/
 
 | 에이전트     | 진입 조건                          | 기본 역할                        | TDD 모드                                        |
 | ------------ | ---------------------------------- | -------------------------------- | ----------------------------------------------- |
-| `@pilot-planner`   | 새 기능 시작 / 구현 방향 불명확 시 | 요구사항 분석 → 단계별 구현 계획 | + 스텝 분할 + 실패 테스트 작성 (Red)            |
+| `@pilot-planner`   | 새 기능 시작 / 구현 방향 불명확 시 | 요구사항 분석 → 단계별 구현 계획 | + 스텝 분할 + Red 계약 작성 (실패 테스트는 Generator) |
 | `@pilot-planner-critic` *(선택)* | planner 의 plan.md 확정 후 / 변경 영향이 큰 기능 | red-team 시각으로 plan.md 챌린지 → `.plan.critic.md` 작성 (plan·코드 직접 수정 안 함) | (동일 — 모드 무관) |
-| `@pilot-generator` | 코드 작성 시                       | 패턴·서비스·모델 참조, 구현 수행 | + 실패 테스트 통과 최소 구현 + Refactor (Green) |
+| `@pilot-generator` | 코드 작성 시                       | 패턴·서비스·모델 참조, 구현 수행 | + Red 실패 테스트 작성 → Green 최소 구현 → Refactor |
 | `@pilot-evaluator` | 구현 완료 후                       | 요구사항 충족 여부·일관성 검토   | + 변경 관련 테스트만 `{test_command} {paths}`     |
 
 TDD 모드 활성화: `/pilot:tdd` — `project.md` 제한사항에 TDD 모드 문구 추가 + 각 에이전트 파일 책임 확장
@@ -134,7 +137,7 @@ issues/{이슈명}/
 
 | 상황                                                       | 동작                                                                                  |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `STATE.md` 가 없는 경우                                    | 빈 테이블(`\| 모드 \| 이름/이슈명 \| 상태 \|`)로 생성 후 계속 진행                    |
+| `STATE.md` 가 없는 경우                                    | `messages.md` 의 `workspace_missing` 안내 출력 후 종료                    |
 | `STATE.md` 형식이 깨진 경우                                | `/pilot:project` 또는 `/pilot:issue`로 초기화하도록 안내하고 종료             |
 | `project.md` 가 없는 경우                                  | 사용자에게 파일 생성 여부를 확인 후 진행                                              |
 | `prompts/` 폴더 또는 파일이 없는 경우                      | `project.md`만으로 작업한다                                                           |

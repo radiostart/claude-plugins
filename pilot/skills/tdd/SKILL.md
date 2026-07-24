@@ -10,7 +10,7 @@ description: >-
 **이미 구현된 코드가 있는 프로젝트**에 TDD 모드를 사후 적용하거나 비활성화한다.
 
 > 신규 프로젝트를 TDD로 시작할 때는 `/pilot:project {PROJECT} --tdd` 를 사용한다.
-> `mode: characterize` 와 동시 설정 시 **characterize 가 우선** 적용된다 — 우선순위 규칙: [characterize/SKILL.md](../characterize/SKILL.md) 참조.
+> `mode: characterize` 와 동시 설정 시 **characterize 가 우선** 적용된다 — 우선순위 규칙: [`modes/characterize.md`](../context/modes/characterize.md) 참조.
 
 ## 사전 확인
 

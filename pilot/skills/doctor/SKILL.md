@@ -43,7 +43,7 @@ exit code:
 
 - `--fix` — auto-fixable 항목 자동 수정. v0.1.0 → v0.2.0 마이그레이션 동작 (`## learn 언어 패턴` default 표 자동 주입 여부 질의) 상세: [`references/migration.md`](references/migration.md).
 - `--diagnose` — 실패 진단 모드. 정합성 검사와 독립적으로 런타임 실패 패턴 (`loop`·`red-miss`·`repeat-not-ready`·`scope-violation`·`none`) 을 진단한다. exit code: `0` (pattern=none) · `1` (감지). 호출 시점: evaluator `NOT_READY` 2회 / 동일 도구 반복 의심 / 완료 선언인데 체크리스트·REPORT 비어있을 때.
-- `--schema` — 플러그인 구조 전용 검사 (workspace 와 무관, `workspace` 인자 없이 실행). CI 자동 실행 (`.github/workflows/validate.yml`). 스키마 규칙: [`PLUGIN_SCHEMA_NOTES.md`](../../.claude-plugin/PLUGIN_SCHEMA_NOTES.md).
+- `--schema` — 플러그인 구조 전용 검사 (workspace 와 무관, `workspace` 인자 없이 실행). CI 연동은 #20 에서 `validate.yml` 신설 예정 — 현재는 수동 실행. 스키마 규칙: [`PLUGIN_SCHEMA_NOTES.md`](../../.claude-plugin/PLUGIN_SCHEMA_NOTES.md).
 
 ---
 

@@ -164,7 +164,7 @@ features/ 생성 후 `project.md` 의 `## 목표` 와 `## 관련 파일` 을 자
 
 config lookup·default fallback·프로세스 단계 상세: [`references/scope-sync.md`](references/scope-sync.md) `5-2` 섹션.
 
-**cross-domain 의존성 detect (#09)** — features/ 키워드와 scope/{domain}.md 매칭 시도 후 cover 되지 않는 외부 클래스/도메인을 MANIFEST 의 `## 외부 도메인 reference` 표에서 lookup. 매칭되면 INFO `[INFO] features/ 의 일부 영역이 {외부 도메인} 도메인에 의존 — \`/pilot:learn {추천 경로}\` 후 재분석 권장` 출력. 상세: [`references/scope-sync.md`](references/scope-sync.md).
+**cross-domain 의존성 detect (#09)** — features/ 키워드와 scope/{domain}.md 매칭 시도 후 cover 되지 않는 외부 클래스/도메인을 MANIFEST 의 `## 외부 도메인 reference` 표에서 lookup. 매칭되면 INFO `[INFO] {외부 도메인} 의존성 감지 — 먼저 \`/pilot:learn {추천 경로}\` 권장` 출력 (재분석 권장 취지는 상세 문서 산문이 담당). 상세: [`references/scope-sync.md`](references/scope-sync.md).
 
 **Open Questions 섹션 보존 + 갱신 (#11)** — 기존 `## Open Questions` 섹션 보존 + cross-domain detect 결과는 `### (b) cross-domain 산출물 부재` 에 행 추가 + 신규 파일은 4 카테고리 + `- (없음)` 포함. 4 카테고리 분류 기준: [`../context/shared/open-questions.md`](../context/shared/open-questions.md). 상세 규칙: [`references/scope-sync.md`](references/scope-sync.md).
 
@@ -199,4 +199,4 @@ features/ 분석 결과로 `prompts/{planner,generator,evaluator}.md` 갱신 + `
 - `features/` 파일은 프로젝트 에이전트(@pilot-planner, @pilot-generator)가 직접 Read하여 사용한다.
 - `docs/` 파일은 원본 보관용이며 `/pilot:confl` 커맨드를 통해서만 접근한다.
 - 분석 품질이 낮으면 `/pilot:analyze --force` 로 재분석할 수 있다.
-- TDD 모드에서는 @pilot-planner 가 Red 단계에서 `features/NN-{slug}.md` 를 직접 읽어 실패 테스트를 작성한다 (상세: [`rgr.md`](../context/modes/rgr.md)).
+- TDD 모드에서는 @pilot-generator 가 `.plan.md` 의 Red 계약을 따라 실패 테스트를 작성한다 (Planner 는 Red 계약만 — 상세: [`rgr.md`](../context/modes/rgr.md)).
