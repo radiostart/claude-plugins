@@ -11,7 +11,7 @@ scope/{domain}.md 가 업데이트됐거나 features 가 여러 개 추가돼 `p
 3. 6-1 / 6-2 / 6-3 — prompts/*.md 재작성
 4. 6-4 — `.agent-state.yml` 의 `analyzed_at`, `last_analyzed_features` 갱신
 5. **post-regen 검증 (필수)** — 아래 "post-regen 검증" 참조. regen-verify 로 보존 영역 확인 + doctor 돌려 중복 섹션 WARN 확인
-6. 7 단계 — 분석 품질 자가 검증 중 **7-2, 7-3 만** 수행 (7-1 커버리지·7-4 추측 혐의는 docs 재변환이 없으므로 제외)
+6. 7 단계 — 분석 품질 자가 검증 중 **7-2, 7-3 만** 수행 (7-1 커버리지·7-4 추측 혐의는 docs 재변환이 없으므로 제외) · 7.5(조건부 인터뷰)는 미발동(features 신규 생성 없음)
 7. 8 단계 — 결과 출력 (백업 경로 + WARN 여부 포함)
 
 기존 수동 편집 영역 (planner 의 `## 플래닝 프로세스` 하위 등) 은 보존한다. 섹션별 보존 규칙은 [`prompts-update.md`](prompts-update.md) 의 6-1 / 6-2 / 6-3 참조.

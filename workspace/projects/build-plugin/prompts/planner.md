@@ -62,6 +62,18 @@
 - 신규: `pilot/tests/tools/test_doctor_integrity.py` (`test_doctor_slack.py` 패턴 답습 — unittest + importlib.util)
 - 회귀 픽스처: `pilot/tests/fixtures/v0.1.0-baseline/config/{pass-empty,pass-valid,error-*}` (test 와 fixture 공유)
 
+### #17 조건부 인터뷰 (Open Questions 소비) (features/17-conditional-interview.md)
+
+- 조건: feature spec 의 `## Open Questions` 에 unchecked `- [ ]` 항목 ≥ 1 일 때만 발동 (soft gate — `- (없음)` 뿐이면 현행과 동일 무중단). 규칙 SSOT 는 신설 `pilot/skills/context/shared/interview.md` (open-questions.md 와 동일 위상).
+- 트리거: create-feature 3-bis 직후 신설 3-ter / analyze 7↔8 사이 신설 7.5 (신규 features 일괄 질의). `--regen-agents` 모드는 미발동.
+- 기대결과: 우선순위 (d)>(b)>(c)>(a), 상한 단건 4·일괄 8 문항, 모든 질문에 "나중에 결정" 제공. 답변은 spec 해당 섹션 반영 + `- [x] {질문} → {답변 요약}` 체크. 산출물 대조 (spec 심볼 ↔ scope/{domain}.md lookup, 부재 → (a) 행 추가) 는 코드 전체 탐색 금지 — planner 영향 분석과 역할 분리. 에이전트·autopilot 무변경.
+
+**관련 파일 범위**:
+- 신설: `pilot/skills/context/shared/interview.md` (인터뷰 규칙 SSOT)
+- 변경: `pilot/skills/create-feature/SKILL.md` (3-bis 직후 3-ter 단계 + 결과 요약 인터뷰 라인)
+- 변경: `pilot/skills/analyze/SKILL.md` (7.5 일괄 질의 단계 + 결과 출력 라인)
+- 참조: `pilot/skills/context/shared/open-questions.md` (행 형식 파싱 소스 — 대조 필요)
+
 > `workspace/context/scope/pilot.md` · `workspace/context/rules/pilot.md` 부재 — 본 프로젝트는 사용자 커스텀 layer 미작성. features/ 의 file:line 인용을 1 차 근거로 활용한다 (예: `pilot/skills/learn/SKILL.md:90-111`).
 
 ---

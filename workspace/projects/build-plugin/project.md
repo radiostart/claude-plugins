@@ -33,6 +33,7 @@
 - [x] Onboarding 시나리오 가이드 (5분 완주 문서) -> [상세](features/14-onboarding-guide.md) `[v0.3.0 HIGH]`
 - [x] TDD 모드 사후 토글 (`/pilot:tdd on|off`) -> [상세](features/15-tdd-mode-toggle.md) `[v0.3.0 MED]`
 - [x] Doctor onboarding-health 점검 -> [상세](features/16-doctor-onboarding-health.md) `[v0.3.0 MED]`
+- [x] 조건부 인터뷰 (Open Questions 소비) -> [상세](features/17-conditional-interview.md)
 
 > `/pilot:analyze` 실행 시 features/ 파일과 동기화되어 이 목록이 자동 갱신된다.
 
@@ -109,11 +110,11 @@
 - [ ] #09·#10 의 `_parse_md_tables_in_section` 헬퍼에 코드블록 (` ``` `) 추적 보강 완료 (integrity.py:807·811-820). 코드블록 안 `| ... |` 줄 = false positive 방지. 후속 신규 doctor schema 검증 함수에서도 동일 헬퍼 재사용 가능 — 별도 보강 불필요 (from #10)
 - [x] #09·#10 의 `check_workspace_external_domain_section` 신규 함수 (integrity.py:1077-1197) 는 `## 외부 도메인 reference` 헤더에 sub-string 매칭 (`(learn 미완료)` 등 사용자 편집 friendly). 후속 #11 (Open Questions) · #12 (transaction contracts) doctor 검증 함수 작성 시 동일 sub-string 패턴 재사용 가능 (from #10) — #16 OH-1 의 `## learn 언어 패턴`·`## scope 카테고리`·`## Ignore` 헤더 매칭에서 sub-string 패턴 재사용
 - [ ] #09 의 외부 도메인 ignore 패턴은 Ruby default 12 항목만 hardcoded (learn SKILL.md:101). config 의 `## learn 외부 도메인 ignore 패턴` 섹션 추가 가능 (선택). Python·TS 등 multi-language ignore 시스템은 v0.4.0 milestone (from #09)
-- [ ] #09 의 cross-domain detect (`/pilot:create-feature` 3-bis, `/pilot:analyze` 5-2) 는 MANIFEST 의 `## 외부 도메인 reference` 표 lookup → INFO 1 줄. #11 의 Open Questions 4 카테고리 (b) 자동 입력은 PR-2 머지 후 wiring 필요 (from #09)
+- [x] #09 의 cross-domain detect (`/pilot:create-feature` 3-bis, `/pilot:analyze` 5-2) 는 MANIFEST 의 `## 외부 도메인 reference` 표 lookup → INFO 1 줄. #11 의 Open Questions 4 카테고리 (b) 자동 입력은 PR-2 머지 후 wiring 필요 (from #09) — wiring 완료 확인 (2026-07-24, #17 planner): create-feature SKILL.md:98-106 (3-bis) + analyze SKILL.md:167-169 실재. #17 의 3-ter/7.5 인터뷰가 이 (b) 행 출력을 소비
 - [ ] #10 의 추정 도메인 알고리즘은 1 순위 (`Module::Class` namespace 첫 segment 소문자화) 만 구현. 2 순위 (snake_case 변환) 와 3 순위 (unclassified 카테고리) 는 v0.4.0 이월 (Open Q d-1 사용자 옵션 A 수락) (from #10)
 - [ ] #09·#10 의 회귀 픽스처 `_input/python-sample/secondary-domain/` (4 파일) + `services/checkout.py` 1 줄 추가는 cross-domain detect end-to-end 시나리오용. expected output 캡처 (`learn/expected/.../inventory.md` 외부 의존 카테고리 + `MANIFEST.md` 외부 도메인 섹션) 는 후속 0c PR 에서 진행 예정 (from #09·#10)
 - [x] #11 의 `check_features_open_questions` 신규 함수 (integrity.py:1203-1258) 는 features/NN-*.md 의 `## Open Questions` H2 부재 시 INFO 1 줄 (backward-compat — 기존 v0.2.x features 13 건 모두 INFO 만, ERROR 없음). 후속 #12 (transaction contracts) doctor 검증 함수 작성 시 동일 sub-string 패턴 + INFO-only 거동 재사용 가능 (from #11) — #16 OH-5 의 features 디렉터리 순회 + `.md` glob 패턴 재사용
-- [ ] #11 의 create-feature SKILL.md 3-bis 가 cross-domain detect 결과를 Open Questions (b) 행으로 자동 추가하는 wiring (PR-1 머지 후) 은 본 PR-2 에서 명문화 완료. PR-1 의 MANIFEST `## 외부 도메인 reference` 표 lookup 거동과 결합되어 end-to-end 동작. doctor 픽스처 `pass-valid` 의 (a)·(c) 행은 추상 placeholder (FooService·ExternalApi) 사용 — 후속 픽스처 작성 시 도메인 단어 누출 회피 패턴 답습 권장 (from #11)
+- [x] #11 의 create-feature SKILL.md 3-bis 가 cross-domain detect 결과를 Open Questions (b) 행으로 자동 추가하는 wiring (PR-1 머지 후) 은 본 PR-2 에서 명문화 완료. PR-1 의 MANIFEST `## 외부 도메인 reference` 표 lookup 거동과 결합되어 end-to-end 동작. doctor 픽스처 `pass-valid` 의 (a)·(c) 행은 추상 placeholder (FooService·ExternalApi) 사용 — 후속 픽스처 작성 시 도메인 단어 누출 회피 패턴 답습 권장 (from #11) — #17 planner 가 3-ter 결합 지점 확인 (행 형식 대조, plan 참조) 으로 소비 (2026-07-24). #17 은 픽스처 무변경이라 placeholder 권고는 미해당 — 향후 픽스처 작성 시 여전히 유효한 가이드
 - [ ] #11 의 example/features template 신규 생성 안 함 (S5 결정 반영). create-feature SKILL.md inline 템플릿이 SSOT. v0.4.0 에서 별도 template 시스템 도입 시 재고 (from #11)
 - [ ] #12 의 `_parse_md_tables_in_h3_section` 신규 헬퍼 (integrity.py:1271-1326) 는 H3 (`### ...`) 섹션 안 표 파싱 + 코드블록 펜스 추적. 후속 신규 H3 sub-section schema 검증에 재사용 가능 (#10 의 `_parse_md_tables_in_section` H2 버전과 짝). 후속 feature 에서 H3 단위 검증 필요 시 활용 (from #12)
 - [ ] #12 의 `_TX_TYPE_WHITELIST` (integrity.py:1264-1269) 는 Rails ActiveRecord 메서드 → CRUD type 매핑 결과의 화이트리스트. `read` / `write` / `destroy` / `create` + `·` 조합 14 항목. v0.4.0 multi-language ignore 시스템 도입 시 재고 (from #12)
@@ -143,3 +144,5 @@
 - [ ] #08 plan 의 공통-2 (PR 단위 = #06·#07·#08 일괄 단일 PR `docs: pilot SKILL.md wording 명확화`) — 본 #08 완료 시점에 commit·PR 미생성. #06·#07·#08 generator 완료분 묶어 단일 PR 추진 필요 (LOW priority 합본 정책). v0.3.0 합본 PR (Q7) 와 별개 가능 (LOW 3 건은 코드 변경 없음·회귀 영향 없음) (from #08)
 - [ ] #08 의 H1 단순화 정규식 채택 (Q3 — `^#\s+.*\{프로젝트명\}.*$`) — prompts/*.md 의 `# Planner — {프로젝트명}` 같은 콜론·대시 구분자 H1 형식 매칭 가능. spec line 36 의 2 옵션 (정확 매칭 vs 단순화) 중 단순화 답습. 후속 SKILL.md 본문에 H1 토큰 치환 패턴 추가 시 동일 정규식 형태 재사용 가능 (from #08)
 - [ ] #08 의 `pilot/docs/getting-started.md` project 출력 코드블록 drift 점검 (인수인계 line 128) 은 plan step 3 에서 "치환 절차 wording 변경이 출력 형식 깨지 않는 한 변화 없음" 결정. blockquote 추가 → SKILL.md 본문 한정 (사용자 출력 미관여) → getting-started.md 영향 0 으로 잠정. v0.3.0 합본 PR 머지 후 실 `/pilot:project` 1 회 호출로 재확인 (from #08)
+- [ ] `workspace/context/pilot/spec.md` stale (drift-protocol A 보고, #17 plan 주의사항 예고분) — analyze "8 단계 프로세스" (spec.md:58-66) 에 7.5 (조건부 인터뷰) 부재 + step 8 인용 `SKILL.md:242-263` 어긋남 (실제 191-193), create-feature 단계 기술 (spec.md:71-98) 에 3-bis·3-ter 부재 + 라인 인용 shift (+17줄). `/pilot:learn` 재실행 또는 drift-protocol 승인 하 갱신 필요 — 직접 Edit 금지 준수 (from #17)
+- [ ] open-questions.md (작성 SSOT) ↔ interview.md (소비 SSOT) 짝 패턴 정착 — 후속 feature 가 Open Questions 행 형식·카테고리를 변경하면 interview.md 행 파싱 규칙 (`- [ ] ` prefix 판정 · 마지막 `→` 뒤 = 답변 요약) 과 scope-sync.md 5-2 규칙 2 (중복 판정 키 = 외부 도메인명) 3곳 동시 동기화 필요 (from #17)

@@ -21,6 +21,7 @@
 
 - 다음 순번으로 `features/NN-{slug}.md` 파일을 생성합니다. (`slug` 명칭은 입력 프롬프트 내용을 기반으로 자동 추출하여 `pre-issue-eligibility-check` 와 같은 kebab-case 형태로 정규화됩니다)
 - 템플릿 구성: `# 제목`, `## 요구사항` (조건, 트리거, 기대결과), `## 상태 전환`, `## 비즈니스 규칙`, `## 예외 케이스`, `## Open Questions` 등의 섹션이 포함됩니다.
+- 생성된 spec 에 미해결 Open Questions(`- [ ]`) 가 있으면 **조건부 인터뷰**가 발동해 우선순위((d) 비즈니스 결정 우선) 순으로 최대 4문항을 질의하고, 답변을 spec 에 반영합니다. 모든 질문에 "나중에 결정" 이 제공되며, 스킵하면 기존 흐름과 동일하게 진행됩니다.
 - `project.md` 의 목표 및 관련 파일 섹션 중 `[analyze-managed]` 마커 내부 영역을 동기화합니다.
 - `prompts/planner.md`, `prompts/generator.md`, `prompts/evaluator.md` 의 *기능별 사전 확인 사항* 표에 해당 feature 행을 추가합니다.
 

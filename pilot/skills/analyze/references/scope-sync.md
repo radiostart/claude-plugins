@@ -117,7 +117,7 @@ features/ 키워드와 scope/{domain}.md 매칭 시도 후, cover 되지 않는 
 features/ 갱신 시 기존 features/NN-*.md 파일의 `## Open Questions` 섹션을 다음 규칙으로 처리한다.
 
 1. 기존 `## Open Questions` 섹션이 있으면 보존. 기존 `- (없음)` 행, 작성자 수동 기입 행 모두 그대로 유지.
-2. cross-domain detect 결과 (외부 도메인 매칭) → 해당 feature 의 `### (b) cross-domain 산출물 부재` 에 행 추가만 (중복 행은 skip).
+2. cross-domain detect 결과 (외부 도메인 매칭) → 해당 feature 의 `### (b) cross-domain 산출물 부재` 에 행 추가만 (중복 행은 skip — 판정 키는 **외부 도메인명**: 동일 외부 도메인을 가리키는 (b) 행이 이미 있으면 체크 상태 `- [x]`·답변 append 여부와 무관하게 skip. 소비 규칙: [interview.md](../../context/shared/interview.md)).
 3. 신규 features/NN-*.md 생성 시에는 `## Open Questions` 4 카테고리 섹션 + `- (없음)` 반드시 포함.
 4. `## Open Questions` 섹션이 아예 없는 기존 파일은 수정하지 않음 (doctor 가 INFO 로 안내).
 
