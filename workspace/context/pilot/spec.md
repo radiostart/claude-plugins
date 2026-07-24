@@ -62,8 +62,9 @@ Confluence 기획서 fetch / 검색 (`pilot/skills/confl/SKILL.md:9`).
   4. **저장** — `workspace/projects/{PROJECT}/features/{NN}-{slug}.md`. 배치 Write (3~5 개 단위 권장) (`pilot/skills/analyze/SKILL.md:124-132`).
   5. **project.md 갱신** — 도메인 결정 → `## 목표` 체크리스트 + `## 관련 파일` 표 (Routes/Models/Services 를 `scope/{domain}.md` 에서 추출) (`pilot/skills/analyze/SKILL.md:133-176`).
   6. **prompts/ 갱신** — `references/prompts-update.md` 절차 + `.agent-state.yml.analyzed: true` (`pilot/skills/analyze/SKILL.md:177-180`).
-  7. **자가 검증** — `references/self-verify.md` 4 항목 (커버리지·구조·정합성·추측 혐의) (`pilot/skills/analyze/SKILL.md:181-184`).
-  8. **결과 출력** (`pilot/skills/analyze/SKILL.md:242-263`).
+  7. **자가 검증** — `references/self-verify.md` 4 항목 (커버리지·구조·정합성·추측 혐의).
+  7.5. **조건부 인터뷰 (#17)** — 신규 생성 features 의 unchecked Open Questions (`- [ ]`) 존재 시에만 발동 (soft gate). (d)>(b)>(c)>(a) 우선순위로 최대 8 문항 일괄 질의, 답변 spec 반영 + `- [x]` 체크. 해소 ≥1 건 시 `--regen-agents` 권장 INFO. `--regen-agents` 모드는 미발동. 소비 규칙 SSOT: `pilot/skills/context/shared/interview.md` (`pilot/skills/analyze/SKILL.md:179-189`).
+  8. **결과 출력** — (7.5 발동 시) `인터뷰: 해소 N건 / 이월 M건` 줄 포함 (`pilot/skills/analyze/SKILL.md:191-193`).
 - **추측 금지** — 원본에 없는 내용 추가 금지. 한 번 추측 들어가면 후속 prompts/·planner/·generator 가 모두 잘못된 사실 기반 동작 (`pilot/skills/analyze/SKILL.md:153`).
 
 ---
@@ -92,7 +93,8 @@ Confluence 기획서 fetch / 검색 (`pilot/skills/confl/SKILL.md:9`).
   ## 상태 전환 / 비즈니스 규칙 / 예외 케이스
   ```
   - 추측성 내용 **금지** — placeholder 로 둠.
-- **자동 갱신** — `analyze` 의 5 ~ 6 단계 그대로 호출 (소스가 docs/ 가 아니라 **현재 features/ 전체**) (`pilot/skills/create-feature/SKILL.md:94-110`).
+- **3-ter 조건부 인터뷰 (#17)** — 3-bis 직후, spec 의 unchecked Open Questions 존재 시에만 발동. 산출물 대조 (spec 심볼 ↔ `scope/{domain}.md` lookup only, 코드 탐색 금지) 후 (d)>(b)>(c)>(a) 우선순위 최대 4 문항 질의, 답변 spec 반영. 해소 (b) 행은 5-2 재detect 에서 재개봉 안 함 (판정 키 = 외부 도메인명). 소비 규칙 SSOT: `pilot/skills/context/shared/interview.md` (`pilot/skills/create-feature/SKILL.md:108-122`).
+- **자동 갱신** — `analyze` 의 5 ~ 6 단계 그대로 호출 (소스가 docs/ 가 아니라 **현재 features/ 전체**).
 - **제약** (`pilot/skills/create-feature/SKILL.md:146-150`):
   - 에이전트 자동 호출 안 함. 시작점은 `@pilot-planner`.
   - `> source: prompt` tag → `analyze --force` 가 덮어쓰기 시 사용자 승인 필요.

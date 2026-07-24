@@ -37,6 +37,7 @@ ls workspace/projects/{PROJECT}/docs/
 - `project.md` 의 목표 섹션 중 `[analyze-managed]` 마커 내 영역을 갱신합니다 (마커 외부의 사용자 작성 영역은 보존됩니다).
 - `prompts/planner.md`, `prompts/generator.md`, `prompts/evaluator.md` 의 *기능별 사전 확인 사항* 섹션을 자동 작성합니다.
 - `.agent-state.yml` 의 `analyzed: true` 설정을 업데이트합니다.
+- 신규 생성된 features 에 미해결 Open Questions(`- [ ]`) 가 남아 있으면 분석 완료 후 **조건부 인터뷰**가 발동해 우선순위 순으로 최대 8문항을 일괄 질의합니다. 모든 질문에 "나중에 결정" 이 제공되며, 스킵하면 기존 흐름과 동일하게 진행됩니다 (질문이 없으면 인터뷰 자체가 발동하지 않습니다).
 
 ### 3. 결과 검토
 
