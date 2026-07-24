@@ -15,7 +15,7 @@ Planner 가 작성하고 Generator 가 Read 하는 plan 파일의 **형식 계�
 | 미설정 | `true` | **tdd** |
 | 미설정 | `false` 또는 미설정 | **standard** |
 
-`mode: characterize` 와 `tdd: true` 가 동시 설정된 경우 characterize 우선 ([`modes/characterize.md`](../modes/characterize.md):10).
+`mode: characterize` 와 `tdd: true` 동시 설정 시 우선순위(characterize 우선)는 [`modes/characterize.md`](../modes/characterize.md):10 이 정본이다.
 
 ## 공통 요건 (모든 모드)
 

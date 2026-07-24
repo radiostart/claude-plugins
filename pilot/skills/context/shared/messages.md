@@ -63,6 +63,8 @@ docs/ 에 기획서가 없습니다. `/pilot:confl {url}` 로 먼저 기획서�
 프로젝트별 Slack Incoming Webhook 으로 발송하는 알림. 설정 SSOT: `workspace/projects/{PROJECT}/.slack.env`.
 발송 주체: `tools/slack-notify.py`. 사용자 인터랙션 주체: `/pilot:slack`.
 
+**발송 계약 (정본)**: `slack-notify.py` 는 항상 exit 0 — `.slack.env` 미설정·webhook 빈 값이면 자동 no-op. 호출자(에이전트·스킬)는 이 사실과 무관하게 **항상 호출**하고, 실패·no-op 은 본 흐름을 차단하지 않는다(stderr 경고는 원문 그대로 사용자에게 전달). 소비처는 이 계약을 재서술하지 않고 참조만 한다.
+
 ### `slack.activated`
 
 ```

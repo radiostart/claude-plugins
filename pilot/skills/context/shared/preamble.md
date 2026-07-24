@@ -32,6 +32,7 @@ auto-memory (`~/.claude/projects/{slug(cwd)}/memory/`) 는 Claude Code harness �
 
 `workspace/STATE.md` 를 Read 하여 `진행중` 행의 프로젝트명을 `{PROJECT}` 로 사용한다.
 
+- `workspace/STATE.md` 자체가 없으면 [messages.md](messages.md) 의 `workspace_missing` 메시지를 출력하고 종료한다 (아래 두 케이스와 구분 — 파일 자체 부재).
 - 진행중 행이 없으면 [messages.md](messages.md) 의 `no_active_project` 메시지를 출력하고 종료한다.
 - 진행중 행이 2개 이상이면 [messages.md](messages.md) 의 `state_corrupt` 메시지를 출력하고 종료한다.
 
@@ -81,12 +82,18 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 | `autopilot`      |     |    | ✅ |    |    |
 | `pr`             | ✅  |    | ✅ |    |    |
 | `slack`          |     |    | ✅ |    |    |
+| `code-review-init` |   |    |    |    |    |
+| `review`         |     |    |    |    |    |
 
 > `init` 은 workspace 가 없는 상태에서 실행되므로 P1 을 수행하지 않는다 (workspace/STATE.md 를 처음 생성하는 스킬).
 >
 > `doctor` 는 P 절차를 수행하지 않는다 — doctor.py 가 워크스페이스·프로젝트 해석을 자체 수행한다.
 >
 > `learn` 은 workspace 부트스트랩 단계라 활성 프로젝트 없이 실행 가능 — P1 을 수행하지 않는다.
+>
+> `code-review-init` 은 활성 프로젝트가 아니라 `workspace/context/` 존재 여부만 확인한다 (`messages.md` 의 `workspace_missing` 참조) — P1 미적용.
+>
+> `review` 는 사전 확인 없이 target 을 결정해 `@pilot-code-review` 에 위임한다 (그 에이전트가 self-contained).
 
 ---
 

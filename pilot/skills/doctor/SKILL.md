@@ -24,18 +24,13 @@ description: >-
 
 ## 동작
 
-아래 Bash 명령을 실행해 결과를 사용자에게 그대로 출력한다:
+아래 Bash 명령을 실행해 결과를 사용자에게 그대로 출력한다 (인자로 프로젝트명 전달 시 `--project {PROJECT}` 덧붙임):
 
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace
 ```
 
-인자로 프로젝트명이 전달되면 `--project {PROJECT}` 를 덧붙인다.
-
-exit code:
-
-- `0` — ERROR 없음 (PASS / WARN 만)
-- `1` — ERROR 1 건 이상
+exit code: `0` — ERROR 없음 (PASS / WARN 만) · `1` — ERROR 1 건 이상.
 
 ---
 
@@ -47,12 +42,15 @@ exit code:
 
 ---
 
-## 언제 실행하나
+## 임베디드 호출 시 출력 규칙 (정본)
 
-- 프로젝트 활성화 직후 상태 확인 (`/pilot:project {이름}` 후)
-- `analyze` · `tdd` 실행 직후 state 갱신 확인
-- drift 의심 시 수동 점검
-- 신규 팀 합류 시 workspace 구조 검증
+다른 스킬·절차가 자체 흐름 마지막 단계로 `doctor.py workspace` 를 실행할 때(예: `project`·`create-feature`·`analyze` 6-5·`tdd-activation` §6) 따르는 공통 규칙:
+
+- ERROR 또는 WARN 이 있으면 **원문을 사용자에게 그대로 출력**한다 (요약하면 어떤 파일·필드가 문제인지 직접 확인할 수 없다).
+- 모두 PASS 면 `doctor: all checks passed` 한 줄만 표시한다.
+- 비차단 — 호출부 절차 자체를 중단시키지 않는다 (읽기 전용 점검이므로).
+
+호출부는 이 규칙을 재서술하지 않고 본 절 참조만 남긴다.
 
 ---
 

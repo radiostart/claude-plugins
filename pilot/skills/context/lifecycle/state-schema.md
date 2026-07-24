@@ -66,7 +66,7 @@ Wrapper 동작 차이:
 
 - 값: `null` (기본) 또는 `characterize`.
 - `characterize`: 레거시 코드의 현재 동작 포착 모드. `{source_root}` 수정 금지, 테스트 (`{test_path_convention}`) 만 추가. 상세: [`characterize.md`](../modes/characterize.md).
-- `tdd: true` 와 `mode: characterize` 동시 설정 시 **characterize 우선**. Red 계약 대신 Characterization Contract 사용.
+- `tdd: true` 와 `mode: characterize` 동시 설정 시 우선순위는 [`characterize.md`](../modes/characterize.md):10 이 정본 (characterize 우선 — Red 계약 대신 Characterization Contract 사용).
 - 전환 명령: `/pilot:characterize` (`on` / `off`).
 
 ### `domain` (v1.1 신규, 필수)
