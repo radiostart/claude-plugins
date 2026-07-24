@@ -34,6 +34,9 @@
 - [x] TDD 모드 사후 토글 (`/pilot:tdd on|off`) -> [상세](features/15-tdd-mode-toggle.md) `[v0.3.0 MED]`
 - [x] Doctor onboarding-health 점검 -> [상세](features/16-doctor-onboarding-health.md) `[v0.3.0 MED]`
 - [x] 조건부 인터뷰 (Open Questions 소비) -> [상세](features/17-conditional-interview.md)
+- [ ] 정비 prune — 미사용·드리프트 정리 -> [상세](features/18-consolidation-prune.md) `[consolidation 1/3]`
+- [ ] 정비 rewrite — 원칙 중심 재작성 -> [상세](features/19-consolidation-rewrite.md) `[consolidation 2/3]`
+- [ ] 정비 slim — Python 슬림화 -> [상세](features/20-consolidation-slim.md) `[consolidation 3/3]`
 
 > `/pilot:analyze` 실행 시 features/ 파일과 동기화되어 이 목록이 자동 갱신된다.
 

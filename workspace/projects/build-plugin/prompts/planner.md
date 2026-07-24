@@ -74,6 +74,39 @@
 - 변경: `pilot/skills/analyze/SKILL.md` (7.5 일괄 질의 단계 + 결과 출력 라인)
 - 참조: `pilot/skills/context/shared/open-questions.md` (행 형식 파싱 소스 — 대조 필요)
 
+### #18 정비 prune — 미사용·드리프트 정리 (features/18-consolidation-prune.md)
+
+- 조건: 2026-07-24 전수 감사 승인 완료. 동작 변경 없는 삭제·정정만.
+- 트리거: 정비 사이클 1/3 — #19 전에 삭제 확정으로 죽은 참조 방지.
+- 기대결과: handoff-quality 4파일·v0.1.0-baseline 수동 하네스·examples README·사람용 문서 3종 삭제 + 드리프트 B-1~B-9 정정 + docs_build stale 정리. 깨진 링크 0.
+
+**관련 파일 범위**:
+- 삭제: `pilot/tests/fixtures/handoff-quality/` · `pilot/tests/fixtures/v0.1.0-baseline/{diff.sh,learn,project,analyze,wizard,tdd-on,tdd-off,doctor-onboarding}` · `pilot/examples/code-review/README.md` · `pilot/skills/context/lifecycle/{INDEX.md,setup/README.md,issues/example/issue.md}`
+- 정정: `pilot/skills/analyze/SKILL.md:202` · `pilot/skills/pr/SKILL.md:49` · `pilot/skills/context/lifecycle/projects/GUIDE.md` · `pilot/skills/code-review-init/SKILL.md:31` · `pilot/skills/tdd/SKILL.md:13` · `pilot/tools/docs_build.py`
+- 근거 SSOT: `docs/audits/2026-07-24-audit-1-reference-graph.md` · `2026-07-24-audit-2-duplication.md`
+
+### #19 정비 rewrite — 원칙 중심 재작성 (features/19-consolidation-rewrite.md)
+
+- 조건: #18 완료 후. 감사 축 3 의 스킬별 불변 조건 체크리스트가 검증 기준.
+- 트리거: 정비 사이클 2/3.
+- 기대결과: SKILL.md 17개 각 100줄 이하 원칙 중심 재작성 (agents 는 계약 보존 우선), context/ SSOT 재편 (wrapper-protocol 신설·16 클러스터 통합·A2 정의 신설), 지시 문서 30~35% 감축. 문자열 원문 계약·analyze 단계 번호 앵커 불변.
+
+**관련 파일 범위**:
+- 변경: `pilot/skills/*/SKILL.md` 전체 · `pilot/agents/*.md` · `pilot/skills/context/shared/*` (wrapper-protocol.md 신설 포함)
+- 근거 SSOT: `docs/audits/2026-07-24-audit-3-instruction-excess.md` (불변 조건 체크리스트) · `2026-07-24-audit-2-duplication.md` (정본 지정)
+
+### #20 정비 slim — Python 슬림화 (features/20-consolidation-slim.md)
+
+- 조건: #19 완료 후 (이관 원칙의 지시문 반영을 diff 로 확인 가능).
+- 트리거: 정비 사이클 3/3.
+- 기대결과: integrity.py 2,160→~1,060 (마이그레이션 삭제·lint 4종 이관·OH 축소), diagnose·memory-hint·init_detect 이관 후 삭제 (호출처 문서와 동일 커밋), schema.py 유지 + validate.yml CI 신설, verify-report-lint 슬림화 (파서는 auto_pilot 흡수), 연동 테스트 ~1,380줄 삭제. tools/ 30%+ 감축.
+
+**관련 파일 범위**:
+- 변경: `pilot/tools/doctor/integrity.py` · `pilot/tools/{doctor.py,verify-report-lint.py,auto_pilot.py,orchestrate-load.py}` · 관련 SKILL/preamble 지시문
+- 삭제: `pilot/tools/{doctor/diagnose.py,memory-hint.py,init_detect.py}` + 연동 테스트·픽스처
+- 신설: `.github/workflows/validate.yml`
+- 근거 SSOT: `docs/audits/2026-07-24-audit-4-python.md`
+
 > `workspace/context/scope/pilot.md` · `workspace/context/rules/pilot.md` 부재 — 본 프로젝트는 사용자 커스텀 layer 미작성. features/ 의 file:line 인용을 1 차 근거로 활용한다 (예: `pilot/skills/learn/SKILL.md:90-111`).
 
 ---

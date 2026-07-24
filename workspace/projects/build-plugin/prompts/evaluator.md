@@ -19,6 +19,9 @@
 - [x] #03 `/pilot:project` 가 신규 폴더 생성 시 1 회 H3 동적 생성. 재실행 시 기존 H3 보존. config 비면 default H3 (Models/Endpoints/Services) 생성 (기존 거동).
 - [x] #04 doctor 가 신규 config 섹션 존재 시 스키마 검증 (컬럼 수·헤더 화이트리스트·`## ` prefix). D10 행 수 0 허용 (빈 표 → INFO 1 줄). 부재 시 INFO 1 줄, WARN 아님.
 - [x] #05 doctor `--fix` 가 v0.1.0→v0.2.0 업그레이드 감지 시 사용자 확인 (a/b/c) 후 v0.1.0 default 표 자동 주입 또는 거부 기록. interactive 환경 only — non-interactive 자동 미루기.
+- [ ] #18 감사 승인 삭제 전건 수행 (handoff-quality·v0.1.0-baseline 수동 하네스·examples README·사람용 문서 3종) + 자동 테스트 참조 픽스처 (external-domain·transaction-contracts·config·migration·open-questions·verify-reports) 보존 + 드리프트 B-1~B-9 정정 (정본 = 감사 축 2 § B 판정) + 깨진 링크 0 + pytest·doctor·docs 빌드 클린. 기계 계약·스킬 동작 무변경.
+- [ ] #19 SKILL.md 각 100줄 이하 + 감사 축 3 의 스킬별 불변 조건 체크리스트 전 항목 보존 (문자열 원문 계약·analyze 단계 번호 앵커·learn 실측 규칙 포함) + agents 는 계약 보존 우선 + context/ 16 클러스터 정본 통합 + 지시 문서 총량 30~35% 감축 + pytest·doctor·docs 빌드 클린.
+- [ ] #20 integrity.py ~1,060줄 (마이그레이션 삭제·lint 4종 이관·OH 축소) + 이관 3종 스크립트 삭제가 호출처 문서 대체와 동일 커밋 + schema.py 유지 · validate.yml CI 신설 + 이관 부적합 6종 (plan-validate·regen-verify·auto_pilot·confluence·slack-notify·docs_build) 무변경 + 연동 테스트 정리 후 pytest 전체 통과 + tools/ 30%+ 감축 + 파이프라인 1사이클 실완주.
 - [x] #17 create-feature 3-ter · analyze 7.5 조건부 인터뷰 — unchecked Open Questions 존재 시에만 발동 (soft gate). 우선순위 (d)>(b)>(c)>(a), 상한 4/8, "나중에 결정" 항상 제공, 스킵 시 unchecked 유지 (무열화 degrade). 답변 spec 반영 + `- [x] {질문} → {답변 요약}` 체크. 산출물 대조 (scope lookup only, 코드 탐색 금지) 부재 심볼 → (a) 행 추가. scope 부재 시 대조 스킵 (A2). `--regen-agents` 미발동. 결과 요약 `인터뷰: 해소 N건 / 이월 M건` 라인. SSOT `context/shared/interview.md`. 에이전트·autopilot 무변경. (검증 2026-07-24: interview.md 7섹션 + 3-ter (create-feature SKILL.md:108-122) + 7.5 (analyze SKILL.md:179-189) + regen-mode.md item 6 + scope-sync.md 규칙 2 C1 키 + open-questions.md 상호 링크 + getting-started.md C6 시나리오. C1~C6 전건 실재, 링크 8건 해석 OK, doctor exit 0 · 0 ERROR, markdown-only (`.py` 변경 0), 회귀 픽스처 무변경)
 
 ---
