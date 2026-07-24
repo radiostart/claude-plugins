@@ -2,6 +2,8 @@
 
 `/pilot:analyze` 와 `/pilot:create-feature` 가 공유하는 Open Questions 작성 규칙과 분류 기준. features/NN-*.md 작성 시 `## Open Questions` 섹션의 SSOT.
 
+> **소비 규칙(조건부 인터뷰)** 은 [`interview.md`](interview.md) 가 SSOT — unchecked (`- [ ] `) 행이 여기 작성 규칙대로 만들어지므로, 본 문서의 행 형식을 바꾸면 `interview.md` 의 행 파싱 규칙도 함께 동기화해야 한다.
+
 ---
 
 ## 작성 규칙

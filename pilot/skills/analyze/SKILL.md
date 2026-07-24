@@ -176,9 +176,21 @@ features/ 분석 결과로 `prompts/{planner,generator,evaluator}.md` 갱신 + `
 
 6-5 (doctor) 완료 후 4 항목 (커버리지·구조·정합성·추측 혐의) 자가 점검. 상세 + 출력 형식: [`references/self-verify.md`](references/self-verify.md).
 
+### 7.5 조건부 인터뷰 — 신규 features Open Questions 일괄 소비 (#17)
+
+대상은 **이번 실행에서 신규 생성된 features 만** — 기존 features 의 unchecked 항목은 대상이 아니다(`--regen-agents` 는 features 신규 생성이 없으므로 미발동 — 상세: [`references/regen-mode.md`](references/regen-mode.md)).
+
+**절차:**
+
+1. **산출물 대조** — 신규 features 각각의 spec 명시 심볼 ↔ `scope/{domain}.md` lookup. 5 단계에서 이미 Read 한 산출물을 재사용 — 추가 Read 불필요.
+2. **우선순위 정렬 + 일괄 질의** — 전체 신규 features 의 unchecked 항목을 (d) > (b) > (c) > (a) → 파일 NN 순으로 정렬, 최대 8 문항까지 일괄 질의.
+3. **답변 반영** — 해당 spec 섹션에 반영 후 `- [x] {원문} → {답변 요약}` 체크. 스킵 항목은 unchecked 유지.
+
+상세 규칙(행 파싱·상한 산술·미발동 컨텍스트 등): [`../context/shared/interview.md`](../context/shared/interview.md).
+
 ### 8. 결과 출력
 
-`분석 완료: {원본 파일명}` + 생성된 features 목록 (`features/{NN}-{slug}.md — {기능명}`) + `총 N개` + 갱신 파일 (project.md / prompts/*.md / .agent-state.yml) + 검증 한 줄.
+`분석 완료: {원본 파일명}` + 생성된 features 목록 (`features/{NN}-{slug}.md — {기능명}`) + `총 N개` + 갱신 파일 (project.md / prompts/*.md / .agent-state.yml) + 검증 한 줄 + (7.5 발동 시) `인터뷰: 해소 N건 / 이월 M건` 줄. 해소 ≥ 1 건이면 `[INFO] 인터뷰 답변이 spec 에 반영됨 — prompts 최신화가 필요하면 /pilot:analyze --regen-agents 권장` 1 줄을 추가로 출력한다.
 
 ---
 

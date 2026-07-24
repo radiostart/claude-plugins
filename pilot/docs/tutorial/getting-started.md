@@ -136,11 +136,15 @@ Open Questions (자동 생성):
   (b) cross-domain 산출물 부재 — (없음)
   (c) 외부 spec 부재 — (없음)
   (d) 비즈니스 결정 — email 중복 허용 여부
+
+인터뷰: 해소 0건 / 이월 2건
 ```
 
 **생성 파일:** `workspace/projects/python-sample-demo/features/01-user-email-field.md`
 
 `features/11` 양식에 정의된 Open Questions 4개 카테고리 템플릿이 자동으로 주입됩니다. 답변하기 모호한 항목은 `(없음)`으로 유지한 채 Planner에게 분석과 설계를 위임할 수 있습니다.
+
+unchecked 항목이 있으면 3-ter 조건부 인터뷰가 발동합니다 — **이 예시는 (d)·(a) 2건이 질의된 뒤 모두 "나중에 결정"을 선택한 시나리오**입니다 (해소 0 / 이월 2 / 미질의 0). 스킵하면 기존 흐름과 완전히 동일하게 진행됩니다.
 
 ---
 

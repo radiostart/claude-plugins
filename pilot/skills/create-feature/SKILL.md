@@ -105,6 +105,22 @@ feature spec 작성 후 MANIFEST 를 조회해 산출물 lookup 으로 답할 �
 
 매핑 알고리즘·INFO 메시지·A2 fallback 상세: [`../context/shared/open-questions.md`](../context/shared/open-questions.md) `cross-domain 의존성 detect 시 분류 매핑` 섹션.
 
+### 3-ter. 조건부 인터뷰 — Open Questions 소비 (#17)
+
+3-bis 직후, step 4(prompts 갱신)보다 앞에 위치한다 — 답변이 spec 에 먼저 반영돼야 step 4 의 prompts/ 재생성이 최신 spec 을 기준으로 동작한다.
+
+**발동 조건:** `## Open Questions` 하위 unchecked(`- [ ] `) 항목이 1 개 이상. `- (없음)` 뿐이면 이 단계를 건너뛴다(soft gate — 발동하지 않아도 흐름은 계속됨).
+
+**절차:**
+
+1. **산출물 대조** — spec 명시 심볼 ↔ `scope/{domain}.md` lookup. `{domain}` 은 `.agent-state.yml.domain` 만 사용하며 null 이면 대조를 스킵한다.
+2. **우선순위 정렬 + 질의** — (d) > (b) > (c) > (a) 순, 동일 카테고리는 파일 내 등장 순. 최대 4 문항까지 사용자에게 질의(모든 질문에 "나중에 결정" 제공).
+3. **답변 반영** — 해당 spec 섹션에 반영 후 항목을 `- [x] {원문} → {답변 요약}` 으로 체크. 스킵 항목은 unchecked 유지.
+
+상세 규칙(행 파싱·상한 산술·미발동 컨텍스트 등): [`../context/shared/interview.md`](../context/shared/interview.md).
+
+> **재개봉 방지(C1):** 3-ter 가 해소한 `### (b)` 행은 step 4(analyze 5-2 인용)의 cross-domain 재detect 에서 재추가되지 않는다 — 중복 판정 기준은 [`../analyze/references/scope-sync.md`](../analyze/references/scope-sync.md) 5-2 규칙 2(판정 키 = 외부 도메인명, 체크 상태·답변 append 무관)가 SSOT.
+
 ### 4. `project.md` 및 `prompts/*` 자동 갱신
 
 신규 feature 파일 생성 후 [../analyze/SKILL.md](../analyze/SKILL.md) 의 **"분석 프로세스" 5 ~ 6 단계** 를 그대로 수행한다 (도메인 결정·5-1·5-2·6-1~6-4 절차와 보존 규칙 모두 analyze 가 SSOT).
@@ -140,6 +156,7 @@ Feature 생성 완료: #{NN} {기능명}
   - .agent-state.yml     (analyzed: true)
 
 검증: {doctor 결과 한 줄 요약}
+인터뷰: 해소 {N}건 / 이월 {M}건  (3-ter 발동 시에만 표기)
 
 다음 단계:
 → 명세가 부족하면 features/{NN}-{slug}.md 직접 편집
