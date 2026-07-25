@@ -39,6 +39,14 @@ exit code: `0` — ERROR 없음 (PASS / WARN 만) · `1` — ERROR 1 건 이상.
 
 다른 스킬·절차가 자체 흐름 마지막 단계로 `doctor.py workspace` 를 실행할 때(예: `project`·`create-feature`·`analyze` 6-5·`tdd-activation` §6) 따르는 공통 규칙: ERROR 또는 WARN 이 있으면 **원문을 사용자에게 그대로 출력**한다(요약하면 어떤 파일·필드가 문제인지 직접 확인할 수 없다) · 모두 PASS 면 `doctor: all checks passed` 한 줄만 표시 · 비차단(읽기 전용 점검이므로 호출부 절차를 중단시키지 않는다). 호출부는 이 규칙을 재서술하지 않고 본 절 참조만 남긴다.
 
+## Onboarding Health (모델 점검)
+
+`doctor.py` 출력 자체에는 온보딩 점검 섹션이 없다 (v0.9.0+ 구조 정합성 검사로 축소 — 근거: `docs/audits/2026-07-24-audit-4-python.md` § B). `/pilot:doctor` **스킬 경유 호출**에서만 아래 조건으로 모델이 직접 점검·안내한다. **임베디드 호출**(`project`·`create-feature`·`analyze` 6-5·`tdd-activation` §6)에서는 이 nudge 가 발화하지 않는다 — 의도된 다운그레이드이며, 신규 사용자 온보딩 funnel 은 [`docs/tutorial/getting-started.md`](../../docs/tutorial/getting-started.md) 가 커버한다.
+
+- **발동 조건**: `context/MANIFEST.md` 의 `## 도메인 분류` 표 행 0건 **또는** `STATE.md` 등록 프로젝트(진행중/대기) 0건.
+- **점검 5항목**: (1) `config.md` 의 `## learn 언어 패턴`·`## scope 카테고리`·`## Ignore` 3섹션 채움 여부 (2) `context/scope/` 에 `*.md` 존재 여부 (3) `STATE.md` 진행중/대기 프로젝트 ≥1 여부 (4) `MANIFEST.md` `## 도메인 분류` 표 행 ≥1 여부 (5) 활성 프로젝트 `features/` 에 `*.md` ≥1 여부.
+- **처방 3종**: 미채움 항목에 따라 `/pilot:learn {진입파일}`(도메인 학습) · `/pilot:project {이름}`(프로젝트 등록) · `/pilot:create-feature`(feature 작성) 를 안내.
+
 ## 제약
 
 - 스크립트는 순수 파이썬 stdlib 만 사용 (외부 의존 없음)
