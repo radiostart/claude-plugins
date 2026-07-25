@@ -46,7 +46,7 @@
 | Python 슬림화 | `pilot/tools/doctor/integrity.py` · `verify-report-lint.py` · `doctor.py` · 삭제 3종 (`diagnose.py`·`memory-hint.py`·`init_detect.py`) + 연동 테스트 | 마이그레이션 삭제·lint 이관·파서 흡수, schema.py 유지 + validate.yml CI 신설 (#20) |
 | 문서 정합 | `pilot/docs/reference/index.md` · `pilot/docs/how-to/doctor-migration.md` · `pilot/docs/tutorial/getting-started.md` | #20 삭제·이관 반영 — 도구 목록 정정·how-to 현행화·Troubleshooting 무효 항목 삭제, md 만 수정, 파일명 보존 (#21) |
 | context 재학습 | `workspace/context/pilot/index.md` · `lifecycle.md` | 삭제 스크립트 3건 서술 해소 — **직접 Edit 금지**, `/pilot:learn` 재실행 경로 (#22) |
-| conventions 파서 | `pilot/tools/doctor/integrity.py` (`check_conventions_paths`) | config 표 플레이스홀더를 실선언으로 오탐 — 파서 수정 (#23) |
+| doctor 파서 오탐 | `pilot/tools/doctor/integrity.py` (`check_conventions_paths`) · `pilot/tools/doctor/_common.py` (`count_real_features`) | (A) config 표 플레이스홀더를 실선언으로 오탐 (B) `.plan.critic.md` 를 feature 로 계수 — 둘 다 파서 수정 (#23) |
 
 ---
 
