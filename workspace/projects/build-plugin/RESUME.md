@@ -33,7 +33,11 @@
    ⚠️ **세션 재시작 필요** — 세션 시작 시 로드된 경로가 고정이라, 재시작 전에는 구버전(0.4.0)이 계속 쓰인다.
 3. **#20 dogfooding 게이트 마감** — 재시작 후 실경로에서 1사이클 완주.
    판정 기준: (a) 사이클 중 삭제 스크립트 4종 호출 시도 0건 (b) orchestrate-load JSON 에 도메인 진입 파일 실재.
-   통과 시 `project.md:39` 의 #20 목표를 `[x]` 로 (evaluator 단독 권한) + 부기된 미체크 사유 제거.
+   통과 시 `project.md` 의 #20 목표를 `[x]` 로 (evaluator 단독 권한) + 부기된 미체크 사유 제거.
+
+   > **버전 확인과 게이트 증거는 별개다.**
+   > - **로드 버전 확인 (즉시·무비용)** — 아무 `/pilot:` 스킬을 부르면 헤더에 `Base directory for this skill: .../pilot/{version}/skills/{name}` 이 찍힌다. `0.10.0` 이면 실경로 진입 완료.
+   > - **orchestrate-load 증거** — 세션을 여는 것만으로는 실행되지 않는다. `orchestrate-load.py` 는 **서브에이전트 wrapper 가 호출 시 최우선 실행**하므로, 다음 사이클의 `@pilot-planner` 호출이 곧 판정 (b) 의 증거가 된다. 판정 (a) 는 사이클 전체를 봐야 한다.
 4. **#23 사이클** — `@pilot-planner` → (critic) → `@pilot-generator` → `@pilot-evaluator`.
    브랜치는 이미 `skills/23-doctor-parser-false-positives` 로 생성돼 있다.
 5. **#22 사이클** — `/pilot:learn` 재실행. **반드시 세션 재시작 이후에** — 구버전 스킬로 재학습하면 옛 서술을 다시 학습한다.
