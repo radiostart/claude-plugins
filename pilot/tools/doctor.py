@@ -7,12 +7,14 @@ pilot doctor — workspace / project 정합성 검사.
   - default 모드     → doctor.integrity.run_integrity_check
   - --fix            → 위에 포함 (run_integrity_check 인자)
   - --schema         → doctor.schema.run_schema_check
-  - --diagnose       → doctor.diagnose.run_diagnose
+
+진단 모드(과거 `--diagnose`)는 스크립트 없이 `skills/doctor/SKILL.md`
+§ 진단 모드 지시문이 모델 판단으로 직접 수행한다 (근거:
+`docs/audits/2026-07-24-audit-4-python.md` § C-6).
 
 Usage:
     python3 doctor.py [WORKSPACE_PATH] [--project PROJECT] [--fix]
     python3 doctor.py --schema
-    python3 doctor.py [WORKSPACE_PATH] --diagnose [--project PROJECT]
 
 패키지 함수를 직접 테스트하려면 `doctor.integrity`·`doctor._common` 을
 sys.path 경유로 직접 import 한다 (본 파일은 더 이상 wildcard-style
@@ -34,16 +36,6 @@ if str(_TOOLS_DIR) not in sys.path:
 from doctor._common import RED, RESET  # noqa: E402
 from doctor.integrity import run_integrity_check  # noqa: E402
 from doctor.schema import run_schema_check  # noqa: E402
-from doctor.diagnose import (  # noqa: E402, F401
-    DIAGNOSE_PATTERNS,
-    _pattern_loop,
-    _pattern_red_miss,
-    _pattern_repeat_not_ready,
-    _pattern_scope_violation,
-    _read_project_files,
-    _recommend_action,
-    run_diagnose,
-)
 
 
 def main() -> int:
@@ -66,24 +58,12 @@ def main() -> int:
         action="store_true",
         help="플러그인 구조 스키마 검사만 수행 (workspace 인자 무시).",
     )
-    parser.add_argument(
-        "--diagnose",
-        action="store_true",
-        help="런타임 실패 패턴 진단 — loop/red-miss/repeat-not-ready/scope-violation 검사.",
-    )
     args = parser.parse_args()
 
     if args.schema:
         # 이 스크립트의 부모 디렉터리 = 플러그인 루트 (tools/ 상위)
         plugin_root = Path(__file__).resolve().parent.parent
         return run_schema_check(plugin_root)
-
-    if args.diagnose:
-        workspace = Path(args.workspace).resolve()
-        if not workspace.is_dir():
-            print(f"{RED}error{RESET}: workspace not found: {workspace}", file=sys.stderr)
-            return 1
-        return run_diagnose(workspace, args.project)
 
     workspace = Path(args.workspace).resolve()
     if not workspace.is_dir():
