@@ -55,7 +55,7 @@
 
 - MANIFEST 진입파일 부재 → scope 파일 생성 skip + `[INFO] MANIFEST 진입 파일 없음 — scope 파일 생성 skip` 1 줄. 5-2 도 skip.
 - `config.md` 의 `## scope 카테고리` 빈 표 → default 매핑 사용 (Routes/Models/Services → Endpoints/Models/Services).
-- `scope 헤더` 컬럼 값이 `## ` prefix 미준수 → doctor 검증이 사전 차단 (ERROR). A2 fallback 으로 default 적용.
+- `scope 헤더` 컬럼 값이 `## ` prefix 미준수 → 모델 자기 검증으로 발견 시 A2 fallback 으로 default 적용 (stderr `[WARN] config.md ## scope 카테고리: scope 헤더 '## ' prefix 미준수 — default 사용` 1 줄, abort 안 함). doctor 는 이 스키마를 더 이상 사전 차단하지 않는다.
 
 ---
 

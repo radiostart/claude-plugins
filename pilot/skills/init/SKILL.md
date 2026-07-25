@@ -34,7 +34,7 @@ workspace 경로 = CWD 기준 `./workspace/`. 폴더 없으면 생성(`mkdir -p 
 
 `config.md` 가 `created` 일 때만 진입(`exists` 면 skip). `--no-wizard` 토큰이 있으면 skip. **어느 단계가 실패해도 abort 금지 — 나머지는 계속 진행** ([guardrails.md](../context/shared/guardrails.md) § A2).
 
-> **표 헤더 고정 스키마 (doctor strict 검증 — 한 글자 오차도 ERROR)**: `## learn 언어 패턴` 표1(의존성 추적) `| 언어 | 의존성 추출 패턴 |` · 표2(역할 분류) `| 역할 | 식별 패턴 |` · `## scope 카테고리` `| scope 헤더 | project.md 대상 H3 | 표 헤더 |`(scope 헤더 값은 `## ` 로 시작) · `## Ignore` `| 패턴 | 사유 |`. 문자열 원문 그대로 보존 필수.
+> **표 헤더 고정 스키마 (헤더 리터럴 정확 유지 — 모델 자기 검증)**: `## learn 언어 패턴` 표1(의존성 추적) `| 언어 | 의존성 추출 패턴 |` · 표2(역할 분류) `| 역할 | 식별 패턴 |` · `## scope 카테고리` `| scope 헤더 | project.md 대상 H3 | 표 헤더 |`(scope 헤더 값은 `## ` 로 시작, H3 값은 영숫자·공백·하이픈만) · `## Ignore` `| 패턴 | 사유 |`. 문자열 원문 그대로 보존 — 저장 직후 재확인.
 
 1. **언어 감지** — `${CLAUDE_PLUGIN_ROOT}/tools/init_detect.py` 의 `detect_languages(cwd_path)`(`pathlib.Path`)를 호출해 `## learn 언어 패턴` 두 표에 주입(언어별 default 패턴 — ruby/typescript/python/kotlin/go). 기존 행 있으면 dedupe 병합(사용자 수동 추가 보존). 감지 0건 → 헤더만 남기고 빈 행 + INFO.
 2. **scope 후보 감지** — `detect_scope_candidates(cwd_path)` 호출해 `## scope 카테고리` 표(scope 헤더/project.md 대상 H3/표 헤더 3컬럼 강제)에 주입. 같은 H3 가 여러 폴더에서 매핑되면 1행만 dedupe. 후보 0건 → default 3행(Routes/Models/Services, 출처: [scope-sync.md](../analyze/references/scope-sync.md) 5-2 canonical) + INFO.
