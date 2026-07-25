@@ -1,7 +1,7 @@
 schema: v1.2
 analyzed: true
 analyzed_at: "2026-07-25T01:21:31Z"
-last_analyzed_features: 22
+last_analyzed_features: 24
 tdd: false
 domain: pilot
 plugin_version: "0.1.0"

@@ -74,10 +74,15 @@
 
 **완료 후 최종 검증 — 파이프라인 1사이클 실완주 (dogfooding, spec 게이트)**
 
-- [ ] **미실행 — 사유: 본 세션은 `@pilot-generator` 서브에이전트 단독 실행이며 서브에이전트는 다른 에이전트(`@pilot-planner`·`@pilot-generator`·`@pilot-evaluator`)를 호출할 권한이 없다.** #21 등록 + 3-agent 사이클 완주는 메인 대화(호출자)가 이 세션 종료 후 별도로 수행해야 한다 (사용자 지시로 본 구현 범위에서 명시 제외).
-  - 단, C8 판정 기준 (b)는 본 세션에서 **선행 실측 확인 완료**: `python3 orchestrate-load.py --phase generator --workspace workspace` 실행 결과 JSON 에 `workspace/context/pilot/index.md` 가 `files_to_read` 로 실재하고 "진입 파일 미등록" 힌트가 부재함을 확인 (스텝 6 실버그 수정 검증). 판정 기준 (a) (사이클 산출물 + Bash 오류에 삭제 4파일명 0건)는 실제 3-agent 사이클 실행이 전제이므로 메인 대화 수행 시점까지 미확정.
+> **[판정 범위 축소 — 2026-07-25, D-1 (b) 사용자 승인. #21 planner 가 정정]**
+> 본 게이트의 판정 근거는 **저장소 사본(`pilot/tools/…`) 직접 실행 결과로 한정**한다. wrapper 가 실제로 로드하는 것은 설치 캐시 `~/.claude/plugins/cache/radiostart-plugins/pilot/` 의 **0.4.0** 이고 저장소는 `plugin.json` 기준 **0.9.0** 이라, 사이클 완주가 #20 변경분의 **실경로 통과를 의미하지 않는다**. 마켓플레이스가 GitHub 클론이라 캐시 갱신에는 머지·배포가 선행돼야 해 사이클 내 해소가 불가능했다.
+> **한계 명시** — 캐시 0.4.0 은 애초에 삭제 대상 4파일을 참조하지 않는 구버전이므로, 무증상 통과를 하위호환 신호로도 해석할 수 없다.
+> **후속 확인 필요** — 배포로 캐시가 0.9.0 으로 갱신된 뒤, 실경로(설치 캐시 경유 wrapper 세션)에서 아래 (b) 기대값을 1회 재확인해야 한다. 본 항목은 **미완**으로 남는다.
 
-방법: 소형 검증 feature 를 `/pilot:create-feature` 로 등록 (D3 승인됨 — 소재 = #21 소형 문서성 feature, spec.md 재학습 후속 정정 계열) → `@pilot-planner` → `@pilot-generator` → `@pilot-evaluator` 1사이클 완주. 이 사이클이 #20 변경분의 실경로를 통과한다: orchestrate-load 정규식 수정 (도메인 진입 파일 로드 실측)·wrapper-protocol 배선 (D2)·preamble P0 신문안 (memory-hint 부재 확인)·doctor 슬림 출력 (evaluator 게이트)·plan-validate (무변경 확인). **완주 판정 — 채증 가능 2건 (critic C8)**: (a) #21 사이클 산출물 (`.plan.md`·critic·VERIFICATION REPORT `status: READY`) + 사이클 중 Bash 오류 출력에 삭제 4파일명 (`diagnose.py`·`memory-hint.py`·`init_detect.py`·`verify-report-lint.py`) 문자열 0건 (b) 사이클의 orchestrate-load 결과 JSON 에 `context/pilot/index.md` 가 files_to_read 로 실재 + "진입 파일 미등록" 힌트 부재.
+- [ ] **미실행 — 사유: 본 세션은 `@pilot-generator` 서브에이전트 단독 실행이며 서브에이전트는 다른 에이전트(`@pilot-planner`·`@pilot-generator`·`@pilot-evaluator`)를 호출할 권한이 없다.** #21 등록 + 3-agent 사이클 완주는 메인 대화(호출자)가 이 세션 종료 후 별도로 수행해야 한다 (사용자 지시로 본 구현 범위에서 명시 제외).
+  - 단, C8 판정 기준 (b)는 본 세션에서 **저장소 사본 기준 선행 실측 확인 완료**: `python3 pilot/tools/orchestrate-load.py --phase generator --workspace workspace` 실행 결과 JSON 에 `workspace/context/pilot/index.md` 가 `files_to_read` 로 실재하고 "진입 파일 미등록" 힌트가 부재함을 확인 (스텝 6 실버그 수정 검증). **설치 캐시 경유 실경로는 미검증** (위 판정 범위 축소 blockquote). 판정 기준 (a) (사이클 산출물 + Bash 오류에 삭제 4파일명 0건)는 실제 3-agent 사이클 실행이 전제이므로 메인 대화 수행 시점까지 미확정.
+
+방법: 소형 검증 feature 를 `/pilot:create-feature` 로 등록 (D3 승인됨 — 소재 = #21 소형 문서성 feature, spec.md 재학습 후속 정정 계열) → `@pilot-planner` → `@pilot-generator` → `@pilot-evaluator` 1사이클 완주. 이 사이클은 #20 변경분의 **저장소 사본을 직접 호출한 명령에 한해** 검증한다 (~~실경로를 통과한다~~ — 위 판정 범위 축소 참조): orchestrate-load 정규식 수정 (도메인 진입 파일 로드 실측)·wrapper-protocol 배선 (D2)·preamble P0 신문안 (memory-hint 부재 확인)·doctor 슬림 출력 (evaluator 게이트)·plan-validate (무변경 확인). wrapper 가 자동 실행하는 캐시본(0.4.0)은 이 목록 중 어느 것도 통과시키지 않는다. **완주 판정 — 채증 가능 2건 (critic C8)**: (a) #21 사이클 산출물 (`.plan.md`·critic·VERIFICATION REPORT `status: READY`) + 사이클 중 Bash 오류 출력에 삭제 4파일명 (`diagnose.py`·`memory-hint.py`·`init_detect.py`·`verify-report-lint.py`) 문자열 0건 (b) 사이클의 orchestrate-load 결과 JSON 에 `context/pilot/index.md` 가 files_to_read 로 실재 + "진입 파일 미등록" 힌트 부재.
 
 ### 주의사항
 

@@ -38,6 +38,8 @@
 - [x] 정비 rewrite — 원칙 중심 재작성 -> [상세](features/19-consolidation-rewrite.md) `[consolidation 2/3]`
 - [ ] 정비 slim — Python 슬림화 -> [상세](features/20-consolidation-slim.md) `[consolidation 3/3]`
 - [ ] 정비 후속 — 문서 정합 (#20 반영) -> [상세](features/21-consolidation-docs-sync.md) `[dogfooding]`
+- [ ] 정비 후속 — context 드리프트 재학습 (D-2, 실측 3건) -> [상세](features/22-context-drift-relearn.md) `[후속]`
+- [ ] doctor conventions 플레이스홀더 오탐 (D-3, 파서 수정) -> [상세](features/23-conventions-placeholder-false-positive.md) `[후속]`
 
 > `/pilot:analyze` 실행 시 features/ 파일과 동기화되어 이 목록이 자동 갱신된다.
 

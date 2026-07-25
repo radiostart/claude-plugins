@@ -111,11 +111,28 @@
 
 - 조건: #20 완료 (이관 3종·verify-report-lint 삭제·마이그레이션 제거·--diagnose 지시문화).
 - 트리거: #20 dogfooding 게이트 소재 — 사이클 완주 자체가 검증 목적.
-- 기대결과: reference/index.md 도구 목록 정정 + how-to/doctor-migration.md 현행화 (파일명 보존, 인바운드 링크 5곳 유지) + docs 빌드·링크 게이트 통과. md 만 수정.
+- 기대결과: reference/index.md 도구 목록 정정 + how-to/doctor-migration.md 현행화 (파일명 보존, 인바운드 링크 5곳 유지) + getting-started.md Troubleshooting 무효 항목 삭제 (S1) + docs 빌드·링크 게이트 통과. md 만 수정.
+- 한계: 설치 캐시(0.4.0) ↔ 저장소(0.9.0) 격차로 **실경로 미검증** — #20 게이트 판정은 저장소 사본 기준으로 축소 (D-1).
 
 **관련 파일 범위**:
-- 변경: `pilot/docs/reference/index.md` · `pilot/docs/how-to/doctor-migration.md`
-- 게이트: `docs_build.py --check` · `test_doc_links`
+- 변경: `pilot/docs/reference/index.md` · `pilot/docs/how-to/doctor-migration.md` · `pilot/docs/tutorial/getting-started.md`
+- 게이트: `docs_build.py --check` + `pilot/docs/` 링크 검사 (**`test_doc_links` 는 `SCAN_DIRS = ("skills","agents")` 로 docs/ 미스캔** — plan § 게이트 G4 로 대체)
+
+### #22 정비 후속 — context 드리프트 재학습 (features/22-context-drift-relearn.md)
+
+- 조건: #20 완료 + #21 PR 머지.
+- 트리거: `workspace/context/pilot/` 가 삭제된 스크립트 3종을 현행 구현으로 서술 (`index.md` P0 memory-hint · `lifecycle.md` init_detect · `lifecycle.md` diagnose.py).
+- 기대결과: `/pilot:learn` 재실행으로 3건 해소. **직접 Edit 금지** (drift-protocol § A). 검증은 라인 번호가 아니라 문자열 기준.
+
+### #23 doctor conventions 플레이스홀더 오탐 (features/23-conventions-placeholder-false-positive.md)
+
+- 조건: #20 완료 상태의 `integrity.py`.
+- 트리거: `check_conventions_paths` 가 config 표의 설명용 플레이스홀더를 실선언으로 파싱해 WARN 2건 상시 발화.
+- 기대결과: 파서 수정으로 오탐 제거 (문서만 고치면 다른 workspace 에 동일 오탐 잔존). 정상 미선언 케이스의 WARN 은 유지.
+
+**관련 파일 범위**:
+- 변경: `pilot/tools/doctor/integrity.py` (`check_conventions_paths`) · 필요 시 config.md 템플릿 표기 규약
+- 게이트: doctor WARN 4 → 2 · 기존 doctor 테스트 무손
 
 > `workspace/context/scope/pilot.md` · `workspace/context/rules/pilot.md` 부재 — 본 프로젝트는 사용자 커스텀 layer 미작성. features/ 의 file:line 인용을 1 차 근거로 활용한다 (예: `pilot/skills/learn/SKILL.md:90-111`).
 
