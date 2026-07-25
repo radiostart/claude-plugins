@@ -74,6 +74,66 @@
 - 변경: `pilot/skills/analyze/SKILL.md` (7.5 일괄 질의 단계 + 결과 출력 라인)
 - 참조: `pilot/skills/context/shared/open-questions.md` (행 형식 파싱 소스 — 대조 필요)
 
+### #18 정비 prune — 미사용·드리프트 정리 (features/18-consolidation-prune.md)
+
+- 조건: 2026-07-24 전수 감사 승인 완료. 동작 변경 없는 삭제·정정만.
+- 트리거: 정비 사이클 1/3 — #19 전에 삭제 확정으로 죽은 참조 방지.
+- 기대결과: handoff-quality 4파일·v0.1.0-baseline 수동 하네스·examples README·사람용 문서 3종 삭제 + 드리프트 B-1~B-9 정정 + docs_build stale 정리. 깨진 링크 0.
+
+**관련 파일 범위**:
+- 삭제: `pilot/tests/fixtures/handoff-quality/` · `pilot/tests/fixtures/v0.1.0-baseline/{diff.sh,learn,project,analyze,wizard,tdd-on,tdd-off,doctor-onboarding}` · `pilot/examples/code-review/README.md` · `pilot/skills/context/lifecycle/{INDEX.md,setup/README.md,issues/example/issue.md}`
+- 정정: `pilot/skills/analyze/SKILL.md:202` · `pilot/skills/pr/SKILL.md:49` · `pilot/skills/context/lifecycle/projects/GUIDE.md` · `pilot/skills/code-review-init/SKILL.md:31` · `pilot/skills/tdd/SKILL.md:13` · `pilot/tools/docs_build.py`
+- 근거 SSOT: `docs/audits/2026-07-24-audit-1-reference-graph.md` · `2026-07-24-audit-2-duplication.md`
+
+### #19 정비 rewrite — 원칙 중심 재작성 (features/19-consolidation-rewrite.md)
+
+- 조건: #18 완료 후. 감사 축 3 의 스킬별 불변 조건 체크리스트가 검증 기준.
+- 트리거: 정비 사이클 2/3.
+- 기대결과: SKILL.md 17개 각 100줄 이하 원칙 중심 재작성 (agents 는 계약 보존 우선), context/ SSOT 재편 (wrapper-protocol 신설·16 클러스터 통합·A2 정의 신설), 지시 문서 30~35% 감축. 문자열 원문 계약·analyze 단계 번호 앵커 불변.
+
+**관련 파일 범위**:
+- 변경: `pilot/skills/*/SKILL.md` 전체 · `pilot/agents/*.md` · `pilot/skills/context/shared/*` (wrapper-protocol.md 신설 포함)
+- 근거 SSOT: `docs/audits/2026-07-24-audit-3-instruction-excess.md` (불변 조건 체크리스트) · `2026-07-24-audit-2-duplication.md` (정본 지정)
+
+### #20 정비 slim — Python 슬림화 (features/20-consolidation-slim.md)
+
+- 조건: #19 완료 후 (이관 원칙의 지시문 반영을 diff 로 확인 가능).
+- 트리거: 정비 사이클 3/3.
+- 기대결과: integrity.py 2,160→~1,060 (마이그레이션 삭제·lint 4종 이관·OH 축소), diagnose·memory-hint·init_detect 이관 후 삭제 (호출처 문서와 동일 커밋), schema.py 유지 + validate.yml CI 신설, verify-report-lint 슬림화 (파서는 auto_pilot 흡수), 연동 테스트 ~1,380줄 삭제. tools/ 30%+ 감축.
+
+**관련 파일 범위**:
+- 변경: `pilot/tools/doctor/integrity.py` · `pilot/tools/{doctor.py,verify-report-lint.py,auto_pilot.py,orchestrate-load.py}` · 관련 SKILL/preamble 지시문
+- 삭제: `pilot/tools/{doctor/diagnose.py,memory-hint.py,init_detect.py}` + 연동 테스트·픽스처
+- 신설: `.github/workflows/validate.yml`
+- 근거 SSOT: `docs/audits/2026-07-24-audit-4-python.md`
+
+### #21 정비 후속 — 문서 정합 (#20 반영) (features/21-consolidation-docs-sync.md)
+
+- 조건: #20 완료 (이관 3종·verify-report-lint 삭제·마이그레이션 제거·--diagnose 지시문화).
+- 트리거: #20 dogfooding 게이트 소재 — 사이클 완주 자체가 검증 목적.
+- 기대결과: reference/index.md 도구 목록 정정 + how-to/doctor-migration.md 현행화 (파일명 보존, 인바운드 링크 5곳 유지) + getting-started.md Troubleshooting 무효 항목 삭제 (S1) + docs 빌드·링크 게이트 통과. md 만 수정.
+- 한계: 설치 캐시(0.4.0) ↔ 저장소(0.9.0) 격차로 **실경로 미검증** — #20 게이트 판정은 저장소 사본 기준으로 축소 (D-1).
+
+**관련 파일 범위**:
+- 변경: `pilot/docs/reference/index.md` · `pilot/docs/how-to/doctor-migration.md` · `pilot/docs/tutorial/getting-started.md`
+- 게이트: `docs_build.py --check` + `pilot/docs/` 링크 검사 (**`test_doc_links` 는 `SCAN_DIRS = ("skills","agents")` 로 docs/ 미스캔** — plan § 게이트 G4 로 대체)
+
+### #22 정비 후속 — context 드리프트 재학습 (features/22-context-drift-relearn.md)
+
+- 조건: #20 완료 + #21 PR 머지.
+- 트리거: `workspace/context/pilot/` 가 삭제된 스크립트 3종을 현행 구현으로 서술 (`index.md` P0 memory-hint · `lifecycle.md` init_detect · `lifecycle.md` diagnose.py).
+- 기대결과: `/pilot:learn` 재실행으로 3건 해소. **직접 Edit 금지** (drift-protocol § A). 검증은 라인 번호가 아니라 문자열 기준.
+
+### #23 doctor conventions 플레이스홀더 오탐 (features/23-conventions-placeholder-false-positive.md)
+
+- 조건: #20 완료 상태의 `integrity.py`.
+- 트리거: `check_conventions_paths` 가 config 표의 설명용 플레이스홀더를 실선언으로 파싱해 WARN 2건 상시 발화.
+- 기대결과: 파서 수정으로 오탐 제거 (문서만 고치면 다른 workspace 에 동일 오탐 잔존). 정상 미선언 케이스의 WARN 은 유지.
+
+**관련 파일 범위**:
+- 변경: `pilot/tools/doctor/integrity.py` (`check_conventions_paths`) · 필요 시 config.md 템플릿 표기 규약
+- 게이트: doctor WARN 4 → 2 · 기존 doctor 테스트 무손
+
 > `workspace/context/scope/pilot.md` · `workspace/context/rules/pilot.md` 부재 — 본 프로젝트는 사용자 커스텀 layer 미작성. features/ 의 file:line 인용을 1 차 근거로 활용한다 (예: `pilot/skills/learn/SKILL.md:90-111`).
 
 ---

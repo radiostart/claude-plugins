@@ -1,7 +1,0 @@
-schema: v1.2
-analyzed: true
-tdd: false
-domain: python-sample
-plugin_version: "0.2.0"
-last_analyzed_features: 0
-migration_v0_2_0: accepted

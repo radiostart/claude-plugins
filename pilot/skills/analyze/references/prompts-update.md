@@ -192,5 +192,4 @@ evaluator.md 고유:
 python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace
 ```
 
-- ERROR 또는 WARN 있으면 원문을 사용자에게 그대로 출력 (요약하면 어떤 파일·필드가 문제인지 사용자가 직접 확인할 수 없다).
-- 모두 PASS 면 `doctor: all checks passed` 한 줄만 표시.
+출력 규칙: [`doctor/SKILL.md`](../../doctor/SKILL.md) § 임베디드 호출 시 출력 규칙 (정본) 참조.

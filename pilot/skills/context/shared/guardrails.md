@@ -32,6 +32,18 @@ feature spec 대비 누락 여부를 확인한다. 증거는 `features/NN-{slug}
 
 ---
 
+## § A2 runtime fallback (정본)
+
+절차 중 한 단계가 실패해도 **abort 하지 않는다** — default 값으로 fallback 하고 `WARN`/`INFO` 1 줄을 출력한 뒤 나머지 단계를 계속 진행한다. 실패 원인은 안내에 남기되, 사용자 대응은 다음 실행 전 자유롭게 하도록 둔다.
+
+이 정의를 소비하는 곳(스킬 본문·`init`·`project`·`interview.md`·`open-questions.md`·`tdd-activation.md`·`scope-sync.md` 등)은 규칙을 재서술하지 않고 `(A2)` 표기만 남긴다.
+
+## § A16 자동 체인 금지 원칙
+
+에이전트·스킬은 **다음 phase 를 자동 호출하지 않는다** — 각 phase 의 시작점은 항상 **사용자의 명시 호출**이다. 유일한 opt-in 예외는 `/pilot:autopilot` (감독형 자율 모드) 이며, 그 안에서도 hard-stop 신호를 만나면 즉시 사람에게 제어를 반환한다.
+
+---
+
 ## SSOT — 기록은 Edit 으로
 
 체크·증거·합의 결과는 텍스트 보고가 아니라 **Edit 으로 파일에 기록**한다 — 서브에이전트 간 인수인계의 SSOT 는 대화가 아니라 파일 상태다 (체크박스 `[x]`, `.plan.md` 증거, `.plan.critic.md` 합의 표 모두 해당).

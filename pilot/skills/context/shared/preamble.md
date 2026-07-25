@@ -18,10 +18,10 @@ TodoWrite 는 deferred tool 이므로 ToolSearch 선로딩 없이 직접 호출�
 
 ## P0. 관련 메모 선조회
 
-`python3 ${CLAUDE_PLUGIN_ROOT}/tools/memory-hint.py "{PROJECT_OR_ARGS}" [KEYWORDS...]` 실행.
+`~/.claude/projects/{slug(cwd)}/memory/MEMORY.md` 색인을 Read (`slug` = cwd 절대경로의 `/` 를 `-` 로 치환. worktree 슬롯이면 `--claude-worktrees-` 이전 부분으로 복원한 원본 cwd 의 memory/ 도 후보로 함께 확인).
 
-- 출력이 있으면 목록된 파일들을 Read 하여 세션 컨텍스트에 반영한다 (과거 동일 주제·유사 프로젝트의 메모).
-- 출력이 비어 있으면 스킵 (정상 — auto-memory 가 없거나 매칭 없음).
+- 색인 부재 시 skip (정상 — auto-memory 가 없거나 미사용).
+- 색인 항목(`- [{Title}]({file}.md) — {hook}` 형식)의 title·hook·description 을 현재 작업 키워드(스킬 인자·프로젝트명)와 비교해 **관련도 높은 항목만 직접 선별해 Read**한다 (전체 파일 순회 금지 — 무관한 메모까지 열람하지 않는다).
 - memory 파일에 stale 경고가 붙어 있으면 "verify against current code" 원칙에 따라 인용 전 소스 재확인.
 
 auto-memory (`~/.claude/projects/{slug(cwd)}/memory/`) 는 Claude Code harness 소유. 플러그인은 **Read 만** 수행하고 생성·수정·삭제 금지.
@@ -32,6 +32,7 @@ auto-memory (`~/.claude/projects/{slug(cwd)}/memory/`) 는 Claude Code harness �
 
 `workspace/STATE.md` 를 Read 하여 `진행중` 행의 프로젝트명을 `{PROJECT}` 로 사용한다.
 
+- `workspace/STATE.md` 자체가 없으면 [messages.md](messages.md) 의 `workspace_missing` 메시지를 출력하고 종료한다 (아래 두 케이스와 구분 — 파일 자체 부재).
 - 진행중 행이 없으면 [messages.md](messages.md) 의 `no_active_project` 메시지를 출력하고 종료한다.
 - 진행중 행이 2개 이상이면 [messages.md](messages.md) 의 `state_corrupt` 메시지를 출력하고 종료한다.
 
@@ -81,12 +82,18 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 | `autopilot`      |     |    | ✅ |    |    |
 | `pr`             | ✅  |    | ✅ |    |    |
 | `slack`          |     |    | ✅ |    |    |
+| `code-review-init` |   |    |    |    |    |
+| `review`         |     |    |    |    |    |
 
 > `init` 은 workspace 가 없는 상태에서 실행되므로 P1 을 수행하지 않는다 (workspace/STATE.md 를 처음 생성하는 스킬).
 >
 > `doctor` 는 P 절차를 수행하지 않는다 — doctor.py 가 워크스페이스·프로젝트 해석을 자체 수행한다.
 >
 > `learn` 은 workspace 부트스트랩 단계라 활성 프로젝트 없이 실행 가능 — P1 을 수행하지 않는다.
+>
+> `code-review-init` 은 활성 프로젝트가 아니라 `workspace/context/` 존재 여부만 확인한다 (`messages.md` 의 `workspace_missing` 참조) — P1 미적용.
+>
+> `review` 는 사전 확인 없이 target 을 결정해 `@pilot-code-review` 에 위임한다 (그 에이전트가 self-contained).
 
 ---
 

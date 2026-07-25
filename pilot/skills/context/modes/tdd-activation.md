@@ -235,8 +235,7 @@ TDD 활성화 완료 후 아래를 실행한다:
 python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace
 ```
 
-- ERROR / WARN 있으면 **원문 그대로** 출력.
-- 모두 PASS 면 `doctor: all checks passed`.
+출력 규칙: [`doctor/SKILL.md`](../../doctor/SKILL.md) § 임베디드 호출 시 출력 규칙 (정본) 참조.
 
 ---
 

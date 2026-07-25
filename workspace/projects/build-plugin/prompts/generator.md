@@ -41,6 +41,12 @@
 | 인터뷰 규칙 SSOT | `pilot/skills/context/shared/interview.md` (신설) | 조건부 인터뷰 발동 조건·우선순위·상한·답변 반영 규칙 (#17) |
 | create-feature 스킬 본문 | `pilot/skills/create-feature/SKILL.md` | 3-bis 직후 3-ter 조건부 인터뷰 + 산출물 대조 단계 (#17) |
 | analyze 스킬 본문 | `pilot/skills/analyze/SKILL.md` | 7↔8 사이 7.5 일괄 질의 단계 (#17) |
+| 미사용 파일·픽스처 삭제 | `pilot/tests/fixtures/handoff-quality/` · `v0.1.0-baseline/` 수동 하네스 · `examples/code-review/README.md` · `context/lifecycle/{INDEX.md,setup/README.md,issues/example/issue.md}` | 감사 승인 삭제 + 드리프트 B-1~B-9 정정 (#18) |
+| 스킬·에이전트 전체 재작성 | `pilot/skills/*/SKILL.md` · `pilot/agents/*.md` · `context/shared/` (wrapper-protocol.md 신설) | 원칙 중심 100줄 이하 (agents 는 계약 보존 우선), 불변 조건 체크리스트 = 감사 축 3 (#19) |
+| Python 슬림화 | `pilot/tools/doctor/integrity.py` · `verify-report-lint.py` · `doctor.py` · 삭제 3종 (`diagnose.py`·`memory-hint.py`·`init_detect.py`) + 연동 테스트 | 마이그레이션 삭제·lint 이관·파서 흡수, schema.py 유지 + validate.yml CI 신설 (#20) |
+| 문서 정합 | `pilot/docs/reference/index.md` · `pilot/docs/how-to/doctor-migration.md` · `pilot/docs/tutorial/getting-started.md` | #20 삭제·이관 반영 — 도구 목록 정정·how-to 현행화·Troubleshooting 무효 항목 삭제, md 만 수정, 파일명 보존 (#21) |
+| context 재학습 | `workspace/context/pilot/index.md` · `lifecycle.md` | 삭제 스크립트 3건 서술 해소 — **직접 Edit 금지**, `/pilot:learn` 재실행 경로 (#22) |
+| conventions 파서 | `pilot/tools/doctor/integrity.py` (`check_conventions_paths`) | config 표 플레이스홀더를 실선언으로 오탐 — 파서 수정 (#23) |
 
 ---
 

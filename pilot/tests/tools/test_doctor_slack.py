@@ -1,5 +1,5 @@
 """
-tools/doctor.py 의 Slack secret 보호 로직 단위 테스트.
+tools/doctor/integrity.py 의 Slack secret 보호 로직 단위 테스트.
 
     - check_gitignore_required_patterns
     - check_slack_env_not_tracked
@@ -8,8 +8,8 @@ tools/doctor.py 의 Slack secret 보호 로직 단위 테스트.
     python3 tests/tools/test_doctor_slack.py
 """
 
-import importlib.util
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,17 +17,14 @@ from pathlib import Path
 
 THIS_DIR = Path(__file__).resolve().parent
 PLUGIN_ROOT = THIS_DIR.parent.parent
-TOOL_PATH = PLUGIN_ROOT / "tools" / "doctor.py"
 
+# tools/ 를 sys.path 에 추가하여 doctor 패키지를 직접 import (doctor.py 는 더 이상
+# backward-compat re-export 를 제공하지 않음 — #20 스텝 3).
+_TOOLS_DIR = str(PLUGIN_ROOT / "tools")
+if _TOOLS_DIR not in sys.path:
+    sys.path.insert(0, _TOOLS_DIR)
 
-def _load_doctor():
-    spec = importlib.util.spec_from_file_location("doctor_mod", TOOL_PATH)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-doctor = _load_doctor()
+import doctor.integrity as doctor  # noqa: E402
 
 
 def _init_git_repo(path: Path) -> None:
