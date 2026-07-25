@@ -446,7 +446,7 @@ def check_auto_memory_presence() -> list[Result]:
                 Result.PASS,
                 "auto-memory",
                 f"{count} 개 메모 감지 ({memory_dir.relative_to(home)})",
-                "P0 절차로 스킬 진입 시 `tools/memory-hint.py` 로 관련 메모 조회 권장",
+                "P0 절차로 스킬 진입 시 MEMORY.md 색인에서 관련 항목 직접 선별 Read 권장",
             )
         ]
     except Exception:

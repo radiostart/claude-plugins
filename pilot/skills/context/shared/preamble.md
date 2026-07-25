@@ -18,10 +18,10 @@ TodoWrite 는 deferred tool 이므로 ToolSearch 선로딩 없이 직접 호출�
 
 ## P0. 관련 메모 선조회
 
-`python3 ${CLAUDE_PLUGIN_ROOT}/tools/memory-hint.py "{PROJECT_OR_ARGS}" [KEYWORDS...]` 실행.
+`~/.claude/projects/{slug(cwd)}/memory/MEMORY.md` 색인을 Read (`slug` = cwd 절대경로의 `/` 를 `-` 로 치환. worktree 슬롯이면 `--claude-worktrees-` 이전 부분으로 복원한 원본 cwd 의 memory/ 도 후보로 함께 확인).
 
-- 출력이 있으면 목록된 파일들을 Read 하여 세션 컨텍스트에 반영한다 (과거 동일 주제·유사 프로젝트의 메모).
-- 출력이 비어 있으면 스킵 (정상 — auto-memory 가 없거나 매칭 없음).
+- 색인 부재 시 skip (정상 — auto-memory 가 없거나 미사용).
+- 색인 항목(`- [{Title}]({file}.md) — {hook}` 형식)의 title·hook·description 을 현재 작업 키워드(스킬 인자·프로젝트명)와 비교해 **관련도 높은 항목만 직접 선별해 Read**한다 (전체 파일 순회 금지 — 무관한 메모까지 열람하지 않는다).
 - memory 파일에 stale 경고가 붙어 있으면 "verify against current code" 원칙에 따라 인용 전 소스 재확인.
 
 auto-memory (`~/.claude/projects/{slug(cwd)}/memory/`) 는 Claude Code harness 소유. 플러그인은 **Read 만** 수행하고 생성·수정·삭제 금지.
