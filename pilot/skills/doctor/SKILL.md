@@ -33,7 +33,7 @@ exit code: `0` — ERROR 없음 (PASS / WARN 만) · `1` — ERROR 1 건 이상.
 
 - `--fix` — auto-fixable 항목 자동 수정 (`.gitignore` secret 패턴 주입·STATE.md 이력 정리·schema 업그레이드 등).
 - `--diagnose` — 실패 진단 모드. 정합성 검사와 독립적으로 런타임 실패 패턴을 진단한다. 절차: § 진단 모드. 호출 시점: evaluator `NOT_READY` 2회 / 동일 도구 반복 의심 / 완료 선언인데 체크리스트·REPORT 비어있을 때.
-- `--schema` — 플러그인 구조 전용 검사 (workspace 와 무관, `workspace` 인자 없이 실행). CI 연동은 #20 에서 `validate.yml` 신설 예정 — 현재는 수동 실행. 스키마 규칙: [`PLUGIN_SCHEMA_NOTES.md`](../../.claude-plugin/PLUGIN_SCHEMA_NOTES.md).
+- `--schema` — 플러그인 구조 전용 검사 (workspace 와 무관, `workspace` 인자 없이 실행). `.github/workflows/validate.yml` 가 `skills/`·`agents/`·`hooks/`·`.claude-plugin/`·`tools/doctor/schema.py` 변경 시 CI 로 실행 (#20). 스키마 규칙: [`PLUGIN_SCHEMA_NOTES.md`](../../.claude-plugin/PLUGIN_SCHEMA_NOTES.md).
 
 ## 임베디드 호출 시 출력 규칙 (정본)
 
