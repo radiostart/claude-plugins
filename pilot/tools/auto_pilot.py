@@ -78,32 +78,150 @@ def parse_critic_severities(text: str):
 _THIS_DIR = Path(__file__).resolve().parent
 
 
-def _load_report_lint():
-    """tools/verify-report-lint.py 를 동적 로드 (하이픈 파일명)."""
-    import importlib.util
+# ---------------------------------------------------------------------------
+# VERIFICATION REPORT 파서 (구 tools/verify-report-lint.py 에서 이식, #20 스텝 5)
+#
+# 원본은 REQUIRED_TOP_KEYS 스키마 검증(validate)·렌더링·CLI 를 갖춘 독립
+# lint 도구였으나 런타임 소비자가 auto_pilot(본 파서 2함수)뿐이라 스키마
+# 검증 로직은 삭제하고 파서만 원문 이식했다 (근거:
+# docs/audits/2026-07-24-audit-4-python.md § C-5). evaluator REPORT 형식
+# 자기 점검은 agents/pilot-evaluator.md 의 출력 직전 self-check 로 대체.
+# ---------------------------------------------------------------------------
 
-    path = _THIS_DIR / "verify-report-lint.py"
-    spec = importlib.util.spec_from_file_location("verify_report_lint_mod", path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["verify_report_lint_mod"] = module
-    spec.loader.exec_module(module)
-    return module
+REPORT_HEADER_RE = re.compile(r"^##\s+VERIFICATION REPORT\s*$", re.M)
+NEXT_H2_RE = re.compile(r"^## ", re.M)
+
+_TOP_KEY_RE = re.compile(r"^- ([a-z_]+):\s*(.*)$")
+# 비정규 top-level 키 회수용 — 불릿이 `*` 이거나 누락됐거나 공백이 다른 경우.
+# 정규(_TOP_KEY_RE) 매칭 실패 시 REQUIRED_TOP_KEYS 에 한해 이 패턴으로 회수한다.
+_LOOSE_TOP_KEY_RE = re.compile(r"^[-*]?[ \t]*([a-z_]+):\s*(.*)$")
+_NESTED_KEY_RE = re.compile(r"^\s+- ([a-z_]+):\s*(.+?)(?:\s+—\s+(.*))?$")
+_ISSUE_LINE_RE = re.compile(r"^\s+-\s+(.+)$")
+
+REQUIRED_TOP_KEYS = ["status", "feature", "mode", "gates", "metrics", "issues_to_fix", "next"]
+
+
+def extract_report_block(text: str) -> str | None:
+    """`## VERIFICATION REPORT` 블록 추출. 없으면 None."""
+    m = REPORT_HEADER_RE.search(text)
+    if not m:
+        return None
+    rest = text[m.end():]
+    next_h2 = NEXT_H2_RE.search(rest)
+    return (rest[: next_h2.start()] if next_h2 else rest).strip()
+
+
+def parse_report(block: str) -> dict:
+    """REPORT 블록 → 구조화된 dict.
+
+    Returns:
+        {
+          "status": str | None,
+          "feature": str | None,
+          "mode": str | None,
+          "gates": {gate_name: {"value": str, "evidence": str}},
+          "metrics": {metric_name: str},
+          "issues_to_fix": [{"severity": str, "summary": str, "location": str}] or ["none"],
+          "next": str | None,
+          "_raw_top_keys": [str, ...],  # 등장 순서
+        }
+    """
+    out: dict = {
+        "status": None,
+        "feature": None,
+        "mode": None,
+        "gates": {},
+        "metrics": {},
+        "issues_to_fix": [],
+        "next": None,
+        "_raw_top_keys": [],
+        "_malformed_top_keys": [],
+    }
+
+    lines = block.splitlines()
+    current_section: str | None = None  # "gates" | "metrics" | "issues_to_fix" | None
+
+    for raw in lines:
+        line = raw.rstrip()
+        if not line.strip():
+            continue
+
+        # top-level key
+        if not line.startswith(" "):
+            m = _TOP_KEY_RE.match(line)
+            if m:
+                key, rest = m.group(1), m.group(2).strip()
+            else:
+                # 정규 형식(`- key: value`) 이 아니지만 필수 키를 의도한 것으로
+                # 보이면 (불릿 누락·`*` 사용 등) 조용히 버리지 않는다 — 키는 인식하되
+                # 형식 위반으로 기록한다. 그래야 "필수 섹션 부재" 오탐이 안 난다.
+                loose = _LOOSE_TOP_KEY_RE.match(line)
+                if loose and loose.group(1) in REQUIRED_TOP_KEYS:
+                    key, rest = loose.group(1), loose.group(2).strip()
+                    out["_malformed_top_keys"].append(key)
+                else:
+                    continue
+            out["_raw_top_keys"].append(key)
+            if key in ("status", "mode"):
+                # value 의 첫 토큰만 (예: "READY", "tdd | NOT_READY" 같은 enum 표기 제외)
+                out[key] = rest.split()[0] if rest else None
+            elif key in ("feature", "next"):
+                out[key] = rest if rest else None
+            elif key == "gates":
+                current_section = "gates"
+            elif key == "metrics":
+                current_section = "metrics"
+            elif key == "issues_to_fix":
+                current_section = "issues_to_fix"
+            continue
+
+        # nested (들여쓰기)
+        if current_section == "gates":
+            m = _NESTED_KEY_RE.match(line)
+            if m:
+                gate_name, value, evidence = m.group(1), m.group(2).strip(), (m.group(3) or "").strip()
+                # value 가 "pass | fail | skip" 같은 enum 표기면 첫 토큰 사용
+                first = value.split()[0] if value else ""
+                out["gates"][gate_name] = {"value": first, "evidence": evidence}
+        elif current_section == "metrics":
+            m = _NESTED_KEY_RE.match(line)
+            if m:
+                metric_name, value, _ = m.group(1), m.group(2).strip(), m.group(3)
+                out["metrics"][metric_name] = value
+        elif current_section == "issues_to_fix":
+            m = _ISSUE_LINE_RE.match(line)
+            if not m:
+                continue
+            content = m.group(1).strip()
+            if content.lower() == "none":
+                out["issues_to_fix"].append({"severity": None, "summary": "none", "location": None})
+                continue
+            # `[severity] summary — location` 형식
+            sev_m = re.match(r"\[(\w+)\]\s+(.+?)(?:\s+—\s+(.+))?$", content)
+            if sev_m:
+                out["issues_to_fix"].append({
+                    "severity": sev_m.group(1),
+                    "summary": sev_m.group(2).strip(),
+                    "location": (sev_m.group(3) or "").strip() or None,
+                })
+            else:
+                # 형식 안 맞아도 raw 로 보존 (validate 에서 검증)
+                out["issues_to_fix"].append({"severity": None, "summary": content, "location": None})
+
+    return out
 
 
 def parse_evaluator_status(text: str):
     """evaluator 출력 텍스트에서 VERIFICATION REPORT status 를 추출한다.
 
-    기존 verify-report-lint.py 의 검증된 파서를 재사용한다 (REPORT 파싱 중복 금지).
-
     Returns:
         "READY" | "NOT_READY"  — 정상 파싱
         None                   — REPORT 블록 부재 또는 status 부재/이상 (상위에서 hard-stop)
     """
-    lint = _load_report_lint()
-    block = lint.extract_report_block(text)
+    block = extract_report_block(text)
     if block is None:
         return None
-    parsed = lint.parse_report(block)
+    parsed = parse_report(block)
     status = parsed.get("status")
     if status not in ("READY", "NOT_READY"):
         return None

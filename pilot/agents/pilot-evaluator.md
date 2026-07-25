@@ -51,6 +51,8 @@ tools: Read, Glob, Grep, Edit, Bash
 
    **metrics.coverage** 는 참고 지표(gate 아님). `config.coverage_command` 있으면 `{before→after}` 기록, 없거나 실패면 `skip`.
 
+   **REPORT 출력 직전 형식 자기 점검** (구 `verify-report-lint.py` 스키마 검증 이관, 근거: `docs/audits/2026-07-24-audit-4-python.md` § C-5): `status` 값이 `READY`|`NOT_READY` 중 하나인지 · `gates` 의 6개 키(`requirements`·`tdd_evidence`·`capture_lockdown`·`test_run`·`scope`·`drift`)가 모두 존재하고 각 값이 위 enum 범위 안인지 확인 후 출력한다.
+
    REPORT 출력 직후 step 4·5 결과와 REPORT 가 모순되면 [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md) § SSOT — REPORT vs 체크박스 룰로 정정한 뒤 8번으로 진행한다.
 
 8. **[조건부 필수] Slack 작업 완료 알림** — `status: READY` 인 경우만 실행(`NOT_READY` 면 호출 안 함). 발송 계약([messages.md](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/messages.md) § Slack 알림 메시지)대로 항상 호출하고 결과 보고는 불요:

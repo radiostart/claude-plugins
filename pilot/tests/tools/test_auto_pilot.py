@@ -211,6 +211,63 @@ class TestParseEvaluatorStatus(unittest.TestCase):
         self.assertIsNone(m.parse_evaluator_status(EVAL_NO_REPORT))
 
 
+class TestExtractAndParseReport(unittest.TestCase):
+    """extract_report_block · parse_report 단위 테스트 (구 test_verify_report_lint.py 이식, #20 스텝 5)."""
+
+    def test_no_block_returns_none(self):
+        self.assertIsNone(m.extract_report_block("# 다른 헤더\n본문"))
+
+    def test_block_extracted(self):
+        text = "전문\n## VERIFICATION REPORT\n- status: READY\n## 다음 섹션\n끝"
+        block = m.extract_report_block(text)
+        self.assertIn("status: READY", block)
+        self.assertNotIn("다음 섹션", block)
+
+    def test_parse_top_level_keys(self):
+        block = (
+            "- status: READY\n"
+            "- feature: #03 결제\n"
+            "- mode: red_contract\n"
+            "- next: #04 환불\n"
+        )
+        r = m.parse_report(block)
+        self.assertEqual(r["status"], "READY")
+        self.assertEqual(r["feature"], "#03 결제")
+        self.assertEqual(r["mode"], "red_contract")
+        self.assertEqual(r["next"], "#04 환불")
+
+    def test_parse_gates(self):
+        block = (
+            "- gates:\n"
+            "  - requirements: pass — features/03.md\n"
+            "  - tdd_evidence: skip — mode 미사용\n"
+            "  - drift: detected — workspace/...\n"
+        )
+        r = m.parse_report(block)
+        self.assertEqual(r["gates"]["requirements"]["value"], "pass")
+        self.assertEqual(r["gates"]["requirements"]["evidence"], "features/03.md")
+        self.assertEqual(r["gates"]["tdd_evidence"]["value"], "skip")
+        self.assertEqual(r["gates"]["drift"]["value"], "detected")
+
+    def test_parse_issues(self):
+        block = (
+            "- issues_to_fix:\n"
+            "  - [Major] foo 누락 — features/03.md:14\n"
+            "  - [Minor] bar — files/x.md\n"
+        )
+        r = m.parse_report(block)
+        self.assertEqual(len(r["issues_to_fix"]), 2)
+        self.assertEqual(r["issues_to_fix"][0]["severity"], "Major")
+        self.assertEqual(r["issues_to_fix"][0]["summary"], "foo 누락")
+        self.assertEqual(r["issues_to_fix"][0]["location"], "features/03.md:14")
+
+    def test_parse_issues_none(self):
+        block = "- issues_to_fix:\n  - none\n"
+        r = m.parse_report(block)
+        self.assertEqual(len(r["issues_to_fix"]), 1)
+        self.assertEqual(r["issues_to_fix"][0]["summary"], "none")
+
+
 class TestCli(unittest.TestCase):
     def _run(self, args, stdin_text=None):
         proc = subprocess.run(
