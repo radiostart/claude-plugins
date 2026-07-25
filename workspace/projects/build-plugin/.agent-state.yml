@@ -5,3 +5,4 @@ last_analyzed_features: 24
 tdd: false
 domain: pilot
 plugin_version: "0.1.0"
+pr_base_branch: main
