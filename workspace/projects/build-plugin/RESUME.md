@@ -15,6 +15,7 @@
 | #21 docs-sync | ✅ READY | reference/index.md · doctor-migration.md · getting-started.md 정합. 정정 대장 15행을 소스로 재검증 |
 | #22 relearn | 📋 등록만 됨 | `/pilot:learn` 재실행으로 context 드리프트 3건 해소 |
 | #23 파서 오탐 | 📋 등록만 됨 | doctor 파서 오탐 2건 (conventions 플레이스홀더 · features 카운트) |
+| #24 update 도구 | 📋 등록만 됨 | `pilot-update.sh` 경로 stale + 설계 한계 + 잘못된 안내. **존치 여부 결정이 선행** |
 
 **릴리스 상태**: `main` = `677fe7c` (PR #9 머지). 태그 `pilot-v0.10.0`. 릴리스 노트 게시됨.
 문서 사이트 배포 완료 (`Deployed 677fe7c`).
@@ -26,18 +27,17 @@
 
 ## 남은 작업 (순서대로)
 
-1. **버전 표기 3곳 동기화 PR** — 현재 브랜치 `skills/23-doctor-parser-false-positives` 에 커밋됨.
-   `mkdocs.yml:122`·`docs/index.md:11` 이 0.9.0 으로 남아 있던 것을 0.10.0 + v0.10.0 highlights 로 교체.
-   릴리스 시 `plugin.json` 만 올리고 누락했던 분. **머지 후 사이트 재배포 확인 필요.**
-2. **플러그인 캐시 갱신 + 세션 재시작** — `pilot/tools/pilot-update.sh` 실행 → **세션 재시작**.
-   세션 중 플러그인 리로드는 되지 않는다. 갱신 확인 신호: `~/.claude/plugins/cache/radiostart-plugins/pilot/` 에서
-   `init_detect.py`·`memory-hint.py` 소멸 + 디렉터리 `0.10.0` 등장.
+1. ~~버전 표기 3곳 동기화~~ — **완료** (PR #10 머지, `main` = `229b2a8`). 사이트 랜딩 v0.10.0 표기 확인됨.
+2. ~~플러그인 설치본 갱신~~ — **완료** (사용자가 `/plugin` 으로 업데이트).
+   `installed_plugins.json` → `pilot@radiostart-plugins 0.10.0`, `cache/.../pilot/0.10.0/` 에 tools 8종 · doctor/ 4개 · wrapper-protocol.md 실재 확인.
+   ⚠️ **세션 재시작 필요** — 세션 시작 시 로드된 경로가 고정이라, 재시작 전에는 구버전(0.4.0)이 계속 쓰인다.
 3. **#20 dogfooding 게이트 마감** — 재시작 후 실경로에서 1사이클 완주.
    판정 기준: (a) 사이클 중 삭제 스크립트 4종 호출 시도 0건 (b) orchestrate-load JSON 에 도메인 진입 파일 실재.
    통과 시 `project.md:39` 의 #20 목표를 `[x]` 로 (evaluator 단독 권한) + 부기된 미체크 사유 제거.
 4. **#23 사이클** — `@pilot-planner` → (critic) → `@pilot-generator` → `@pilot-evaluator`.
    브랜치는 이미 `skills/23-doctor-parser-false-positives` 로 생성돼 있다.
-5. **#22 사이클** — `/pilot:learn` 재실행. **2번(캐시 갱신) 이후에 할 것** — 구 버전 스킬로 재학습하면 옛 서술을 다시 학습한다.
+5. **#22 사이클** — `/pilot:learn` 재실행. **반드시 세션 재시작 이후에** — 구버전 스킬로 재학습하면 옛 서술을 다시 학습한다.
+6. **#24 사이클** — `pilot-update.sh` 존치 여부 결정이 선행. 브랜치 `skills/24-pilot-update-tool` 에 등록분이 있다.
 
 ## 이어받을 때 주의
 
