@@ -48,6 +48,7 @@
 | context 재학습 | `workspace/context/pilot/index.md` · `lifecycle.md` | 삭제 스크립트 3건 서술 해소 — **직접 Edit 금지**, `/pilot:learn` 재실행 경로 (#22) |
 | doctor 파서 오탐 | `pilot/tools/doctor/integrity.py` (`check_conventions_paths`) · `pilot/tools/doctor/_common.py` (`count_real_features`) | (A) config 표 플레이스홀더를 실선언으로 오탐 (B) `.plan.critic.md` 를 feature 로 계수 — 둘 다 파서 수정 (#23) |
 | 업그레이드 도구 | `pilot/tools/pilot-update.sh` · `pilot/README.md` · `pilot/docs/tutorial/getting-started.md` | stale 경로 수정 + 존치 결정 반영 + 잘못된 안내 정정. 전역 설치본 직접 조작 금지 (#24) |
+| 스키마 검사 중복 | `pilot/tools/doctor/schema.py` · `.github/workflows/validate.yml` | `claude plugin validate` 와 중복 정리. CI 차단 강도 유지가 제약 (#25) |
 
 ---
 

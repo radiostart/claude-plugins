@@ -16,6 +16,7 @@
 | #22 relearn | 📋 등록만 됨 | `/pilot:learn` 재실행으로 context 드리프트 3건 해소 |
 | #23 파서 오탐 | 📋 등록만 됨 | doctor 파서 오탐 2건 (conventions 플레이스홀더 · features 카운트) |
 | #24 update 도구 | 📋 등록만 됨 | `pilot-update.sh` 경로 stale + 설계 한계 + 잘못된 안내. **존치 여부 결정이 선행** |
+| #25 스키마 중복 | 📋 등록만 됨 | `doctor --schema` ↔ `claude plugin validate` 중복. 손상본 주입 실측 표가 명세에 있음 |
 
 **릴리스 상태**: `main` = `677fe7c` (PR #9 머지). 태그 `pilot-v0.10.0`. 릴리스 노트 게시됨.
 문서 사이트 배포 완료 (`Deployed 677fe7c`).

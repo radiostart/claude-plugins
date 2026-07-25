@@ -1,5 +1,6 @@
 {
   "name": "radiostart-plugins",
+  "description": "radiostart 가 운영하는 Claude Code 플러그인 마켓플레이스. 도메인 지식 기반 agent workflow 도구를 제공한다.",
   "owner": {
     "name": "radiostart",
     "url": "https://github.com/radiostart"

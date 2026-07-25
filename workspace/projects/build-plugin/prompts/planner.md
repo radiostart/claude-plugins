@@ -148,6 +148,17 @@
 - 게이트: stale 경로 문자열 0건 · 안내 문구가 실제 동작과 일치
 - 주의: 사용자 전역 설치본·`installed_plugins.json` 을 스크립트가 직접 조작하지 않는다. 개명 전 이름으로 등록한 기존 사용자를 위해 경로는 하드코딩 대신 탐지 권장
 
+### #25 doctor --schema ↔ claude plugin validate 중복 (features/25-schema-vs-claude-validate.md)
+
+- 조건: #20 완료 (`schema.py` 410줄 유지 + `validate.yml` CI 신설).
+- 트리거: Claude Code CLI 의 `claude plugin validate <path>` 와 검사 범위가 겹친다. 정비 목적이 자체 구현 축소였으므로 유지 근거 재확인 필요.
+- 실측 대조 (feature 명세에 표로 있음): **완전 포함 관계가 아니다.** CLI 만 잡는 것 = JSON 문법 파손·`plugin.json` 미지 키. 우리만 잡는 것 = version↔git tag 정합. 그리고 **심각도 정책이 다르다** — frontmatter 부재를 CLI 는 WARNING(통과), 우리는 ERROR(CI 차단).
+- 기대결과: (i) 축소 + 병행 (ii) 현행 유지 (iii) 전면 위임 중 확정. **(iii) 은 CI 게이트가 느슨해지고 러너에 CLI 설치·인증이 필요해져 비권장.**
+
+**관련 파일 범위**:
+- 변경: `pilot/tools/doctor/schema.py` · `.github/workflows/validate.yml` · `pilot/skills/doctor/SKILL.md` (`--schema` 서술)
+- 게이트: CI 가 현재 막는 결함을 계속 막는지 (frontmatter 부재 = 차단 유지) · 자체 유지분마다 "CLI 가 못 하는 것" 근거 명시
+
 > `workspace/context/scope/pilot.md` · `workspace/context/rules/pilot.md` 부재 — 본 프로젝트는 사용자 커스텀 layer 미작성. features/ 의 file:line 인용을 1 차 근거로 활용한다 (예: `pilot/skills/learn/SKILL.md:90-111`).
 
 ---
