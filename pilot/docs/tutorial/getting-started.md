@@ -274,7 +274,7 @@ Step 5와 달리, Planner는 자유로운 형식의 Plan 대신 **Characterizati
 cat workspace/context/config.md   # 설정 파일 내용 확인
 ```
 
-`/pilot:doctor` 명령어로 `OH-1` 진단 항목을 확인한 뒤, config 표가 비어 있는 경우 `/pilot:init` 명령어를 다시 실행합니다. (이미 `exists` 상태인 `config.md` 파일이 존재하면 wizard가 실행되지 않고 skip될 수 있으므로, 기존 파일을 삭제한 뒤 재시행해야 합니다.)
+config 표가 비어 있는 경우 `/pilot:init` 명령어를 다시 실행합니다. (이미 `exists` 상태인 `config.md` 파일이 존재하면 wizard가 실행되지 않고 skip될 수 있으므로, 기존 파일을 삭제한 뒤 재시행해야 합니다.)
 
 ---
 
@@ -289,10 +289,6 @@ cat workspace/context/config.md   # 설정 파일 내용 확인
 1. `## scope 카테고리` 표에서 오인식된 행 (예: `| ## Controllers | ... |`)을 제거합니다.
 2. `## Ignore` 표에 제외할 경로 패턴(예: `controllers/`)을 추가합니다.
 
-```
-/pilot:doctor    # schema 검증 수행 — 오류가 없으면 PASS
-```
-
 ---
 
 ### 3. learn H2 매칭 실패
@@ -305,13 +301,7 @@ cat workspace/context/config.md   # 설정 파일 내용 확인
 grep "^##" workspace/context/MANIFEST.md   # 헤더 형식 확인
 ```
 
-`## 도메인 분류` 섹션이 누락되었거나 오탈자가 있는 경우:
-
-```
-/pilot:doctor    # 헤더 정합성 검사 — 오류 보고 확인
-```
-
-doctor 진단 도구가 헤더 불일치를 보고하면, `MANIFEST.md` 파일을 직접 열어 `## 도메인 분류` 헤더 명칭을 올바르게 수정합니다. 이때 `workspace/context/config.md` 파일의 `## learn 언어 패턴` 섹션 정합성도 같이 검증하는 것을 권장합니다.
+`## 도메인 분류` 섹션이 누락되었거나 오탈자가 있는 경우, `MANIFEST.md` 파일을 직접 열어 `## 도메인 분류` 헤더 명칭을 올바르게 수정합니다. 이때 `workspace/context/config.md` 파일의 `## learn 언어 패턴` 섹션 정합성도 같이 검증하는 것을 권장합니다.
 
 ---
 
