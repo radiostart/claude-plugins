@@ -107,6 +107,16 @@
 - 신설: `.github/workflows/validate.yml`
 - 근거 SSOT: `docs/audits/2026-07-24-audit-4-python.md`
 
+### #21 정비 후속 — 문서 정합 (#20 반영) (features/21-consolidation-docs-sync.md)
+
+- 조건: #20 완료 (이관 3종·verify-report-lint 삭제·마이그레이션 제거·--diagnose 지시문화).
+- 트리거: #20 dogfooding 게이트 소재 — 사이클 완주 자체가 검증 목적.
+- 기대결과: reference/index.md 도구 목록 정정 + how-to/doctor-migration.md 현행화 (파일명 보존, 인바운드 링크 5곳 유지) + docs 빌드·링크 게이트 통과. md 만 수정.
+
+**관련 파일 범위**:
+- 변경: `pilot/docs/reference/index.md` · `pilot/docs/how-to/doctor-migration.md`
+- 게이트: `docs_build.py --check` · `test_doc_links`
+
 > `workspace/context/scope/pilot.md` · `workspace/context/rules/pilot.md` 부재 — 본 프로젝트는 사용자 커스텀 layer 미작성. features/ 의 file:line 인용을 1 차 근거로 활용한다 (예: `pilot/skills/learn/SKILL.md:90-111`).
 
 ---
