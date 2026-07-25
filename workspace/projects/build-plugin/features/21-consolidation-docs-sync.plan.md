@@ -174,9 +174,9 @@ python3 pilot/tools/orchestrate-load.py --phase planner --workspace workspace
 
 ## 변경 파일
 
-- [ ] `pilot/docs/reference/index.md` — `:25` tools 카드의 나열을 `pilot/tools/*.py` 실재 8종(알파벳순)과 일치시킨다. 삭제 3종(`init_detect`·`verify-report-lint`·`memory-hint`) 제거. **다른 줄 무변경** (agents 5 · skills 17 은 실측상 정확).
-- [ ] `pilot/docs/how-to/doctor-migration.md` — 전면 현행화. 파일명·H1 유지, 아래 § 정정 대장 **15행** 반영 (커밋 2).
-- [ ] `pilot/docs/tutorial/getting-started.md` — **S1 승인으로 범위 포함 확정.** Troubleshooting §1·§2·§3 의 #20 로 사라진 doctor 거동 3곳(`:277`·`:293`·`:311-314`)을 **삭제**한다 — 대체 절차·버전 분기 서술 금지(사용자 확정 + critic C4). 파일명·§번호·`:281` 앵커 보존, 증상/해결 구조 유지. 인바운드 링크·nav 영향 0(실측). § S1 정정 대장 참조 (커밋 3).
+- [x] `pilot/docs/reference/index.md` — `:25` tools 카드의 나열을 `pilot/tools/*.py` 실재 8종(알파벳순)과 일치시킨다. 삭제 3종(`init_detect`·`verify-report-lint`·`memory-hint`) 제거. **다른 줄 무변경** (agents 5 · skills 17 은 실측상 정확).
+- [x] `pilot/docs/how-to/doctor-migration.md` — 전면 현행화. 파일명·H1 유지, 아래 § 정정 대장 **15행** 반영 (커밋 2).
+- [x] `pilot/docs/tutorial/getting-started.md` — **S1 승인으로 범위 포함 확정.** Troubleshooting §1·§2·§3 의 #20 로 사라진 doctor 거동 3곳(`:277`·`:293`·`:311-314`)을 **삭제**한다 — 대체 절차·버전 분기 서술 금지(사용자 확정 + critic C4). 파일명·§번호·`:281` 앵커 보존, 증상/해결 구조 유지. 인바운드 링크·nav 영향 0(실측). § S1 정정 대장 참조 (커밋 3).
 - [x] `workspace/projects/build-plugin/features/20-consolidation-slim.plan.md` — **D-1 (b) 확정에 따른 문구 정정 — Planner 가 본 세션에서 반영 완료** (drift-protocol § B, 수정 주체 = Planner). ① 완주 검증 절 상단에 "판정 범위 축소" blockquote 신설 (저장소 사본 한정 · 캐시 0.4.0 실경로 미검증 한계 · 배포 후 재확인 = 후속 확인 필요) ② 판정 (b) 문장에 "저장소 사본 기준" 명시 + 명령을 `pilot/tools/orchestrate-load.py` 로 정확화 ③ "이 사이클이 #20 변경분의 **실경로를 통과한다**" → 취소선 + "저장소 사본을 직접 호출한 명령에 한해 검증한다" 로 교체. `## 목표`·체크박스류는 무변경. **Generator 는 이 파일을 다시 수정하지 않는다.**
 
 ## 정정 대장 — `doctor-migration.md` (실측 대조 15행)
@@ -387,3 +387,22 @@ python3 pilot/tools/orchestrate-load.py --phase planner --workspace workspace
 - **#20** — 본 feature 는 #20 최종 게이트의 소재로 **기획됐으나, D-1 (b) 축소 후 그 역할을 실질적으로 수행하지 못한다** (critic C1). 남은 검증은 저장소 사본 단위 호출 1건(= #20 세션이 이미 수행한 것의 재실행)뿐이며 **신규 보증 0건**이다. 따라서 **#20 목표 체크박스는 unchecked 유지**한다 — § #20 목표 체크박스 처리 방침이 단독 SSOT. 실경로 재확인은 배포 후 5단계 절차로 남는다(§ 리스크 R-1). Planner 가 `20-consolidation-slim.plan.md:74-82` 문구를 이미 정정했다.
 - **#19** — `context/pilot/index.md`·`spec.md` 재학습 이월(전달사항 `:157`, D-2 와 동일 계열)은 본 PR 머지 후 `/pilot:learn` 재실행에서 일괄 흡수된다. 본 feature 는 `workspace/context/` 를 **건드리지 않는다.**
 - **분리된 별도 feature 2건** — D-2·D-3. 번호 미확정이라 단정 참조하지 않는다. 본 feature 와 파일 충돌 없음 (대상이 `workspace/context/` 및 `pilot/tools/doctor/integrity.py` 로 본 범위 밖).
+
+## 게이트 실행 결과 (Generator, 2026-07-25 · HEAD 4c0f027)
+
+커밋 1~3 (`reference/index.md`·`doctor-migration.md`·`getting-started.md`) 완료 후 저장소 루트 CWD 기준 실행.
+
+- **G1** — `listed == actual` 성립. `G1 OK 8 ['auto_pilot', 'confluence', 'docs_build', 'doctor', 'orchestrate-load', 'plan-validate', 'regen-verify', 'slack-notify']` → **pass**
+- **G2** — `grep -rn -E "init_detect|verify-report-lint|memory-hint|diagnose\.py" pilot/docs --include="*.md" | grep -v "^pilot/docs/reference/..."` → 매칭 0건(`exit=1`) → **pass**
+- **G2b** — `grep -rn "OH-[1-5]" pilot/docs pilot/skills pilot/agents --include="*.md"` → 매칭 0건(`exit=1`) → **pass**
+- **G3** — `G3 OK — 대장 5파일 전건 존재 · resolve OK · 앵커 0 · 초과 참조 []` + `pilot/mkdocs.yml:98` nav 1건 유지 확인 → **pass**
+- **G4** — `checked 194 broken 0` → **pass**
+- **G5** — `python3 pilot/tools/docs_build.py --check` exit 0 · `python3 -m unittest discover -s tests/tools`(pilot CWD) `Ran 284 tests ... OK` → **pass**
+- **G6 (축1 — 정정 대장 15행)** — 재작성한 `doctor-migration.md` 본문 대조: #1 "기본 검사=검사 전용, 수정은 --fix 한정"(:4) · #2 ".gitignore .slack.env 즉시 주입"(§2 하단 무관 조치 문단) · #3 workspace 8종+conventions 2종+project 9종 3카테고리 나열(§1) · #4 conventions_doc/evals 선언-실존 검사로 대체(§1, docs/ 누락 검사 서술 제거) · #5 PASS·INFO·WARN·ERROR 4단계(§1) · #6 v1/v1.1/v1.2 라벨 직접 bump(§2 표) · #7 백업 없음 명시(§2 "주의할 점") · #8 domain: null 만 주입(§2 표) · #9 MANIFEST 표 보정 auto-fix 아님 명시(§2 하단) · #10 prompts 재생성=권장 안내만·레거시 섹션 제거만 fix(§2 표+하단) · #11 확인 없이 즉시 적용(§2 "주의할 점") · #12~#15 신설 절 3개(§4 --diagnose·§5 --schema·Onboarding Health) 전건 반영 → **15/15 반영, pass**
+- **G6 (축2 — S1 대장 3행)** — `getting-started.md` §1(:277 OH-1 문구 삭제, fallback 지시 보존) · §2(:292-294 코드블록 삭제, 1·2번 지시 보존) · §3(:310-312 코드블록+조건절 삭제, grep 확인 블록·헤더 수정 지시 보존) 3행 전건 삭제 처리 확인, 대체 절차·버전 분기 서술 0건 → **pass**
+- **G6 (축3 — 신규 서술 무근거 0건)** — `doctor-migration.md` §4(--diagnose)·§5(--schema)·Onboarding Health 각 문장이 대장 #13~#15 대응 확인. §4: "스크립트 플래그 아님·`python3 doctor.py --diagnose` unrecognized arguments 실패·슬래시 경유 모델 지시문·4패턴·5필드 DIAGNOSIS" = `doctor.py` argparse(`workspace`·`--project`·`--fix`·`--schema` 뿐) + `skills/doctor/SKILL.md` § 진단 모드 근거. §5: "workspace 인자 없음·validate.yml CI" = `doctor.py` argparse(`--schema` 시 `workspace` 미참조) + `skills/doctor/SKILL.md:36`·`.github/workflows/validate.yml` 근거. Onboarding Health: "doctor.py 출력에 OH 섹션 없음·스킬 경유 한정·발동 조건 2가지" = `skills/doctor/SKILL.md` § Onboarding Health 근거. 무근거 문장 0건 → **pass**
+- **G7** — `python3 pilot/tools/orchestrate-load.py --phase planner --workspace workspace` (저장소 사본) 실행 결과 `files_to_read` 에 `wrapper-protocol.md`·`workspace/context/pilot/index.md` 실재, `hints` 에 미등록 힌트 부재 확인. **(a) `skip — 증거 없음`** (증거력 없음, plan 판정대로) · **(b) "#20 스텝 6 회귀 재확인 (중복 실행)"** — #20 세션이 이미 수행한 동일 검증의 재실행이며 본 사이클의 신규 보증은 0건. **pass 로 기재하지 않음.**
+- **`workspace/context/` 무변경 확인** — `git diff --name-only | grep "^workspace/context/"` → 0건 → **pass**
+- **`20-consolidation-slim.plan.md` 재확인** — D-1 (b) 정정문(`:74-82` 판정 범위 축소 blockquote·취소선)이 HEAD 에 이미 반영돼 있음을 확인 (Planner 선반영분, 본 세션 재수정 없음).
+
+**커밋 대장** — 1: `pilot/docs/reference/index.md`(065b716) · 2: `pilot/docs/how-to/doctor-migration.md`(13bbb8a) · 3: `pilot/docs/tutorial/getting-started.md`(4c0f027) · 4: 본 게이트 증거 + 체크박스 갱신(본 커밋, `skills:` scope).
