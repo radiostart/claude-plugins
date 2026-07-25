@@ -61,9 +61,6 @@ from doctor.integrity import (  # noqa: E402, F401
     _fix_migrate_state_to_current,
     _fix_remove_legacy_planning_section,
     _fix_state_md_prune_history,
-    _inject_v010_defaults_into_config,
-    _is_learn_section_empty,
-    _has_partial_learn_definition,
     _parse_md_tables_in_section,
     _parse_md_tables_in_h3_section,
     CONVENTION_KEYS,
@@ -80,7 +77,6 @@ from doctor.integrity import (  # noqa: E402, F401
     check_workspace_config_sections,
     check_workspace_external_domain_section,
     determine_active_project,
-    migrate_v0_1_to_v0_2,
     run_integrity_check,
 )
 from doctor.schema import (  # noqa: E402, F401

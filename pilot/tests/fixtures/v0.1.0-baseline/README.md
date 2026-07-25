@@ -7,13 +7,15 @@ doctor 검증 로직 (`pilot/tools/doctor/integrity.py` 등) 단위 테스트가
 의 `expected/` 캡처)는 2026-07-24 감사 승인으로 삭제됐다 — 자동 테스트 참조 0건이었고
 LLM 시뮬레이션 캡처 특성상 유지보수 비용만 발생했다 (`docs/audits/2026-07-24-pilot-consolidation-audit.md` § 3).
 
-## 보존 픽스처 5종 — 소비 테스트 매핑
+## 보존 픽스처 4종 — 소비 테스트 매핑
+
+> `migration/` (v0.1.0→v0.2.0 자동 마이그레이션 픽스처)은 `#20` 스텝 1 에서 마이그레이션 코드
+> (`migrate_v0_1_to_v0_2` 등) 삭제와 동일 커밋으로 제거됨 (플러그인 v0.9.0+ 시효 만료).
 
 | 서브디렉터리 | 소비 테스트 |
 | --- | --- |
 | `config/` | `pilot/tests/tools/test_doctor_integrity.py` |
 | `external-domain/` | `pilot/tests/tools/test_doctor_external_domain.py` · `test_doctor_cross_domain.py` |
-| `migration/` | `pilot/tests/tools/test_doctor_migration.py` (`#20` 마이그레이션 코드 삭제 전까지 보존) |
 | `open-questions/` | `pilot/tests/tools/test_doctor_open_questions.py` |
 | `transaction-contracts/` | `pilot/tests/tools/test_doctor_cross_domain_transaction.py` |
 
