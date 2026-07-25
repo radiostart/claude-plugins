@@ -43,6 +43,17 @@ import re
 import sys
 from pathlib import Path
 
+# tools/ 를 sys.path 에 추가 — `doctor._common` 의 parse_state_yml·_parse_semver 를
+# 재사용하기 위해 (dedup, #20 스텝 6-②, 근거: docs/audits/2026-07-24-audit-4-python.md
+# § A). doctor.py 와 동일한 sys.path 패턴. 두 모듈 다 플러그인 tools/ 안에 함께
+# 배포되므로 doctor 패키지 부재는 곧 doctor.py 자체도 못 쓰는 상태 — 같은 실패
+# 모드를 공유한다 (dedup 이 새 결합 리스크를 추가하지 않음).
+_TOOLS_DIR = Path(__file__).resolve().parent
+if str(_TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(_TOOLS_DIR))
+
+from doctor._common import parse_state_yml, _parse_semver as parse_semver  # noqa: E402
+
 SCHEMA_VERSION = "v1.2"
 SUPPORTED_SCHEMAS = ["v1.1", "v1.2"]  # v1.1 도 읽기 허용 (하위호환). v1 은 doctor --fix 로 강제 업그레이드
 PLUGIN_ROOT_ENV = "CLAUDE_PLUGIN_ROOT"
@@ -60,20 +71,6 @@ def read_plugin_version() -> str | None:
         data = json.loads(pj.read_text(encoding="utf-8"))
         v = data.get("version")
         return v if isinstance(v, str) else None
-    except Exception:
-        return None
-
-
-def parse_semver(v: str | None) -> tuple[int, int, int] | None:
-    """`0.1.75` → `(0, 1, 75)`. 실패 시 None."""
-    if not v or not isinstance(v, str):
-        return None
-    try:
-        parts = v.strip().split(".")
-        nums = [int(p) for p in parts[:3]]
-        while len(nums) < 3:
-            nums.append(0)
-        return (nums[0], nums[1], nums[2])
     except Exception:
         return None
 
@@ -122,39 +119,6 @@ def parse_state_md_active(state_md: Path) -> list[str]:
             if len(cells) >= 3 and cells[2] == "진행중":
                 active.append(cells[1])
     return active
-
-
-def parse_state_yml(yml: Path) -> dict | None:
-    """Flat YAML parser for state file. Returns dict or None."""
-    if not yml.is_file():
-        return None
-    data = {}
-    try:
-        for line in yml.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            if ":" not in line:
-                continue
-            k, v = line.split(":", 1)
-            k = k.strip()
-            v = v.strip()
-            # strip surrounding quotes
-            if len(v) >= 2 and v[0] == v[-1] and v[0] in ('"', "'"):
-                v = v[1:-1]
-            if v in ("true", "True"):
-                data[k] = True
-            elif v in ("false", "False"):
-                data[k] = False
-            elif v in ("null", "~", ""):
-                data[k] = None
-            elif v.isdigit():
-                data[k] = int(v)
-            else:
-                data[k] = v
-    except Exception:
-        return None
-    return data
 
 
 LANG_KEYS = (
@@ -254,6 +218,29 @@ def determine_domain(project_md: Path) -> str | None:
     return None
 
 
+def _strip_fenced_code_blocks(text: str) -> str:
+    """마크다운 펜스 코드블록(``` ... ```)에 속한 줄을 제거한 텍스트를 반환.
+
+    가이드·예시 코드블록 안의 `## 도메인 분류` 같은 리터럴이 실제 섹션
+    헤더로 오인되는 것을 방지 (learn SKILL.md:80 의 "코드블록·prose 인용
+    무시" 계약 완전 구현, #20 스텝 6-①·critic C4).
+    """
+    out: list[str] = []
+    in_fence = False
+    for line in text.splitlines(keepends=True):
+        if line.strip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        out.append(line)
+    return "".join(out)
+
+
+_DOMAIN_SECTION_HEADER_RE = re.compile(r"^##\s+도메인\s*분류\s*$", re.M)
+_NEXT_H2_RE = re.compile(r"^##\s", re.M)
+
+
 def parse_manifest_domain_files(manifest_md: Path, domain: str) -> list[str]:
     """
     MANIFEST.md `## 도메인 분류` 표에서 해당 domain 의 진입 파일 경로 추출.
@@ -261,6 +248,13 @@ def parse_manifest_domain_files(manifest_md: Path, domain: str) -> list[str]:
     형식: `| {도메인} | <백틱>진입 파일<백틱> | {설명} |` (3 컬럼, 진입 파일 컬럼은
     backtick·공백 허용). MANIFEST 가 자유 형식이라 best-effort — 매칭 실패 시
     빈 리스트 반환 (호출자가 graceful degrade).
+
+    섹션 헤더는 **단독 라인** `## 도메인 분류` 만 인식한다(anchored, re.M) —
+    blockquote·본문 prose 안의 동일 문자열(예: 안내 문구가 이 리터럴을
+    인용하는 경우)이 먼저 매칭돼 실제 표를 건너뛰는 오탐을 방지한다
+    (#20 스텝 6-①, D1 승인 — 실버그 재현: prose 선매칭 시 표 파싱 누락).
+    suffix 붙은 변형(`## 도메인 분류 (수동 관리)` 등)은 의도적으로 미매칭
+    — 자동 로드 계약은 정확한 H2 리터럴을 요구한다(learn SKILL.md:80).
 
     도메인이 일치하는 **모든 행**을 표 순서대로 반환한다 (중복 제거).
     한 도메인이 여러 진입 파일을 등록할 수 있다 (예: 개요 + 상태 전이표).
@@ -274,11 +268,13 @@ def parse_manifest_domain_files(manifest_md: Path, domain: str) -> list[str]:
         text = manifest_md.read_text(encoding="utf-8")
     except Exception:
         return []
-    # `## 도메인 분류` 섹션 추출 (한국어 헤딩만 인식 — 영문은 향후 확장)
-    m = re.search(r"##\s*도메인\s*분류([\s\S]*?)(?:\n##\s|\Z)", text)
-    if not m:
+    text = _strip_fenced_code_blocks(text)
+    header_m = _DOMAIN_SECTION_HEADER_RE.search(text)
+    if not header_m:
         return []
-    section = m.group(1)
+    rest = text[header_m.end():]
+    next_h2 = _NEXT_H2_RE.search(rest)
+    section = rest[: next_h2.start()] if next_h2 else rest
     # 표 행에서 도메인 일치하는 행 모두 수집
     entries: list[str] = []
     for line in section.splitlines():
@@ -407,12 +403,15 @@ def build_load_plan(
             return True
         return False
 
-    # 0) SSOT — 모든 wrapper 가 톤·판정 축을 강제 로드.
+    # 0) SSOT — 모든 wrapper 가 톤·판정 축 + 공통 계약을 강제 로드.
     #    페르소나는 identity.yml 의 personas.{phase} 가 자기 역할에 해당.
+    #    wrapper-protocol.md 는 4 phase(agents/pilot-*.md) 공통 계약(경로 규칙·
+    #    반환 JSON 처리·domain null 예외·부분 로드·탐색 제약·drift 대응) SSOT —
+    #    각 agent .md 상단의 "Read 지시 1줄"과 이중화(#19 전달사항, D2 승인).
     #    CLAUDE_PLUGIN_ROOT 가 해석 가능하면 존재 확인 후 로드 — 파일 부재 시
     #    존재하지 않는 파일 Read 지시 대신 WARN 힌트로 우아하게 생략한다.
     resolved_root = os.environ.get(PLUGIN_ROOT_ENV)
-    for ssot in ("identity.yml", "guardrails.md"):
+    for ssot in ("identity.yml", "guardrails.md", "wrapper-protocol.md"):
         if resolved_root and not (
             Path(resolved_root) / "skills" / "context" / "shared" / ssot
         ).is_file():
@@ -479,7 +478,8 @@ def build_load_plan(
         else:
             hints.append(
                 f"도메인 '{domain}' 의 진입 파일이 MANIFEST 에 등록되지 않음 — "
-                "`/pilot:learn {진입점}` 으로 부트스트랩하거나 MANIFEST 의 `## 도메인 분류` 표에 행 추가"
+                "`/pilot:learn {진입점}` 으로 부트스트랩하거나 MANIFEST 의 `## 도메인 분류` 표에 행 추가 "
+                "(H2 헤더가 단독 라인 `## 도메인 분류` 형태인지 확인 — suffix·코드블록 안 문자열은 인식되지 않음)"
             )
     else:
         hints.append("도메인 판정 실패 — 도메인 컨텍스트 로드 skip. 사용자 확인 필요.")

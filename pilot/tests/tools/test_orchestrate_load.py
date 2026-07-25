@@ -273,6 +273,60 @@ class ParseManifestDomainFiles(unittest.TestCase):
         p = self._write("## 도메인 분류\n\n| payments | `payments.md` | 결제 |\n")
         self.assertEqual(m.parse_manifest_domain_files(p, "orders"), [])
 
+    def test_prose_prefixed_header_does_not_shadow_real_section(self):
+        """실버그 재현 (#20 스텝 6-①, D1) — 실제 workspace/context/MANIFEST.md 형상.
+
+        본문 안내 blockquote 가 `## 도메인 분류` 리터럴을 인용해도(단독 H2 라인이
+        아님) anchored 매칭이 이를 건너뛰고 실제 표를 정상 파싱해야 한다. 구
+        un-anchored 정규식(`re.search`)은 이 prose 를 먼저 매칭해 빈 리스트를
+        반환했다(재현 대상 실버그).
+        """
+        p = self._write(
+            "# Domain Manifest\n\n"
+            "> **자동 로드 — 도메인 진입 파일** (선택)\n"
+            ">\n"
+            "> `## 도메인 분류` H2 + 3 컬럼 표로 작성하면 플러그인이 자동으로 로드한다.\n\n"
+            "## 도메인 분류\n\n"
+            "| 도메인 | 진입 파일 | 설명 |\n"
+            "| --- | --- | --- |\n"
+            "| orders | `orders.md` | 주문 |\n"
+        )
+        self.assertEqual(m.parse_manifest_domain_files(p, "orders"), ["orders.md"])
+
+    def test_fenced_example_header_ignored(self):
+        """펜스 코드블록 안의 예시 H2 는 무시하고 실제 섹션만 파싱 (critic C4)."""
+        p = self._write(
+            "# Domain Manifest\n\n"
+            "예시:\n\n"
+            "```markdown\n"
+            "## 도메인 분류\n\n"
+            "| 도메인 | 진입 파일 | 설명 |\n"
+            "| --- | --- | --- |\n"
+            "| example | `example.md` | 예시 |\n"
+            "```\n\n"
+            "## 도메인 분류\n\n"
+            "| 도메인 | 진입 파일 | 설명 |\n"
+            "| --- | --- | --- |\n"
+            "| orders | `orders.md` | 주문 |\n"
+        )
+        self.assertEqual(m.parse_manifest_domain_files(p, "orders"), ["orders.md"])
+
+    def test_suffix_variant_header_intentionally_not_matched(self):
+        """suffix 붙은 H2 변형은 의도적으로 미매칭 (critic C5 — 회귀 성격 수용, 문서화).
+
+        anchored 정규식은 `## 도메인 분류` 가 단독 라인일 때만 매칭한다.
+        `## 도메인 분류 (수동 관리)` 같은 suffix 변형은 구 계약에서는 동작했으나
+        (learn SKILL.md:80 의 "코드블록·prose 인용 무시" 계약 완전 구현을 위해)
+        이 케이스는 의도적으로 non-match 로 남긴다.
+        """
+        p = self._write(
+            "## 도메인 분류 (수동 관리)\n\n"
+            "| 도메인 | 진입 파일 | 설명 |\n"
+            "| --- | --- | --- |\n"
+            "| orders | `orders.md` | 주문 |\n"
+        )
+        self.assertEqual(m.parse_manifest_domain_files(p, "orders"), [])
+
 
 class ParseManifestExternalRefs(unittest.TestCase):
     def _write(self, body: str) -> Path:
@@ -605,7 +659,9 @@ class MainStateErrors(unittest.TestCase):
 
 
 class SsotLoad(unittest.TestCase):
-    """SSOT 강제 로드 — identity.yml·guardrails.md 2종, instincts.yaml 은 제거됨 (감사 F17)."""
+    """SSOT 강제 로드 — identity.yml·guardrails.md·wrapper-protocol.md 3종
+    (instincts.yaml 은 제거됨, 감사 F17). wrapper-protocol.md 는 #20 스텝 6-③(D2)
+    에서 배선 — agents/pilot-*.md 상단 "Read 지시 1줄"과 이중화."""
 
     def _plan_files(self, plugin_root_env: str | None) -> tuple[list, list]:
         saved = os.environ.get(m.PLUGIN_ROOT_ENV)
@@ -634,11 +690,17 @@ class SsotLoad(unittest.TestCase):
         self.assertTrue(any(f.endswith("shared/guardrails.md") for f in files))
         self.assertFalse(any("instincts" in f for f in files))
 
+    def test_loads_wrapper_protocol(self):
+        """wrapper-protocol.md 가 files_to_read 에 배선됨 (D2, #19 전달사항 :157 소비)."""
+        files, _ = self._plan_files(str(PLUGIN_ROOT))
+        self.assertTrue(any(f.endswith("shared/wrapper-protocol.md") for f in files))
+
     def test_unresolvable_root_appends_without_check(self):
         """CLAUDE_PLUGIN_ROOT 미설정 시 리터럴 placeholder 로 무조건 포함 (기존 동작 유지)."""
         files, _ = self._plan_files(None)
         self.assertTrue(any("identity.yml" in f for f in files))
         self.assertTrue(any("guardrails.md" in f for f in files))
+        self.assertTrue(any("wrapper-protocol.md" in f for f in files))
 
     def test_missing_ssot_file_skipped_with_warn(self):
         """SSOT 파일 부재 시 존재하지 않는 Read 지시 대신 WARN 힌트 + 생략 (감사 G3)."""
@@ -646,6 +708,7 @@ class SsotLoad(unittest.TestCase):
             files, hints = self._plan_files(fake_root)
             self.assertFalse(any("identity.yml" in f for f in files))
             self.assertFalse(any("guardrails.md" in f for f in files))
+            self.assertFalse(any("wrapper-protocol.md" in f for f in files))
             self.assertTrue(any("SSOT 파일 없음" in h for h in hints))
 
 
