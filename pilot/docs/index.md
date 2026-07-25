@@ -8,10 +8,11 @@ hide:
 
 도메인 지식 기반의 agent workflow 플러그인입니다. Claude Code 내에서 *plan → critic → generate → evaluate*의 명시적 cycle로 project를 진행합니다.
 
-!!! tip "v0.9.0 highlights"
-    - **조건부 인터뷰 (Open Questions 소비)** — `/pilot:create-feature`(3-ter)·`/pilot:analyze`(7.5) 가 spec 의 미해결 Open Questions 를 우선순위((d) 비즈니스 결정 우선)로 사용자에게 조건부 질의하고 답변을 spec 에 반영. 질문이 없으면 발동하지 않는 soft gate — 기존 흐름 무중단
-    - **경량 산출물 대조** — spec 심볼을 `scope/{domain}.md` 산출물과 lookup 대조해 부재 심볼을 (a) 질문으로 승격 (코드 탐색은 planner 몫으로 역할 분리 유지)
-    - 소비 규칙 SSOT `context/shared/interview.md` 신설 — 작성 규칙(open-questions.md)과 짝, 해소된 (b) 행 재개봉 방지 판정 키 명문화
+!!! tip "v0.10.0 highlights"
+    - **스킬 전면 재작성** — 슬래시 커맨드 17개를 원칙 중심으로 압축해 전부 100줄 이하로. 에이전트 5종은 기계 계약(REPORT 블록·Detect literal·표 헤더) 보존을 우선해 재작성. 지시 문서 4,808 → 3,635줄
+    - **도구 슬림화** — `diagnose.py`·`memory-hint.py`·`init_detect.py` 3종을 모델 판단으로 이관해 삭제, `verify-report-lint.py` 파서는 `auto_pilot.py` 로 흡수. tools/ Python 7,138 → 4,997줄 (30.1% 감축)
+    - **wrapper 도메인 컨텍스트 로드 버그 수정** — MANIFEST 파서가 문서 상단 blockquote 를 먼저 매칭해 도메인 문서가 로드되지 않던 문제. anchored 정규식 + 코드블록 strip 으로 해소
+    - `doctor --schema` CI(`validate.yml`) 신설 · `how-to/doctor-migration.md` 를 현행 거동으로 전면 재작성
     - 상세 변경사항: [Explanation → Release Note](explanation/index.md)
 
 ---
