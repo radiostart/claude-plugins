@@ -36,9 +36,9 @@ workspace 경로 = CWD 기준 `./workspace/`. 폴더 없으면 생성(`mkdir -p 
 
 > **표 헤더 고정 스키마 (헤더 리터럴 정확 유지 — 모델 자기 검증)**: `## learn 언어 패턴` 표1(의존성 추적) `| 언어 | 의존성 추출 패턴 |` · 표2(역할 분류) `| 역할 | 식별 패턴 |` · `## scope 카테고리` `| scope 헤더 | project.md 대상 H3 | 표 헤더 |`(scope 헤더 값은 `## ` 로 시작, H3 값은 영숫자·공백·하이픈만) · `## Ignore` `| 패턴 | 사유 |`. 문자열 원문 그대로 보존 — 저장 직후 재확인.
 
-1. **언어 감지** — `${CLAUDE_PLUGIN_ROOT}/tools/init_detect.py` 의 `detect_languages(cwd_path)`(`pathlib.Path`)를 호출해 `## learn 언어 패턴` 두 표에 주입(언어별 default 패턴 — ruby/typescript/python/kotlin/go). 기존 행 있으면 dedupe 병합(사용자 수동 추가 보존). 감지 0건 → 헤더만 남기고 빈 행 + INFO.
-2. **scope 후보 감지** — `detect_scope_candidates(cwd_path)` 호출해 `## scope 카테고리` 표(scope 헤더/project.md 대상 H3/표 헤더 3컬럼 강제)에 주입. 같은 H3 가 여러 폴더에서 매핑되면 1행만 dedupe. 후보 0건 → default 3행(Routes/Models/Services, 출처: [scope-sync.md](../analyze/references/scope-sync.md) 5-2 canonical) + INFO.
-3. **Ignore baseline 주입** — `IGNORE_BASELINE` 10패턴을 `## Ignore` 표에 주입(기존 행 dedupe 병합).
+1. **언어 감지 (Glob 직접 판단)** — 저장소 루트에서 확장자별 Glob 실행: `**/*.rb`(ruby) · `**/*.py`(python) · `**/*.ts`+`**/*.tsx`(typescript, 합산) · `**/*.go`(go) · `**/*.java`(java). `.git/`·`node_modules/`·`__pycache__/`·`vendor/`·`dist/`·`build/`·`.next/`·`target/`·`.`로 시작하는 폴더 경로의 매치는 제외. 매치 수 상위 3 언어(동률이면 위 나열 순서)를 `## learn 언어 패턴` 두 표에 주입. 기존 행 있으면 dedupe 병합(사용자 수동 추가 보존). 감지 0건 → 헤더만 남기고 빈 행 + INFO.
+2. **scope 후보 감지 (Glob 직접 판단)** — 저장소 루트 직속 폴더(depth 1)와 그 하위 폴더(depth 2)를 나열(위와 동일 ignore 폴더 제외), 영문 소문자 폴더명만 아래 매핑으로 `## scope 카테고리` 표(scope 헤더/project.md 대상 H3/표 헤더 3컬럼 강제)에 주입: `controllers`·`routes` → Endpoints · `models`·`entities` → Models · `services`·`workers`·`jobs` → Services. 같은 H3 가 여러 폴더에서 매핑되면 1행만 dedupe. 후보 0건 → default 3행(Routes/Models/Services, 출처: [scope-sync.md](../analyze/references/scope-sync.md) 5-2 canonical) + INFO.
+3. **Ignore baseline 주입** — 다음 10패턴을 `## Ignore` 표에 주입(기존 행 dedupe 병합): `.git/`·`node_modules/`·`__pycache__/`·`vendor/`·`dist/`·`build/`·`.next/`·`target/`·`*.pyc`·`*.lock`.
 
 ## 결과 출력
 
