@@ -39,7 +39,7 @@
 - [ ] 정비 slim — Python 슬림화 -> [상세](features/20-consolidation-slim.md) `[consolidation 3/3]` (dogfooding 게이트 미충족 — #21 사이클은 저장소 사본만 검증, 설치 캐시 실경로는 배포 후 재확인 필요)
 - [x] 정비 후속 — 문서 정합 (#20 반영) -> [상세](features/21-consolidation-docs-sync.md) `[dogfooding]`
 - [ ] 정비 후속 — context 드리프트 재학습 (D-2, 실측 3건) -> [상세](features/22-context-drift-relearn.md) `[후속]`
-- [ ] doctor conventions 플레이스홀더 오탐 (D-3, 파서 수정) -> [상세](features/23-conventions-placeholder-false-positive.md) `[후속]`
+- [ ] doctor 파서 오탐 2건 (conventions 플레이스홀더 + features 카운트) -> [상세](features/23-conventions-placeholder-false-positive.md) `[후속]`
 
 > `/pilot:analyze` 실행 시 features/ 파일과 동기화되어 이 목록이 자동 갱신된다.
 

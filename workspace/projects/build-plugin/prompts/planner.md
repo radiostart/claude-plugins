@@ -124,15 +124,18 @@
 - 트리거: `workspace/context/pilot/` 가 삭제된 스크립트 3종을 현행 구현으로 서술 (`index.md` P0 memory-hint · `lifecycle.md` init_detect · `lifecycle.md` diagnose.py).
 - 기대결과: `/pilot:learn` 재실행으로 3건 해소. **직접 Edit 금지** (drift-protocol § A). 검증은 라인 번호가 아니라 문자열 기준.
 
-### #23 doctor conventions 플레이스홀더 오탐 (features/23-conventions-placeholder-false-positive.md)
+### #23 doctor 파서 오탐 2건 (features/23-conventions-placeholder-false-positive.md)
 
-- 조건: #20 완료 상태의 `integrity.py`.
-- 트리거: `check_conventions_paths` 가 config 표의 설명용 플레이스홀더를 실선언으로 파싱해 WARN 2건 상시 발화.
-- 기대결과: 파서 수정으로 오탐 제거 (문서만 고치면 다른 workspace 에 동일 오탐 잔존). 정상 미선언 케이스의 WARN 은 유지.
+- 조건: #20 완료 상태의 `pilot/tools/doctor/`.
+- 트리거: 파서가 **실제가 아닌 것을 세어** 잘못된 WARN 을 낸다. 성격이 같은 2건.
+  - (A) `check_conventions_paths` 가 config 표의 설명용 플레이스홀더를 실선언으로 파싱 → WARN 2건 상시.
+  - (B) `count_real_features` 가 `.plan.md` 만 제외하고 `.plan.critic.md` 를 세어 features 24 → 29 로 오계산 → 불필요한 `--regen-agents` 권고. critic 을 쓰는 프로젝트에서만 발현.
+- 기대결과: 양쪽 다 파서 수정으로 해소. 정상 탐지(실선언 후 파일 부재 / 실제 spec 증가)는 유지. doctor WARN 4 → 1 (남는 1건은 `plugin_version` 정상 감지).
 
 **관련 파일 범위**:
-- 변경: `pilot/tools/doctor/integrity.py` (`check_conventions_paths`) · 필요 시 config.md 템플릿 표기 규약
-- 게이트: doctor WARN 4 → 2 · 기존 doctor 테스트 무손
+- 변경: `pilot/tools/doctor/integrity.py` (`check_conventions_paths`) · `pilot/tools/doctor/_common.py` (`count_real_features`) · 필요 시 config.md 템플릿 표기 규약
+- 게이트: doctor WARN 4 → 1 · 기존 doctor 테스트 무손 · (B) 회귀 테스트 신규
+- 주의: `count_real_features` 는 `integrity.py:517` (analyzed 정합성) 에서도 쓰인다 — 그쪽 판정 불변 확인. 기존 `last_analyzed_features` 값은 spec 기준 기록이라 파서도 spec 기준이어야 정합
 
 > `workspace/context/scope/pilot.md` · `workspace/context/rules/pilot.md` 부재 — 본 프로젝트는 사용자 커스텀 layer 미작성. features/ 의 file:line 인용을 1 차 근거로 활용한다 (예: `pilot/skills/learn/SKILL.md:90-111`).
 
