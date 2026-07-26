@@ -36,10 +36,10 @@
 - [x] 조건부 인터뷰 (Open Questions 소비) -> [상세](features/17-conditional-interview.md)
 - [x] 정비 prune — 미사용·드리프트 정리 -> [상세](features/18-consolidation-prune.md) `[consolidation 1/3]`
 - [x] 정비 rewrite — 원칙 중심 재작성 -> [상세](features/19-consolidation-rewrite.md) `[consolidation 2/3]`
-- [ ] 정비 slim — Python 슬림화 -> [상세](features/20-consolidation-slim.md) `[consolidation 3/3]` (dogfooding 게이트 미충족 — #21 사이클은 저장소 사본만 검증, 설치 캐시 실경로는 배포 후 재확인 필요)
+- [x] 정비 slim — Python 슬림화 -> [상세](features/20-consolidation-slim.md) `[consolidation 3/3]`
 - [x] 정비 후속 — 문서 정합 (#20 반영) -> [상세](features/21-consolidation-docs-sync.md) `[dogfooding]`
 - [ ] 정비 후속 — context 드리프트 재학습 (D-2, 실측 3건) -> [상세](features/22-context-drift-relearn.md) `[후속]`
-- [ ] doctor 파서 오탐 2건 (conventions 플레이스홀더 + features 카운트) -> [상세](features/23-conventions-placeholder-false-positive.md) `[후속]`
+- [x] doctor 파서 오탐 2건 (conventions 플레이스홀더 + features 카운트) -> [상세](features/23-conventions-placeholder-false-positive.md) `[후속]`
 
 > `/pilot:analyze` 실행 시 features/ 파일과 동기화되어 이 목록이 자동 갱신된다.
 
@@ -163,3 +163,6 @@
 - [ ] `pilot/docs/reference/{agents,skills,tools}/` 는 `pilot/.gitignore:10` 로 **git 미추적** — `docs_build.py` 재생성 여부는 `git diff`·커밋 diffstat 로 증명 불가하고 **현재 파일 상태 + `--check` exit code** 로만 확인된다. 후속 evaluator 가 "docs 재생성 실행" 류 항목을 판정할 때 커밋 증거를 요구하면 오탐 — 상태 기반 증거(생성 페이지 목록 ↔ 소스 실재 목록 일치)로 대체할 것 (from #20)
 - [ ] **#20 dogfooding 체크 조건** — `project.md` `## 목표` 의 #20 은 `[ ]` 가 정상 상태 (미완 누락 아님). 체크 조건 = 배포 후 **설치 캐시 실경로** 1사이클 검증. 절차 5단계: ① PR 머지 → ② 배포 → ③ `pilot/tools/pilot-update.sh` 실행 → ④ **세션 재시작** (세션 중 플러그인 리로드 불가) → ⑤ 실경로에서 G7 기대값 재측정 (`files_to_read` 에 `wrapper-protocol.md`·`context/pilot/index.md` 실재 + 미등록 힌트 부재) (from #21)
 - [ ] `pilot/docs/PLAN-manual.md:264` — `schema 버전 감지 → migration 경로 (v1.0→v1.1→v1.2)` 표기가 실제 라벨(`v1`·`v1.1`·`v1.2`) + 직접 bump 거동과 불일치. `PLAN-manual.md` 는 mkdocs 제외 메타 산출물이라 #21 spec 범위 외 — 메타 산출물 갱신 시 함께 정정 (from #21)
+- [ ] **[#20 dogfooding 게이트 해소 — 위 `#20 dogfooding 체크 조건` 항목은 소화됨]** 2026-07-26 #23 사이클이 설치 캐시 실경로 `~/.claude/plugins/cache/radiostart-plugins/pilot/0.10.0` 에서 planner→generator→evaluator 완주. 판정 (a) 삭제 스크립트 4종 호출 0건 · (b) `files_to_read` 에 `wrapper-protocol.md`·`context/pilot/index.md` 실재 + 미등록 힌트 부재 — 3구간 전건 충족으로 `project.md` #20 목표 `[x]` 처리. 후속 사이클은 이 게이트를 다시 판정할 필요 없다 (from #23)
+- [ ] `is_feature_spec_file(p)` 가 `pilot/tools/doctor/_common.py:197` 에 신설 — "features/ 의 `*.md` 중 stem 에 `.` 이 있으면 파생 산출물" 이 **파생 판정 SSOT**. 새 파생 접미사(`.plan.review.md` 등)를 추가해도 파서 수정 불필요. **알려진 경계** = spec 파일명 stem 에 점을 쓰면(`05-v1.0-release.md`) 미카운트 — `test_doctor_features_count.py::DottedSpecStemNotCounted` 가 고정. features 명명 규약을 바꾸는 후속 feature 는 이 테스트를 먼저 확인할 것 (from #23)
+- [ ] **orchestrate-load placeholder leak (후속 feature 대상)** — `parse_lang_config` (`pilot/tools/orchestrate-load.py:141-172`) 가 config.md 같은 표를 파싱하며 `test_framework_hints=자유 텍스트` 같은 **플레이스홀더를 실값으로 반환** (#23 evaluator step 1 반환 JSON 에서 재실측: `config: {"test_framework_hints": "자유 텍스트"}`). 성격은 #23 (A) 와 동일하나 wrapper hints 출력이 바뀌므로 별건 — #23 이 만든 구조 기반 판정(`integrity.py:_extract_declared_path`)을 재사용해 해소 가능 (from #23)

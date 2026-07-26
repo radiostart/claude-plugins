@@ -11,11 +11,11 @@
 |---|---|---|
 | #18 prune | ✅ READY | 미사용 46파일 삭제 · 모순 드리프트 B-1~B-9 정정 |
 | #19 rewrite | ✅ READY | 스킬 17개 ≤100줄 (learn 109) · 불변 조건 195항 전수 보존 · 지시 문서 4,808 → 3,635줄 |
-| #20 slim | ⏳ **NOT_READY — 게이트 1건만 남음** | Python 7,138 → 4,997 (절감 2,141줄, 30.1%) · 이관 3종 삭제 · MANIFEST 파서 실버그 수정 · validate.yml CI. **7기준 중 6 통과, dogfooding 1건 미충족** |
+| #20 slim | ✅ **READY (2026-07-26 게이트 마감)** | Python 7,138 → 4,997 (절감 2,141줄, 30.1%) · 이관 3종 삭제 · MANIFEST 파서 실버그 수정 · validate.yml CI. **7기준 전건 통과** — 마지막 dogfooding 게이트는 #23 사이클이 실경로 0.10.0 에서 완주하며 충족 |
 | #21 docs-sync | ✅ READY | reference/index.md · doctor-migration.md · getting-started.md 정합. 정정 대장 15행을 소스로 재검증 |
 | #22 relearn | 📋 등록만 됨 | `/pilot:learn` 재실행으로 context 드리프트 3건 해소 |
-| #23 파서 오탐 | 📋 등록만 됨 | doctor 파서 오탐 2건 (conventions 플레이스홀더 · features 카운트) |
-| #24 update 도구 | 📋 등록만 됨 | `pilot-update.sh` 경로 stale + 설계 한계 + 잘못된 안내. **존치 여부 결정이 선행** |
+| #23 파서 오탐 | ✅ **READY (미커밋)** | 오탐 2건 소멸 — doctor `10 PASS · 1 WARN · 0 ERROR` · `features=24` 복구. `_common.py:is_feature_spec_file` (파생 판정 SSOT) + `integrity.py:_extract_declared_path` (구조 기반 4단 판정) 신설. 테스트 292건 OK (신규 8) |
+| #24 update 도구 | ⏸ **보류 (계획 확정)** | planner 완주 · 결정 D1 = **폐기**. 실작업이 파일 1개 삭제 + 문서 3곳 문구 수정뿐이라 우선순위 낮다고 사용자 판단 (2026-07-26). 산출물은 브랜치 `skills/24-pilot-update-tool` 에 커밋됨 (`8d3a868`) |
 | #25 스키마 중복 | 📋 등록만 됨 | `doctor --schema` ↔ `claude plugin validate` 중복. 손상본 주입 실측 표가 명세에 있음 |
 
 **릴리스 상태**: `main` = `677fe7c` (PR #9 머지). 태그 `pilot-v0.10.0`. 릴리스 노트 게시됨.
@@ -32,17 +32,23 @@
 2. ~~플러그인 설치본 갱신~~ — **완료** (사용자가 `/plugin` 으로 업데이트).
    `installed_plugins.json` → `pilot@radiostart-plugins 0.10.0`, `cache/.../pilot/0.10.0/` 에 tools 8종 · doctor/ 4개 · wrapper-protocol.md 실재 확인.
    ⚠️ **세션 재시작 필요** — 세션 시작 시 로드된 경로가 고정이라, 재시작 전에는 구버전(0.4.0)이 계속 쓰인다.
-3. **#20 dogfooding 게이트 마감** — 재시작 후 실경로에서 1사이클 완주.
-   판정 기준: (a) 사이클 중 삭제 스크립트 4종 호출 시도 0건 (b) orchestrate-load JSON 에 도메인 진입 파일 실재.
-   통과 시 `project.md` 의 #20 목표를 `[x]` 로 (evaluator 단독 권한) + 부기된 미체크 사유 제거.
+3. ~~**#20 dogfooding 게이트 마감**~~ — **완료 (2026-07-26)**. `project.md` #20 목표 `[x]` 처리됨 (evaluator 단독 권한 행사), 부기된 미체크 사유 제거됨.
+   - 판정 (a) 삭제 스크립트 4종 호출 시도 **0건** — planner·generator·evaluator 3구간 전건. evaluator 가 자기 보고 외 구조적 증거도 수집 (캐시 0.10.0 트리에 4종 전부 부재, 잔존 언급은 provenance 주석·릴리스 노트 3건뿐 = 호출 지시 0).
+   - 판정 (b) `orchestrate-load` `files_to_read` 에 `wrapper-protocol.md`·`context/pilot/index.md` 실재 + "미등록" 힌트 부재 — planner·evaluator 두 구간에서 독립 재현.
+   - 3구간 모두 로드 경로 `~/.claude/plugins/cache/radiostart-plugins/pilot/**0.10.0**`. 0.4.0 에서 보이던 MANIFEST 파서 오탐은 실경로에서 소멸.
 
-   > **버전 확인과 게이트 증거는 별개다.**
-   > - **로드 버전 확인 (즉시·무비용)** — 아무 `/pilot:` 스킬을 부르면 헤더에 `Base directory for this skill: .../pilot/{version}/skills/{name}` 이 찍힌다. `0.10.0` 이면 실경로 진입 완료.
-   > - **orchestrate-load 증거** — 세션을 여는 것만으로는 실행되지 않는다. `orchestrate-load.py` 는 **서브에이전트 wrapper 가 호출 시 최우선 실행**하므로, 다음 사이클의 `@pilot-planner` 호출이 곧 판정 (b) 의 증거가 된다. 판정 (a) 는 사이클 전체를 봐야 한다.
-4. **#23 사이클** — `@pilot-planner` → (critic) → `@pilot-generator` → `@pilot-evaluator`.
-   브랜치는 이미 `skills/23-doctor-parser-false-positives` 로 생성돼 있다.
+   > **재판정 불필요.** 후속 사이클은 이 게이트를 다시 측정하지 않는다 (`project.md` 전달사항에도 동일 취지 기록됨).
+4. ~~**#23 사이클**~~ — **완료, evaluator READY**. 브랜치 `skills/23-doctor-parser-false-positives` (main `229b2a8` 까지 ff).
+   **미커밋 상태** — 커밋·PR 이 다음 액션이다.
+   - 코드 4파일 + 신규 테스트 1파일: `_common.py`·`integrity.py`·`test_doctor_conventions.py`(+3)·`test_doctor_features_count.py`(신규 5)·`config.md.template`
+   - workspace: `project.md`(#20·#23 목표 `[x]` + 전달사항 3건 신규) · `prompts/evaluator.md` · `RESUME.md` · `23-*.plan.md`
+   - critic 은 사용자 판단으로 **건너뜀** (판정 규칙 3건 직접 승인).
 5. **#22 사이클** — `/pilot:learn` 재실행. **반드시 세션 재시작 이후에** — 구버전 스킬로 재학습하면 옛 서술을 다시 학습한다.
-6. **#24 사이클** — `pilot-update.sh` 존치 여부 결정이 선행. 브랜치 `skills/24-pilot-update-tool` 에 등록분이 있다.
+6. ~~**#24 사이클**~~ — **보류** (2026-07-26 사용자 판단). 계획은 이미 확정돼 있으므로 재개 시 `@pilot-generator` 부터 시작하면 된다.
+   - 결정: D1 = **폐기** (`pilot/tools/pilot-update.sh` 삭제) · D2 = 릴리스 노트 정정 · D3 = stale 경로 전파처 일괄 정정 · D4 = `getting-started.md` 허구 서술 삭제.
+   - 실제로 필요한 부분은 **`pilot/README.md:35` 의 `/plugin install pilot@claude-plugins`** — 마켓플레이스 id 가 `radiostart-plugins` 라 **신규 설치 안내가 그대로 실패**한다. 재개 전이라도 이 한 줄은 별도로 고칠 가치가 있다.
+   - D2 (게시된 GitHub Release 본문 수정) 는 저장소 밖 상태 변경이라 재개 시 범위에서 빼는 것을 검토할 것.
+   - 산출물 `features/24-pilot-update-tool.plan.md`·`.plan.critic.md` 는 브랜치 `skills/24-pilot-update-tool` 의 커밋 `8d3a868` 에 보존돼 있다 (2026-07-26). 재개 시 그 브랜치로 이동하면 된다.
 
 ## 이어받을 때 주의
 
@@ -57,4 +63,6 @@
 
 - `skills/doctor/SKILL.md:34`·`:79-80` — "검사는 비파괴, 파일 수정 안 함" 이 실측과 반대 (`.gitignore` secret 주입은 `--fix` 없이도 실행). 파생물 `reference/skills/doctor.md:71-72` 를 통해 사이트에도 배포됨. 후속 feature 대상 (R-3).
 - `pilot/docs/PLAN-manual.md` 4곳 (`:19`·`:46`·`:168`·`:264`) — 구 `doctor-migration.md` 구조 기술. mkdocs 제외 메타 산출물.
-- doctor WARN 4건 중 3건이 오탐 — #23 대상 (conventions 2 + features 카운트 1). 나머지 1건은 `plugin_version` 정상 감지.
+- ~~doctor WARN 4건 중 3건이 오탐~~ — **#23 로 해소 (2026-07-26)**. 현재 `10 PASS · 1 WARN · 0 ERROR`, 남은 1건은 `plugin_version` 정상 감지.
+- **orchestrate-load placeholder leak (미등록 · 후속 feature 후보)** — `parse_lang_config` (`pilot/tools/orchestrate-load.py:141-172`) 가 config.md 같은 표를 파싱하며 `test_framework_hints=자유 텍스트` 같은 **플레이스홀더를 실값으로 반환**한다 (#23 evaluator step 1 반환 JSON 에서 실측). 성격은 #23 (A) 와 동일하나 wrapper hints 출력이 바뀌므로 별건. #23 이 만든 `integrity.py:_extract_declared_path` 를 재사용해 해소 가능.
+- **features 명명 경계** — spec 파일명 stem 에 점을 쓰면 (`05-v1.0-release.md`) 파생 산출물로 오판정돼 미카운트된다. `test_doctor_features_count.py::DottedSpecStemNotCounted` 가 이 경계를 고정. 명명 규약을 바꾸는 후속 feature 는 이 테스트를 먼저 볼 것.
