@@ -49,8 +49,8 @@
 | `source_root` | `app/` · `src/main/` 등 | 소스 루트. characterize 모드의 잠금 대상 · scope-guard 기준 |
 | `test_path_convention` | 예: `spec/**/*_spec.rb`, `src/test/kotlin/**/*Test.kt` | 테스트 파일 경로 규약 |
 | `test_framework_hints` | 자유 텍스트 | 프레임워크 특이사항 (예: `RSpec 3.x, shared_examples 사용`) |
-| `conventions_doc` | 예: `context/conventions.md` | 언어·프레임워크 관행 산문 문서 경로. generator·evaluator phase 가 자동 로드 |
-| `conventions_evals` | 예: `context/evals/conventions.json` | 언어·프레임워크별 검증 케이스 JSON 경로. generator·evaluator phase 가 자동 로드 |
+| `conventions_doc` | — | 언어·프레임워크 관행 산문 문서 경로 (예: `context/conventions.md`). generator·evaluator phase 가 자동 로드 |
+| `conventions_evals` | — | 언어·프레임워크별 검증 케이스 JSON 경로 (예: `context/evals/conventions.json`). generator·evaluator phase 가 자동 로드 |
 | `pr_default_base` | 예: `develop` · `main` | `/pilot:pr` 의 base branch default. `.agent-state.yml` 의 `pr_base_branch` 부재 시 사용. 미선언 시 하드 fallback `develop` |
 
 ## 설정
@@ -65,5 +65,6 @@
 
 - 사용하지 않는 키는 행을 지우거나 값을 비운다. 플러그인이 **해당 기능 부분만** 스킵.
 - 값은 백틱으로 감싸도 되고 평문이어도 된다 (파서가 둘 다 처리).
+- 값 셀에는 실제 값만 적는다. 예시는 용도 컬럼에, 미선언은 `—`.
 - `conventions_doc` · `conventions_evals` 는 선언 후 실제 파일을 사용자가 지정한 경로에 생성해야 한다.
 - 키를 추가하려면 플러그인 수정이 필요하다. 임의 키 추가는 읽히지 않음.
