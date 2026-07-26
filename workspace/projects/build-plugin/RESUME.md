@@ -1,4 +1,4 @@
-# RESUME — pilot 정비 프로젝트 (2026-07-25 갱신)
+# RESUME — pilot 정비 프로젝트 (2026-07-26 갱신)
 
 컨텍스트 한계로 세션을 새로 시작할 때 이 문서만 읽으면 이어받을 수 있다.
 
@@ -15,8 +15,8 @@
 | #21 docs-sync | ✅ READY | reference/index.md · doctor-migration.md · getting-started.md 정합. 정정 대장 15행을 소스로 재검증 |
 | #22 relearn | 📋 등록만 됨 | `/pilot:learn` 재실행으로 context 드리프트 3건 해소 |
 | #23 파서 오탐 | 📋 등록만 됨 | doctor 파서 오탐 2건 (conventions 플레이스홀더 · features 카운트) |
-| #24 update 도구 | 📋 등록만 됨 | `pilot-update.sh` 경로 stale + 설계 한계 + 잘못된 안내. **존치 여부 결정이 선행** |
-| #25 스키마 중복 | 📋 등록만 됨 | `doctor --schema` ↔ `claude plugin validate` 중복. 손상본 주입 실측 표가 명세에 있음 |
+| #24 update 도구 | ⚠️ **NOT_READY (저장소 내 전건 통과)** | D1 = **(iii) 폐기** 실행 — `pilot-update.sh` 삭제 + README·getting-started·release-and-upgrade 안내 정정. `README.md:35` 설치 명령 id 오류(신규 설치 실패)도 함께 해소. **잔여 1건 = v0.10.0 릴리스 노트 `## 업그레이드` 블록** (저장소 밖·`immutable:false`). 커밋 `b4e73e3`+`f0f01d5` |
+| #25 스키마 중복 | ✅ **READY (코드 변경 0)** | 결론 **(ii) 현행 유지**. `--strict` 로 명세의 유지 근거 하나는 죽었으나 어느 쪽도 상위 집합 아님 — CLI 미탐 2종(description 바이트 상한·version↔tag)이 `schema.py` 존치 근거. CLI 는 릴리스 전 로컬 보조 검사로 문서화. 대조표 = `features/25-*.md` § 재실측 |
 
 **릴리스 상태**: `main` = `677fe7c` (PR #9 머지). 태그 `pilot-v0.10.0`. 릴리스 노트 게시됨.
 문서 사이트 배포 완료 (`Deployed 677fe7c`).
@@ -42,7 +42,8 @@
 4. **#23 사이클** — `@pilot-planner` → (critic) → `@pilot-generator` → `@pilot-evaluator`.
    브랜치는 이미 `skills/23-doctor-parser-false-positives` 로 생성돼 있다.
 5. **#22 사이클** — `/pilot:learn` 재실행. **반드시 세션 재시작 이후에** — 구버전 스킬로 재학습하면 옛 서술을 다시 학습한다.
-6. **#24 사이클** — `pilot-update.sh` 존치 여부 결정이 선행. 브랜치 `skills/24-pilot-update-tool` 에 등록분이 있다.
+6. ~~**#24 사이클**~~ — **저장소 내 전건 완료** (2026-07-26, 브랜치 `skills/24-pilot-update-tool`). `pilot-update.sh` 는 **삭제됐다 — 되살리지 말 것**. 잔여는 배포된 v0.10.0 릴리스 노트 `## 업그레이드` 블록 1건뿐이고, 절차는 `features/24-pilot-update-tool.plan.md` 스텝 2 (백업 → 취득 → 교체 → diff 검증). 사용자가 범위 제외를 명시 승인하면 그 기록으로 대체한다.
+7. ~~**#25 사이클**~~ — **완료 (코드 변경 0)**. 결론 (ii) 현행 유지 — `schema.py`·`validate.yml` 무변경. 재개 불필요.
 
 ## 이어받을 때 주의
 

@@ -26,7 +26,7 @@
 
 ### 대조에서 드러난 것
 
-- **완전 포함 관계가 아니다.** CLI 는 JSON 문법 파손·미지 키를 잡고, 우리 것은 version↔tag 정합을 잡는다. 어느 쪽도 상위 집합이 아니다.
+- **완전 포함 관계가 아니다.** CLI 는 JSON 문법 파손·미지 키를 잡고, 우리 것은 version↔tag 정합을 잡는다. 어느 쪽도 상위 집합이 아니다. — ⚠️ **이 줄은 아래 § 재실측 (2026-07-26) 으로 대체됐다.** JSON 문법 파손은 CLI 전용이 아니라 **양쪽 다** 잡는다 (위 표의 "(문법 파손은 미검증)" 은 미탐이 아니라 미측정이었다). 결론(어느 쪽도 상위 집합 아님)만 유효하다.
 - **심각도 정책이 다르다.** frontmatter 부재를 CLI 는 WARNING(통과), 우리는 ERROR(CI 차단)로 본다. **CLI 로 단순 교체하면 CI 게이트가 느슨해진다** — `validate.yml` 이 지금 막고 있는 것을 통과시키게 된다.
 - **관련 CLI 도 있다.** `claude plugin tag` 는 "plugin.json 과 마켓플레이스 엔트리가 일치하는지 검증" 한다고 기술돼 있어 version 계열 검사와 겹칠 여지가 있다 — 실측 미확인.
 
@@ -72,8 +72,14 @@ _(없음)_
 | agents frontmatter 부재 | WARN → **exit 1** | ERROR → exit 1 |
 | `hooks.json` 미지 이벤트 (`hooks.BogusEvent`) | ERROR → exit 1 | ERROR → exit 1 |
 | `plugin.json` 미지 키 (`bogus_key`) | WARN → **exit 1** | **미탐 (PASS)** |
+| `plugin.json` JSON 문법 파손 | ERROR → exit 1 | ERROR → exit 1 |
 | SKILL `description` 5199 bytes (>1024) | **미탐 (통과)** | ERROR → exit 1 |
 | `plugin.json` version ↔ git tag | **미검사** | WARN |
+
+> **2026-07-25 구표(§ 실측 대조)의 "(문법 파손은 미검증)" 은 "미탐" 이 아니라 "측정하지 않음" 이었다.**
+> 실제로 측정하니 `doctor --schema` 도 `plugin.json`·`hooks/hooks.json` 양쪽 JSON 파싱 실패를
+> ERROR → exit 1 로 잡는다 (`schema.py` 의 `json.load` 실패 경로). 미검증을 미탐으로 읽어 CLI 고유
+> 항목으로 승격시킨 최초 서술은 code-review blocking 지적으로 정정됐다.
 
 정상 상태: `claude plugin validate ./pilot` → `✔ Validation passed` (exit 0) · `doctor --schema` → `6 PASS · 0 WARN · 0 ERROR` (exit 0).
 
