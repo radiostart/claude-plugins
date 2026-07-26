@@ -868,6 +868,30 @@ def _parse_md_tables_in_section(text: str, section_header: str) -> list[list[lis
 
 CONVENTION_KEYS = ("conventions_doc", "conventions_evals")
 
+_UNDECLARED_MARKERS = {"", "-", "—", "–", "값", "n/a", "N/A", "(없음)", "(미설정)"}
+
+
+def _extract_declared_path(cell: str) -> tuple[str | None, bool]:
+    """config 값 셀에서 실제 선언 경로만 추출. 예시·플레이스홀더면 None.
+
+    구조 기반 판정 (한국어 문자열 하드코딩 의존 없음). 반환값 `(value, ambiguous)`:
+
+    1. `cell.strip()` 이 `_UNDECLARED_MARKERS` 에 속하면 → `(None, False)` (미선언, 조용히 skip).
+    2. 백틱 코드 스팬이 정확히 1개이고 셀 전체(양끝 공백 제외)를 감싸면
+       → `(내부 텍스트, False)`.
+    3. 코드 스팬이 0개이고 셀에 공백이 없으면 → `(셀 텍스트, False)` (평문 선언도 허용).
+    4. 그 외(설명문 + 코드 스팬 혼재 / 코드 스팬 복수 / 공백 포함 산문)
+       → `(None, True)` — 호출부가 예시 표기 INFO 1줄을 발화할 신호.
+    """
+    stripped = cell.strip()
+    if stripped in _UNDECLARED_MARKERS:
+        return None, False
+    if stripped.count("`") == 2 and stripped.startswith("`") and stripped.endswith("`"):
+        return stripped[1:-1].strip(), False
+    if "`" not in stripped and " " not in stripped:
+        return stripped, False
+    return None, True
+
 
 def check_conventions_paths(workspace: Path, project: str | None) -> list[Result]:
     """config.md `## 언어·도구 기본값` 이 선언한 conventions_doc·conventions_evals 경로 실존 검사.
@@ -899,9 +923,21 @@ def check_conventions_paths(workspace: Path, project: str | None) -> list[Result
                 if len(row) < 2:
                     continue
                 key = row[0].strip().strip("`").strip()
-                value = row[1].strip().strip("`").strip()
-                if key in CONVENTION_KEYS and value and value != "값":
+                if key not in CONVENTION_KEYS:
+                    continue
+                value, ambiguous = _extract_declared_path(row[1])
+                if value:
                     declared[key] = value
+                elif ambiguous:
+                    results.append(
+                        Result(
+                            Result.INFO,
+                            "conventions",
+                            f"{key} 값 셀이 예시 표기로 보임 — 미선언 취급 ('{row[1].strip()}'). "
+                            "실제 경로는 백틱 코드 스팬 단독 또는 공백 없는 평문으로 기입",
+                            "config.md 값 셀을 실제 경로 또는 미선언 표기(`—`)로 정정",
+                        )
+                    )
 
     if project:
         project_md = workspace / "projects" / project / "project.md"
@@ -918,7 +954,9 @@ def check_conventions_paths(workspace: Path, project: str | None) -> list[Result
                         line,
                     )
                     if row and row.group(1) in CONVENTION_KEYS:
-                        declared[row.group(1)] = row.group(2).strip()
+                        value, _ambiguous = _extract_declared_path(row.group(2))
+                        if value:
+                            declared[row.group(1)] = value
 
     for key, rel in declared.items():
         rel_norm = rel.lstrip("/")
