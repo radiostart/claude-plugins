@@ -55,9 +55,36 @@ _(없음)_
 - (없음)
 
 ### (c) 외부 시스템 spec 부재
-- [ ] `claude plugin validate` 의 exit code·출력 형식 계약이 문서화돼 있지 않다 — CI 게이트로 쓸 근거 부족
-- [ ] `claude plugin tag` 가 실제로 검증하는 범위 미확인 (version↔marketplace 정합 중복 여부)
+- [x] `claude plugin validate` 의 exit code·출력 형식 계약이 문서화돼 있지 않다 → **부분 해소.** `--strict` 플래그가 `--help` 에 "Treat warnings as errors (exit 1). Use in CI" 로 **명시**돼 있고 exit code 도 실측 확인 (아래 재실측 표). 다만 출력 **형식** 계약은 여전히 비공개 — 파싱하지 않고 exit code 만 쓰는 한 문제없다
+- [x] `claude plugin tag` 가 실제로 검증하는 범위 미확인 → **중복 아님.** `--help` 실측 = "`plugin.json` 과 **enclosing marketplace entry** 가 일치하는지 검증하며 `{name}--v{version}` 태그 생성". 우리 `schema.py` 는 `plugin.json` ↔ **git tag** 정합을 본다 — 대조 대상이 다르다
 
 ### (d) 비즈니스 결정 영역
-- [ ] 처리 방향 — (i) `schema.py` 를 CLI 미커버 항목(version↔tag)만 남기고 축소 + CI 는 양쪽 병행 (ii) 현행 유지하고 중복을 감수 (iii) CLI 로 전면 위임. (iii) 은 CI 전제가 무거워지고 심각도 정책이 느슨해져 권장하지 않음
-- [ ] CI 에서 `claude plugin validate` 를 병행 실행할 것인가 — 러너에 CLI 설치·인증 비용 대비 이득 판단
+- [x] 처리 방향 → **(ii) 현행 유지** (2026-07-26 확정). 근거는 아래 § 재실측
+- [x] CI 에서 `claude plugin validate` 를 병행 실행할 것인가 → **하지 않는다.** CI 게이트는 러너에 CLI 설치·인증이 필요 없는 `doctor --schema` 단독 유지. CLI 검사는 **릴리스 전 로컬 보조 수단**으로 `pilot/README.md` § 릴리스 및 업데이트 에 문서화
+
+## 재실측 (2026-07-26) — 명세 전제의 무효화와 재확인
+
+명세 작성 시점(2026-07-25) 이후 `claude plugin validate --strict` 의 존재를 확인했다. 손상본 주입 실험을 다시 돌린 결과:
+
+| 주입 결함 | `claude plugin validate --strict` | `doctor --schema` |
+| --- | --- | --- |
+| SKILL frontmatter 부재 | WARN → **exit 1** | ERROR → exit 1 |
+| agents frontmatter 부재 | WARN → **exit 1** | ERROR → exit 1 |
+| `hooks.json` 미지 이벤트 (`hooks.BogusEvent`) | ERROR → exit 1 | ERROR → exit 1 |
+| `plugin.json` 미지 키 (`bogus_key`) | WARN → **exit 1** | **미탐 (PASS)** |
+| SKILL `description` 5199 bytes (>1024) | **미탐 (통과)** | ERROR → exit 1 |
+| `plugin.json` version ↔ git tag | **미검사** | WARN |
+
+정상 상태: `claude plugin validate ./pilot` → `✔ Validation passed` (exit 0) · `doctor --schema` → `6 PASS · 0 WARN · 0 ERROR` (exit 0).
+
+### 결론
+
+- **명세의 유지 근거 하나는 죽었다.** "CLI 는 frontmatter 부재를 WARNING 으로 통과시키므로 교체하면 CI 게이트가 느슨해진다" 는 `--strict` 로 무효화됐다 (exit 1 실측).
+- **그래도 어느 쪽도 상위 집합이 아니다.** CLI 미탐 2종(SKILL description 바이트 상한 · version↔git tag)이 `schema.py` 의 존재 이유로 실측 확정됐다. 명세가 요구한 *"자체 구현을 남기는 부분은 CLI 가 못 하는 것으로 근거를 명시"* 가 이 표로 충족된다.
+- **역방향 갭은 메우지 않는다.** doctor 가 놓치는 `plugin.json` 미지 키를 잡으려면 CLI 의 **비공개 허용 키 목록을 추측 복제**해야 하고, 이는 명세 § 비즈니스 규칙 *"외부 CLI 에 의존하면 Claude Code 버전에 따라 거동이 변한다"* 가 경고한 취약성을 코드 안으로 들여오는 셈이다. 대신 CLI 를 릴리스 전 보조 검사로 문서화해 같은 커버리지를 **의존 없이** 얻는다.
+- **CI 전제는 그대로 둔다.** `validate.yml` 은 `python3` 만 요구하는 현행 유지 — 명세 § 예외 케이스가 지적한 러너 CLI 설치·인증 비용을 지지 않는다.
+
+### 반영
+
+- 코드 변경 **없음** (`schema.py` 410줄 유지 · `validate.yml` 무변경).
+- `pilot/README.md` § 릴리스 및 업데이트 — 릴리스 절차에 `doctor --schema` + `claude plugin validate --strict` 2단 검사와 **"두 검사는 서로 대체하지 않는다"** 근거 blockquote 추가.
