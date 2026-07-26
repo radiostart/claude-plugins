@@ -14,12 +14,13 @@
 | #20 slim | ✅ **READY (2026-07-26 게이트 마감)** | Python 7,138 → 4,997 (절감 2,141줄, 30.1%) · 이관 3종 삭제 · MANIFEST 파서 실버그 수정 · validate.yml CI. **7기준 전건 통과** — 마지막 dogfooding 게이트는 #23 사이클이 실경로 0.10.0 에서 완주하며 충족 |
 | #21 docs-sync | ✅ READY | reference/index.md · doctor-migration.md · getting-started.md 정합. 정정 대장 15행을 소스로 재검증 |
 | #22 relearn | 📋 등록만 됨 | `/pilot:learn` 재실행으로 context 드리프트 3건 해소 |
-| #23 파서 오탐 | ✅ **READY (미커밋)** | 오탐 2건 소멸 — doctor `10 PASS · 1 WARN · 0 ERROR` · `features=24` 복구. `_common.py:is_feature_spec_file` (파생 판정 SSOT) + `integrity.py:_extract_declared_path` (구조 기반 4단 판정) 신설. 테스트 292건 OK (신규 8) |
+| #23 파서 오탐 | ✅ **READY · PR #11 머지 완료** | 오탐 2건 소멸 — doctor `10 PASS · 1 WARN · 0 ERROR` · `features=24` 복구. `_common.py:is_feature_spec_file` (파생 판정 SSOT) + `integrity.py:_extract_declared_path` (구조 기반 4단 판정) 신설. 테스트 292건 OK (신규 8) |
 | #24 update 도구 | ⏸ **보류 (계획 확정)** | planner 완주 · 결정 D1 = **폐기**. 실작업이 파일 1개 삭제 + 문서 3곳 문구 수정뿐이라 우선순위 낮다고 사용자 판단 (2026-07-26). 산출물은 브랜치 `skills/24-pilot-update-tool` 에 커밋됨 (`8d3a868`) |
 | #25 스키마 중복 | 📋 등록만 됨 | `doctor --schema` ↔ `claude plugin validate` 중복. 손상본 주입 실측 표가 명세에 있음 |
 
-**릴리스 상태**: `main` = `677fe7c` (PR #9 머지). 태그 `pilot-v0.10.0`. 릴리스 노트 게시됨.
-문서 사이트 배포 완료 (`Deployed 677fe7c`).
+**릴리스 상태 (2026-07-26)**: `main` = `f73cc1c` (PR #11 머지 — #23 + #20 게이트 마감).
+**v0.10.1 릴리스 진행 중** — 브랜치 `chore/release-v0.10.1` 에서 버전 표기 3곳(`plugin.json`·`mkdocs.yml`·`docs/index.md`) 동기화.
+이전 릴리스: 태그 `pilot-v0.10.0` (PR #9 · `677fe7c`), 문서 사이트 배포 완료.
 
 근거 문서 (모두 커밋됨):
 - 설계: `docs/superpowers/specs/2026-07-24-pilot-skill-consolidation-design.md`

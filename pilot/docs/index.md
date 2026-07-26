@@ -8,11 +8,11 @@ hide:
 
 도메인 지식 기반의 agent workflow 플러그인입니다. Claude Code 내에서 *plan → critic → generate → evaluate*의 명시적 cycle로 project를 진행합니다.
 
-!!! tip "v0.10.0 highlights"
-    - **스킬 전면 재작성** — 슬래시 커맨드 17개를 원칙 중심으로 압축해 전부 100줄 이하로. 에이전트 5종은 기계 계약(REPORT 블록·Detect literal·표 헤더) 보존을 우선해 재작성. 지시 문서 4,808 → 3,635줄
-    - **도구 슬림화** — `diagnose.py`·`memory-hint.py`·`init_detect.py` 3종을 모델 판단으로 이관해 삭제, `verify-report-lint.py` 파서는 `auto_pilot.py` 로 흡수. tools/ Python 7,138 → 4,997줄 (30.1% 감축)
-    - **wrapper 도메인 컨텍스트 로드 버그 수정** — MANIFEST 파서가 문서 상단 blockquote 를 먼저 매칭해 도메인 문서가 로드되지 않던 문제. anchored 정규식 + 코드블록 strip 으로 해소
-    - `doctor --schema` CI(`validate.yml`) 신설 · `how-to/doctor-migration.md` 를 현행 거동으로 전면 재작성
+!!! tip "v0.10.1 highlights"
+    - **doctor 오탐 2건 수정** — config 값 셀의 예시 표기(`예: \`context/conventions.md\``)를 선언으로 오인하던 건, features 카운트가 `.plan.md`·`.plan.critic.md` 파생 산출물을 spec 으로 세던 건. 실측 `4 WARN` → `1 WARN` (남은 1건은 `plugin_version` 정상 감지)
+    - **판정을 구조 기반으로** — 값 셀은 "코드 스팬 단독 또는 공백 없는 평문" 일 때만 선언으로 인정하고, 그 외는 미선언 + INFO 로 강등. 한국어 `예:` 같은 문자열 규약에 의존하지 않는다
+    - **파생 산출물 판정 SSOT 1곳** — `is_feature_spec_file()` 이 "stem 에 `.` 이 있으면 파생" 규칙을 단독 보유. 새 접미사가 늘어도 파서 수정이 필요 없다
+    - v0.10.0 의 정비 3부작(#18 prune · #19 rewrite · #20 slim)이 dogfooding 게이트 통과로 전부 마감
     - 상세 변경사항: [Explanation → Release Note](explanation/index.md)
 
 ---
