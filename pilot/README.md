@@ -138,19 +138,22 @@ workspace/
 
 ```bash
 git checkout main && git pull --ff-only
-python3 pilot/tools/doctor.py --schema   # CI(validate.yml) 와 동일한 구조 검사
+python3 pilot/tools/doctor.py --schema   # CI(validate.yml) 와 동일한 구조 검사 — ERROR 0 만 확인
+                                         # (version 은 올렸고 태그는 아래 release.sh 가 만드므로
+                                         #  `version vs git tag` WARN 1건은 이 시점에 정상)
 claude plugin validate ./pilot --strict  # 보조 — Claude Code 자체 검사 (아래 주 참조)
 ./pilot/tools/release.sh                 # plugin.json 버전 자동 인식 — 태그·GitHub Release 생성
 ```
 
 > **두 검사는 서로 대체하지 않는다.** `doctor --schema` 만 SKILL description 바이트 상한과
-> version↔git tag 정합을 보고, `claude plugin validate --strict` 만 `plugin.json` 미지 키와
-> manifest JSON 문법 파손을 잡는다 (2026-07-26 손상본 주입 실측). CI 게이트는 러너에 CLI 설치·인증이
-> 필요 없는 `doctor --schema` 쪽을 쓰고 (`.github/workflows/validate.yml`), CLI 검사는 릴리스 전
-> 로컬 보조 수단으로 둔다.
+> version↔git tag 정합을 보고, `claude plugin validate --strict` 만 `plugin.json` 미지 키를 잡는다
+> (2026-07-26 손상본 주입 실측 — 대조표는 `workspace/projects/build-plugin/features/25-schema-vs-claude-validate.md`).
+> manifest JSON 문법 파손·frontmatter 부재·`hooks.json` 미지 이벤트는 **양쪽 다** 잡는다.
+> CI 게이트는 러너에 CLI 설치·인증이 필요 없는 `doctor --schema` 쪽을 쓰고
+> (`.github/workflows/validate.yml`), CLI 검사는 릴리스 전 로컬 보조 수단으로 둔다.
 
-사용자 측 업데이트는 `/plugin update pilot@radiostart-plugins` (또는 `/plugin` → Installed → pilot →
-Update) 후 세션 재시작. semver 기준·schema 마이그레이션·캐시
+사용자 측 업데이트는 `/plugin marketplace update radiostart-plugins` → `/plugin update pilot@radiostart-plugins`
+(또는 `/plugin` → Installed → pilot → Update) 후 세션 재시작. semver 기준·schema 마이그레이션·캐시
 정리는 [Explanation → 릴리스·업그레이드](https://radiostart.github.io/claude-plugins/explanation/release-and-upgrade/) 참조.
 
 ---

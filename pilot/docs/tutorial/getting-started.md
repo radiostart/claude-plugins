@@ -331,7 +331,7 @@ ls workspace/projects/python-sample-demo/.agent-state.yml
 
 **해결 방법:**
 
-generator wrapper의 첫 번째 단계(step 1)에서 `orchestrate-load.py`가 선행 실행되어야 합니다.
+generator wrapper의 첫 번째 단계(step 1)에서 `orchestrate-load.py`가 선행 실행되어야 합니다. 구버전 wrapper 에는 이 단계가 없으므로 플러그인을 최신 버전으로 업데이트합니다.
 
 ```
 /plugin marketplace update radiostart-plugins
