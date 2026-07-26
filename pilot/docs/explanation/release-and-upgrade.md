@@ -65,8 +65,8 @@ minor upgrade 시 wrapper contract의 호환성 변경이 의미하는 바는 �
 
 ## Release 시 사용자 Workflow
 
-1. plugin 패키지가 새 버전으로 업데이트됩니다 (Claude Code Marketplace 또는 수동 `pip` / `git pull` 실행).
-2. 새로운 session 시작 → `orchestrate-load.py`가 `plugin_version` 불일치 감지 → hints에 경고(WARN) 주입.
+1. plugin 패키지가 새 버전으로 업데이트됩니다 — `/plugin marketplace update radiostart-plugins` → `/plugin update pilot@radiostart-plugins`. `/plugin` 이 유일한 지원 경로입니다: 마켓플레이스 클론을 직접 당겨도 플러그인이 실제로 로드되는 `~/.claude/plugins/cache/{marketplace}/pilot/{version}/` 은 갱신되지 않습니다.
+2. **세션 재시작** 후 새 session 시작 → `orchestrate-load.py`가 `plugin_version` 불일치 감지 → hints에 경고(WARN) 주입.
 3. 사용자가 `/pilot:doctor` 명령 실행 → 전체 정합성 및 schema 버전 점검.
 4. 필요 시 `/pilot:doctor --fix` 또는 `/pilot:analyze --regen-agents` 명령 실행.
 5. 작업을 재개합니다.

@@ -333,9 +333,9 @@ ls workspace/projects/python-sample-demo/.agent-state.yml
 
 generator wrapper의 첫 번째 단계(step 1)에서 `orchestrate-load.py`가 선행 실행되어야 합니다.
 
-```bash
-# 플러그인을 최신 버전으로 업데이트한 후 세션을 재시작합니다.
-pilot-update    # 또는: /plugin update pilot@claude-plugins
+```
+/plugin marketplace update radiostart-plugins
+/plugin update pilot@radiostart-plugins
 ```
 
-동시에 `workspace/projects/{PROJECT}/project.md` 파일의 `## 에이전트 간 전달사항` 섹션에 orchestrate-load 설정이 누락되지 않았는지 함께 확인합니다.
+업데이트 후 **세션을 재시작**합니다. 열려있는 세션은 시작 시점에 로드한 경로가 고정이라 재시작 전에는 구버전 wrapper 가 계속 쓰입니다.
