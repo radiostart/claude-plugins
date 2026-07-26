@@ -11,6 +11,9 @@ config.md `## 언어·도구 기본값` 에 선언된 conventions_doc / conventi
     - test_undeclared_silent            : 미선언 → 결과 없음 (graceful)
     - test_workspace_prefix_normalized  : `workspace/` 접두 선언도 정상 해석
     - test_project_override_checked     : project.md 제한사항 override 경로도 검사
+    - test_placeholder_cell_not_declared: 예시 표기 셀(설명문+코드 스팬 혼재) → WARN 0건, INFO 1건 (#23 회귀 잠금)
+    - test_plain_text_path_still_declared: 백틱 없는 평문 경로 + 파일 부재 → WARN 1건 (참 보존)
+    - test_dash_marker_silent           : 값 셀 `—` → 결과 0건
 
 실행:
     python3 pilot/tests/tools/test_doctor_conventions.py
@@ -119,6 +122,60 @@ class ProjectOverrideChecked(unittest.TestCase):
             messages = " ".join(r.message for r in warns)
             self.assertEqual(len(warns), 1, f"override 경로 WARN 1 건 기대: {messages}")
             self.assertIn("kotlin-conventions.md", messages)
+
+
+class PlaceholderCellNotDeclared(unittest.TestCase):
+    def test_placeholder_cell_not_declared(self):
+        r"""값 셀이 '설명문 + 코드 스팬' 혼재(예시 표기)면 미선언 취급 — WARN 오탐 소멸.
+
+        #23 (A) 회귀 잠금: `예: \`context/conventions.md\`` 같은 예시 표기가
+        실선언으로 오인돼 파일 부재 WARN 을 잘못 발화하던 버그.
+        """
+        config = (
+            "## 언어·도구 기본값\n\n"
+            "| 키 | 값 | 용도 |\n"
+            "| --- | --- | --- |\n"
+            "| `conventions_doc` | 예: `context/conventions.md` | 관행 문서 |\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            ws = _make_workspace(td, config)
+            results = doctor.check_conventions_paths(ws, None)
+            warns = [r for r in results if r.level == "WARN"]
+            infos = [r for r in results if r.level == "INFO"]
+            self.assertEqual(warns, [], f"예시 표기는 WARN 이면 안 됨: {[r.message for r in warns]}")
+            self.assertEqual(len(infos), 1, f"예시 표기 INFO 1건 기대: {[r.message for r in infos]}")
+
+
+class PlainTextPathStillDeclared(unittest.TestCase):
+    def test_plain_text_path_still_declared(self):
+        """백틱 없는 공백 없는 평문 경로도 여전히 실선언으로 인정(참 보존) → 파일 없으면 WARN."""
+        config = (
+            "## 언어·도구 기본값\n\n"
+            "| 키 | 값 | 용도 |\n"
+            "| --- | --- | --- |\n"
+            "| `conventions_doc` | context/conventions.md | 관행 문서 |\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            ws = _make_workspace(td, config)
+            results = doctor.check_conventions_paths(ws, None)
+            warns = [r for r in results if r.level == "WARN"]
+            self.assertEqual(len(warns), 1, f"평문 선언은 여전히 WARN 대상: {[r.message for r in warns]}")
+            self.assertIn("conventions_doc", warns[0].message)
+
+
+class DashMarkerSilent(unittest.TestCase):
+    def test_dash_marker_silent(self):
+        """값 셀이 미선언 마커(`—`)면 조용히 skip — WARN·INFO 모두 없음."""
+        config = (
+            "## 언어·도구 기본값\n\n"
+            "| 키 | 값 | 용도 |\n"
+            "| --- | --- | --- |\n"
+            "| `conventions_doc` | — | 관행 문서 |\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            ws = _make_workspace(td, config)
+            results = doctor.check_conventions_paths(ws, None)
+            self.assertEqual(results, [], f"미선언 마커는 결과 없어야 함: {[r.message for r in results]}")
 
 
 if __name__ == "__main__":

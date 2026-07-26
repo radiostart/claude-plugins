@@ -194,14 +194,16 @@ def parse_dotenv_file(path: Path) -> dict[str, str]:
 # Project file 헬퍼
 # ---------------------------------------------------------------------------
 
+def is_feature_spec_file(p: Path) -> bool:
+    """features/ 의 spec 파일 판정. 파생 산출물(`*.plan.md`·`*.plan.critic.md` 등
+    다중 확장자)은 spec 이 아니다 — 접미사가 늘어도 이 규칙 하나로 커버된다."""
+    return p.is_file() and p.suffix == ".md" and "." not in p.stem
+
+
 def count_real_features(features_dir: Path) -> int:
     if not features_dir.is_dir():
         return 0
-    return sum(
-        1
-        for p in features_dir.iterdir()
-        if p.is_file() and p.suffix == ".md" and not p.name.endswith(".plan.md")
-    )
+    return sum(1 for p in features_dir.iterdir() if is_feature_spec_file(p))
 
 
 def project_has_tdd_literal(project_md: Path) -> bool:
