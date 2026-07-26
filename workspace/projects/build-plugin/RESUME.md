@@ -43,7 +43,25 @@
    - 코드 4파일 + 신규 테스트 1파일: `_common.py`·`integrity.py`·`test_doctor_conventions.py`(+3)·`test_doctor_features_count.py`(신규 5)·`config.md.template`
    - workspace: `project.md`(#20·#23 목표 `[x]` + 전달사항 3건 신규) · `prompts/evaluator.md` · `RESUME.md` · `23-*.plan.md`
    - critic 은 사용자 판단으로 **건너뜀** (판정 규칙 3건 직접 승인).
-5. **#22 사이클** — `/pilot:learn` 재실행. **반드시 세션 재시작 이후에** — 구버전 스킬로 재학습하면 옛 서술을 다시 학습한다.
+5. **#22 사이클** — **새 세션에서 아래 명령으로 시작할 것** (2026-07-26 사용자 결정).
+
+   ```
+   /pilot:learn pilot/skills/ --domain pilot --force
+   ```
+
+   - **왜 새 세션인가** — 2026-07-26 세션에서 Phase 3 까지 진행하다 중단했다. `pilot/skills/` 는 `.md` 50 개 · 합계 **4,232 줄**이고 전부 300 줄 이하라 learn 규칙상 **전수 Read** 대상이다 (약 100k 토큰). learn 은 산출물 6 개를 재생성하려 50 개 내용을 동시에 들고 있어야 해서, 컨텍스트가 중간에 요약되면 뒤에 쓰이는 파일부터 얕아진다. **중단 시점에 쓴 파일은 없다** (abort cleanup 계약 준수).
+   - **선행 조사 완료 — 재확인 불필요.** 드리프트 3 건의 소스가 모두 현행으로 갱신돼 있어 전수 해소가 예상된다:
+
+     | # | 산출물 현행 서술 | 소스 실제 (2026-07-26 확인) |
+     | --- | --- | --- |
+     | 1 | `index.md` P-N 매트릭스 헤더 `P0 (memory-hint)` | `context/shared/preamble.md:19` = "P0. 관련 메모 선조회" |
+     | 2 | `lifecycle.md` `tools/init_detect.py detect_languages()` | `init/SKILL.md:39` = "언어 감지 (Glob 직접 판단)" |
+     | 3 | `lifecycle.md` `(진단 모드는 tools/doctor/diagnose.py)` | `doctor/SKILL.md:18` = "진단 모드(`--diagnose`)는 스크립트 없이 본 SKILL 지시문이 직접 수행" |
+
+   - **인벤토리 실측** — 발견 50 (`SKILL.md` 17 + `context/` 27 + references 6), `config.md` `Ignore` 표가 비어 있어 제외 0 건, 테스트·벤더 해당 없음. 기존 산출물 6 개(`index`·`lifecycle`·`delivery`·`modes`·`review`·`spec`) 덮어쓰기라 `--force` 필수.
+   - **Phase 2 확인 게이트는 이미 통과했다** — 새 세션에서 같은 통계가 나오면 그대로 진행하면 된다.
+   - **검증** — 재학습 후 `grep -rn "memory-hint\|init_detect\|diagnose\.py" workspace/context/pilot/` 이 0 건이어야 한다 (명세가 라인 번호 아닌 **문자열 기준** 검증을 요구).
+   - **미해소 Open Question (d)** — 재학습이 3 건을 전부 덮지 못하면 drift-protocol § B(승인 하 직접 정정)로 전환할지, learn 스킬 커버리지 결함으로 별도 처리할지 아직 결정 안 됨.
 6. ~~**#24 사이클**~~ — **보류** (2026-07-26 사용자 판단). 계획은 이미 확정돼 있으므로 재개 시 `@pilot-generator` 부터 시작하면 된다.
    - 결정: D1 = **폐기** (`pilot/tools/pilot-update.sh` 삭제) · D2 = 릴리스 노트 정정 · D3 = stale 경로 전파처 일괄 정정 · D4 = `getting-started.md` 허구 서술 삭제.
    - 실제로 필요한 부분은 **`pilot/README.md:35` 의 `/plugin install pilot@claude-plugins`** — 마켓플레이스 id 가 `radiostart-plugins` 라 **신규 설치 안내가 그대로 실패**한다. 재개 전이라도 이 한 줄은 별도로 고칠 가치가 있다.
