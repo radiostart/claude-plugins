@@ -1,4 +1,4 @@
-# RESUME — pilot 정비 프로젝트 (2026-07-25 갱신)
+# RESUME — pilot 정비 프로젝트 (2026-07-26 갱신)
 
 컨텍스트 한계로 세션을 새로 시작할 때 이 문서만 읽으면 이어받을 수 있다.
 
@@ -15,8 +15,8 @@
 | #21 docs-sync | ✅ READY | reference/index.md · doctor-migration.md · getting-started.md 정합. 정정 대장 15행을 소스로 재검증 |
 | #22 relearn | 📋 등록만 됨 | `/pilot:learn` 재실행으로 context 드리프트 3건 해소 |
 | #23 파서 오탐 | ✅ **READY · PR #11 머지 완료** | 오탐 2건 소멸 — doctor `10 PASS · 1 WARN · 0 ERROR` · `features=24` 복구. `_common.py:is_feature_spec_file` (파생 판정 SSOT) + `integrity.py:_extract_declared_path` (구조 기반 4단 판정) 신설. 테스트 292건 OK (신규 8) |
-| #24 update 도구 | ⏸ **보류 (계획 확정)** | planner 완주 · 결정 D1 = **폐기**. 실작업이 파일 1개 삭제 + 문서 3곳 문구 수정뿐이라 우선순위 낮다고 사용자 판단 (2026-07-26). 산출물은 브랜치 `skills/24-pilot-update-tool` 에 커밋됨 (`8d3a868`) |
-| #25 스키마 중복 | 📋 등록만 됨 | `doctor --schema` ↔ `claude plugin validate` 중복. 손상본 주입 실측 표가 명세에 있음 |
+| #24 update 도구 | ✅ **READY** | D1 = **(iii) 폐기** 이행 — `pilot-update.sh` 삭제 + README·getting-started·release-and-upgrade 안내 정정. `README.md:35` 설치 명령 id 오류(**신규 설치가 그대로 실패**하던 실사용자 버그)도 해소. v0.10.0 릴리스 노트 `## 업그레이드` 블록도 사용자 승인 후 정정 (백업→교체→diff 검증 이행) |
+| #25 스키마 중복 | ✅ **READY (코드 변경 0)** | 결론 **(ii) 현행 유지**. `--strict` 로 명세의 유지 근거 하나는 죽었으나 **어느 쪽도 상위 집합이 아님** — CLI 미탐 2종(SKILL description 바이트 상한·version↔git tag)이 `schema.py` 존치 근거. CLI 는 릴리스 전 로컬 보조 검사로 `README.md` 에 문서화. 대조표 = `features/25-*.md` § 재실측 |
 
 **릴리스 상태 (2026-07-26)**: `main` = `f73cc1c` (PR #11 머지 — #23 + #20 게이트 마감).
 **v0.10.1 릴리스 진행 중** — 브랜치 `chore/release-v0.10.1` 에서 버전 표기 3곳(`plugin.json`·`mkdocs.yml`·`docs/index.md`) 동기화.
@@ -63,11 +63,12 @@
    - **Phase 2 확인 게이트는 이미 통과했다** — 새 세션에서 같은 통계가 나오면 그대로 진행하면 된다.
    - **검증** — 재학습 후 `grep -rn "memory-hint\|init_detect\|diagnose\.py" workspace/context/pilot/` 이 0 건이어야 한다 (명세가 라인 번호 아닌 **문자열 기준** 검증을 요구).
    - **미해소 Open Question (d)** — 재학습이 3 건을 전부 덮지 못하면 drift-protocol § B(승인 하 직접 정정)로 전환할지, learn 스킬 커버리지 결함으로 별도 처리할지 아직 결정 안 됨.
-6. ~~**#24 사이클**~~ — **보류** (2026-07-26 사용자 판단). 계획은 이미 확정돼 있으므로 재개 시 `@pilot-generator` 부터 시작하면 된다.
-   - 결정: D1 = **폐기** (`pilot/tools/pilot-update.sh` 삭제) · D2 = 릴리스 노트 정정 · D3 = stale 경로 전파처 일괄 정정 · D4 = `getting-started.md` 허구 서술 삭제.
-   - 실제로 필요한 부분은 **`pilot/README.md:35` 의 `/plugin install pilot@claude-plugins`** — 마켓플레이스 id 가 `radiostart-plugins` 라 **신규 설치 안내가 그대로 실패**한다. 재개 전이라도 이 한 줄은 별도로 고칠 가치가 있다.
-   - D2 (게시된 GitHub Release 본문 수정) 는 저장소 밖 상태 변경이라 재개 시 범위에서 빼는 것을 검토할 것.
-   - 산출물 `features/24-pilot-update-tool.plan.md`·`.plan.critic.md` 는 브랜치 `skills/24-pilot-update-tool` 의 커밋 `8d3a868` 에 보존돼 있다 (2026-07-26). 재개 시 그 브랜치로 이동하면 된다.
+6. ~~**#24 사이클**~~ — **완료 (2026-07-26)**. 브랜치 `skills/24-pilot-update-tool`. D1~D4 전건 이행.
+   - **`pilot/tools/pilot-update.sh` 는 삭제됐다 — 되살리지 말 것.** 지원 업그레이드 경로는 `/plugin marketplace update radiostart-plugins` → `/plugin update pilot@radiostart-plugins` → **세션 재시작** 하나뿐이고, `/plugin` 자체가 없는 환경은 **미지원**으로 문서에 명시했다.
+   - D2 (게시된 v0.10.0 Release 본문) 도 사용자 명시 승인 후 정정 완료 — 백업 → `## 업그레이드` 블록만 교체 → `gh release edit --notes-file` → `--json body` 재취득 diff 로 해당 블록 외 불변 확인.
+   - evaluator 는 최초에 D2 범위 분리를 **기각**했다 (plan D2 = "정정한다" 가 기록된 사용자 결정인데 유예를 뒷받침할 기록이 없었음). 구현 주체가 자기 커밋에서 요구사항을 완화하면 순환 논증이 된다는 지적 — 후속 사이클도 같은 기준으로 판정된다.
+7. ~~**#25 사이클**~~ — **완료 (2026-07-26, 코드 변경 0)**. 결론 (ii) 현행 유지 — `schema.py`(410줄)·`validate.yml` 무변경. 재개 불필요.
+   - code-review 가 blocking 1건을 잡았다: README 릴리스 절차에 "manifest JSON 문법 파손은 CLI 만 잡는다" 를 실측인 것처럼 적었으나 **양쪽 다 잡는다**. 2026-07-25 구표의 "(문법 파손은 미검증)" 을 "미탐" 으로 오독한 결과 — **미검증을 실측으로 승격시키지 말 것**. 정정 완료.
 
 ## 이어받을 때 주의
 

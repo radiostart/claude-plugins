@@ -137,6 +137,28 @@
 - 게이트: doctor WARN 4 → 1 · 기존 doctor 테스트 무손 · (B) 회귀 테스트 신규
 - 주의: `count_real_features` 는 `integrity.py:517` (analyzed 정합성) 에서도 쓰인다 — 그쪽 판정 불변 확인. 기존 `last_analyzed_features` 값은 spec 기준 기록이라 파서도 spec 기준이어야 정합
 
+### #24 pilot-update.sh 고장 (features/24-pilot-update-tool.md)
+
+- 조건: v0.10.0 릴리스 직후. 2026-07-25 실제 업그레이드 시도 중 발견.
+- 트리거: (A) `pilot-update.sh:17` 의 `CACHE_DIR` 이 개명 전 `claude-plugins` 를 가리켜 **즉시 실패** (커밋 `19a7ff9` 개명 누락) (B) 고쳐도 `marketplaces/` 클론만 갱신하고 실제 로드 경로인 `cache/{mp}/pilot/{version}/` 은 못 건드림 — 캐시 생성은 `/plugin` 몫임이 실측 확인됨 (C) README·getting-started·릴리스 노트가 이 도구를 업그레이드 수단으로 안내 중.
+- 기대결과: 존치 여부를 먼저 결정한 뒤 (A)·(C) 를 같은 사이클에서 처리. (A) 만 고치면 "실행은 되나 업그레이드는 안 되는" 조용한 실패가 된다.
+
+**관련 파일 범위**:
+- 변경: `pilot/tools/pilot-update.sh` · `pilot/README.md:50-55,:147` · `pilot/docs/tutorial/getting-started.md:338`
+- 게이트: stale 경로 문자열 0건 · 안내 문구가 실제 동작과 일치
+- 주의: 사용자 전역 설치본·`installed_plugins.json` 을 스크립트가 직접 조작하지 않는다. 개명 전 이름으로 등록한 기존 사용자를 위해 경로는 하드코딩 대신 탐지 권장
+
+### #25 doctor --schema ↔ claude plugin validate 중복 (features/25-schema-vs-claude-validate.md)
+
+- 조건: #20 완료 (`schema.py` 410줄 유지 + `validate.yml` CI 신설).
+- 트리거: Claude Code CLI 의 `claude plugin validate <path>` 와 검사 범위가 겹친다. 정비 목적이 자체 구현 축소였으므로 유지 근거 재확인 필요.
+- 실측 대조 (feature 명세에 표로 있음): **완전 포함 관계가 아니다.** CLI 만 잡는 것 = JSON 문법 파손·`plugin.json` 미지 키. 우리만 잡는 것 = version↔git tag 정합. 그리고 **심각도 정책이 다르다** — frontmatter 부재를 CLI 는 WARNING(통과), 우리는 ERROR(CI 차단).
+- 기대결과: (i) 축소 + 병행 (ii) 현행 유지 (iii) 전면 위임 중 확정. **(iii) 은 CI 게이트가 느슨해지고 러너에 CLI 설치·인증이 필요해져 비권장.**
+
+**관련 파일 범위**:
+- 변경: `pilot/tools/doctor/schema.py` · `.github/workflows/validate.yml` · `pilot/skills/doctor/SKILL.md` (`--schema` 서술)
+- 게이트: CI 가 현재 막는 결함을 계속 막는지 (frontmatter 부재 = 차단 유지) · 자체 유지분마다 "CLI 가 못 하는 것" 근거 명시
+
 > `workspace/context/scope/pilot.md` · `workspace/context/rules/pilot.md` 부재 — 본 프로젝트는 사용자 커스텀 layer 미작성. features/ 의 file:line 인용을 1 차 근거로 활용한다 (예: `pilot/skills/learn/SKILL.md:90-111`).
 
 ---
