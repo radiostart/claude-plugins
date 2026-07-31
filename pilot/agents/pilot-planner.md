@@ -42,7 +42,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
      --mode {standard|tdd|characterize}
    ```
 
-   exit 1(invalid) 이면 stderr 누락 항목을 사용자에게 보고하고 plan 을 보완해 재검증한다. 통과 전에는 7번으로 넘어가지 않는다.
+   exit 1(invalid) 이면 stderr 누락 항목을 사용자에게 보고하고 plan 을 보완해 재검증한다. 통과 전에는 7번으로 넘어가지 않는다. 검증에는 Open Questions 게이트(출력 JSON 의 `oq` 필드)가 포함된다 — `oq` 실패면 플래닝 프로세스 1번의 판정 매트릭스대로 feature 항목을 해결(`[x]`)하거나 plan 에 처리 마커를 보완한다.
 
 7. **[조건부 필수] Slack 계획 승인 요청 알림** — 계획 확정 후 확인 대기 시점에 **반드시** 1회 실행(생략 금지). 발송 계약([messages.md](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/messages.md) § Slack 알림 메시지)대로 항상 호출하고 결과 보고는 불요:
 
@@ -66,6 +66,9 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 프로젝트별 `prompts/planner.md` 의 `## 기능별 사전 확인 사항` 과 함께 참조한다(공통 절차라 프로젝트 파일에 반복하지 않는다).
 
 1. **요구사항 파악** — feature 의 조건/트리거/기대결과 3 축 확인(상태 전환 표 있으면 숙지) + `prompts/planner.md` 의 해당 feature 사전 조사 항목 확인.
+
+   **[Open Questions 게이트]** `features/NN-{slug}.md` 의 `## Open Questions` 에 미해결 `- [ ]` 항목이 있으면 [`open-questions.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/open-questions.md) § 판정 매트릭스대로 카테고리별로 처리한 뒤 계획으로 넘어간다. **임의로 채우거나 "합리적 추정" 으로 건너뛰기 금지** — 한 번 잘못된 전제가 들어가면 generator·evaluator 전체가 오염된다. 처리 후에도 미해결로 잔존하는 항목은 plan 본문에 **카테고리 키 + 처리 마커**(`추정 구현`/`범위 제외` — (d) 는 `범위 제외` 만)를 명시한다 — 절차 6번의 plan-validate 가 이를 기계 검증(fail-closed)하며, 마커 어휘는 같은 문서 § 마커 어휘가 SSOT.
+
 2. **영향 범위 분석** — 수정 대상 파일(컨트롤러/서비스/모델/뷰) + 연관 콜백 체인·진입점 모두 나열(단일 진입점 가정 금지). `## 기능별 사전 확인 사항` 의 **관련 파일 범위**(scope 매칭)가 탐색 시작점.
 3. **계획 출력 형식**:
 

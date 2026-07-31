@@ -23,6 +23,13 @@ tools: Read, Glob, Grep, Edit, Bash
    - **`tdd: true` (mode 미설정)** — [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Evaluator — 실행 및 검증(관련 테스트 실행·스텝별 `[Red]`/`[Green]` 증거 검증·인프라 오류 스텝 반려).
    - **둘 다 아님 (표준 모드)** — `config.test_command` 설정 시 이번 변경 관련 테스트 실행(`{test_command} {관련 테스트 경로}`), 실패 시 Generator 에 재요청. 미설정이면 요구사항 체크리스트 검토만 하고 REPORT `test_run` 은 `skip`.
 3. `files_to_read` 로 `conventions_doc`/`conventions_evals` 가 로드된 경우 **언어별 검증 케이스를 검토 항목에 포함**한다(merge 규칙: [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md) § 검증). Generator 자기 검사와 별개로 독립 수행하며, 위반은 `issues_to_fix` 에 기록하고 `requirements` gate 판정 근거에 반영한다.
+
+   **[Open Questions 게이트]** 판정 기준 SSOT: [`open-questions.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/open-questions.md) § 판정 매트릭스. `features/NN-{slug}.md` 의 `## Open Questions` 를 확인한다 (feature 파일 또는 섹션 부재 시 REPORT 의 `open_questions` gate 는 `skip`):
+   - `### (d) 비즈니스 결정 영역` 에 `- [ ]` 가 있는데 구현이 이를 임의로 결정했으면 → **Major 이슈** 로 escalate. 구현 반려.
+   - 미해결 `- [ ]` 가 있는 카테고리((a)~(d) 공통)에 plan 의 처리 마커(`추정 구현`/`범위 제외` — 어휘는 같은 문서 § 마커 어휘)가 없으면 → **Major 이슈** 로 escalate. 보조 도구: `plan-validate.py` 출력의 `oq` 필드 (planner·generator 와 동일 판정).
+   - `추정 구현` 마커 항목인데 구현 코드에 TODO 주석(같은 문서 § Generator TODO 주석 규약)이 없으면 → **Minor 이슈**.
+   - 해결된 항목(`- [x]`)은 구현이 그 결정을 실제로 반영했는지 육안 검증.
+   - 반려 시 에스컬레이션은 같은 문서 § 에스컬레이션 경로 — 직접 planner 호출 금지, 사용자 보고 후 오케스트레이션이 라우팅.
 4. **[필수]** 검토가 끝나면 **반드시** Edit 으로 `workspace/projects/{PROJECT}/prompts/evaluator.md` 의 **모든** 체크리스트 항목을 `[x]`(통과)/`[ ]`(미통과)로 업데이트한다 ([`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md) § SSOT — 기록은 Edit 으로).
 5. 전 항목 통과 시 Edit 으로 `project.md` 의 해당 목표를 `[x]` 로 변경한다.
 6. **[전달사항]** 다음 feature 에 영향 줄 사항이 있으면 `project.md` 의 `## 에이전트 간 전달사항` 에 항목 추가(없으면 생성). 형식: `- [ ] {내용} (from #{완료 feature 번호})`. 없으면 skip.
@@ -39,6 +46,7 @@ tools: Read, Glob, Grep, Edit, Bash
      - capture_lockdown: pass | fail | skip — {mode:characterize 에서 git diff --stat {source_root} 결과, 그 외 skip}
      - test_run:         pass | fail | skip — {명령 + exit code, test_command 미설정 시에만 skip}
      - scope:            pass | fail — {.focus.md 범위 내}
+     - open_questions:   pass | fail | skip — {(d) 임의결정 없음 / Major 이슈 / feature 파일·OQ 섹션 없으면 skip}
      - drift:            none | detected — {drift-protocol A/B, detected 시 보고 링크. 3건 이상이면 `(count: N) — 일괄 정리 권장` 첨부}
    - metrics:
      - coverage: {before%→after% / skip — coverage_command 미설정 또는 측정 실패}
@@ -51,7 +59,7 @@ tools: Read, Glob, Grep, Edit, Bash
 
    **metrics.coverage** 는 참고 지표(gate 아님). `config.coverage_command` 있으면 `{before→after}` 기록, 없거나 실패면 `skip`.
 
-   **REPORT 출력 직전 형식 자기 점검** (구 `verify-report-lint.py` 스키마 검증 이관, 근거: `docs/audits/2026-07-24-audit-4-python.md` § C-5): `status` 값이 `READY`|`NOT_READY` 중 하나인지 · `gates` 의 6개 키(`requirements`·`tdd_evidence`·`capture_lockdown`·`test_run`·`scope`·`drift`)가 모두 존재하고 각 값이 위 enum 범위 안인지 확인 후 출력한다.
+   **REPORT 출력 직전 형식 자기 점검** (구 `verify-report-lint.py` 스키마 검증 이관, 근거: `docs/audits/2026-07-24-audit-4-python.md` § C-5): `status` 값이 `READY`|`NOT_READY` 중 하나인지 · `gates` 의 7개 키(`requirements`·`tdd_evidence`·`capture_lockdown`·`test_run`·`scope`·`open_questions`·`drift`)가 모두 존재하고 각 값이 위 enum 범위 안인지 확인 후 출력한다.
 
    REPORT 출력 직후 step 4·5 결과와 REPORT 가 모순되면 [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md) § SSOT — REPORT vs 체크박스 룰로 정정한 뒤 8번으로 진행한다.
 

@@ -4,13 +4,17 @@ plan-validate — Planner 가 작성한 `features/NN-{slug}.plan.md` 의 형식 
 모드별로 검증한다.
 
 스펙: skills/context/lifecycle/plan-schema.md
+Open Questions 게이트 스펙: skills/context/shared/open-questions.md § 판정 매트릭스
 
 작동 흐름:
   1. plan 파일 Read
   2. 최상단 H2(`## 구현 계획: ...`) 존재 확인
   3. 모드별 필수 H3 섹션 존재 확인
   4. tdd/characterize: `### 스텝 목록[...]` 안의 각 스텝 항목별 필수 라벨 확인
-  5. 결과를 JSON 으로 stdout 출력 + 누락 요약을 stderr (exit 1 인 경우)
+  5. Open Questions 게이트 — plan 경로에서 feature 파일을 유도해
+     미해결 OQ 카테고리별 plan 처리 마커(`추정 구현`/`범위 제외`) 존재 검증.
+     feature 파일·OQ 섹션 부재 시 skip (oq.checked=false)
+  6. 결과를 JSON 으로 stdout 출력 + 누락 요약을 stderr (exit 1 인 경우)
 
 Usage:
     python3 plan-validate.py <plan_file> --mode {standard|tdd|characterize}
@@ -178,6 +182,159 @@ def step_missing_labels(
     return missing
 
 
+# ---------------------------------------------------------------------------
+# Open Questions 게이트 — 스펙: skills/context/shared/open-questions.md § 판정 매트릭스
+# ---------------------------------------------------------------------------
+
+# feature 파일 `## Open Questions` 파서 — pilot 은 doctor 가 슬림(#20)해 공유
+# 파서 모듈이 없으므로 본 도구가 자체 보유한다 (dp-skills 는 doctor.integrity 재사용).
+OQ_CATEGORY_KEYS = ["(a)", "(b)", "(c)", "(d)"]
+_OQ_H3_RE = re.compile(r"^### (\([abcd]\)) ", re.M)
+_OQ_H2_RE = re.compile(r"^## Open Questions\s*$", re.M)
+_OQ_NEXT_H2_RE = re.compile(r"^## ", re.M)
+_OQ_ITEM_OPEN_RE = re.compile(r"^- \[ \] (.+)$")
+_OQ_ITEM_RESOLVED_RE = re.compile(r"^- \[x\] (.+)$", re.IGNORECASE)
+
+PLAN_SUFFIX_RE = re.compile(r"^(?P<stem>.+)\.plan(?:\.r\d+)?\.md$")
+OQ_MARKER_ASSUME = "추정 구현"
+OQ_MARKER_EXCLUDE_RE = re.compile(r"범위(?:에서)?\s*제외")
+OQ_LEGACY_BLANKET = "산출물 부재 상태에서 추정 구현"
+
+
+def _fenced_mask(lines: list[str]) -> list[bool]:
+    """각 라인이 fenced 코드블록(``` 또는 ~~~) 내부면 True (펜스 구분선 포함).
+
+    OQ 마커 매칭이 코드블록 안의 예시 라인을 진짜 처리 마커로 오인하는 것을 막는다."""
+    mask = [False] * len(lines)
+    in_code = False
+    for i, line in enumerate(lines):
+        stripped = line.lstrip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            mask[i] = True  # 펜스 구분선 자체도 내부로 취급
+            in_code = not in_code
+            continue
+        mask[i] = in_code
+    return mask
+
+
+def _extract_oq_section(text: str) -> str | None:
+    """`## Open Questions` 섹션 본문만 추출. 없으면 None."""
+    m = _OQ_H2_RE.search(text)
+    if not m:
+        return None
+    start = m.end()
+    rest = text[start:]
+    next_h2 = _OQ_NEXT_H2_RE.search(rest)
+    return rest[: next_h2.start()] if next_h2 else rest
+
+
+def _parse_oq_categories(section: str) -> dict:
+    """OQ 섹션 본문 → 카테고리별 open/resolved 항목 리스트.
+
+    Returns:
+        {"(a)": {"open": [str, ...], "resolved": [str, ...]}, "(b)": {...}, ...}
+    누락된 카테고리는 빈 list 로 채움.
+    """
+    out = {k: {"open": [], "resolved": []} for k in OQ_CATEGORY_KEYS}
+    current: str | None = None
+    for raw in section.splitlines():
+        line = raw.rstrip()
+        h3 = _OQ_H3_RE.match(line)
+        if h3:
+            current = h3.group(1)
+            continue
+        if current is None:
+            continue
+        m_open = _OQ_ITEM_OPEN_RE.match(line)
+        if m_open:
+            out[current]["open"].append(m_open.group(1).strip())
+            continue
+        m_done = _OQ_ITEM_RESOLVED_RE.match(line)
+        if m_done:
+            out[current]["resolved"].append(m_done.group(1).strip())
+    return out
+
+
+def derive_feature_path(plan_path: Path) -> Path | None:
+    """plan 경로 → 대응 feature 파일 경로. plan 명명 규약 외 파일이면 None.
+
+    `NN-{slug}.plan.md` → `NN-{slug}.md` (`.plan.r{N}.md` 도 동일 stem — 회차 plan 대비).
+    """
+    m_ = PLAN_SUFFIX_RE.match(plan_path.name)
+    if not m_:
+        return None
+    return plan_path.with_name(m_.group("stem") + ".md")
+
+
+def _empty_oq_result() -> dict:
+    return {"checked": False, "feature_file": None, "unresolved": {}, "errors": []}
+
+
+def check_open_questions(plan_text: str, feature_path: Path | None) -> dict:
+    """미해결 OQ ↔ plan 처리 마커 대조. 스펙: open-questions.md § 마커 어휘.
+
+    feature 파일·OQ 섹션 부재 시 checked=False (skip — 사이클 밖 plan 호환).
+    미해결 카테고리마다 plan 본문(fenced 코드블록 제외)에 카테고리 키 +
+    마커(`추정 구현`/`범위 제외`) 동일 라인 등장을 요구한다. 포괄 문구
+    "산출물 부재 상태에서 추정 구현" 은 (d) 외 카테고리를 커버(하위 호환).
+    (d) 비즈니스 결정 영역은 `범위 제외` 키 동반만 인정 — 임의 결정 금지.
+    """
+    out = _empty_oq_result()
+    if feature_path is None or not feature_path.is_file():
+        return out
+    out["feature_file"] = str(feature_path)
+    try:
+        feature_text = feature_path.read_text(encoding="utf-8")
+    except Exception:
+        return out
+    section = _extract_oq_section(feature_text)
+    if section is None:
+        return out
+
+    out["checked"] = True
+    parsed = _parse_oq_categories(section)
+    unresolved = {
+        cat: parsed[cat]["open"]
+        for cat in OQ_CATEGORY_KEYS
+        if parsed[cat]["open"]
+    }
+    out["unresolved"] = unresolved
+    if not unresolved:
+        return out
+
+    lines = plan_text.splitlines()
+    mask = _fenced_mask(lines)
+    body_lines = [ln for i, ln in enumerate(lines) if not mask[i]]
+    has_blanket = any(OQ_LEGACY_BLANKET in ln for ln in body_lines)
+
+    def keyed_marker(cat: str, allow_assume: bool) -> bool:
+        for ln in body_lines:
+            if cat not in ln:
+                continue
+            if OQ_MARKER_EXCLUDE_RE.search(ln):
+                return True
+            if allow_assume and OQ_MARKER_ASSUME in ln:
+                return True
+        return False
+
+    for cat, items in unresolved.items():
+        if cat == "(d)":
+            if not keyed_marker(cat, allow_assume=False):
+                out["errors"].append(
+                    f"(d) 미해결 {len(items)}건 — 사용자 결정 필요. "
+                    "plan 진행은 `(d) ...: 범위 제외` 마커(사용자 결정 보류 "
+                    "명시)로만 가능 (스펙: open-questions.md § 판정 매트릭스)"
+                )
+        else:
+            if not keyed_marker(cat, allow_assume=True) and not has_blanket:
+                out["errors"].append(
+                    f"{cat} 미해결 {len(items)}건 — plan 에 처리 마커 없음. "
+                    f"`{cat} ...: 추정 구현` 또는 `{cat} ...: 범위 제외` "
+                    "라인 필요 (스펙: open-questions.md § 마커 어휘)"
+                )
+    return out
+
+
 def validate(plan_path: Path, mode: str) -> dict:
     if mode not in MODES:
         return {
@@ -201,6 +358,7 @@ def validate(plan_path: Path, mode: str) -> dict:
         "missing_sections": [],
         "step_errors": [],
         "errors": [],
+        "oq": _empty_oq_result(),
     }
 
     if not text.strip():
@@ -241,6 +399,11 @@ def validate(plan_path: Path, mode: str) -> dict:
                             {"step": num, "missing_fields": miss}
                         )
 
+    oq = check_open_questions(text, derive_feature_path(plan_path))
+    result["oq"] = oq
+    if oq["errors"]:
+        result["valid"] = False
+
     return result
 
 
@@ -253,6 +416,8 @@ def format_human_summary(result: dict, plan_path: Path) -> str:
     for serr in result.get("step_errors", []):
         fields = ", ".join(serr["missing_fields"])
         lines.append(f"  - step {serr['step']} missing: {fields}")
+    for oerr in result.get("oq", {}).get("errors", []):
+        lines.append(f"  - open questions: {oerr}")
     return "\n".join(lines)
 
 
