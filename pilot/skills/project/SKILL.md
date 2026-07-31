@@ -38,7 +38,7 @@ description: >-
 
   **`.agent-state.yml` 초기화**: `schema: v1.2` / `analyzed: false` / `tdd: false` / `domain: null` / `plugin_version`(획득 실패 시 라인 생략). `domain` 은 analyze 진입 시 사용자 확인 후 채워진다 — 여기서 자동 추론 금지.
 
-- **있으면**: `project.md`·`prompts/` 로드. `.agent-state.yml` 없거나 `schema: v1` 이면 `/pilot:doctor --fix` 안내. **drift 체크** (v1.1+, `analyzed_at` 존재 시): `docs_last_fetched_at > analyzed_at` → 재분석 여부 질의(y→6·7·8 수행) / `features 개수 > last_analyzed_features+1` → `--regen-agents` 권장 / `scope mtime > analyzed_at` → `--regen-agents` 권장 (모두 안내만, 자동 실행 X).
+- **있으면**: `project.md`·`prompts/` 로드. `.agent-state.yml` 없거나 `schema: v1` 이면 `/pilot:pilot-doctor --fix` 안내. **drift 체크** (v1.1+, `analyzed_at` 존재 시): `docs_last_fetched_at > analyzed_at` → 재분석 여부 질의(y→6·7·8 수행) / `features 개수 > last_analyzed_features+1` → `--regen-agents` 권장 / `scope mtime > analyzed_at` → `--regen-agents` 권장 (모두 안내만, 자동 실행 X).
 
 ### 3. STATE.md 갱신
 
@@ -76,12 +76,12 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/confluence.py fetch "{CONFL_URL}"
 python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace
 ```
 
-출력 규칙: [`doctor/SKILL.md`](../doctor/SKILL.md) § 임베디드 호출 시 출력 규칙 참조.
+출력 규칙: [`pilot-doctor/SKILL.md`](../pilot-doctor/SKILL.md) § 임베디드 호출 시 출력 규칙 참조.
 
 ### 10. 결과 출력
 
 프로젝트 컨텍스트 요약 + 다음 작업 안내. TDD 모드면 "`@pilot-planner` 호출 시 Red 계약이 함께 수행됩니다" 안내 추가.
 
-**다음 단계 안내** — features/ 존재 여부로 분기: **있음** → "`@pilot-planner` 를 호출해 구현을 시작하세요" / **없음** → `project.md` 보강 → `/pilot:confl`+`/pilot:analyze` 또는 `/pilot:create-feature` → `@pilot-planner` 순서 안내.
+**다음 단계 안내** — features/ 존재 여부로 분기: **있음** → "`/pilot:autopilot {NN}` 으로 feature 1건 자동 진행, 또는 `@pilot-planner` 를 호출해 수동으로 시작하세요" (두 경로 병기) / **없음** → `project.md` 보강 → `/pilot:confl`+`/pilot:analyze` 또는 `/pilot:create-feature` → `/pilot:autopilot {NN}` 또는 `@pilot-planner` 순서 안내.
 
 **공통**: "Slack 완료·승인 알림은 `/pilot:slack` 으로 활성화" 안내 1줄 (신규 프로젝트만 — 기존 재활성화 시 생략).

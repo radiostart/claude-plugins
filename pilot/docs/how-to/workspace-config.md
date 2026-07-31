@@ -67,11 +67,11 @@
 - 임의로 추가한 사용자 키는 무시되므로, 신규 설정을 추가하려면 플러그인 레벨의 패치가 필요합니다.
 
 !!! tip "설정 적합성 검증"
-    워크스페이스 설정을 변경한 뒤 `/pilot:doctor` 명령을 통해 config.md 설정 파일의 정합성을 한 번에 점검할 수 있습니다. 키 누락이나 credential drift 우려 사항 발견 시 WARN 리포트를 안내받게 됩니다.
+    워크스페이스 설정을 변경한 뒤 `/pilot:pilot-doctor` 명령을 통해 config.md 설정 파일의 정합성을 한 번에 점검할 수 있습니다. 키 누락이나 credential drift 우려 사항 발견 시 WARN 리포트를 안내받게 됩니다.
 
 ## 다음 단계
 
-- :material-book-open-variant: Reference: [`/pilot:doctor`](../reference/skills/doctor.md) — config.md 정합성 및 구성 진단 도구 안내.
+- :material-book-open-variant: Reference: [`/pilot:pilot-doctor`](../reference/skills/pilot-doctor.md) — config.md 정합성 및 구성 진단 도구 안내.
 - :material-gavel: How-to: [도메인 규칙 작성](authoring-domain-rules.md) — 런타임 설정을 담당하는 `config.md` 와 도메인 지식을 관리하는 `MANIFEST.md` 의 구조적 비교 가이드.
 - :material-code-braces: How-to: [언어 컨벤션 설정](language-conventions.md) — `conventions_doc` 및 `conventions_evals` 의 구체적인 작성 및 배포 지침.
 - :material-lightbulb-on: Explanation: [Workspace 레이아웃](../explanation/workspace-layout.md) — `context/` 디렉터리의 내부 레이아웃 설계 가이드.

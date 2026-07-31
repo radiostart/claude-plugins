@@ -6,11 +6,11 @@
 
 ---
 
-## P-1. TodoWrite 선로딩 (다단계 스킬 진입 시)
+## P-1. 진행 보드 선로딩 (다단계 스킬 진입 시)
 
-3 단계 이상 수행하는 스킬은 **첫 tool call 로 `ToolSearch select:TodoWrite` 를 수행**한다. 직후 단계 목록을 세워 사용자에게 게시하고 진행하며 갱신한다.
+3 단계 이상 수행하는 스킬은 **첫 tool call 로 `ToolSearch select:TodoWrite,TaskCreate,TaskUpdate` 를 수행**하고, 로드된 것 중 가용한 도구로 단계 목록을 세워 사용자에게 게시하고 진행하며 갱신한다 — 진행 보드 도구는 하니스 세대에 따라 이름이 다르다 (구세대 `TodoWrite` / 신세대 `TaskCreate`·`TaskUpdate`). 아무것도 로드되지 않으면 텍스트 체크리스트로 대체한다 (스킬 중단 사유 아님).
 
-TodoWrite 는 deferred tool 이므로 ToolSearch 선로딩 없이 직접 호출하면 InputValidationError 가 발생한다. 중간에 시스템 리마인더를 받고서야 로드하는 상황을 방지한다.
+진행 보드 도구는 deferred tool 이므로 ToolSearch 선로딩 없이 직접 호출하면 InputValidationError 가 발생하고, 존재하지 않는 단일 이름만 select 하면 0-결과가 된다. 겸용 select 는 중간에 시스템 리마인더를 받고서야 로드하는 상황과 세대 불일치 공회전을 함께 방지한다.
 
 **미적용:** 단일 수행 스킬 (3 단계 미만).
 
@@ -73,7 +73,7 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 | `analyze`        | ✅  | ✅ | ✅ |    |    |
 | `confl`          |     |    | ✅ |    |    |
 | `tdd`            |     |    | ✅ |    |    |
-| `doctor`         |     |    |    |    |    |
+| `pilot-doctor`   |     |    |    |    |    |
 | `focus`          |     |    | ✅ |    |    |
 | `create-feature` | ✅  | ✅ | ✅ |    |    |
 | `commit`         |     |    | ✅ |    |    |
@@ -87,7 +87,7 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 
 > `init` 은 workspace 가 없는 상태에서 실행되므로 P1 을 수행하지 않는다 (workspace/STATE.md 를 처음 생성하는 스킬).
 >
-> `doctor` 는 P 절차를 수행하지 않는다 — doctor.py 가 워크스페이스·프로젝트 해석을 자체 수행한다.
+> `pilot-doctor` 는 P 절차를 수행하지 않는다 — doctor.py 가 워크스페이스·프로젝트 해석을 자체 수행한다.
 >
 > `learn` 은 workspace 부트스트랩 단계라 활성 프로젝트 없이 실행 가능 — P1 을 수행하지 않는다.
 >
@@ -103,6 +103,6 @@ ToolSearch 선로딩이 필요한 주요 도구:
 
 | 도구 | 용도 | 로드 트리거 |
 | ---- | ---- | ----------- |
-| `TodoWrite` | 다단계 스킬 진행 보드 | P-1 자동 수행 |
+| `TodoWrite` / `TaskCreate`·`TaskUpdate` | 다단계 스킬 진행 보드 (하니스 세대별 택일 — 겸용 select) | P-1 자동 수행 |
 | `WebFetch` | 외부 기획서·문서 fetch (confl 외 케이스) | URL 감지 시 |
 | `AskUserQuestion` | 선택지 있는 질의 (현재 pilot 는 자유 질의 위주로 미사용) | 선택지 고정 질의가 필요한 스킬에서 옵션 |

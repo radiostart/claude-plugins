@@ -34,7 +34,7 @@ plugin_version: "0.1.75"             # .agent-state.yml 을 마지막으로 쓴 
 pr_base_branch: "release/4.5"        # PR 생성 시 자동 타겟. 부재 시 context/config.md 의 pr_default_base 사용
 ```
 
-필수 4 개 (`schema`·`analyzed`·`tdd`·`domain`) + optional 6 개. optional 필드는 drift 감지 (`/pilot:doctor`) · 모드 분기 (`mode`) · 플러그인 업그레이드 감지 (`plugin_version`) · PR 자동 타겟 (`pr_base_branch`) 에 사용. 부재 시 해당 체크·분기만 skip.
+필수 4 개 (`schema`·`analyzed`·`tdd`·`domain`) + optional 6 개. optional 필드는 drift 감지 (`/pilot:pilot-doctor`) · 모드 분기 (`mode`) · 플러그인 업그레이드 감지 (`plugin_version`) · PR 자동 타겟 (`pr_base_branch`) 에 사용. 부재 시 해당 체크·분기만 skip.
 
 ## 필드 의미
 

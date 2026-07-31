@@ -28,11 +28,29 @@ PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 check_path() {
   local file_path="$1"
   local tool="$2"
+  # `./` 접두 정규화 — 접두가 남으면 아래 regex 판정을 통째로 벗어난다.
+  while [[ "$file_path" == ./* ]]; do file_path="${file_path#./}"; done
   local rel_path="${file_path#$PROJECT_DIR/}"
 
   # 백업 경로는 통과
   [[ "$rel_path" == *".prompts.bak/"* ]] && return 0
   [[ "$rel_path" == *".bak."* ]] && return 0
+  # focus 수명주기 경로는 통과 (focus 스킬의 아카이브 mv/삭제/재작성 흐름)
+  [[ "$rel_path" == */.focus.md ]] && return 0
+  [[ "$rel_path" == *".focus.history/"* ]] && return 0
+
+  # projects/ 상위 폴더 자체 — destructive 대상이면 차단 (모든 프로젝트 소실 경로)
+  if [[ "$rel_path" =~ ^(workspace/projects)/?$ ]]; then
+    local abs_parent
+    if [[ "$file_path" = /* ]]; then abs_parent="$file_path"; else abs_parent="$PROJECT_DIR/${BASH_REMATCH[1]}"; fi
+    [[ ! -e "$abs_parent" ]] && return 0
+    cat >&2 <<EOF
+❌ $tool 차단: $rel_path
+   projects/ 상위 폴더 삭제·이동 금지 — 모든 프로젝트의 누적 작업물이 소실됩니다.
+   우회: PILOT_PROTECT_BYPASS=1 환경변수와 함께 재실행 (백업 권장)
+EOF
+    return 2
+  fi
 
   # workspace/projects/*/ 하위 + 프로젝트 폴더 자체(trailing slash 없는 rm -rf 등) 검사
   [[ ! "$rel_path" =~ ^workspace/projects/[^/]+(/|$) ]] && return 0

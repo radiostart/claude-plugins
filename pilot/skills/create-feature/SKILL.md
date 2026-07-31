@@ -57,11 +57,11 @@ step 4(prompts 갱신) 보다 **앞**에 위치 — 답변이 spec 에 먼저 �
 python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace
 ```
 
-출력 규칙: [`../doctor/SKILL.md`](../doctor/SKILL.md) § 임베디드 호출 시 출력 규칙 참조.
+출력 규칙: [`../pilot-doctor/SKILL.md`](../pilot-doctor/SKILL.md) § 임베디드 호출 시 출력 규칙 참조.
 
 ### 6. 결과 요약
 
-생성(`features/{NN}-{slug}.md`) + 갱신(project.md/prompts 3종/.agent-state.yml) + 검증 결과 + (3-ter 발동 시) `인터뷰: 해소 {N}건 / 이월 {M}건` + 다음 단계(`@pilot-planner` 호출) 안내.
+생성(`features/{NN}-{slug}.md`) + 갱신(project.md/prompts 3종/.agent-state.yml) + 검증 결과 + (3-ter 발동 시) `인터뷰: 해소 {N}건 / 이월 {M}건` + 다음 단계 안내 — `/pilot:autopilot {NN}` (자동 진행) 또는 `@pilot-planner` (수동 시작) 병기.
 
 ## 제약
 
@@ -74,3 +74,4 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace
 - `/pilot:analyze` — docs/ 기획서 벌크 분석
 - `/pilot:focus` — ad-hoc 사용자 지시 기록 (features/ 밖)
 - `@pilot-planner` — features/{NN}-{slug}.md 를 읽어 구현 계획 수립
+- `/pilot:autopilot {NN}` — 생성한 feature 1건을 자동 순차 진행 (opt-in)

@@ -1,6 +1,6 @@
 ---
 name: pilot-generator
-model: sonnet  # 계획 확정 후 구현이므로 빠른 모델로 충분 (비용·속도 최적화). evaluator 반려가 반복되는 프로젝트는 opus 상향 재평가 — 이 model 값이 오버라이드 지점.
+model: opus  # 도메인 규칙(scope/rules/enums)·팀 관행·TDD/characterize 제약이 겹쳐 구현 중 판단이 계속 필요. 재생성 루프 1회 비용이 단가 차이보다 크고, 지시 준수(무단 수정·허위 보고 방지) 축도 상위 모델이 유리. 비용 우선 프로젝트는 sonnet 하향 — 이 model 값이 오버라이드 지점.
 description: 코드를 구현한다. Planner 계획 확정 후 실행. 패턴·서비스·모델 참조해 일관성 있게 작성.
 tools: Read, Glob, Grep, Edit, Write, Bash
 ---

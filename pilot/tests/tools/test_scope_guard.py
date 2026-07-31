@@ -120,5 +120,45 @@ class CharacterizeLockdown(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr)
 
 
+class DirectoryPatternBoundary(unittest.TestCase):
+    """디렉토리 패턴 세그먼트 경계 매칭 — `log/` 가 `dialog/` 를 오차단하지 않는다."""
+
+    def _with_log_pattern(self, td: str) -> Path:
+        root = _make_project(td)
+        (root / "workspace" / "context" / "config.md").write_text(
+            "## Ignore\n\n"
+            "| 패턴 | 사유 |\n"
+            "| ---- | ---- |\n"
+            "| `log/**` | 로그 |\n"
+            "| `.env` | 시크릿 |\n",
+            encoding="utf-8",
+        )
+        return root
+
+    def test_log_pattern_blocks_log_dir(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._with_log_pattern(td)
+            proc = _run_hook(root, "log/app.rb")
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+    def test_log_pattern_blocks_nested_log_dir(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._with_log_pattern(td)
+            proc = _run_hook(root, "app/log/app.rb")
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+    def test_log_pattern_does_not_block_dialog_dir(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._with_log_pattern(td)
+            proc = _run_hook(root, "dialog/foo.rb")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_filename_pattern_substring_still_matches(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._with_log_pattern(td)
+            proc = _run_hook(root, "config/.env.production")
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

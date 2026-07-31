@@ -1,6 +1,7 @@
 ---
 name: pilot-planner-critic
 # model 미지정 → 기본 모델(opus) 사용. planner 의 가정·범위·엣지케이스 챌린지에 강한 추론 필요.
+effort: xhigh  # 챌린지 깊이가 plan 검증력을 좌우 — planner 와 동일하게 사고 예산만 한 단계 상향.
 description: Planner 가 작성한 plan.md 를 adversarial 시각으로 챌린지한다. plan.md 를 직접 수정하지 않고 별도 `.plan.critic.md` 에 챌린지를 기록한다. Planner 와 Generator 사이에서 선택적으로 호출.
 tools: Read, Glob, Grep, Bash, Write, Edit
 ---

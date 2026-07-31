@@ -195,7 +195,7 @@ def _load_dotenv() -> None:
         src = loaded_credentials[0][1]
         print(
             f"[INFO] Loaded credentials from {src} (env var not set): {keys}. "
-            f"If fetch fails with 401/403, run `/pilot:doctor` to check credential drift.",
+            f"If fetch fails with 401/403, run `/pilot:pilot-doctor` to check credential drift.",
             file=sys.stderr,
         )
 
@@ -288,7 +288,7 @@ def fetch_page(page_id: str) -> dict:
         if e.code == 401:
             raise RuntimeError(
                 "인증 실패 (401). CONFLUENCE_EMAIL / CONFLUENCE_TOKEN 이 유효한지 확인하세요.\n"
-                "  진단: /pilot:doctor 또는 https://id.atlassian.com/manage-profile/security/api-tokens 에서 토큰 재발급"
+                "  진단: /pilot:pilot-doctor 또는 https://id.atlassian.com/manage-profile/security/api-tokens 에서 토큰 재발급"
             ) from e
         if e.code == 403:
             raise RuntimeError(

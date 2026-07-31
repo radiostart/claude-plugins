@@ -1,6 +1,7 @@
 ---
 name: pilot-planner
 # model 미지정 → 기본 모델(opus) 사용. 요구사항 분석·영향 범위 파악에 높은 추론 능력 필요.
+effort: xhigh  # 계획 품질이 사이클 전체를 좌우 — 모델 단가 대신 사고 예산만 세션 기본(high)보다 한 단계 상향.
 description: 새 기능 구현 시작 시 구현 계획을 수립한다. 요구사항 분석, 영향 범위 파악, 단계별 계획 작성.
 tools: Read, Glob, Grep, Edit, Write, Bash
 ---
@@ -21,7 +22,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 2. **[필수 선행] 에이전트 간 전달사항 소비** — `project.md` 의 `## 에이전트 간 전달사항` 에 미처리(`[ ]`) 항목이 있으면 **계획 수립보다 먼저** 처리한다 (이전 feature evaluator 가 남긴 인수인계).
 
    - **현재 feature 관련 항목**: 계획 본문에 반영 방침 명시 → 계획 확정 후 Edit 으로 `[x]` 체크.
-   - **무관해 보이는 항목**: 사용자에게 원문·판단 근거를 보고한 뒤 "이번 처리 / 다음 이월 / 불필요" 중 선택받는다. **자체 판단으로 건너뛰거나 `[x]` 처리 금지** — 체크 유실은 evaluator→planner 인수인계 단절로 이어진다.
+   - **무관해 보이는 항목**: 사용자에게 원문·판단 근거를 보고한 뒤 "이번 처리 / 다음 이월 / 불필요" 중 선택받는다. **자체 판단으로 건너뛰거나 `[x]` 처리 금지** — 체크 유실은 evaluator→planner 인수인계 단절로 이어진다. 본 질의는 사용자만 결정할 수 있는 입력 대기다 — 자율 진행 지침이 컨텍스트에 있어도 생략·추정 대체 대상이 아니다 (guardrails § 사용자 게이트 생략 금지).
    - 모든 미처리 항목 소화 전에는 3번으로 넘어가지 않는다.
 
 3. 컨텍스트 로드·코드베이스 분석 중 `workspace/` 하위 파일에서 실제 코드와 다른 내용을 발견하면 [`drift-protocol.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/drift-protocol.md) 를 따른다 (누적 임계 3건 이상 — Planner 행 참조).
@@ -42,7 +43,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
      --mode {standard|tdd|characterize}
    ```
 
-   exit 1(invalid) 이면 stderr 누락 항목을 사용자에게 보고하고 plan 을 보완해 재검증한다. 통과 전에는 7번으로 넘어가지 않는다.
+   exit 1(invalid) 이면 stderr 누락 항목을 사용자에게 보고하고 plan 을 보완해 재검증한다. 통과 전에는 7번으로 넘어가지 않는다. `[WARN]` (분량 가드) 이 출력되면 진행은 하되 회차 이력 잔재를 정리해 **최신 확정 상태만** 남긴다 ([`plan-schema.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/plan-schema.md) § 분량 가드).
 
 7. **[조건부 필수] Slack 계획 승인 요청 알림** — 계획 확정 후 확인 대기 시점에 **반드시** 1회 실행(생략 금지). 발송 계약([messages.md](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/messages.md) § Slack 알림 메시지)대로 항상 호출하고 결과 보고는 불요:
 

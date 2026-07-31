@@ -18,7 +18,7 @@ description: >-
 
 [preamble.md](../context/shared/preamble.md) 의 **P-1, P0** 수행.
 
-- P-1: TodoWrite 선로딩 (다단계 스킬).
+- P-1: 진행 보드 선로딩 (다단계 스킬).
 - P0: 인자의 이슈명·키워드로 MEMORY.md 색인에서 관련 메모를 직접 선별해 Read 하여 유사 이슈 이력 반영.
 
 ## 수행 절차
