@@ -23,10 +23,10 @@ cd /tmp/pilot-tutorial
 
 ---
 
-## Step 1: 워크스페이스 초기화 (`/pilot:init`)
+## Step 1: 워크스페이스 초기화 (`/pilot:pilot-init`)
 
 ```
-/pilot:init
+/pilot:pilot-init
 ```
 
 **기대 출력:**
@@ -274,7 +274,7 @@ Step 5와 달리, Planner는 자유로운 형식의 Plan 대신 **Characterizati
 cat workspace/context/config.md   # 설정 파일 내용 확인
 ```
 
-config 표가 비어 있는 경우 `/pilot:init` 명령어를 다시 실행합니다. (이미 `exists` 상태인 `config.md` 파일이 존재하면 wizard가 실행되지 않고 skip될 수 있으므로, 기존 파일을 삭제한 뒤 재시행해야 합니다.)
+config 표가 비어 있는 경우 `/pilot:pilot-init` 명령어를 다시 실행합니다. (이미 `exists` 상태인 `config.md` 파일이 존재하면 wizard가 실행되지 않고 skip될 수 있으므로, 기존 파일을 삭제한 뒤 재시행해야 합니다.)
 
 ---
 

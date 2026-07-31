@@ -1,5 +1,5 @@
 ---
-name: review
+name: pilot-review
 description: >-
   프로젝트 진행 중 작성된 코드를 PR 이전에 품질 관점에서 리뷰한다.
   변경분(git diff)을 대상으로 pilot-code-review 에이전트를 호출하며,
@@ -7,7 +7,7 @@ description: >-
   evaluator 의 요구사항·게이트 판정과는 별개 축이다.
 ---
 
-# /pilot:review
+# /pilot:pilot-review
 
 PR 생성 이전, 사이클 내부에서 작성된 코드를 품질 관점으로 리뷰한다.
 
@@ -29,7 +29,7 @@ PR 생성 이전, 사이클 내부에서 작성된 코드를 품질 관점으로
 
 ## 역할 경계
 
-- `/pilot:review` (이 스킬) — 팀 규칙 파일(`workspace/context/review/{lang}.md`) 적용·사이클 재진입 라우팅이 필요한 리뷰. 대화창에 리포트 + 재진입 라우팅 출력.
+- `/pilot:pilot-review` (이 스킬) — 팀 규칙 파일(`workspace/context/review/{lang}.md`) 적용·사이클 재진입 라우팅이 필요한 리뷰. 대화창에 리포트 + 재진입 라우팅 출력.
 - 내장 `/code-review` — 범용 정확성 리뷰 패스 (로컬 변경분·GitHub PR 모두 대상). 팀 규칙·라우팅이 필요 없으면 이쪽.
 - `@pilot-evaluator` — 요구사항 충족·게이트 통과 **판정**. 사이클의 일부.
 - 내장 `/security-review` — 심층 보안 패스. 보안이 중요한 변경에 별도 권장.

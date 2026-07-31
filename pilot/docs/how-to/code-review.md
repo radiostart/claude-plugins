@@ -29,14 +29,14 @@ planner → critic → generator → evaluator cycle과 **별개로 동작하는
 ### 1. 리뷰 실행
 
 ```
-/pilot:review
+/pilot:pilot-review
 ```
 
 `@pilot-code-review` 를 호출합니다. 검토 대상 범위는 다음과 같이 지정할 수 있습니다:
 
 - **인자 없음**: 전체 변경사항 검토 (uncommitted + 현재 branch의 commit)
-- **특정 경로 지정** (예: `/pilot:review app/services/`): 해당 디렉터리 내의 변경사항만 검토
-- **Commit 범위 지정** (예: `/pilot:review HEAD~3..HEAD`): 해당 범위 내의 변경사항 검토
+- **특정 경로 지정** (예: `/pilot:pilot-review app/services/`): 해당 디렉터리 내의 변경사항만 검토
+- **Commit 범위 지정** (예: `/pilot:pilot-review HEAD~3..HEAD`): 해당 범위 내의 변경사항 검토
 
 실행이 완료되면 `CODE REVIEW REPORT`가 출력되며, 각 결함 항목에 `blocking`, `suggestion`, `nit` 중 하나의 severity와 함께 `file:line`, 개선안, 재진입 routing(`feature`, `planner`, `generator`, `trivial`, `new-feature`, `dismiss`)이 제공됩니다.
 
@@ -65,6 +65,6 @@ routing 및 수정 규모 분류는 `CODE REVIEW REPORT` 에 통합되어 있습
 
 ## 다음 단계
 
-- :material-book-open-variant: Reference: [`/pilot:review`](../reference/skills/review.md) · [`/pilot:code-review-init`](../reference/skills/code-review-init.md)
+- :material-book-open-variant: Reference: [`/pilot:pilot-review`](../reference/skills/review.md) · [`/pilot:code-review-init`](../reference/skills/code-review-init.md)
 - :material-lightbulb-on: Explanation: [에이전트 흐름](../explanation/agent-flow.md) — critic 과 code-review 의 역할 및 검토 범위 경계.
 - :material-shield-alert: How-to: [Critic 활용](critic-review.md) — *계획(Plan)* 수립 단계에서의 adversarial 검토 방법.

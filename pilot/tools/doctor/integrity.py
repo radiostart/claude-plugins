@@ -325,7 +325,7 @@ def check_workspace(workspace: Path) -> list[Result]:
                 Result.ERROR,
                 "workspace/",
                 "없음",
-                "`/pilot:init` 실행",
+                "`/pilot:pilot-init` 실행",
             )
         )
         return results
@@ -386,7 +386,7 @@ def check_workspace(workspace: Path) -> list[Result]:
                 Result.ERROR,
                 "STATE.md",
                 "없음",
-                "`/pilot:init` 재실행",
+                "`/pilot:pilot-init` 재실행",
             )
         )
 
@@ -399,7 +399,7 @@ def check_workspace(workspace: Path) -> list[Result]:
                 Result.ERROR,
                 "context/MANIFEST.md",
                 "없음",
-                "`/pilot:init` 재실행",
+                "`/pilot:pilot-init` 재실행",
             )
         )
 
@@ -412,7 +412,7 @@ def check_workspace(workspace: Path) -> list[Result]:
                 Result.WARN,
                 "context/config.md",
                 "없음",
-                "`/pilot:init` 재실행 또는 직접 작성",
+                "`/pilot:pilot-init` 재실행 또는 직접 작성",
             )
         )
 

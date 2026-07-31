@@ -8,7 +8,7 @@
 
 | 스킬 | 진입 파일 | 카테고리 |
 | --- | --- | --- |
-| `/pilot:init` | `pilot/skills/init/SKILL.md` | lifecycle |
+| `/pilot:pilot-init` | `pilot/skills/pilot-init/SKILL.md` | lifecycle |
 | `/pilot:project` | `pilot/skills/project/SKILL.md` | lifecycle |
 | `/pilot:issue` | `pilot/skills/issue/SKILL.md` | lifecycle |
 | `/pilot:pilot-doctor` | `pilot/skills/pilot-doctor/SKILL.md` | lifecycle |
@@ -20,7 +20,7 @@
 | `/pilot:tdd` | `pilot/skills/tdd/SKILL.md` | modes |
 | `/pilot:characterize` | `pilot/skills/characterize/SKILL.md` | modes |
 | `/pilot:autopilot` | `pilot/skills/autopilot/SKILL.md` | modes |
-| `/pilot:review` | `pilot/skills/review/SKILL.md` | review |
+| `/pilot:pilot-review` | `pilot/skills/pilot-review/SKILL.md` | review |
 | `/pilot:code-review-init` | `pilot/skills/code-review-init/SKILL.md` | review |
 | `/pilot:commit` | `pilot/skills/commit/SKILL.md` | delivery |
 | `/pilot:pr` | `pilot/skills/pr/SKILL.md` | delivery |
@@ -38,13 +38,13 @@
 
 ## 공통 사전 확인 (P-N) 매트릭스
 
-스킬마다 진입 시 수행하는 공통 절차. **`pilot/skills/context/shared/preamble.md` 의 "스킬별 P 절차 적용표" 가 유일한 SSOT** — 아래는 그 표의 사본 + 표 밖 2 스킬 주석.
+스킬마다 진입 시 수행하는 공통 절차. **`pilot/skills/context/shared/preamble.md` 의 "스킬별 P 절차 적용표" 가 유일한 SSOT** — 아래는 그 표의 사본.
 
 | 스킬 | P-1 (진행 보드) | P0 (memory-hint) | P1 (활성 프로젝트) | P2 (STATE 갱신) | P3 (도메인 로드) |
 | --- | --- | --- | --- | --- | --- |
 | `project` | ✅ | ✅ | – | ✅ | ✅ |
 | `issue` | ✅ | ✅ | – | ✅ | ✅ |
-| `init` | – | – | – | – | – |
+| `pilot-init` | – | – | – | – | – |
 | `analyze` | ✅ | ✅ | ✅ | – | – |
 | `confl` | – | – | ✅ | – | – |
 | `tdd` | – | – | ✅ | – | – |
@@ -57,6 +57,8 @@
 | `autopilot` | – | – | ✅ | – | – |
 | `pr` | ✅ | – | ✅ | – | – |
 | `slack` | – | – | ✅ | – | – |
+| `code-review-init` | – | – | – | – | – |
+| `pilot-review` | – | – | – | – | – |
 
-> `doctor` 는 P 절차를 수행하지 않는다 — doctor.py 가 워크스페이스·프로젝트 해석을 자체 수행 (preamble.md 적용표 주석).
-> `review`·`code-review-init` 은 preamble 적용표에 없다 — review 는 사전 확인 섹션 자체가 없고, code-review-init 은 P 라벨 없는 자체 사전 확인 (인자 파싱·workspace 존재 확인) 만 수행 (`pilot/skills/code-review-init/SKILL.md:18-37`).
+> `pilot-doctor` 는 P 절차를 수행하지 않는다 — doctor.py 가 워크스페이스·프로젝트 해석을 자체 수행 (preamble.md 적용표 주석).
+> `pilot-review` 는 사전 확인 없이 target 을 결정해 `@pilot-code-review` 에 위임하고, `code-review-init` 은 P 라벨 없는 자체 사전 확인 (인자 파싱·workspace 존재 확인) 만 수행 (`pilot/skills/code-review-init/SKILL.md:18-37`).
