@@ -23,6 +23,9 @@ tools: Read, Glob, Grep, Edit, Bash
    - **`tdd: true` (mode 미설정)** — [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Evaluator — 실행 및 검증(관련 테스트 실행·스텝별 `[Red]`/`[Green]` 증거 검증·인프라 오류 스텝 반려).
    - **둘 다 아님 (표준 모드)** — `config.test_command` 설정 시 이번 변경 관련 테스트 실행(`{test_command} {관련 테스트 경로}`), 실패 시 Generator 에 재요청. 미설정이면 요구사항 체크리스트 검토만 하고 REPORT `test_run` 은 `skip`.
 3. `files_to_read` 로 `conventions_doc`/`conventions_evals` 가 로드된 경우 **언어별 검증 케이스를 검토 항목에 포함**한다(merge 규칙: [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md) § 검증). Generator 자기 검사와 별개로 독립 수행하며, 위반은 `issues_to_fix` 에 기록하고 `requirements` gate 판정 근거에 반영한다.
+
+   **[도메인 지식 환류 판정 — 검토 완료 후, step 4 진입 전. conventions 로드 여부와 무관하게 항상 수행]** 이번 변경 diff 를 [`knowledge-sync.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/knowledge-sync.md) § 판정 에 따라 분류한다 — `detected | none | skip`. detected 항목은 `{유형}: {요약} → {대상 문서}` 형식으로 수집한다 (step 7 의 `metrics.domain_impact` 와 chat 안내 블록에 사용). **gate 아님** — status 판정에 영향을 주지 않으며, READY 와 detected 는 정상 공존한다. `workspace/context/` 파일을 직접 Edit 하지 않는다 — 기록 주체는 사용자 승인 후 메인 대화 (knowledge-sync.md § 기록).
+
 4. **[필수]** 검토가 끝나면 **반드시** Edit 으로 `workspace/projects/{PROJECT}/prompts/evaluator.md` 의 **모든** 체크리스트 항목을 `[x]`(통과)/`[ ]`(미통과)로 업데이트한다 ([`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md) § SSOT — 기록은 Edit 으로).
 5. 전 항목 통과 시 Edit 으로 `project.md` 의 해당 목표를 `[x]` 로 변경한다.
 6. **[전달사항]** 다음 feature 에 영향 줄 사항이 있으면 `project.md` 의 `## 에이전트 간 전달사항` 에 항목 추가(없으면 생성). 형식: `- [ ] {내용} (from #{완료 feature 번호})`. 없으면 skip.
@@ -42,6 +45,7 @@ tools: Read, Glob, Grep, Edit, Bash
      - drift:            none | detected — {drift-protocol A/B, detected 시 보고 링크. 3건 이상이면 `(count: N) — 일괄 정리 권장` 첨부}
    - metrics:
      - coverage: {before%→after% / skip — coverage_command 미설정 또는 측정 실패}
+     - domain_impact: none | detected | skip — {유형}: {요약} → {대상 문서} (항목 `;` 구분, skip 은 — domain: null 명시)
    - issues_to_fix:
      - [severity] {요약} — {파일:라인}
    - next: {다음 feature 후보 or null}
@@ -50,6 +54,8 @@ tools: Read, Glob, Grep, Edit, Bash
    gate 판정 근거·모드별 매핑(`tdd_evidence`·`capture_lockdown`)은 [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md) § 기본 판정 축 을 따른다. `NOT_READY` 는 `issues_to_fix` 최소 1항목, `READY` 는 `- none`.
 
    **metrics.coverage** 는 참고 지표(gate 아님). `config.coverage_command` 있으면 `{before→after}` 기록, 없거나 실패면 `skip`.
+
+   **metrics.domain_impact** 는 참고 지표(gate 아님). 판정 기준·기록 절차 SSOT: [`knowledge-sync.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/knowledge-sync.md). `status: READY` + `detected` 시 **REPORT 출력 직후 (step 8 Slack 진행 전)** knowledge-sync.md § 수동 사이클의 "도메인 지식 환류 제안" 안내 블록을 **반드시** 출력한다 (생략 금지 — step 8 Slack 과 동급 의무). 질의·기록 여부는 사용자가 결정하며, 기록 주체는 승인 후 메인 대화다 — evaluator 는 감지·보고까지만. `NOT_READY` + `detected` 면 안내 블록을 띄우지 않는다 — REPORT 에 기록만 하고 재작업 후 `READY` 재평가에서 질의한다 (변경 미확정).
 
    **REPORT 출력 직전 형식 자기 점검** (구 `verify-report-lint.py` 스키마 검증 이관, 근거: `docs/audits/2026-07-24-audit-4-python.md` § C-5): `status` 값이 `READY`|`NOT_READY` 중 하나인지 · `gates` 의 6개 키(`requirements`·`tdd_evidence`·`capture_lockdown`·`test_run`·`scope`·`drift`)가 모두 존재하고 각 값이 위 enum 범위 안인지 확인 후 출력한다.
 
