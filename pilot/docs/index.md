@@ -8,12 +8,13 @@ hide:
 
 도메인 지식 기반의 agent workflow 플러그인입니다. Claude Code 내에서 *plan → critic → generate → evaluate*의 명시적 cycle로 project를 진행합니다.
 
-!!! tip "v0.13.0 highlights"
-    - **issue 단건 사이클** — `/pilot:issue` 가 경량 모드에서 사이클 지원으로 재정의. orchestrate-load 가 STATE.md 의 `| issue | {이슈명} |` 행을 인식해 (`work_mode` 계약) planner→critic→generator→evaluator 를 `issues/{이슈명}/` 기반으로 구동 — 이슈명을 프로젝트로 오인하던 오도성 에러·doctor 오진 제거
-    - **이슈 폴더 slug 자동 명명** — 폴더명(영문 kebab slug ≤40자)과 표시명(issue.md H1 한글 요약) 분리, 팀 용어는 도메인 문서의 코드 표기 우선. 유사 이슈 검색은 폴더명 `ls` + H1 `grep` 병행
-    - **issues/ 훅 보호 확장** — 기존 이슈 파일 Write·destructive 차단 (Edit·신규 파생 산출물·`.focus.*` 통과), issues/ 상위 폴더 차단
-    - **focus·commit issue 모드 지원** — focus 는 `issues/{이슈명}/.focus.md` 로 분기, commit 은 P1 issue 판정 예외로 계속 동작. 나머지 project 전용 스킬은 issue 행에서 명확히 종료
-    - 가이드: [운영 이슈 단건 처리](how-to/issue-cycle.md)
+!!! tip "v0.14.0 highlights"
+    - **issue 단건 사이클 + 폴더 slug** — `/pilot:issue` 가 경량 모드에서 사이클 지원으로 재정의. orchestrate-load 가 STATE.md 의 `| issue | {이슈명} |` 행을 인식해 (`work_mode` 계약) planner→critic→generator→evaluator 를 `issues/{이슈명}/` 기반으로 구동한다. 폴더명(영문 kebab slug ≤40자)과 표시명(issue.md H1)을 분리해 유사 이슈 검색을 폴더명 `ls` + H1 `grep` 병행으로 수행 → [운영 이슈 단건 처리](how-to/issue-cycle.md)
+    - **Open Questions fail-closed 게이트** — 미해결 `- [ ]` 항목에 plan 처리 마커(`추정 구현`/`범위 제외`)가 없으면 `plan-validate` 가 차단. evaluator REPORT 에 `open_questions` gate 추가 (7 gates)
+    - **도메인 지식 환류 (knowledge-sync)** — evaluator 가 사이클 종료 시 이번 변경이 도메인 문서에 남길 지식을 감지해 `metrics.domain_impact` 로 보고. 기록 여부는 사용자 승인 후 메인 대화가 결정
+    - **`/pilot:init`·`/pilot:review` → `/pilot:pilot-init`·`/pilot:pilot-review`** — Claude Code 내장 `/init`·`/review` 와의 bare 별칭 충돌 해소
+    - **issue 모드 경계 집행** — issues/ 훅 보호(기존 파일 Write·destructive 차단, Edit·신규 산출물 통과), focus 는 `issues/{이슈명}/.focus.md` 로 분기, commit 은 계속 동작하고 나머지 project 전용 스킬은 issue 행에서 종료
+    - **하니스 정합·규율 보강** — 진행 보드 겸용 선로딩, 계획 단계 effort 상향, plan 분량 가드(WARN), 주석 규율 eval, 훅 결함 4건 수정, SessionStart 컨텍스트 훅
 
 ---
 

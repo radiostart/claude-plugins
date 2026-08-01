@@ -217,8 +217,8 @@ def step_missing_labels(
 # Open Questions 게이트 — 스펙: skills/context/shared/open-questions.md § 판정 매트릭스
 # ---------------------------------------------------------------------------
 
-# feature 파일 `## Open Questions` 파서 — pilot 은 doctor 가 슬림(#20)해 공유
-# 파서 모듈이 없으므로 본 도구가 자체 보유한다 (dp-skills 는 doctor.integrity 재사용).
+# feature 파일 `## Open Questions` 파서 — doctor 슬림화(#20)로 공유 파서 모듈이
+# 없어졌으므로 본 도구가 자체 보유한다.
 OQ_CATEGORY_KEYS = ["(a)", "(b)", "(c)", "(d)"]
 _OQ_H3_RE = re.compile(r"^### (\([abcd]\)) ", re.M)
 _OQ_H2_RE = re.compile(r"^## Open Questions\s*$", re.M)
