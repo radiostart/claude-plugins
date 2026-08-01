@@ -65,6 +65,6 @@ routing 및 수정 규모 분류는 `CODE REVIEW REPORT` 에 통합되어 있습
 
 ## 다음 단계
 
-- :material-book-open-variant: Reference: [`/pilot:pilot-review`](../reference/skills/review.md) · [`/pilot:code-review-init`](../reference/skills/code-review-init.md)
+- :material-book-open-variant: Reference: [`/pilot:pilot-review`](../reference/skills/pilot-review.md) · [`/pilot:code-review-init`](../reference/skills/code-review-init.md)
 - :material-lightbulb-on: Explanation: [에이전트 흐름](../explanation/agent-flow.md) — critic 과 code-review 의 역할 및 검토 범위 경계.
 - :material-shield-alert: How-to: [Critic 활용](critic-review.md) — *계획(Plan)* 수립 단계에서의 adversarial 검토 방법.
