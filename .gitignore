@@ -26,3 +26,6 @@ workspace/.env
 # pilot: 세션 로컬 상태 — 추적 여부는 사용자 정책이나 이 저장소는 로컬 전용 운영 (감사 F22)
 workspace/STATE.md
 .focus.history/
+
+# pilot: analyze --regen-agents 의 prompts 백업 (로컬 복구용 — regen-mode.md 권장)
+.prompts.bak/

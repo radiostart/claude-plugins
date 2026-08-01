@@ -45,10 +45,10 @@
 | 스킬·에이전트 전체 재작성 | `pilot/skills/*/SKILL.md` · `pilot/agents/*.md` · `context/shared/` (wrapper-protocol.md 신설) | 원칙 중심 100줄 이하 (agents 는 계약 보존 우선), 불변 조건 체크리스트 = 감사 축 3 (#19) |
 | Python 슬림화 | `pilot/tools/doctor/integrity.py` · `verify-report-lint.py` · `doctor.py` · 삭제 3종 (`diagnose.py`·`memory-hint.py`·`init_detect.py`) + 연동 테스트 | 마이그레이션 삭제·lint 이관·파서 흡수, schema.py 유지 + validate.yml CI 신설 (#20) |
 | 문서 정합 | `pilot/docs/reference/index.md` · `pilot/docs/how-to/doctor-migration.md` · `pilot/docs/tutorial/getting-started.md` | #20 삭제·이관 반영 — 도구 목록 정정·how-to 현행화·Troubleshooting 무효 항목 삭제, md 만 수정, 파일명 보존 (#21) |
-| context 재학습 | `workspace/context/pilot/index.md` · `lifecycle.md` | 삭제 스크립트 3건 서술 해소 — **직접 Edit 금지**, `/pilot:learn` 재실행 경로 (#22) |
+| context 재학습 | `workspace/context/pilot/` 6 파일 | 완료 — `/pilot:learn … --force` 재실행으로 전부 재생성 (인용 172건 전건 유효). **직접 Edit 금지** 는 상시 규칙 (drift-protocol § A) (#22) |
 | doctor 파서 오탐 | `pilot/tools/doctor/integrity.py` (`check_conventions_paths`) · `pilot/tools/doctor/_common.py` (`count_real_features`) | (A) config 표 플레이스홀더를 실선언으로 오탐 (B) `.plan.critic.md` 를 feature 로 계수 — 둘 다 파서 수정 (#23) |
-| 업그레이드 도구 | `pilot/tools/pilot-update.sh` · `pilot/README.md` · `pilot/docs/tutorial/getting-started.md` | stale 경로 수정 + 존치 결정 반영 + 잘못된 안내 정정. 전역 설치본 직접 조작 금지 (#24) |
-| 스키마 검사 중복 | `pilot/tools/doctor/schema.py` · `.github/workflows/validate.yml` | `claude plugin validate` 와 중복 정리. CI 차단 강도 유지가 제약 (#25) |
+| 업그레이드 도구 | ~~`pilot/tools/pilot-update.sh`~~ (삭제 완료) · `pilot/README.md` · `pilot/docs/tutorial/getting-started.md` | 폐기 확정 — 스크립트 삭제 + 안내를 `/plugin` 2단계 + 세션 재시작으로 일원화. **변경 대상으로 잡지 말 것** (#24) |
+| 스키마 검사 중복 | (코드 변경 없음) | 결론 **현행 유지** — `schema.py` 와 CLI 는 서로 대체하지 않는다. CI 는 `doctor --schema` 단독 유지 (#25) |
 | issue 사이클 + slug | `pilot/tools/orchestrate-load.py` · `pilot/agents/pilot-*.md` 4종 · `preamble.md`·`messages.md`·`wrapper-protocol.md` · `pilot/hooks/protect-managed.sh` · `pilot/skills/{focus,issue}/SKILL.md` · `issues/GUIDE.md` · `pilot/tools/doctor/integrity.py` · 테스트 3종 · `docs/how-to/issue-cycle.md` | dp-skills 0.25.0/0.30.0 포팅 — work_mode 계약·이슈 블록 자기완결 인라인·slug 규약. qa/lint/인터뷰/oq-gate 이식 제외, 사내 식별자 0건 (#26) |
 
 ---
