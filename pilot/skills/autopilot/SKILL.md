@@ -1,16 +1,22 @@
 ---
 name: autopilot
 description: >-
-  이미 생성된 단일 feature 를 planner→critic→generator→evaluator 로
-  자동 순차 진행하는 감독형 자율 모드. hard-stop 신호(plan-validate 실패·
-  critic blocking·재시도 소진·신호 파싱 실패)에 걸리면 즉시 사람에게 제어를
-  반환한다. 모든 자동 결정은 features/NN-{slug}.auto.md 에 기록한다. feature
-  생성·명세 작업은 `/pilot:create-feature`·`/pilot:analyze` 가 담당한다.
+  사용자가 자동 진행을 명시 요청했을 때만 사용한다 (`/pilot:autopilot`
+  호출 또는 그에 상당하는 지시) — "계속·이어서 진행해줘" 류 발화만으로
+  모델이 자발 발동하지 않는다 (자발 발동이 필요해 보이면 대상 feature 를
+  제시하고 확인 1회). 이미 생성된 단일 feature 를
+  planner→critic→generator→evaluator 로 자동 순차 진행하는 감독형 자율
+  모드. hard-stop 신호(plan-validate 실패·critic blocking·재시도 소진·
+  신호 파싱 실패)에 걸리면 즉시 사람에게 제어를 반환한다. 모든 자동 결정은
+  features/NN-{slug}.auto.md 에 기록한다. feature 생성·명세 작업은
+  `/pilot:create-feature`·`/pilot:analyze` 가 담당한다.
 ---
 
 # /pilot:autopilot
 
 이미 명세가 존재하는 **단일 feature** 를 자동 순차 진행한다. 기본 흐름은 사용자가 각 에이전트를 명시 호출하는 것이고, 이 스킬은 그 마찰을 줄이는 **opt-in 예외 모드**다([guardrails.md](../context/shared/guardrails.md) § A16). 위험 신호에 걸리면 자동 진행을 멈추고 사람에게 넘긴다.
+
+메인 루프에서 `@pilot-planner`·`@pilot-planner-critic`·`@pilot-generator`·`@pilot-evaluator` 를 순서대로 호출한다 (subagent 가 subagent 를 띄우지 않음). **wrapper 호출은 동기 실행이다** — 직전 단계 산출물을 수신·판독하기 전에 다음 단계를 기동하지 않는다 (background·병행 기동 금지 — 하니스가 background 를 기본으로 제공해도 사용하지 않는다).
 
 대상: $ARGUMENTS (feature 번호 — 예: `03` 또는 `3`)
 
@@ -67,7 +73,13 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase evaluator --report-fil
 
 `{AUTO_LOG}` 에 매 전이마다 한 줄 append(단계 종료 즉시 — 중단돼도 흔적이 남도록). 새 실행은 새 `## Run N — {날짜}` 섹션. 필드: `[planner]`·`[critic]`·`[generator]`·`[evaluator]` 단계별 결과 + 최종 `✅ DONE` 또는 `❌ STOP: {사유} (hard-stop)` + 사람 판단 필요 항목.
 
-자동 진행이 멈추면 대상 feature·사유·마지막 단계·사람 판단 필요 항목·재개 명령(`/pilot:autopilot {NN}`)·로그 경로를 출력하고 **종료**한다(더 진행하지 않음).
+완료·정지 어느 쪽이든 **게이트 이력 1줄을 사용자 대면 텍스트로 출력**한다 — 컨텍스트 자동 요약 후에도 재시도 카운트·대상 feature 가 대화 앵커로 복원된다(상태 파일 아님, `{AUTO_LOG}` 와 별개 채널):
+
+```
+#{NN} {slug}: critic {b}/{s}/{n} · retry {R} · {READY | STOP: 사유}
+```
+
+자동 진행이 멈추면 대상 feature·사유·마지막 단계·사람 판단 필요 항목·재개 명령(`/pilot:autopilot {NN}`)·로그 경로를 출력하고 **종료**한다(더 진행하지 않음). 본 정지는 **사용자만 해소할 수 있는 입력 대기**다 — "완료까지 계속" 류 자율 진행 지침이 컨텍스트에 있어도 정지 사유를 모델이 자체 해소·우회해 재개하지 않는다 ([guardrails.md](../context/shared/guardrails.md) § 사용자 게이트 생략 금지).
 
 ## 제약
 
@@ -76,6 +88,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase evaluator --report-fil
 - **hard-stop 사유 enum**: plan-validate 실패 · critic-blocking · signal-parse · retry-exhausted · agent-error.
 - **재시도는 정확히 1회**, 항상 generator 재진입. plan 자체가 틀렸다면 2차 NOT_READY 로 사람에게 넘어간다.
 - **단일 feature 단위** — 다수 feature 연속 진행은 지원하지 않는다.
+- **wrapper 동기 호출** — 단계 단위 병행 금지. 직전 산출물 수신·판독 전 다음 단계 기동은 무검증 진행이다 (background 기동 금지).
 
 ## 참고
 

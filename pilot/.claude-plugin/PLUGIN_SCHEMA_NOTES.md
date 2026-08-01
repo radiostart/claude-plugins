@@ -41,6 +41,7 @@
 
 - 필수: `name`, `description`, `tools`
 - 선택: `model` (미지정 시 기본)
+- 선택: `effort` (low/medium/high/xhigh/max — 미지정 시 세션 상속. 플러그인 에이전트 반영은 CLI 2.1.78+)
 
 ## schema 버전 태그
 

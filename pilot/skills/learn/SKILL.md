@@ -61,7 +61,9 @@ description: >-
 
 25k 토큰 거부 시 **limit 1/2 축소** 재시도 (소스 코드는 라인당 토큰 밀도가 낮아 1/2 로 충분 — analyze 의 표 중심 마크다운 1/3 규칙과 의도된 차이). 누적 ~50k 초과 시 진행 여부 재확인.
 
-**추출 항목**: 파일 목적 · public interface(시그니처·route·클래스·상속) · 의존성 · state enum · business rule · **cross-domain transaction nesting**(외부 namespace receiver 만 — [`references/cross-domain.md`](references/cross-domain.md) Phase 3). **추측 금지** — 코드 문자 그대로만 (주석 인용 허용), 모든 항목 `file:line` 인용 (`/pilot:doctor` 의 mtime drift 감지 입력). 카테고리별(routes·controllers·services·models·enums·rules) 메모리 누적.
+**추출 항목**: 파일 목적 · public interface(시그니처·route·클래스·상속) · 의존성 · state enum · business rule · **cross-domain transaction nesting**(외부 namespace receiver 만 — [`references/cross-domain.md`](references/cross-domain.md) Phase 3). **추측 금지** — 코드 문자 그대로만 (주석 인용 허용 — 아래 식별자 배제 적용), 모든 항목 `file:line` 인용 (`/pilot:pilot-doctor` 의 mtime drift 감지 입력). 카테고리별(routes·controllers·services·models·enums·rules) 메모리 누적.
+
+**프로젝트 식별자 배제** — scope·rules·MANIFEST·enums 는 개별 프로젝트보다 오래 사는 공유 지식이다. 프로젝트 생애주기에 종속된 토큰 — feature ID (`F{숫자}`·`features/NN`·`#34`), 티켓 키 (`ABC-123`), PR·이슈 번호, 분기·스프린트 라벨 — 은 본문에 기록하지 않는다 (프로젝트 종료 후 "어느 프로젝트의 F9 인지" 알 수 없어 공유 지식을 오염). 주석 인용·요약 시에도 토큰을 벗겨 도메인 사실만 적는다: `# F14 B 승인 절차` → `B 승인 절차`. 이 규칙은 공유 context (`workspace/context/**`) 산출물에만 적용 — `projects/{P}/features/`·`*.plan.md` 등 프로젝트-스코프 산출물의 feature ID 표기는 정상이다.
 
 ### Phase 4. 구조 결정 + 미리보기 + 생성
 

@@ -11,7 +11,7 @@
 | `/pilot:init` | `pilot/skills/init/SKILL.md` | lifecycle |
 | `/pilot:project` | `pilot/skills/project/SKILL.md` | lifecycle |
 | `/pilot:issue` | `pilot/skills/issue/SKILL.md` | lifecycle |
-| `/pilot:doctor` | `pilot/skills/doctor/SKILL.md` | lifecycle |
+| `/pilot:pilot-doctor` | `pilot/skills/pilot-doctor/SKILL.md` | lifecycle |
 | `/pilot:focus` | `pilot/skills/focus/SKILL.md` | lifecycle |
 | `/pilot:confl` | `pilot/skills/confl/SKILL.md` | spec |
 | `/pilot:analyze` | `pilot/skills/analyze/SKILL.md` | spec |
@@ -40,7 +40,7 @@
 
 스킬마다 진입 시 수행하는 공통 절차. **`pilot/skills/context/shared/preamble.md` 의 "스킬별 P 절차 적용표" 가 유일한 SSOT** — 아래는 그 표의 사본 + 표 밖 2 스킬 주석.
 
-| 스킬 | P-1 (TodoWrite) | P0 (memory-hint) | P1 (활성 프로젝트) | P2 (STATE 갱신) | P3 (도메인 로드) |
+| 스킬 | P-1 (진행 보드) | P0 (memory-hint) | P1 (활성 프로젝트) | P2 (STATE 갱신) | P3 (도메인 로드) |
 | --- | --- | --- | --- | --- | --- |
 | `project` | ✅ | ✅ | – | ✅ | ✅ |
 | `issue` | ✅ | ✅ | – | ✅ | ✅ |
@@ -48,7 +48,7 @@
 | `analyze` | ✅ | ✅ | ✅ | – | – |
 | `confl` | – | – | ✅ | – | – |
 | `tdd` | – | – | ✅ | – | – |
-| `doctor` | – | – | – | – | – |
+| `pilot-doctor` | – | – | – | – | – |
 | `focus` | – | – | ✅ | – | – |
 | `create-feature` | ✅ | ✅ | ✅ | – | – |
 | `commit` | – | – | ✅ | – | – |

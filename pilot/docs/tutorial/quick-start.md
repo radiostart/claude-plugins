@@ -90,4 +90,4 @@ features/01-user-profile-email-field.plan.md
     - [스킬 (`/pilot:*`)](../reference/index.md)
 
 !!! tip "문제 해결"
-    진행 과정 중 오류가 발생하거나 막히는 경우, `/pilot:doctor` 명령어를 실행하십시오. workspace의 무결성과 schema 버전을 확인하여 문제 진단 및 마이그레이션 안내를 제공합니다.
+    진행 과정 중 오류가 발생하거나 막히는 경우, `/pilot:pilot-doctor` 명령어를 실행하십시오. workspace의 무결성과 schema 버전을 확인하여 문제 진단 및 마이그레이션 안내를 제공합니다.

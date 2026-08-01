@@ -7,8 +7,17 @@
 set -euo pipefail
 
 # tool_input.file_path 추출
-FILE_PATH=$(cat /dev/stdin | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))" 2>/dev/null || echo "")
+INPUT=$(cat /dev/stdin)
+FILE_PATH=$(echo "$INPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))" 2>/dev/null || echo "")
 [[ -z "$FILE_PATH" ]] && exit 0
+
+# 세션당 1회 발화 — 같은 안내가 Edit 마다 대화 컨텍스트에 누적되는 것을 방지.
+SESSION_ID=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('session_id',''))" 2>/dev/null || echo "")
+MARKER=""
+if [[ -n "$SESSION_ID" ]]; then
+  MARKER="${TMPDIR:-/tmp}/pilot-coding-rules.$(printf '%s' "$SESSION_ID" | tr -cd '[:alnum:]-_')"
+  [[ -f "$MARKER" ]] && exit 0
+fi
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 
@@ -22,6 +31,19 @@ REL_PATH="${FILE_PATH#$PROJECT_DIR/}"
 CONTEXT_DIR="$PROJECT_DIR/workspace/context"
 CONFIG_FILE="$CONTEXT_DIR/config.md"
 RULES_DIR="$CONTEXT_DIR/rules"
+
+# source_root 가 선언돼 있으면 그 안의 파일만 대상 (문서·스크립트 등 소스 밖 수정에 오발화 방지).
+# 실재하는 디렉토리일 때만 적용 — 템플릿 placeholder 값은 -d 검사에서 걸러진다 (fail-open).
+if [[ -f "$CONFIG_FILE" ]]; then
+  SOURCE_ROOT=$(sed -nE 's/^\|[ \t]*`?source_root`?[ \t]*\|[ \t]*`?([^`|]+)`?[ \t]*\|.*$/\1/p' "$CONFIG_FILE" | head -1 | tr -d '[:space:]')
+  if [[ -n "$SOURCE_ROOT" && -d "$PROJECT_DIR/${SOURCE_ROOT%/}" ]]; then
+    ROOT_TRIMMED="${SOURCE_ROOT%/}"
+    case "$REL_PATH" in
+      "$ROOT_TRIMMED"/*) ;;
+      *) exit 0 ;;
+    esac
+  fi
+fi
 
 # --- 코딩 규칙 존재 여부 탐지 (규칙 없으면 hook 은 동작하지 않는다) ---
 RULE_SOURCES=()
@@ -54,8 +76,10 @@ fi
 
 # --- 리마인드 컨텍스트 주입 (PostToolUse, 비차단) ---
 SRC_LIST=$(printf '%s; ' "${RULE_SOURCES[@]}")
-MSG="소스 파일 '${REL_PATH}' 이 수정되었습니다. pilot 워크스페이스에 코딩 규칙이 정의돼 있습니다 — 변경분이 다음 규칙을 준수하는지 검증하고, 미충족 항목은 수정 후 재확인하세요: ${SRC_LIST%; }"
+MSG="소스 파일 '${REL_PATH}' 이 수정되었습니다. pilot 워크스페이스에 코딩 규칙이 정의돼 있습니다 — 변경분이 다음 규칙을 준수하는지 검증하고, 미충족 항목은 수정 후 재확인하세요: ${SRC_LIST%; }. 언어 중립 원칙: ${CLAUDE_PLUGIN_ROOT:-\$CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md (이 안내는 세션당 1회만 표시됩니다.)"
 
 python3 -c "import json,sys; print(json.dumps({'hookSpecificOutput': {'hookEventName': 'PostToolUse', 'additionalContext': sys.argv[1]}}))" "$MSG"
+
+[[ -n "$MARKER" ]] && { touch "$MARKER" 2>/dev/null || true; }
 
 exit 0

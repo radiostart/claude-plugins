@@ -16,7 +16,7 @@
 
     ---
 
-    `/pilot:*` 슬래시 커맨드 — `init`, `project`, `analyze`, `create-feature`, `focus`, `tdd`, `characterize`, `doctor`, `confl`, `slack`, `commit`, `pr`, `review`, `learn`, `issue`, `code-review-init`, `autopilot`.
+    `/pilot:*` 슬래시 커맨드 — `init`, `project`, `analyze`, `create-feature`, `focus`, `tdd`, `characterize`, `pilot-doctor`, `confl`, `slack`, `commit`, `pr`, `review`, `learn`, `issue`, `code-review-init`, `autopilot`.
 
 -   :material-console:{ .lg .middle } __[Tools](tools/index.md)__
 

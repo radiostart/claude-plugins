@@ -147,13 +147,32 @@ class MessageExtraction(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertIn("gamma", proc.stderr)
 
-    def test_heredoc_message_passes_silently(self):
-        """heredoc 방식은 메시지 추출 불가 — 통과 (문서화된 한계)."""
+    def test_heredoc_message_extracted_and_validated(self):
+        """HEREDOC 방식도 첫 내용 줄을 제목으로 추출해 검증한다."""
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             _write_config(root, "`alpha`")
             cmd = 'git commit -m "$(cat <<\'EOF\'\ngamma: 작업\nEOF\n)"'
             proc = _run_hook(root, cmd)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("gamma", proc.stderr)
+
+    def test_heredoc_valid_scope_silent(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write_config(root, "`alpha`")
+            cmd = 'git commit -m "$(cat <<\'EOF\'\nalpha: 작업\nEOF\n)"'
+            proc = _run_hook(root, cmd)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual(proc.stderr, "")
+
+    def test_multiple_m_first_is_title(self):
+        """다중 -m 은 첫 번째가 제목 — 두 번째(본문)로 50자 경고를 내지 않는다."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write_config(root, "`alpha`")
+            body = "본문 설명이 아주 길어서 오십 자를 훌쩍 넘기는 문장입니다 — 제목이 아니므로 경고 대상이 아닙니다"
+            proc = _run_hook(root, f'git commit -m "alpha: 제목" -m "{body}"')
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertEqual(proc.stderr, "")
 
@@ -166,6 +185,26 @@ class MessageExtraction(unittest.TestCase):
             self.assertEqual(proc.stderr, "")
 
 
+class CommandAnchoring(unittest.TestCase):
+    """비커밋 명령에 'git commit' 문자열이 섞여 있어도 검증 대상이 아니다."""
+
+    def test_echo_containing_git_commit_silent(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write_config(root, "`alpha`")
+            proc = _run_hook(root, "echo 'git commit -m \"gamma: x\"' >> doc.md")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual(proc.stderr, "")
+
+    def test_chained_git_commit_still_validated(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write_config(root, "`alpha`")
+            proc = _run_hook(root, 'cd sub && git commit -m "gamma: 작업"')
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("gamma", proc.stderr)
+
+
 class TitleRules(unittest.TestCase):
     def test_title_over_50_chars_warns(self):
         with tempfile.TemporaryDirectory() as td:
@@ -175,6 +214,16 @@ class TitleRules(unittest.TestCase):
             proc = _run_hook(root, f'git commit -m "{long_title}"')
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertIn("50자", proc.stderr)
+
+    def test_korean_title_length_counted_in_chars(self):
+        """한국어 제목 길이는 바이트가 아니라 UTF-8 문자 수로 센다."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write_config(root, "`alpha`")
+            title = "가" * 52  # 52자 (156바이트)
+            proc = _run_hook(root, f'git commit -m "{title}"')
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("52자", proc.stderr)
 
     def test_korean_only_title_passes(self):
         """scope 없는 한국어 설명 (허용 형식 3) — 무경고."""

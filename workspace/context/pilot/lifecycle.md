@@ -1,6 +1,6 @@
 # pilot — Lifecycle skills
 
-워크스페이스 셋업·세션 활성·정합성 검사·즉석 지시 기록을 다룬다. 5 개 스킬: `init` `project` `issue` `doctor` `focus`.
+워크스페이스 셋업·세션 활성·정합성 검사·즉석 지시 기록을 다룬다. 5 개 스킬: `init` `project` `issue` `pilot-doctor` `focus`.
 
 ---
 
@@ -64,22 +64,22 @@
 
 ---
 
-## `/pilot:doctor`
+## `/pilot:pilot-doctor`
 
-워크스페이스·프로젝트 정합성 검사. **검사 범위·판정 기준·출력 형식·처방의 로직 SSOT 는 `pilot/tools/doctor.py`** (진단 모드는 `tools/doctor/diagnose.py`) — SKILL.md 는 호출 계약만 정의 (`pilot/skills/doctor/SKILL.md:22-23`). 페르소나: diagnostician (증상 → 근거 → 처방).
+워크스페이스·프로젝트 정합성 검사. **검사 범위·판정 기준·출력 형식·처방의 로직 SSOT 는 `pilot/tools/doctor.py`** (진단 모드는 `tools/doctor/diagnose.py`) — SKILL.md 는 호출 계약만 정의 (`pilot/skills/pilot-doctor/SKILL.md:22-23`). 페르소나: diagnostician (증상 → 근거 → 처방).
 
-- **인자**: 생략 시 STATE.md 의 `진행중` 프로젝트, 프로젝트명 전달 시 `--project {PROJECT}` 부가 (`pilot/skills/doctor/SKILL.md:24·33`).
-- **기본 동작** (`pilot/skills/doctor/SKILL.md:27-38`):
+- **인자**: 생략 시 STATE.md 의 `진행중` 프로젝트, 프로젝트명 전달 시 `--project {PROJECT}` 부가 (`pilot/skills/pilot-doctor/SKILL.md:24·33`).
+- **기본 동작** (`pilot/skills/pilot-doctor/SKILL.md:27-38`):
   ```bash
   python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace [--project {PROJECT}]
   ```
   - exit `0` — ERROR 없음 (PASS / WARN 만)
   - exit `1` — ERROR 1 건 이상
-- **플래그** (`pilot/skills/doctor/SKILL.md:44-46`):
+- **플래그** (`pilot/skills/pilot-doctor/SKILL.md:44-46`):
   - `--fix` — auto-fixable 항목 자동 수정 + v0.1.0→v0.2.0 마이그레이션 질의 (상세: `references/migration.md`).
   - `--diagnose` — 런타임 실패 패턴 진단 (`loop`·`red-miss`·`repeat-not-ready`·`scope-violation`·`none`). exit `0` (none) · `1` (감지). 호출 시점: evaluator NOT_READY 2회 / 동일 도구 반복 의심 / 완료 선언인데 체크리스트·REPORT 비어있을 때.
   - `--schema` — 플러그인 구조 전용 (workspace 무관). CI 자동 실행 (`.github/workflows/validate.yml`).
-- **제약** (`pilot/skills/doctor/SKILL.md:59-63`): 순수 stdlib · 비파괴 (읽기만, `--fix` 제외) · 실패 시 fix 제안만 출력하고 자동 적용 안 함.
+- **제약** (`pilot/skills/pilot-doctor/SKILL.md:59-63`): 순수 stdlib · 비파괴 (읽기만, `--fix` 제외) · 실패 시 fix 제안만 출력하고 자동 적용 안 함.
 
 ---
 

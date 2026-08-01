@@ -321,5 +321,44 @@ class OtherTools(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr)
 
 
+class PortedGuards(unittest.TestCase):
+    """`./` 접두 정규화 · projects/ 상위 차단 · focus 수명주기 예외."""
+
+    def test_dot_slash_prefix_still_blocked(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            proc = _run_hook(root, _bash("rm ./workspace/projects/P/plan.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+    def test_rm_rf_projects_parent_blocked(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            proc = _run_hook(root, _bash("rm -rf workspace/projects"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+            self.assertIn("상위", proc.stderr)
+
+    def test_focus_md_mv_archive_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            proj = root / "workspace" / "projects" / "P"
+            (proj / ".focus.md").write_text("focus\n", encoding="utf-8")
+            proc = _run_hook(
+                root,
+                _bash(
+                    "mv workspace/projects/P/.focus.md "
+                    "workspace/projects/P/.focus.history/20260731-000000.md"
+                ),
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_write_focus_md_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            proj = root / "workspace" / "projects" / "P"
+            (proj / ".focus.md").write_text("focus\n", encoding="utf-8")
+            proc = _run_hook(root, _write(root, "workspace/projects/P/.focus.md"))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
