@@ -18,7 +18,7 @@
 ### `workspace_missing`
 
 ```
-workspace/ 가 없습니다. 먼저 `/pilot:init` 으로 초기화하세요.
+workspace/ 가 없습니다. 먼저 `/pilot:pilot-init` 으로 초기화하세요.
 ```
 
 ### `no_active_project`

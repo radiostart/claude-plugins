@@ -663,7 +663,7 @@ def main() -> int:
 
     if not workspace.is_dir():
         result["error"] = (
-            f"workspace not found: {workspace}. `/pilot:init` 실행 필요."
+            f"workspace not found: {workspace}. `/pilot:pilot-init` 실행 필요."
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 1

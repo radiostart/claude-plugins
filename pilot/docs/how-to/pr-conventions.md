@@ -17,7 +17,7 @@
 
 ## 전제 조건
 
-- `/pilot:init` 을 실행하여 `workspace/context/` 디렉터리가 생성되어 있어야 합니다.
+- `/pilot:pilot-init` 을 실행하여 `workspace/context/` 디렉터리가 생성되어 있어야 합니다.
 
 ## 작업 절차
 

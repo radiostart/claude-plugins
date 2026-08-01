@@ -12,7 +12,7 @@
 
 ## 전제
 
-- workspace 가 초기화되어 있을 것 (`/pilot:init`).
+- workspace 가 초기화되어 있을 것 (`/pilot:pilot-init`).
 - 도메인 컨텍스트 (`workspace/context/`) 가 채워져 있을수록 진단 품질이 올라갑니다 ([`/pilot:learn`](../reference/skills/learn.md) 누적).
 
 ## 절차

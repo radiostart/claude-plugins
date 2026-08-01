@@ -1,28 +1,28 @@
 # pilot — Lifecycle skills
 
-워크스페이스 셋업·세션 활성·정합성 검사·즉석 지시 기록을 다룬다. 5 개 스킬: `init` `project` `issue` `pilot-doctor` `focus`.
+워크스페이스 셋업·세션 활성·정합성 검사·즉석 지시 기록을 다룬다. 5 개 스킬: `pilot-init` `project` `issue` `pilot-doctor` `focus`.
 
 ---
 
-## `/pilot:init`
+## `/pilot:pilot-init`
 
-워크스페이스 스켈레톤 생성 (`pilot/skills/init/SKILL.md:9`).
+워크스페이스 스켈레톤 생성 (`pilot/skills/pilot-init/SKILL.md:9`).
 
 - **인자**: `--no-wizard` (선택 — wizard skip).
-- **사전 확인**: 없음 (workspace 가 없는 상태에서 실행되므로 P1 미적용 — `pilot/skills/init/SKILL.md:15-18`)
-- **1. 스켈레톤 생성** (`pilot/skills/init/SKILL.md:24-44`):
+- **사전 확인**: 없음 (workspace 가 없는 상태에서 실행되므로 P1 미적용 — `pilot/skills/pilot-init/SKILL.md:15-18`)
+- **1. 스켈레톤 생성** (`pilot/skills/pilot-init/SKILL.md:24-44`):
   - CWD 기준 `./workspace/context/` 폴더 생성 (필요 시).
   - 템플릿 3 개 → 대상 경로로 Write (대상 존재 시 skip=`exists`, 없으면 `created` — idempotent):
     - `templates/STATE.md.template` → `workspace/STATE.md`
     - `templates/MANIFEST.md.template` → `workspace/context/MANIFEST.md` (외부 도메인 reference placeholder 주석 포함)
     - `templates/config.md.template` → `workspace/context/config.md`
-  - 템플릿 위치: `${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/setup/templates/` (`pilot/skills/init/SKILL.md:34`)
-  - **`rules/`·`scope/`·`enums/` 카테고리 폴더는 만들지 않는다** — MANIFEST 가 가리키는 대로 사용자가 만든다 (`pilot/skills/init/SKILL.md:44`).
-- **2. wizard 적용** — `config.md` 가 `created` 인 경우만, `--no-wizard` 시 skip (`pilot/skills/init/SKILL.md:48-78`):
+  - 템플릿 위치: `${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/setup/templates/` (`pilot/skills/pilot-init/SKILL.md:34`)
+  - **`rules/`·`scope/`·`enums/` 카테고리 폴더는 만들지 않는다** — MANIFEST 가 가리키는 대로 사용자가 만든다 (`pilot/skills/pilot-init/SKILL.md:44`).
+- **2. wizard 적용** — `config.md` 가 `created` 인 경우만, `--no-wizard` 시 skip (`pilot/skills/pilot-init/SKILL.md:48-78`):
   1. **언어 감지** — `tools/init_detect.py` `detect_languages()` → `## learn 언어 패턴` 두 표에 default 패턴 주입 (기존 행 dedupe 병합, 감지 0건 → 헤더만 + INFO).
   2. **scope 후보 감지** — `detect_scope_candidates()` → `## scope 카테고리` 3 컬럼 표 주입 (후보 0건 → default 3 행 Routes·Models·Services).
   3. **Ignore baseline** — `IGNORE_BASELINE` 10 패턴 주입.
-  - 어느 단계가 실패해도 abort 금지 (A2 fallback). 표 헤더는 doctor strict 검증 대상 고정 스키마 (`pilot/skills/init/SKILL.md:56-61`).
+  - 어느 단계가 실패해도 abort 금지 (A2 fallback). 표 헤더는 doctor strict 검증 대상 고정 스키마 (`pilot/skills/pilot-init/SKILL.md:56-61`).
 - **부수 효과 없음** — STATE 갱신·도메인 로드 안 함.
 
 ---

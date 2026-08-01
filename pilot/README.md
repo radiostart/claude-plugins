@@ -60,7 +60,7 @@ subagent 호출이 가능해진다.
 작업할 저장소에서 한 줄이면 전체 구조가 생성된다 (idempotent):
 
 ```
-/pilot:init
+/pilot:pilot-init
 ```
 
 ```
@@ -78,7 +78,7 @@ workspace/
 ## Quick Start — 최소 시퀀스
 
 ```
-/pilot:init                                  # (1회) 워크스페이스 부트스트랩
+/pilot:pilot-init                                  # (1회) 워크스페이스 부트스트랩
 /pilot:project MyFeature                     # 프로젝트 생성·활성화
 /pilot:create-feature "지연 주문 목록 UI"      # feature 명세 단건 추가
 

@@ -11,7 +11,7 @@
 ## 1. workspace 초기화
 
 ```bash
-/pilot:init
+/pilot:pilot-init
 ```
 
 대화형 wizard가 실행되어 `workspace/` 디렉터리를 생성합니다.
