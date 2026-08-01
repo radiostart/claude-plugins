@@ -29,6 +29,8 @@
 
 에이전트·스킬은 **탐색·코드 수정 전에 MANIFEST.md 를 먼저 로드**하고, 도메인이 결정되면 그 진입 파일·하위 파일을 읽는다. 플러그인은 언어 컨벤션(`coding.md`), TDD 도구(`rgr.md`), 커밋·메시지 규약(`commit.md`, `messages.md`) 같은 메커니즘 자원만 보유한다.
 
+컨텍스트 문서의 생애주기 프로토콜 2 종: 기존 문서-코드 불일치(우연 발견)는 [`drift-protocol.md`](lifecycle/drift-protocol.md), 사이클 종료 시 신규 지식 환류(evaluator 감지 → 사용자 승인 후 메인 대화가 기록)는 [`knowledge-sync.md`](lifecycle/knowledge-sync.md) 를 따른다.
+
 ## STATE.md
 
 `workspace/STATE.md` — 추적 여부는 사용자 정책 ([state-schema.md](lifecycle/state-schema.md) 와 동일). 로컬 전용 운영 권장.
