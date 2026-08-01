@@ -360,5 +360,63 @@ class PortedGuards(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr)
 
 
+def _make_issue_root(td: str) -> Path:
+    """기존 이슈 (workspace/issues/hotfix-1/issue.md) 를 갖춘 프로젝트 루트 생성."""
+    root = Path(td)
+    idir = root / "workspace" / "issues" / "hotfix-1"
+    idir.mkdir(parents=True)
+    (idir / "issue.md").write_text("# issue\n\n## 현상\n\n- 증상\n", encoding="utf-8")
+    return root
+
+
+class ProtectManagedIssues(unittest.TestCase):
+    """issues/ 보호 — 기존 이슈 파일 Write/destructive 차단 (issue.md 의 사용자
+    작성 현상·누적 기록 보호), Edit (원인·조치 기입)·신규 파일 (사이클 파생
+    산출물)·`.focus.*` 통과. issues/ 상위 폴더는 projects/ 와 대칭 차단."""
+
+    def test_write_existing_issue_md_blocked(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_issue_root(td)
+            proc = _run_hook(root, _write(root, "workspace/issues/hotfix-1/issue.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+            self.assertIn("이슈", proc.stderr)
+
+    def test_write_new_derived_artifact_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_issue_root(td)
+            proc = _run_hook(
+                root, _write(root, "workspace/issues/hotfix-1/issue.plan.md")
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_edit_existing_issue_md_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_issue_root(td)
+            proc = _run_hook(root, _edit(root, "workspace/issues/hotfix-1/issue.md"))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_rm_issue_dir_blocked(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_issue_root(td)
+            proc = _run_hook(root, _bash("rm -rf workspace/issues/hotfix-1"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+    def test_issues_parent_rm_blocked(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_issue_root(td)
+            proc = _run_hook(root, _bash("rm -rf workspace/issues"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+            self.assertIn("상위", proc.stderr)
+
+    def test_focus_in_issues_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_issue_root(td)
+            (root / "workspace" / "issues" / "hotfix-1" / ".focus.md").write_text(
+                "focus\n", encoding="utf-8"
+            )
+            proc = _run_hook(root, _write(root, "workspace/issues/hotfix-1/.focus.md"))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -6,6 +6,12 @@
 #   workspace/projects/{PROJECT}/ 하위 *기존 파일* 에 대한
 #   Write 와 destructive Bash 명령은 차단. Edit·신규 파일·외부 경로는 통과.
 #
+# issues/ 규칙:
+#   workspace/issues/{이슈명}/ 하위 *기존 파일* 도 동일 보호 —
+#   issue.md 의 사용자 작성 현상·누적 기록이 재진입 Write 로 소실되는 것을
+#   차단한다. Edit (원인·조치 기입)·신규 파일 (사이클 파생 산출물)·`.focus.*`
+#   는 통과. issues/ 상위 폴더 destructive 도 projects/ 와 대칭으로 차단.
+#
 # 예외 (통과):
 #   - Edit 도구 (splice 방식 — 안전)
 #   - 신규 파일 생성 (대상 경로에 파일 없음)
@@ -48,6 +54,37 @@ check_path() {
 ❌ $tool 차단: $rel_path
    projects/ 상위 폴더 삭제·이동 금지 — 모든 프로젝트의 누적 작업물이 소실됩니다.
    우회: PILOT_PROTECT_BYPASS=1 환경변수와 함께 재실행 (백업 권장)
+EOF
+    return 2
+  fi
+
+  # issues/ 상위 폴더 자체 — destructive 대상이면 차단 (모든 이슈 기록 소실 경로)
+  if [[ "$rel_path" =~ ^(workspace/issues)/?$ ]]; then
+    local abs_iparent
+    if [[ "$file_path" = /* ]]; then abs_iparent="$file_path"; else abs_iparent="$PROJECT_DIR/${BASH_REMATCH[1]}"; fi
+    [[ ! -e "$abs_iparent" ]] && return 0
+    cat >&2 <<EOF
+❌ $tool 차단: $rel_path
+   issues/ 상위 폴더 삭제·이동 금지 — 모든 이슈의 누적 기록이 소실됩니다.
+   우회: PILOT_PROTECT_BYPASS=1 환경변수와 함께 재실행 (백업 권장)
+EOF
+    return 2
+  fi
+
+  # workspace/issues/{이슈명} 자기 자신 또는 하위 검사
+  # projects 기본 규칙과 동일: 신규 통과, 기존 파일·폴더 Write/destructive 차단.
+  # Edit 분기 코드는 불필요 — 이 훅은 Write·Bash 만 처리하므로 Edit 통과는 구조적 보장.
+  # (백업·focus 예외는 위 공통 예외가 이미 처리.)
+  if [[ "$rel_path" =~ ^(workspace/issues/[^/]+)(/|$) ]]; then
+    local abs_issue
+    if [[ "$file_path" = /* ]]; then abs_issue="$file_path"; else abs_issue="$PROJECT_DIR/$rel_path"; fi
+    [[ ! -e "$abs_issue" ]] && return 0
+    cat >&2 <<EOF
+❌ $tool 차단: $rel_path
+   기존 이슈 파일·폴더 덮어쓰기·삭제·이동 금지 (issue.md 의 사용자 작성 현상·기록 손실 위험).
+   대안:
+     - 부분 갱신 (원인·조치·재발 방지 기입) → Edit 도구
+     - 의도적 reset → PILOT_PROTECT_BYPASS=1 환경변수와 함께 재실행 (백업 권장)
 EOF
     return 2
   fi

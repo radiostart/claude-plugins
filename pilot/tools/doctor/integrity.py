@@ -375,7 +375,7 @@ def check_workspace(workspace: Path) -> list[Result]:
                     Result.WARN,
                     "STATE.md 이력",
                     f"`진행중` 이 아닌 행 {len(history_rows)} 개 감지: {labels}{more}",
-                    "STATE.md 는 진행중 1행만 유지 — 이력은 git log 로 추적. "
+                    "STATE.md 는 진행중 1행만 유지 — 이력 SSOT 는 projects/·issues/ 로컬 폴더. "
                     "`doctor --fix` 로 자동 정리 가능",
                     fix=_fix_state_md_prune_history(state_md),
                 )
@@ -974,11 +974,39 @@ def check_conventions_paths(workspace: Path, project: str | None) -> list[Result
     return results
 
 
-def determine_active_project(workspace: Path) -> str | None:
+def _active_rows(workspace: Path) -> list[tuple[str, str]]:
+    """STATE.md 진행중 행들의 (mode, 이름) 목록."""
     state_md = workspace / "STATE.md"
-    count, names = parse_state_md(state_md)
-    if count == 1:
-        return names[0]
+    return [
+        (mode, name)
+        for mode, name, status in parse_state_md_all_rows(state_md)
+        if status == "진행중"
+    ]
+
+
+def determine_active_project(workspace: Path) -> str | None:
+    """STATE.md 의 단일 활성 행이 project 일 때만 이름 반환 (mode 인식).
+
+    활성 행의 mode 가 `issue` 면 None — 이슈명을 프로젝트로 오인해
+    "프로젝트 폴더 없음 → `/pilot:project {이슈명}` 실행" 을 처방하는
+    오진 (따르면 이슈명으로 프로젝트가 생성되고 STATE 가 뒤집힘) 을 막는다.
+    legacy 표 (첫 칸이 순번 숫자) 는 project 로 폴백해 하위호환.
+    """
+    active = _active_rows(workspace)
+    if len(active) == 1:
+        mode, name = active[0]
+        if mode != "issue":
+            return name
+    return None
+
+
+def determine_active_issue(workspace: Path) -> str | None:
+    """STATE.md 의 단일 활성 행이 issue 일 때 이슈명 반환 (스킵 안내용)."""
+    active = _active_rows(workspace)
+    if len(active) == 1:
+        mode, name = active[0]
+        if mode == "issue":
+            return name
     return None
 
 
@@ -1012,10 +1040,17 @@ def run_integrity_check(workspace: Path, project: str | None, fix: bool) -> int:
     all_results.extend(conv_results)
 
     if not project:
-        print(
-            f"\n{YELLOW}활성 프로젝트 없음 — 프로젝트 체크 건너뜀 "
-            f"(--project 인자로 대상 지정 가능){RESET}"
-        )
+        active_issue = determine_active_issue(workspace)
+        if active_issue:
+            print(
+                f"\n{YELLOW}활성 issue ({active_issue}) — 프로젝트 체크 건너뜀 "
+                f"(이슈는 issues/ 폴더 기반. 프로젝트 검사는 --project 로 지정){RESET}"
+            )
+        else:
+            print(
+                f"\n{YELLOW}활성 프로젝트 없음 — 프로젝트 체크 건너뜀 "
+                f"(--project 인자로 대상 지정 가능){RESET}"
+            )
         if fix:
             run_auto_fixes(all_results)
         return summarize(all_results)

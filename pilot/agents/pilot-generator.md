@@ -18,6 +18,14 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 
    `error` 필드 있으면 **원문을 사용자에게 출력하고 종료**. 그 외에는 `wrapper-protocol.md` 의 반환 JSON 처리 규칙(files_to_read Read·focus 반영·hints 주입·domain null 예외·부분 로드)을 따른다.
 
+   **[필수] work_mode 확인** — step 1 JSON 의 `work_mode` 가 `issue` 면 아래 **이슈 수정 모드** 블록을 활성화한다 (issue 는 standard 고정 — stateless 라 tdd/characterize 와 동시 활성 없음). `project`(또는 필드 부재 — 구버전 출력)면 평소대로 진행.
+
+   **이슈 수정 모드 (work_mode == issue).** 활성 issue (`workspace/issues/{이슈명}/`) 의 운영 결함 1 건 국소 수정 only.
+   - **변경 범위 게이트**: plan 본문의 `결함 함수: {file_path}#{symbol}` (데이터 정합 이슈면 `조치 대상: {테이블·데이터 범위}`) 안에서만 수정. 범위 밖 변경 필요 발견 시 구현 중단 + 사용자에게 보고 (`@pilot-planner` 재확인 안내) 후 종료.
+   - **plan 로드 경로**: step 2 의 `features/NN-{slug}.plan.md` 대신 `issues/{이슈명}/issue.plan[.r{N}].md` (r 최대값 파일) 를 로드하고, plan-validate 도 동일 경로 + `--mode standard` 로 실행한다.
+   - **issue.md `## 조치` 기입**: 구현 완료 시 `issues/{이슈명}/issue.md` 의 `## 조치` 섹션을 Edit 으로 채운다 — 변경 파일 목록 + 핵심 diff 요약 (데이터 조치면 실행 쿼리·대상 범위).
+   - **회귀 재현 테스트**: plan 의 "회귀 재현 테스트" 스텝대로 작성한다 (evaluator 가 직접 실행해 test_run 에 기록).
+
 2. `features/NN-{slug}.plan.md`가 있으면 로드하여 구현 지침으로 사용한다(변경 대상 파일·구현 순서·주의사항 확인 — 추가 탐색 최소화). 없으면 이 단계 skip.
 
    **[필수] plan Read 직전 형식 검증** — plan 존재 시 먼저 실행 (planner 저장 이후 수동 편집 개입 가능성 때문에 읽기 게이트로 재검증 — [`plan-schema.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/plan-schema.md) § 호출 지점). exit 1(invalid) 이면 **구현을 시작하지 않는다** — stderr 누락 항목을 사용자에게 보고하고 "Planner 에 plan 보완을 요청하세요." 안내 후 종료.

@@ -8,14 +8,12 @@ hide:
 
 도메인 지식 기반의 agent workflow 플러그인입니다. Claude Code 내에서 *plan → critic → generate → evaluate*의 명시적 cycle로 project를 진행합니다.
 
-!!! tip "v0.11.0 highlights"
-    - **doctor 스킬 → `pilot-doctor` 리네임** — 플러그인 스킬의 bare `/doctor` 별칭이 Claude Code 내장 `/doctor` 를 가리는 충돌 해소. 호출은 `/pilot:pilot-doctor` (도구 `tools/doctor.py` 는 무변경)
-    - **Claude 5 하니스 정합** — preamble P-1 을 "진행 보드 선로딩" 으로 개편 (`TodoWrite`/`TaskCreate`·`TaskUpdate` 겸용 select), autopilot 에 wrapper 동기 호출·명시 호출 한정·게이트 이력 1줄 앵커 명시, guardrails 에 "사용자 게이트 생략 금지" 신설
-    - **에이전트 모델·effort 조정** — planner·planner-critic `effort: xhigh`, generator `sonnet → opus` (재생성 루프 1회 비용 > 단가 차이)
-    - **SessionStart 도메인 컨텍스트 포인터 훅** — 스킬 없이 메인 세션이 직접 도메인 코드를 만질 때도 MANIFEST·STATE 로딩 규칙을 안내
-    - **훅 결함 수정 이식** — scope-guard 디렉토리 패턴 세그먼트 경계 매칭(`log/` 가 `dialog/` 오차단), commit-format 명령 앵커링·첫 `-m` 추출·HEREDOC 검증·UTF-8 길이, protect-managed `./` 접두 정규화·projects/ 상위 차단·focus 수명주기 예외, coding-rules 세션당 1회 발화·source_root 한정
-    - **규율·가드 이식** — coding.md 주석 규율(표기 형태 불문) + evals `comment-discipline`, learn 프로젝트 식별자 배제, plan 분량 가드(30k자/1.5k라인 WARN)
-    - 상세 변경사항: [Explanation → Release Note](explanation/index.md)
+!!! tip "v0.13.0 highlights"
+    - **issue 단건 사이클** — `/pilot:issue` 가 경량 모드에서 사이클 지원으로 재정의. orchestrate-load 가 STATE.md 의 `| issue | {이슈명} |` 행을 인식해 (`work_mode` 계약) planner→critic→generator→evaluator 를 `issues/{이슈명}/` 기반으로 구동 — 이슈명을 프로젝트로 오인하던 오도성 에러·doctor 오진 제거
+    - **이슈 폴더 slug 자동 명명** — 폴더명(영문 kebab slug ≤40자)과 표시명(issue.md H1 한글 요약) 분리, 팀 용어는 도메인 문서의 코드 표기 우선. 유사 이슈 검색은 폴더명 `ls` + H1 `grep` 병행
+    - **issues/ 훅 보호 확장** — 기존 이슈 파일 Write·destructive 차단 (Edit·신규 파생 산출물·`.focus.*` 통과), issues/ 상위 폴더 차단
+    - **focus·commit issue 모드 지원** — focus 는 `issues/{이슈명}/.focus.md` 로 분기, commit 은 P1 issue 판정 예외로 계속 동작. 나머지 project 전용 스킬은 issue 행에서 명확히 종료
+    - 가이드: [운영 이슈 단건 처리](how-to/issue-cycle.md)
 
 ---
 

@@ -19,6 +19,8 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 
    `error` 필드 있으면 **원문을 사용자에게 출력하고 종료**. 그 외에는 `wrapper-protocol.md` 의 반환 JSON 처리 규칙(files_to_read Read·focus 반영·hints 주입·domain null 예외·부분 로드)을 따른다.
 
+   **[필수] work_mode 확인** — step 1 JSON 의 `work_mode` 가 `issue` 면 아래 **`## 이슈 수정 모드 (work_mode == issue)`** 섹션 블록을 활성화한다 (issue 는 standard 고정 — stateless 라 tdd/characterize 와 동시 활성 없음). `project`(또는 필드 부재 — 구버전 출력)면 평소대로 진행.
+
 2. **[필수 선행] 에이전트 간 전달사항 소비** — `project.md` 의 `## 에이전트 간 전달사항` 에 미처리(`[ ]`) 항목이 있으면 **계획 수립보다 먼저** 처리한다 (이전 feature evaluator 가 남긴 인수인계).
 
    - **현재 feature 관련 항목**: 계획 본문에 반영 방침 명시 → 계획 확정 후 Edit 으로 `[x]` 체크.
@@ -33,7 +35,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 
    공통: **테스트 코드는 작성하지 않는다** — 실제 테스트 파일 작성은 Generator 담당.
 5. **[필수]** 계획 수립 과정에서 체크리스트(`[ ]`)를 작성했거나 완료한 경우 **반드시** Edit 으로 `[x]` 갱신한다. 텍스트 보고만으로 대체 금지.
-6. **[계획 저장]** `features/` 폴더가 있으면 계획 확정 시 `features/NN-{slug}.plan.md` 에 저장한다 (변경 대상 파일·구현 순서·스텝별 설명·주의사항 포함, 모드별 계약 축은 4번과 동일 — Generator 가 직접 Read). `features/` 없는 프로젝트는 이 단계 skip.
+6. **[계획 저장]** `features/` 폴더가 있으면 계획 확정 시 `features/NN-{slug}.plan.md` 에 저장한다 (변경 대상 파일·구현 순서·스텝별 설명·주의사항 포함, 모드별 계약 축은 4번과 동일 — Generator 가 직접 Read). `features/` 없는 프로젝트는 이 단계 skip. work_mode=issue 면 이슈 수정 모드 블록의 "plan 저장 경로 (issue)" 가 우선한다 (features/ 부재와 무관하게 저장).
 
    **[필수] 저장 직후 형식 검증**:
 
@@ -61,6 +63,19 @@ tools: Read, Glob, Grep, Edit, Write, Bash
    > 예외: `/pilot:autopilot` 은 이 흐름을 자동 순차 진행하되 hard-stop 신호에 걸리면 사람에게 제어를 반환한다. 자동 모드에서도 critic 은 항상 실행되며 blocking 챌린지는 auto-accept 하지 않는다(무감독 구간의 유일한 사전 hard-stop).
 
 9. **[재호출 분기]** `features/NN-{slug}.plan.critic.md` 가 이미 존재하는 재호출이면: critic 챌린지를 모두 검토하고 반영/기각/이월을 결정 → `## 합의` 표에 각 `C#` 별 처리(`accepted|rejected|deferred`)와 메모를 Edit 으로 채운다. 합의 표를 채우지 않은 채 generator 안내로 넘어가지 않는다.
+
+## 이슈 수정 모드 (work_mode == issue)
+
+절차 1번의 work_mode 확인에서 `issue` 일 때만 활성화한다. 활성 issue (`workspace/issues/{이슈명}/`) 의 운영 결함 1 건 해결이 목적 — 최소 변경·회귀영향 중심.
+
+- **명세는 issue.md**: `issues/{이슈명}/issue.md` 의 `## 현상`·`## 의심 영역` 이 요구사항이다. features/·project.md·prompts/ 는 존재하지 않는다.
+- **최소 변경·롤백 가능**: 결함 지점만 좁게 수정. 인접 코드 개선·리팩터·신규 추상화 제안 금지. 수정은 롤백 가능하게 설계한다 (운영 안정성 — issues/GUIDE.md 원칙).
+- **`## 원인` 기입**: 원인 분석이 확정되면 issue.md 의 `## 원인` 섹션을 Edit 으로 채운다.
+- **영향 범위 후보 필수**: plan 본문에 "영향 범위 후보" 절을 반드시 포함 — 결함 지점과 동일 호출 경로를 공유하는 코드 후보를 명시적으로 나열 (grep/scan 결과 인용). 후보 0 건이면 "검색 범위·키워드" 를 함께 기록 — evaluator 가 반려 게이트로 사용.
+- **결함 지점 1줄 필수**: 코드 결함이면 `결함 함수: {file_path}#{symbol}` 1 줄을 plan 본문에 명시 (generator 의 변경 범위 게이트). 데이터 정합 이슈 (쿼리 조치 중심) 면 `조치 대상: {테이블·데이터 범위}` 로 대체한다.
+- **회귀 재현 테스트 스텝 필수**: plan 에 "회귀 재현 테스트" 스텝을 실행 명령 포함으로 반드시 명시한다 — 테스트 코드 작성은 Generator 몫 (절차 4 공통 원칙 불변), evaluator 가 이 스텝을 직접 실행해 판정한다.
+- **plan 저장 경로 (issue)**: `features/NN-{slug}.plan.md` 가 아니라 `issues/{이슈명}/issue.plan.md`. 재작업·사이클 내 대형 개정은 `issue.plan.r{N}.md` (`.r{N}` 규약 SSOT: issues/GUIDE.md § 이슈 폴더 구조). plan-validate 도 이 경로로 실행한다 (`--mode standard`).
+- **비적용·치환**: 절차 2 (에이전트 간 전달사항 — project.md 없음) 는 건너뛴다. 절차 7 Slack 메시지는 `계획 확인 필요: {이슈명}` 으로 치환한다 (이슈 Slack 미지원 — notifier 자동 no-op, 호출 자체는 유지). 절차 9 재호출 분기의 critic 파일은 `issues/{이슈명}/issue.plan.critic[.r{N}].md` 다.
 
 ## 플래닝 프로세스 (공통 가이드)
 
