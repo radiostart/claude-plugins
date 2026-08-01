@@ -27,7 +27,7 @@ Planner 가 작성하고 Generator 가 Read 하는 plan 파일의 **형식 계�
 
 ## standard 모드
 
-근거: [`agents/pilot-planner.md`:64-88](../../../agents/pilot-planner.md)
+근거: [`agents/pilot-planner.md`:64-92](../../../agents/pilot-planner.md)
 
 ### 필수 섹션
 
@@ -87,6 +87,25 @@ Planner 가 작성하고 Generator 가 Read 하는 plan 파일의 **형식 계�
 - 파일 최상단에 `# #N {제목} — Characterization Contract` 형식의 H1 (실제 운영 plan 의 통상 패턴).
 - mode·source·planner_at 등 frontmatter 인용구.
 
+## Open Questions 게이트 검사 (모든 모드 공통)
+
+형식 검증과 별도로, plan 경로에서 대응 feature 파일을 자동 유도(`NN-{slug}.plan.md` → `NN-{slug}.md`, `.plan.r{N}.md` 도 동일 stem)해 **미해결 Open Questions ↔ plan 처리 마커**를 대조한다.
+
+- feature 파일 부재 또는 `## Open Questions` 섹션 부재 → skip (`oq.checked: false`) — 사이클 밖 plan 호환.
+- 미해결 카테고리에 처리 마커 부재 → `invalid` (fail-closed).
+- 판정 기준·마커 어휘 SSOT: [`open-questions.md`](../shared/open-questions.md) § 판정 매트릭스.
+
+## 분량 가드 (모든 모드 공통 — WARN, 비차단)
+
+plan 은 Generator·Critic·Evaluator 가 매 라운드 전문을 Read 하는 인계 문서다. 분량 초과는 후속 에이전트의 컨텍스트 윈도우를 선소모하므로 plan-validate 가 WARN 으로 보고한다. exit code 는 불변 — 차단하지 않는다.
+
+| 검사 | 임계 | 근거 |
+|---|---|---|
+| 본문 길이 | 30,000자 초과 | ≈ 토큰 10~15k — 한 라운드 인계 문서 상한. 초과분은 대부분 회차 이력 잔재 |
+| 최장 라인 | 1,500자 초과 | Read 툴 라인 절단(2,000자) 안전 마진 |
+
+WARN 시 planner 는 회차 이력 잔재 — `N차 갱신`·`N회차 개정` 헤더, `[C# 해소]`·`1회차 대비 정정` 류 주석, 기각된 대안의 장문 사유 — 를 제거하고 **최신 확정 상태만** 남긴다. 반영·기각·이월 disposition 의 기록처는 critic 합의 표(현 회차)다 — 회차 간 이력은 git (형식: pilot-planner-critic 출력 `## 합의` 표 / 채움: pilot-planner 재호출 단계).
+
 ## 호출
 
 ```bash
@@ -97,6 +116,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/plan-validate.py \
 
 - exit 0 = valid
 - exit 1 = invalid — stderr 에 누락 항목 출력, stdout 에 JSON 진단
+- `[WARN]` (stderr, exit 불변) = 분량 가드 초과 — § 분량 가드 처리
 
 JSON 형식:
 
@@ -107,7 +127,13 @@ JSON 형식:
   "missing_sections": ["### 스텝 목록"],
   "step_errors": [
     {"step": 2, "missing_fields": ["기대 실패 유형"]}
-  ]
+  ],
+  "oq": {
+    "checked": true,
+    "feature_file": "features/02-refund.md",
+    "unresolved": {"(b)": ["결제 도메인 산출물 부재"]},
+    "errors": ["(b) 미해결 1건 — plan 에 처리 마커 없음. ..."]
+  }
 }
 ```
 
@@ -123,4 +149,5 @@ JSON 형식:
 - `tools/plan-validate.py` — 검증 로직
 - `tests/tools/test_plan_validate.py` — 회귀 테스트
 - `agents/pilot-planner.md` step 6, `agents/pilot-generator.md` step 2 — 호출 지점
+- [`open-questions.md`](../shared/open-questions.md) § 판정 매트릭스 — Open Questions 게이트 판정 SSOT
 - 본 인덱스의 `INDEX.md` 표 — 본 문서 행 추가

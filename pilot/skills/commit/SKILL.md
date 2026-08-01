@@ -9,7 +9,7 @@ description: >-
 
 ## 사전 확인
 
-[preamble.md](../context/shared/preamble.md) 의 **P1** 수행.
+[preamble.md](../context/shared/preamble.md) 의 **P1** 수행. 활성 행이 `| issue | {이슈명} |` 이어도 종료하지 않고 진행한다 (P1 issue 판정의 예외 — 이슈 수정 커밋은 필수 경로. preamble P1 참조).
 
 커밋 규칙 로드:
 

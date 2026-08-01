@@ -1,28 +1,28 @@
 # pilot — Lifecycle skills
 
-워크스페이스 셋업·세션 활성·정합성 검사·즉석 지시 기록을 다룬다. 5 개 스킬: `init` `project` `issue` `doctor` `focus`.
+워크스페이스 셋업·세션 활성·정합성 검사·즉석 지시 기록을 다룬다. 5 개 스킬: `pilot-init` `project` `issue` `pilot-doctor` `focus`.
 
 ---
 
-## `/pilot:init`
+## `/pilot:pilot-init`
 
-워크스페이스 스켈레톤 생성 (`pilot/skills/init/SKILL.md:9`).
+워크스페이스 스켈레톤 생성 (`pilot/skills/pilot-init/SKILL.md:9`).
 
 - **인자**: `--no-wizard` (선택 — wizard skip).
-- **사전 확인**: 없음 (workspace 가 없는 상태에서 실행되므로 P1 미적용 — `pilot/skills/init/SKILL.md:15-18`)
-- **1. 스켈레톤 생성** (`pilot/skills/init/SKILL.md:24-44`):
+- **사전 확인**: 없음 (workspace 가 없는 상태에서 실행되므로 P1 미적용 — `pilot/skills/pilot-init/SKILL.md:15-18`)
+- **1. 스켈레톤 생성** (`pilot/skills/pilot-init/SKILL.md:24-44`):
   - CWD 기준 `./workspace/context/` 폴더 생성 (필요 시).
   - 템플릿 3 개 → 대상 경로로 Write (대상 존재 시 skip=`exists`, 없으면 `created` — idempotent):
     - `templates/STATE.md.template` → `workspace/STATE.md`
     - `templates/MANIFEST.md.template` → `workspace/context/MANIFEST.md` (외부 도메인 reference placeholder 주석 포함)
     - `templates/config.md.template` → `workspace/context/config.md`
-  - 템플릿 위치: `${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/setup/templates/` (`pilot/skills/init/SKILL.md:34`)
-  - **`rules/`·`scope/`·`enums/` 카테고리 폴더는 만들지 않는다** — MANIFEST 가 가리키는 대로 사용자가 만든다 (`pilot/skills/init/SKILL.md:44`).
-- **2. wizard 적용** — `config.md` 가 `created` 인 경우만, `--no-wizard` 시 skip (`pilot/skills/init/SKILL.md:48-78`):
+  - 템플릿 위치: `${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/setup/templates/` (`pilot/skills/pilot-init/SKILL.md:34`)
+  - **`rules/`·`scope/`·`enums/` 카테고리 폴더는 만들지 않는다** — MANIFEST 가 가리키는 대로 사용자가 만든다 (`pilot/skills/pilot-init/SKILL.md:44`).
+- **2. wizard 적용** — `config.md` 가 `created` 인 경우만, `--no-wizard` 시 skip (`pilot/skills/pilot-init/SKILL.md:48-78`):
   1. **언어 감지** — `tools/init_detect.py` `detect_languages()` → `## learn 언어 패턴` 두 표에 default 패턴 주입 (기존 행 dedupe 병합, 감지 0건 → 헤더만 + INFO).
   2. **scope 후보 감지** — `detect_scope_candidates()` → `## scope 카테고리` 3 컬럼 표 주입 (후보 0건 → default 3 행 Routes·Models·Services).
   3. **Ignore baseline** — `IGNORE_BASELINE` 10 패턴 주입.
-  - 어느 단계가 실패해도 abort 금지 (A2 fallback). 표 헤더는 doctor strict 검증 대상 고정 스키마 (`pilot/skills/init/SKILL.md:56-61`).
+  - 어느 단계가 실패해도 abort 금지 (A2 fallback). 표 헤더는 doctor strict 검증 대상 고정 스키마 (`pilot/skills/pilot-init/SKILL.md:56-61`).
 - **부수 효과 없음** — STATE 갱신·도메인 로드 안 함.
 
 ---
@@ -64,22 +64,22 @@
 
 ---
 
-## `/pilot:doctor`
+## `/pilot:pilot-doctor`
 
-워크스페이스·프로젝트 정합성 검사. **검사 범위·판정 기준·출력 형식·처방의 로직 SSOT 는 `pilot/tools/doctor.py`** (진단 모드는 `tools/doctor/diagnose.py`) — SKILL.md 는 호출 계약만 정의 (`pilot/skills/doctor/SKILL.md:22-23`). 페르소나: diagnostician (증상 → 근거 → 처방).
+워크스페이스·프로젝트 정합성 검사. **검사 범위·판정 기준·출력 형식·처방의 로직 SSOT 는 `pilot/tools/doctor.py`** (진단 모드는 `tools/doctor/diagnose.py`) — SKILL.md 는 호출 계약만 정의 (`pilot/skills/pilot-doctor/SKILL.md:22-23`). 페르소나: diagnostician (증상 → 근거 → 처방).
 
-- **인자**: 생략 시 STATE.md 의 `진행중` 프로젝트, 프로젝트명 전달 시 `--project {PROJECT}` 부가 (`pilot/skills/doctor/SKILL.md:24·33`).
-- **기본 동작** (`pilot/skills/doctor/SKILL.md:27-38`):
+- **인자**: 생략 시 STATE.md 의 `진행중` 프로젝트, 프로젝트명 전달 시 `--project {PROJECT}` 부가 (`pilot/skills/pilot-doctor/SKILL.md:24·33`).
+- **기본 동작** (`pilot/skills/pilot-doctor/SKILL.md:27-38`):
   ```bash
   python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace [--project {PROJECT}]
   ```
   - exit `0` — ERROR 없음 (PASS / WARN 만)
   - exit `1` — ERROR 1 건 이상
-- **플래그** (`pilot/skills/doctor/SKILL.md:44-46`):
+- **플래그** (`pilot/skills/pilot-doctor/SKILL.md:44-46`):
   - `--fix` — auto-fixable 항목 자동 수정 + v0.1.0→v0.2.0 마이그레이션 질의 (상세: `references/migration.md`).
   - `--diagnose` — 런타임 실패 패턴 진단 (`loop`·`red-miss`·`repeat-not-ready`·`scope-violation`·`none`). exit `0` (none) · `1` (감지). 호출 시점: evaluator NOT_READY 2회 / 동일 도구 반복 의심 / 완료 선언인데 체크리스트·REPORT 비어있을 때.
   - `--schema` — 플러그인 구조 전용 (workspace 무관). CI 자동 실행 (`.github/workflows/validate.yml`).
-- **제약** (`pilot/skills/doctor/SKILL.md:59-63`): 순수 stdlib · 비파괴 (읽기만, `--fix` 제외) · 실패 시 fix 제안만 출력하고 자동 적용 안 함.
+- **제약** (`pilot/skills/pilot-doctor/SKILL.md:59-63`): 순수 stdlib · 비파괴 (읽기만, `--fix` 제외) · 실패 시 fix 제안만 출력하고 자동 적용 안 함.
 
 ---
 

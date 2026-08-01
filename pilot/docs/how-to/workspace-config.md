@@ -5,14 +5,14 @@
 
 ## config.md 란
 
-`/pilot:init` 명령이 기본 스켈레톤(skeleton) 구조를 생성합니다. 동일한 `context/` 디렉터리 내에서 도메인 *지식* 정보는 `MANIFEST.md` 가 담당하고, 런타임 *설정* 정보는 `config.md` 파일이 담당하여 역할을 분리해 관리합니다.
+`/pilot:pilot-init` 명령이 기본 스켈레톤(skeleton) 구조를 생성합니다. 동일한 `context/` 디렉터리 내에서 도메인 *지식* 정보는 `MANIFEST.md` 가 담당하고, 런타임 *설정* 정보는 `config.md` 파일이 담당하여 역할을 분리해 관리합니다.
 
 !!! warning "고정 schema에 따른 값만 기입"
     표의 헤더 정보 및 키 이름은 플러그인이 정확히 정의된 형태로만 파싱합니다. 임의로 헤더와 키 이름을 수정하거나 신규 키를 단독 추가하면 설정값이 무시됩니다. 파일의 섹션 구조는 원본 그대로 보존한 상태에서 **설정값만** 수정하십시오.
 
 ## 전제 조건
 
-- `/pilot:init` 을 실행하여 `workspace/context/config.md` 스켈레톤 파일이 생성되어 있어야 합니다.
+- `/pilot:pilot-init` 을 실행하여 `workspace/context/config.md` 스켈레톤 파일이 생성되어 있어야 합니다.
 
 ## 작업 절차
 
@@ -57,7 +57,7 @@
 
 ### 4. `## learn 언어 패턴` 및 `## scope 카테고리` 설정
 
-보통 `/pilot:init` 실행 도중 대화형 wizard 가 개발 언어를 감지하여 자동으로 해당 행을 채워 넣습니다. 감지 결과가 정확하지 않거나 매칭 패턴을 커스텀 보강하려는 경우에만 수동으로 값을 편집합니다.
+보통 `/pilot:pilot-init` 실행 도중 대화형 wizard 가 개발 언어를 감지하여 자동으로 해당 행을 채워 넣습니다. 감지 결과가 정확하지 않거나 매칭 패턴을 커스텀 보강하려는 경우에만 수동으로 값을 편집합니다.
 
 ## 작성 규칙
 
@@ -67,11 +67,11 @@
 - 임의로 추가한 사용자 키는 무시되므로, 신규 설정을 추가하려면 플러그인 레벨의 패치가 필요합니다.
 
 !!! tip "설정 적합성 검증"
-    워크스페이스 설정을 변경한 뒤 `/pilot:doctor` 명령을 통해 config.md 설정 파일의 정합성을 한 번에 점검할 수 있습니다. 키 누락이나 credential drift 우려 사항 발견 시 WARN 리포트를 안내받게 됩니다.
+    워크스페이스 설정을 변경한 뒤 `/pilot:pilot-doctor` 명령을 통해 config.md 설정 파일의 정합성을 한 번에 점검할 수 있습니다. 키 누락이나 credential drift 우려 사항 발견 시 WARN 리포트를 안내받게 됩니다.
 
 ## 다음 단계
 
-- :material-book-open-variant: Reference: [`/pilot:doctor`](../reference/skills/doctor.md) — config.md 정합성 및 구성 진단 도구 안내.
+- :material-book-open-variant: Reference: [`/pilot:pilot-doctor`](../reference/skills/pilot-doctor.md) — config.md 정합성 및 구성 진단 도구 안내.
 - :material-gavel: How-to: [도메인 규칙 작성](authoring-domain-rules.md) — 런타임 설정을 담당하는 `config.md` 와 도메인 지식을 관리하는 `MANIFEST.md` 의 구조적 비교 가이드.
 - :material-code-braces: How-to: [언어 컨벤션 설정](language-conventions.md) — `conventions_doc` 및 `conventions_evals` 의 구체적인 작성 및 배포 지침.
 - :material-lightbulb-on: Explanation: [Workspace 레이아웃](../explanation/workspace-layout.md) — `context/` 디렉터리의 내부 레이아웃 설계 가이드.

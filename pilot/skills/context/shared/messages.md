@@ -18,7 +18,7 @@
 ### `workspace_missing`
 
 ```
-workspace/ 가 없습니다. 먼저 `/pilot:init` 으로 초기화하세요.
+workspace/ 가 없습니다. 먼저 `/pilot:pilot-init` 으로 초기화하세요.
 ```
 
 ### `no_active_project`
@@ -32,6 +32,14 @@ workspace/ 가 없습니다. 먼저 `/pilot:init` 으로 초기화하세요.
 ```
 STATE.md 의 `진행중` 행이 2개 이상이거나 형식이 깨졌습니다.
 `/pilot:project {프로젝트명}` 또는 `/pilot:issue` 로 다시 활성화하세요.
+```
+
+### `issue_active_not_project`
+
+```
+지금 활성 작업은 issue ({이슈명}) 입니다. 본 스킬은 project 전용이라 실행하지 않습니다.
+- 이슈 작업을 계속하려면: `@pilot-planner` (사이클) 또는 직접 수정
+- project 로 전환하려면: `/pilot:project {프로젝트명}`
 ```
 
 ### `docs_missing`

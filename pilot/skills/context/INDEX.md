@@ -29,6 +29,8 @@
 
 에이전트·스킬은 **탐색·코드 수정 전에 MANIFEST.md 를 먼저 로드**하고, 도메인이 결정되면 그 진입 파일·하위 파일을 읽는다. 플러그인은 언어 컨벤션(`coding.md`), TDD 도구(`rgr.md`), 커밋·메시지 규약(`commit.md`, `messages.md`) 같은 메커니즘 자원만 보유한다.
 
+컨텍스트 문서의 생애주기 프로토콜 2 종: 기존 문서-코드 불일치(우연 발견)는 [`drift-protocol.md`](lifecycle/drift-protocol.md), 사이클 종료 시 신규 지식 환류(evaluator 감지 → 사용자 승인 후 메인 대화가 기록)는 [`knowledge-sync.md`](lifecycle/knowledge-sync.md) 를 따른다.
+
 ## STATE.md
 
 `workspace/STATE.md` — 추적 여부는 사용자 정책 ([state-schema.md](lifecycle/state-schema.md) 와 동일). 로컬 전용 운영 권장.
@@ -75,7 +77,7 @@
 | `issue.md` 가 없는 경우                                    | 사용자에게 파일 생성 여부를 확인 후 진행                                              |
 | MANIFEST 에 도메인 진입 파일이 등록되지 않은 경우 | `/pilot:learn {진입점}` 으로 부트스트랩 안내 또는 사용자에게 MANIFEST 행 추가 요청 |
 | `workspace/context/MANIFEST.md` 가 미존재인 경우 | 사용자에게 컨텍스트를 먼저 설정하라고 안내하고 종료 |
-| `workspace/context/config.md` 가 미존재인 경우 | 파서 (`scope-guard`·`commit-format`·`orchestrate-load`) 가 해당 검증만 skip 하고 통과. toolchain 키 fallback 으로 Ruby 만 동작. 다른 언어는 `/pilot:doctor` 가 WARN |
+| `workspace/context/config.md` 가 미존재인 경우 | 파서 (`scope-guard`·`commit-format`·`orchestrate-load`) 가 해당 검증만 skip 하고 통과. toolchain 키 fallback 으로 Ruby 만 동작. 다른 언어는 `/pilot:pilot-doctor` 가 WARN |
 
 ## 코드 생성 정책
 

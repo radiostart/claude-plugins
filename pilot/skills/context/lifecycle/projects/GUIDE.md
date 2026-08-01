@@ -66,7 +66,7 @@ projects/{PROJECT}/
 
 ### drift 감지
 
-`.agent-state.yml` 의 optional 필드 `analyzed_at` · `last_analyzed_features` 를 기반으로 `/pilot:doctor` 가 drift 를 감지하고 경고한다.
+`.agent-state.yml` 의 optional 필드 `analyzed_at` · `last_analyzed_features` 를 기반으로 `/pilot:pilot-doctor` 가 drift 를 감지하고 경고한다.
 
 | 신호 | 원인 | 대응 |
 | ---- | ---- | ---- |
@@ -255,7 +255,7 @@ projects/{PROJECT}/
 - 변경 파일 1~2 개
 - 로직 변경 아님 (리팩토링·주석·상수·네이밍)
 - 기존 테스트 영향 없음
-- `/pilot:doctor` ERROR 없음
+- `/pilot:pilot-doctor` ERROR 없음
 
 **왜 우회가 정식 경로인가:**
 

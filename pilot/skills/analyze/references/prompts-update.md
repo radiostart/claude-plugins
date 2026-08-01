@@ -164,7 +164,7 @@ evaluator.md 고유:
 
 1. `workspace/projects/{PROJECT}/.agent-state.yml` 을 Read 한다.
 2. 파일이 없거나 `schema` 가 지원 버전 (`v1`, `v1.1`, `v1.2`) 이 아니면 에러 출력 후 중단:
-   "프로젝트 상태 파일 누락 또는 구버전. `/pilot:doctor --fix` 실행 후 재시도하세요."
+   "프로젝트 상태 파일 누락 또는 구버전. `/pilot:pilot-doctor --fix` 실행 후 재시도하세요."
 3. 아래 필드를 Edit 한다:
    - `analyzed: true`
    - `analyzed_at: "{ISO 8601 UTC timestamp, e.g. 2026-04-18T10:30:00Z}"`
@@ -174,7 +174,7 @@ evaluator.md 고유:
 
 이 단계를 통과해야 wrapper (`@pilot-planner`·`@pilot-generator`·`@pilot-evaluator`) 가 post-analyze 분기 (`scope` 원본 재로드 생략) 로 동작한다.
 
-`analyzed_at` 과 `last_analyzed_features` 는 `/pilot:doctor` 가 **drift 감지** 에 사용한다:
+`analyzed_at` 과 `last_analyzed_features` 는 `/pilot:pilot-doctor` 가 **drift 감지** 에 사용한다:
 
 - features 개수가 `last_analyzed_features + 1` 초과 → "재분석 권장" WARN
 - `context/scope/{domain}.md` mtime 이 `analyzed_at` 보다 최근 → "scope 업데이트됨, `--regen-agents` 권장" WARN
@@ -192,4 +192,4 @@ evaluator.md 고유:
 python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace
 ```
 
-출력 규칙: [`doctor/SKILL.md`](../../doctor/SKILL.md) § 임베디드 호출 시 출력 규칙 (정본) 참조.
+출력 규칙: [`pilot-doctor/SKILL.md`](../../pilot-doctor/SKILL.md) § 임베디드 호출 시 출력 규칙 (정본) 참조.

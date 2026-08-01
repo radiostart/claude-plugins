@@ -92,6 +92,12 @@
 
 <div class="grid cards" markdown>
 
+-   :material-fire-extinguisher:{ .lg .middle } __[운영 이슈 단건 처리](issue-cycle.md)__
+
+    ---
+
+    누적 컨텍스트 기반으로 운영 이슈 1건을 진단·수정합니다. 코드 수정 시 project 와 동일한 4-에이전트 사이클을 이슈 단위로 사용합니다.
+
 -   :material-doctor:{ .lg .middle } __[Doctor 마이그레이션](doctor-migration.md)__
 
     ---
