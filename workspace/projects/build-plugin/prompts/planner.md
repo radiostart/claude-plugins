@@ -141,29 +141,29 @@
 
 - 조건: v0.10.0 릴리스 직후. 2026-07-25 실제 업그레이드 시도 중 발견.
 - 트리거: (A) `pilot-update.sh:17` 의 `CACHE_DIR` 이 개명 전 `claude-plugins` 를 가리켜 **즉시 실패** (커밋 `19a7ff9` 개명 누락) (B) 고쳐도 `marketplaces/` 클론만 갱신하고 실제 로드 경로인 `cache/{mp}/pilot/{version}/` 은 못 건드림 — 캐시 생성은 `/plugin` 몫임이 실측 확인됨 (C) README·getting-started·릴리스 노트가 이 도구를 업그레이드 수단으로 안내 중.
-- 기대결과: 존치 여부를 먼저 결정한 뒤 (A)·(C) 를 같은 사이클에서 처리. (A) 만 고치면 "실행은 되나 업그레이드는 안 되는" 조용한 실패가 된다.
+- **확정 결과 — 폐기.** 존치 3안 중 (iii) 채택: (i) 경로만 고쳐 목적 축소는 `/plugin marketplace update` 와 중복이면서 나머지 절반을 못 해 목적 미달, (ii) `cache/` + 레지스트리 확장은 전역 설치본 불가침 규칙에 저촉. `pilot/tools/pilot-update.sh` 는 **삭제됐다 (79줄)**.
 
 **관련 파일 범위**:
-- 변경: `pilot/tools/pilot-update.sh` · `pilot/README.md:50-55,:147` · `pilot/docs/tutorial/getting-started.md:338`
-- 게이트: stale 경로 문자열 0건 · 안내 문구가 실제 동작과 일치
-- 주의: 사용자 전역 설치본·`installed_plugins.json` 을 스크립트가 직접 조작하지 않는다. 개명 전 이름으로 등록한 기존 사용자를 위해 경로는 하드코딩 대신 탐지 권장
+- **이 feature 는 완료됐다 — `pilot/tools/pilot-update.sh` 는 더 이상 존재하지 않는다.** 후속 작업에서 이 경로를 변경 대상으로 잡지 말 것.
+- 지원 업그레이드 경로는 하나뿐: `/plugin marketplace update radiostart-plugins` → `/plugin update pilot@radiostart-plugins` → **세션 재시작** (세션 중 플러그인 리로드 불가). `/plugin` 이 없는 환경은 미지원으로 명시한다.
+- 주의: 사용자 전역 설치본·`installed_plugins.json` 은 어떤 스크립트도 직접 조작하지 않는다 (전역 설치본 불가침).
 
 ### #25 doctor --schema ↔ claude plugin validate 중복 (features/25-schema-vs-claude-validate.md)
 
 - 조건: #20 완료 (`schema.py` 410줄 유지 + `validate.yml` CI 신설).
 - 트리거: Claude Code CLI 의 `claude plugin validate <path>` 와 검사 범위가 겹친다. 정비 목적이 자체 구현 축소였으므로 유지 근거 재확인 필요.
-- 실측 대조 (feature 명세에 표로 있음): **완전 포함 관계가 아니다.** CLI 만 잡는 것 = JSON 문법 파손·`plugin.json` 미지 키. 우리만 잡는 것 = version↔git tag 정합. 그리고 **심각도 정책이 다르다** — frontmatter 부재를 CLI 는 WARNING(통과), 우리는 ERROR(CI 차단).
-- 기대결과: (i) 축소 + 병행 (ii) 현행 유지 (iii) 전면 위임 중 확정. **(iii) 은 CI 게이트가 느슨해지고 러너에 CLI 설치·인증이 필요해져 비권장.**
+- 실측 대조: **완전 포함 관계가 아니다.** CLI 만 잡는 것 = `plugin.json` 미지 키. 우리만 잡는 것 = SKILL `description` 바이트 상한 · version↔git tag 정합. **JSON 문법 파손은 양쪽 다 잡는다** (초기 서술이 이를 "CLI 만" 으로 적었던 것은 구표의 "미검증" 을 "미탐" 으로 오독한 결과 — 미검증을 실측으로 단정하지 말 것). 심각도 정책도 다르다 — frontmatter 부재를 CLI 는 WARNING(통과), 우리는 ERROR(CI 차단).
+- **확정 결과 — (ii) 현행 유지.** CI(`validate.yml`)는 러너에 CLI 설치·인증이 필요 없는 `doctor --schema` 단독으로 유지하고, CLI 는 릴리스 전 로컬 보조 수단으로 `pilot/README.md` 에 문서화했다.
 
 **관련 파일 범위**:
-- 변경: `pilot/tools/doctor/schema.py` · `.github/workflows/validate.yml` · `pilot/skills/doctor/SKILL.md` (`--schema` 서술)
-- 게이트: CI 가 현재 막는 결함을 계속 막는지 (frontmatter 부재 = 차단 유지) · 자체 유지분마다 "CLI 가 못 하는 것" 근거 명시
+- **이 feature 는 결론이 "현행 유지" 라 코드 변경이 없다.** `schema.py` 를 CLI 로 대체하자는 제안이 다시 올라오면 위 실측 대조를 먼저 확인할 것.
+- 게이트(유지 확인): CI 가 현재 막는 결함을 계속 막는지 (frontmatter 부재 = 차단 유지) · 자체 유지분마다 "CLI 가 못 하는 것" 근거 명시
 
 ### #26 issue 단건 사이클 + slug 자동 명명 (features/26-issue-cycle-slug.md)
 
 - 조건: pilot v0.11.0 (`bac0375` — dp-skills 0.30.2 하니스 정합 기포팅 상태).
 - 트리거: `/pilot:issue` 가 경량 모드 — 사이클이 STATE 의 issue 행을 인식하지 못해 이슈명을 프로젝트로 오인 (오도성 `.agent-state.yml` 처방·doctor 오진), 폴더명 규약 부재로 유사 이슈 검색 무력화.
-- 기대결과: 8개 영역 — orchestrate-load work_mode 계약 · wrapper 4종 이슈 블록 (자기완결 인라인) · preamble P1 판정 · protect-managed issues/ 보호 · focus 분기 · issue SKILL+GUIDE 재정의+slug · doctor 오진 제거 · 테스트/문서/0.13.0 bump.
+- 기대결과: 8개 영역 — orchestrate-load work_mode 계약 · wrapper 4종 이슈 블록 (자기완결 인라인) · preamble P1 판정 · protect-managed issues/ 보호 · focus 분기 · issue SKILL+GUIDE 재정의+slug · doctor 오진 제거 · 테스트/문서/버전 bump (spec 은 0.13.0, 병렬 병합분 정합으로 최종 릴리스는 **v0.14.0**).
 - **포팅 원본**: `/Users/jay-p/Projects/deali-skills-plugin` HEAD (`7dc24fb` 0.30.2). 범위 특정: `git show cf54939 --stat` (0.25.0) · `git show c1febc6 --stat` (0.30.0). HEAD 파일 상태 기준 + spec 의 "이식 제외" 7항 적용.
 
 **관련 파일 범위**:

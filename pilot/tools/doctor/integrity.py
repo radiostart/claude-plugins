@@ -718,7 +718,7 @@ def check_project(workspace: Path, project: str) -> list[Result]:
     # context mtime drift + docs drift (analyzed_at 이 있을 때만)
     if analyzed_flag and isinstance(analyzed_at, str) and analyzed_at:
         try:
-            from datetime import datetime
+            from datetime import datetime, timezone
 
             def _parse_iso(ts: str):
                 return datetime.fromisoformat(ts.rstrip("Z").replace("T", " "))
@@ -741,7 +741,12 @@ def check_project(workspace: Path, project: str) -> list[Result]:
                         newest_mtime = mt
                         newest_path = p
             if newest_mtime > 0 and newest_path is not None:
-                newest_dt = datetime.fromtimestamp(newest_mtime)
+                # mtime 도 UTC naive 로 맞춘다 — `analyzed_at` 은 UTC 기록이므로
+                # 로컬 시각으로 읽으면 UTC 를 앞서는 표준시대 (예: UTC+9) 에서
+                # analyze 직후에도 항상 drift 로 오판한다.
+                newest_dt = datetime.fromtimestamp(
+                    newest_mtime, tz=timezone.utc
+                ).replace(tzinfo=None)
                 if newest_dt > analyzed_dt:
                     rel = newest_path.relative_to(workspace)
                     results.append(
