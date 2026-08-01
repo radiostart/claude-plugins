@@ -22,10 +22,17 @@ description: >-
 
 [preamble.md](../context/shared/preamble.md) 의 **P1** 수행. 실패 시 [messages.md](../context/shared/messages.md) 의 `workspace_missing`/`no_active_project` 출력 후 종료. `--clear` 도 지시문도 없는 빈 인자면 안내 후 종료.
 
+- 활성 행이 `| project | {PROJECT} |` → project 를 대상으로 진행.
+- 활성 행이 `| issue | {이슈명} |` → **P1 issue 종료 규칙 예외** — 종료하지 않고 이슈를 대상으로 진행한다 (아래 § 경로 계약 의 issues/ 분기). 단 `| issue | - |` (이슈명 없는 bare) 는 기록처가 없으므로 "bare issue 모드에는 focus 를 기록할 수 없습니다. `/pilot:issue {이슈명}` 으로 재진입하세요." 출력 후 종료.
+
 ## 경로 계약
 
-- 현재 focus: `workspace/projects/{PROJECT}/.focus.md`
-- 아카이브: `workspace/projects/{PROJECT}/.focus.history/{ISO timestamp}.md` (삭제가 아닌 **이동**)
+활성 STATE.md 행의 mode 에 따라 기록 폴더가 갈린다 — **orchestrate-load 가 같은 기준 (work_mode) 으로 읽으므로 반드시 일치시켜야 한다** (project 활성인데 issues/ 에 쓰거나 그 반대면 래퍼가 지시를 못 본다):
+
+- **project 활성**: `workspace/projects/{PROJECT}/.focus.md` · 아카이브 `workspace/projects/{PROJECT}/.focus.history/{ISO timestamp}.md` (삭제가 아닌 **이동**)
+- **issue 활성**: `workspace/issues/{이슈명}/.focus.md` · 아카이브 `workspace/issues/{이슈명}/.focus.history/{ISO timestamp}.md`
+
+아래 동작의 `.focus.md`·`.focus.history/` 와 결과 출력의 `{경로}` 는 모두 위에서 결정된 활성 폴더 기준이다.
 
 ## 동작
 

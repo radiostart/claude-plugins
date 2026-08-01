@@ -27,15 +27,19 @@ tools: Read, Glob, Grep, Bash, Write, Edit
 
    `error` 필드 있으면 **원문을 사용자에게 출력하고 종료**. 그 외에는 `wrapper-protocol.md` 의 반환 JSON 처리 규칙을 따른다.
 
+   **[필수] work_mode 확인** — step 1 JSON 의 `work_mode` 가 `issue` 면 대상은 활성 issue 다: 후보 탐색 (절차 2)·입력 (절차 3)·출력 (절차 5) 이 `issues/{이슈명}/` 기준으로 바뀐다 (각 절차의 issue 분기 참조). 챌린지 기준·산출 형식은 동일 (issue 는 standard 고정 — stateless 라 tdd/characterize 와 동시 활성 없음). `project`(또는 필드 부재 — 구버전 출력)면 평소대로 진행.
+
 2. **[대상 plan 확정]** 호출자 프롬프트 또는 `.focus.md` 에서 feature 번호·slug 추출. 명시 없으면:
 
    ```bash
    ls -t workspace/projects/{PROJECT}/features/*.plan.md 2>/dev/null | head -3
+   # work_mode=issue 면 활성 issue 의 plan 후보:
+   ls -t workspace/issues/{이슈명}/issue.plan*.md 2>/dev/null | head -3
    ```
 
    후보 0개 → "검토할 plan 이 없습니다. 먼저 `@pilot-planner` 호출 필요" 후 종료. 2개 이상+지시 없음 → 목록 제시 후 1개 선택 요청하고 종료(**멋대로 고르지 않는다**). 1개 → 그 plan 으로 진행.
 
-3. **[입력 Read]** `features/NN-{slug}.md`(요구사항) · `features/NN-{slug}.plan.md`(산출물) · 기존 `.plan.critic.md`(있으면 — 누적 챌린지, 중복 제외).
+3. **[입력 Read]** `features/NN-{slug}.md`(요구사항) · `features/NN-{slug}.plan.md`(산출물) · 기존 `.plan.critic.md`(있으면 — 누적 챌린지, 중복 제외). work_mode=issue 면 features/ 대신 `issues/{이슈명}/issue.md`(현상·의심 영역) + `issues/{이슈명}/issue.plan[.r{N}].md` 가 입력이다.
 
 4. **[챌린지 작성]** `personas.planner-critic`(red-team)의 archetype·forbid 를 적용. 카테고리 5종: `premise`(요구사항 해석 일치?) · `scope`(단계 과다/부족?) · `edge-case`(빠진 경계/실패/동시성/롤백?) · `alternative`(더 단순한 접근?) · `risk`(보안·성능·데이터 손실·교차 의존?).
 
@@ -43,7 +47,7 @@ tools: Read, Glob, Grep, Bash, Write, Edit
 
    **취향/스타일 차이를 blocking 으로 격상 금지** ([identity.yml](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) forbid). **변경 파일 밖·무관 일반론 금지.** **빠진 게 없으면 챌린지 0개로 보고** — 억지로 만들지 않는다.
 
-5. **[출력]** `features/NN-{slug}.plan.critic.md` 를 다음 형식으로 Write (기존 파일 있으면 덮어쓴다 — 누적은 합의 표, 본문 챌린지는 최신 상태만):
+5. **[출력]** `features/NN-{slug}.plan.critic.md` 를 다음 형식으로 Write (기존 파일 있으면 덮어쓴다 — 누적은 합의 표, 본문 챌린지는 최신 상태만). work_mode=issue 면 출력은 `issues/{이슈명}/issue.plan.critic[.r{N}].md` (r 은 대상 plan 과 동일):
 
    ```markdown
    # Plan Critic — #NN {제목}

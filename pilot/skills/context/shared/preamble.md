@@ -35,6 +35,7 @@ auto-memory (`~/.claude/projects/{slug(cwd)}/memory/`) 는 Claude Code harness �
 - `workspace/STATE.md` 자체가 없으면 [messages.md](messages.md) 의 `workspace_missing` 메시지를 출력하고 종료한다 (아래 두 케이스와 구분 — 파일 자체 부재).
 - 진행중 행이 없으면 [messages.md](messages.md) 의 `no_active_project` 메시지를 출력하고 종료한다.
 - 진행중 행이 2개 이상이면 [messages.md](messages.md) 의 `state_corrupt` 메시지를 출력하고 종료한다.
+- **진행중 행의 mode 열이 `issue` 면** (`| issue | {이슈명} | 진행중 |`): [messages.md](messages.md) 의 `issue_active_not_project` 메시지를 출력하고 종료한다 — 이슈명을 `{PROJECT}` 로 오인해 `projects/{이슈명}/` 유령 경로를 만들거나 부재 state 에 기록하는 것을 막는다. **예외:** `focus` 는 종료하지 않고 issues/ 경로로 분기한다 (focus/SKILL.md § 경로 계약), `commit` 은 종료하지 않고 진행한다 (이슈 수정 커밋은 필수 경로 — commit/SKILL.md 사전 확인 참조), `pilot-doctor` 는 P 절차 밖 (doctor.py 자체 인식).
 
 ---
 
@@ -46,8 +47,9 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 
 - 기존 활성 행이 `{이름}` 과 동일 (모드까지): 변경 없음 (idempotent 재실행)
 - 그 외 (다른 이름·모드·`보류`/`완료` 등 모든 과거 행 포함): **테이블 본문 전체 삭제 후** `| {mode} | {이름} | 진행중 |` 1 행만 추가
+- issue 모드의 기록 값은 issue SKILL 3단계가 확정한 **slug** 다 — 표는 1행 규약이라 개행·`|` 가 섞이면 행 파서가 깨진다.
 
-**원칙 — 이력은 git log 로.** `보류`·`완료` 행을 누적하지 않는다. 과거 작업 이력은 `git log workspace/STATE.md` 또는 `workspace/projects/*/` 폴더가 SSOT.
+**원칙 — 이력은 STATE.md 에 쌓지 않는다.** `보류`·`완료` 행을 누적하지 않는다. 과거 작업 이력의 SSOT 는 `workspace/projects/*/`·`issues/*/` **로컬 폴더** 자체다 (STATE.md·projects/ 는 통상 gitignore 라 `git log` 로는 회수되지 않는다 — 저장소가 이들을 추적하는 예외 구성에서만 git log 보조 가능).
 
 **갱신 전 사용자 확인:**
 
@@ -58,6 +60,8 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 ## P3. 도메인 컨텍스트 로드 (project / issue 진입 시)
 
 [INDEX.md](../INDEX.md) 의 "도메인별 컨텍스트 로딩" 규칙에 따라 SCOPE, DOMAIN, ENUMS 를 선택적으로 로드한다.
+
+- **issue 모드**: 도메인 소스는 `.agent-state.yml` 이 아니라 **issue.md 의 `도메인:` 라인**이다 (state 파일 미신설 — 기록처는 이슈 자신의 기록물). 라인이 있으면 그 값으로 도메인 컨텍스트를 로드하고, 없으면 issue SKILL 5단계의 1회 질의가 확정 후 기입한다. orchestrate-load 도 같은 라인을 파싱하므로 wrapper 사이클과 소스가 일치한다.
 
 ---
 

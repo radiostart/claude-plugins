@@ -159,6 +159,18 @@
 - 변경: `pilot/tools/doctor/schema.py` · `.github/workflows/validate.yml` · `pilot/skills/doctor/SKILL.md` (`--schema` 서술)
 - 게이트: CI 가 현재 막는 결함을 계속 막는지 (frontmatter 부재 = 차단 유지) · 자체 유지분마다 "CLI 가 못 하는 것" 근거 명시
 
+### #26 issue 단건 사이클 + slug 자동 명명 (features/26-issue-cycle-slug.md)
+
+- 조건: pilot v0.11.0 (`bac0375` — dp-skills 0.30.2 하니스 정합 기포팅 상태).
+- 트리거: `/pilot:issue` 가 경량 모드 — 사이클이 STATE 의 issue 행을 인식하지 못해 이슈명을 프로젝트로 오인 (오도성 `.agent-state.yml` 처방·doctor 오진), 폴더명 규약 부재로 유사 이슈 검색 무력화.
+- 기대결과: 8개 영역 — orchestrate-load work_mode 계약 · wrapper 4종 이슈 블록 (자기완결 인라인) · preamble P1 판정 · protect-managed issues/ 보호 · focus 분기 · issue SKILL+GUIDE 재정의+slug · doctor 오진 제거 · 테스트/문서/0.13.0 bump.
+- **포팅 원본**: `/Users/jay-p/Projects/deali-skills-plugin` HEAD (`7dc24fb` 0.30.2). 범위 특정: `git show cf54939 --stat` (0.25.0) · `git show c1febc6 --stat` (0.30.0). HEAD 파일 상태 기준 + spec 의 "이식 제외" 7항 적용.
+
+**관련 파일 범위**:
+- 변경: `pilot/tools/orchestrate-load.py` · `pilot/agents/pilot-{planner,planner-critic,generator,evaluator}.md` · `pilot/skills/context/shared/{preamble,messages,wrapper-protocol}.md` · `pilot/hooks/protect-managed.sh` · `pilot/skills/focus/SKILL.md` · `pilot/skills/issue/SKILL.md` · `pilot/skills/context/lifecycle/issues/GUIDE.md` · `pilot/tools/doctor/integrity.py` · 테스트 3종 · `pilot/docs/how-to/issue-cycle.md` (신설) · `mkdocs.yml` · `plugin.json`
+- 게이트: unittest 전체 통과 · issue smoke 4 phase · doctor 오진 0 · 사내 식별자 sweep 0건 · docs_build --check exit 0 · 분량 규율 (SKILL ≤100줄)
+- 주의: qa/verify-report-lint/인터뷰 5-bis/oq-gate/supplementary/단일 도메인 자동 채택 은 **이식 제외** (spec § 비즈니스 규칙). dp 이슈 블록의 "qa 원형 참조" 는 전문 인라인. `parse_lang_tools` 불변 (전달사항 :173 placeholder leak 은 별건). commit 은 issue 모드 예외 (계속 동작).
+
 > `workspace/context/scope/pilot.md` · `workspace/context/rules/pilot.md` 부재 — 본 프로젝트는 사용자 커스텀 layer 미작성. features/ 의 file:line 인용을 1 차 근거로 활용한다 (예: `pilot/skills/learn/SKILL.md:90-111`).
 
 ---
