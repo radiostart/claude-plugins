@@ -38,7 +38,7 @@
 - [x] 정비 rewrite — 원칙 중심 재작성 -> [상세](features/19-consolidation-rewrite.md) `[consolidation 2/3]`
 - [x] 정비 slim — Python 슬림화 -> [상세](features/20-consolidation-slim.md) `[consolidation 3/3]`
 - [x] 정비 후속 — 문서 정합 (#20 반영) -> [상세](features/21-consolidation-docs-sync.md) `[dogfooding]`
-- [ ] 정비 후속 — context 드리프트 재학습 (D-2, 실측 3건) -> [상세](features/22-context-drift-relearn.md) `[후속]`
+- [x] 정비 후속 — context 드리프트 재학습 (D-2, 실측 3건) -> [상세](features/22-context-drift-relearn.md) `[후속]`
 - [x] doctor 파서 오탐 2건 (conventions 플레이스홀더 + features 카운트) -> [상세](features/23-conventions-placeholder-false-positive.md) `[후속]`
 - [x] pilot-update.sh 고장 — 경로 stale + 설계 한계 + 잘못된 안내 -> [상세](features/24-pilot-update-tool.md) `[후속]` (evaluator 2026-07-26: 저장소 내 전건 통과 + 잔여 1건이던 v0.10.0 릴리스 노트도 사용자 승인 후 정정 완료)
 - [x] doctor --schema ↔ claude plugin validate 중복 검토 (결론: 현행 유지) -> [상세](features/25-schema-vs-claude-validate.md) `[후속]`

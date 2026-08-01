@@ -38,6 +38,12 @@
 
     메인 대화 도중 이루어진 의사결정(예: '소프트 딜리트는 제외')을 다음 subagent 호출 시 명시적으로 주입하고 추적합니다.
 
+-   :material-help-circle:{ .lg .middle } __[Open Questions 게이트](open-questions-gate.md)__
+
+    ---
+
+    미해결 전제가 남은 채로 구현이 시작되는 것을 차단합니다. 카테고리별 처리 방법과 plan 마커 작성 규칙을 다룹니다.
+
 </div>
 
 ## 컨텍스트 관리
@@ -61,6 +67,12 @@
     ---
 
     의존 관계에 있는 다른 도메인의 구현 코드를 분석하여 `context/` 경로에 새로운 도메인 문서를 구성합니다.
+
+-   :material-sync:{ .lg .middle } __[도메인 지식 환류](knowledge-sync.md)__
+
+    ---
+
+    cycle 이 만든 신규 지식(라우트·enum·외부 의존 등)을 evaluator 가 감지해 보고하고, 승인 후 `context/` 문서에 되돌려 기록합니다.
 
 -   :material-pencil:{ .lg .middle } __[도메인 암묵지 기록](tacit-domain-knowledge.md)__
 
