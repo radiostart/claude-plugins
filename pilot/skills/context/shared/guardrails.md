@@ -26,6 +26,10 @@ feature spec 대비 누락 여부를 확인한다. 증거는 `features/NN-{slug}
 
 `.focus.md` 및 `config.md` 의 `## Ignore` 범위 준수. 증거는 변경 파일 목록과 scope/rules 매칭.
 
+### open_questions
+
+feature 의 `## Open Questions` 미해결 항목이 [`open-questions.md`](open-questions.md) § 판정 매트릭스대로 처리됐는지 확인한다. (d) 임의 결정·처리 마커 부재는 **Major**, `추정 구현` 항목의 TODO 주석 부재는 **Minor**. 보조 도구는 `plan-validate.py` 출력의 `oq` 필드. feature 파일 또는 `## Open Questions` 섹션이 없으면 skip.
+
 ### drift
 
 `workspace/context/` 또는 프로젝트 산출물이 실제와 다름을 발견했을 때 drift-protocol 발동 여부. 증거는 보고 이력과 사용자 승인 기록.

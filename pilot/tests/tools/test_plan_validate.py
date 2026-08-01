@@ -380,6 +380,171 @@ class CliExit(unittest.TestCase):
         self.assertIn("plan-validate", r.stderr)
 
 
+FEATURE_WITH_OQ = """# #1 주문 검증
+
+## 요구사항
+
+- 주문 금액 검증
+
+## Open Questions
+
+### (a) 같은 도메인 추가 read 필요
+- (없음)
+
+### (b) cross-domain 산출물 부재
+- [ ] 결제 도메인 산출물 부재
+
+### (c) 외부 시스템 spec 부재
+- [x] PG API spec 확보됨
+
+### (d) 비즈니스 결정 영역
+- (없음)
+"""
+
+FEATURE_ALL_RESOLVED = """# #1 주문 검증
+
+## Open Questions
+
+### (a) 같은 도메인 추가 read 필요
+- (없음)
+
+### (b) cross-domain 산출물 부재
+- [x] 결제 도메인 산출물 확보
+
+### (c) 외부 시스템 spec 부재
+- (없음)
+
+### (d) 비즈니스 결정 영역
+- (없음)
+"""
+
+FEATURE_WITH_D_OPEN = """# #1 주문 검증
+
+## Open Questions
+
+### (a) 같은 도메인 추가 read 필요
+- (없음)
+
+### (b) cross-domain 산출물 부재
+- (없음)
+
+### (c) 외부 시스템 spec 부재
+- (없음)
+
+### (d) 비즈니스 결정 영역
+- [ ] 부분 환불 시 수수료 부담 주체
+"""
+
+
+class DeriveFeaturePath(unittest.TestCase):
+    def test_plan_md(self):
+        p = m.derive_feature_path(Path("/w/features/01-foo.plan.md"))
+        self.assertEqual(p, Path("/w/features/01-foo.md"))
+
+    def test_plan_rN_md(self):
+        p = m.derive_feature_path(Path("/w/features/01-foo.plan.r2.md"))
+        self.assertEqual(p, Path("/w/features/01-foo.md"))
+
+    def test_non_plan_returns_none(self):
+        self.assertIsNone(m.derive_feature_path(Path("/w/features/01-foo.md")))
+
+
+class OpenQuestionsGate(unittest.TestCase):
+    """Open Questions 게이트 — 스펙: skills/context/shared/open-questions.md § 판정 매트릭스"""
+
+    def _validate(self, plan_text: str, feature_text: str | None,
+                  feature_name: str = "01-foo.md") -> dict:
+        with tempfile.TemporaryDirectory() as td:
+            plan = Path(td) / "01-foo.plan.md"
+            plan.write_text(plan_text, encoding="utf-8")
+            if feature_text is not None:
+                (Path(td) / feature_name).write_text(
+                    feature_text, encoding="utf-8"
+                )
+            return m.validate(plan, "standard")
+
+    def test_no_feature_file_skips(self):
+        r = self._validate(VALID_STANDARD, None)
+        self.assertTrue(r["valid"])
+        self.assertFalse(r["oq"]["checked"])
+
+    def test_feature_without_oq_section_skips(self):
+        r = self._validate(VALID_STANDARD, "# #1 주문 검증\n\n본문만.\n")
+        self.assertTrue(r["valid"])
+        self.assertFalse(r["oq"]["checked"])
+
+    def test_all_resolved_passes(self):
+        r = self._validate(VALID_STANDARD, FEATURE_ALL_RESOLVED)
+        self.assertTrue(r["valid"])
+        self.assertTrue(r["oq"]["checked"])
+        self.assertEqual(r["oq"]["errors"], [])
+
+    def test_unresolved_b_without_marker_fails(self):
+        r = self._validate(VALID_STANDARD, FEATURE_WITH_OQ)
+        self.assertFalse(r["valid"])
+        self.assertTrue(any("(b)" in e for e in r["oq"]["errors"]))
+
+    def test_unresolved_b_with_keyed_assume_marker_passes(self):
+        plan = VALID_STANDARD + (
+            "\n### Open Questions 처리\n\n"
+            "- (b) 결제 도메인: 추정 구현 — 사용자 승인 (그냥 진행)\n"
+        )
+        r = self._validate(plan, FEATURE_WITH_OQ)
+        self.assertTrue(r["valid"])
+
+    def test_unresolved_b_with_keyed_exclude_marker_passes(self):
+        plan = VALID_STANDARD + (
+            "\n### Open Questions 처리\n\n"
+            "- (b) 결제 도메인 연동부: 구현 범위에서 제외 (TODO 마킹)\n"
+        )
+        r = self._validate(plan, FEATURE_WITH_OQ)
+        self.assertTrue(r["valid"])
+
+    def test_legacy_blanket_marker_covers_b(self):
+        plan = VALID_STANDARD + "\n산출물 부재 상태에서 추정 구현.\n"
+        r = self._validate(plan, FEATURE_WITH_OQ)
+        self.assertTrue(r["valid"])
+
+    def test_legacy_blanket_marker_not_cover_d(self):
+        plan = VALID_STANDARD + "\n산출물 부재 상태에서 추정 구현.\n"
+        r = self._validate(plan, FEATURE_WITH_D_OPEN)
+        self.assertFalse(r["valid"])
+        self.assertTrue(any("(d)" in e for e in r["oq"]["errors"]))
+
+    def test_d_with_assume_marker_fails(self):
+        plan = VALID_STANDARD + "\n- (d) 수수료 부담 주체: 추정 구현\n"
+        r = self._validate(plan, FEATURE_WITH_D_OPEN)
+        self.assertFalse(r["valid"])
+
+    def test_d_with_exclude_marker_passes(self):
+        plan = VALID_STANDARD + (
+            "\n- (d) 수수료 부담 주체: 범위 제외 — 사용자가 결정 보류 명시\n"
+        )
+        r = self._validate(plan, FEATURE_WITH_D_OPEN)
+        self.assertTrue(r["valid"])
+
+    def test_marker_in_fenced_code_ignored(self):
+        plan = VALID_STANDARD + (
+            "\n```\n- (b) 결제 도메인: 추정 구현\n```\n"
+        )
+        r = self._validate(plan, FEATURE_WITH_OQ)
+        self.assertFalse(r["valid"])
+
+    def test_cli_exit_1_on_oq_violation(self):
+        with tempfile.TemporaryDirectory() as td:
+            plan = Path(td) / "01-foo.plan.md"
+            plan.write_text(VALID_STANDARD, encoding="utf-8")
+            (Path(td) / "01-foo.md").write_text(
+                FEATURE_WITH_OQ, encoding="utf-8"
+            )
+            proc = subprocess.run(
+                ["python3", str(TOOL_PATH), str(plan), "--mode", "standard"],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(proc.returncode, 1)
+            self.assertIn("(b)", proc.stderr)
+
+
 class SizeWarnings(unittest.TestCase):
     """분량 가드 — WARN 비차단 (plan-schema.md § 분량 가드)."""
 
