@@ -131,7 +131,7 @@ workspace/
 
 ## 릴리스 및 업데이트
 
-릴리스는 `gh` CLI 로 진행한다. **버전을 올리는 PR 에서 아래 세 곳을 같은 값으로 갱신**한 뒤 main 에 머지한다:
+릴리스는 `gh` CLI 로 진행한다. **버전을 올리는 PR 에서 아래 네 곳을 함께 갱신**한 뒤 main 에 머지한다 (버전 값은 `plugin.json` 과 `mkdocs.yml` 이 정확히 같아야 한다):
 
 - `pilot/.claude-plugin/plugin.json` 의 `version` — 버전 SSOT
 - `pilot/mkdocs.yml` 의 `extra.version` — 불일치 시 `release.sh` 가 릴리스를 중단

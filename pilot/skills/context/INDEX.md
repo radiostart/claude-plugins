@@ -47,7 +47,7 @@
 
 프로젝트 폴더 구조(`project.md`·`prompts/`·`docs/`·`features/`)·agent 파일 책임 경계·drift 감지 규칙은 [`projects/GUIDE.md`](lifecycle/projects/GUIDE.md) 가 정본이다.
 
-이슈 폴더는 `issues/{이슈명}/issue.md` 1 개만 가진다 (사이클 없는 경량 모드 — [`issue/SKILL.md`](../issue/SKILL.md)).
+이슈 폴더 구조(`issue.md` + 사이클 파생 산출물)·slug 규약·`issue.md` 섹션별 역할은 [`issues/GUIDE.md`](lifecycle/issues/GUIDE.md) 가 정본이다.
 
 ### docs/ 접근 규칙
 

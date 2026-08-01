@@ -5,7 +5,7 @@
 
 ## 전제 조건
 
-- 활성화된 project가 존재해야 합니다.
+- 활성화된 project 또는 issue가 존재해야 합니다. (focus는 issue 모드에서도 계속 동작하는 예외 스킬입니다)
 - 다음 에이전트 실행에 반영해야 할 *비교적 짧고 구체적인* 사용자의 추가 지시가 존재해야 합니다. (지시가 너무 방대하거나 영구적인 요구사항인 경우, `features/NN-*.md` 나 `project.md` 에 기록하여 SSOT로 관리하는 것이 더 적절합니다)
 
 ## 작업 절차
@@ -19,7 +19,8 @@
 이 명령을 실행하면 다음 작업이 수행됩니다:
 
 - 기존에 존재하던 `.focus.md` 파일은 `.focus.history/{timestamp}.md` 경로로 아카이브됩니다.
-- 새로운 지시 내용이 `workspace/projects/{PROJECT}/.focus.md` 에 기록됩니다.
+- 새로운 지시 내용이 `STATE.md` 진행중 행의 mode에 따라 분기 기록됩니다 — project 활성이면 `workspace/projects/{PROJECT}/.focus.md`, issue 활성이면 `workspace/issues/{이슈명}/.focus.md`. (orchestrate-load 가 같은 `work_mode` 기준으로 읽으므로 두 경로는 반드시 일치해야 합니다)
+- 단, 이슈명 없는 bare issue 행(`| issue | - |`)은 기록처가 없어 거부됩니다 — `/pilot:issue {이슈명}` 으로 재진입해야 합니다.
 
 ### 2. 다음 subagent 호출
 

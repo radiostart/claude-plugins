@@ -6,12 +6,16 @@
 ## 전제 조건
 
 - 활성화된 project가 존재해야 합니다.
-- Atlassian MCP server (또는 동등한 연동 도구) 가 등록되어 있어야 합니다 (`getConfluencePage`, `searchConfluenceUsingCql` 등의 fetch 도구 필요).
-- 동기화하려는 대상 페이지의 *page ID* 또는 *제목 검색 키워드* 를 알고 있어야 합니다.
+- fetch 에는 `CONFLUENCE_EMAIL`·`CONFLUENCE_TOKEN` 환경변수가 필요합니다 (프로젝트 루트 `.env`·`workspace/.env` 또는 shell profile 의 `export`).
+- 검색은 Atlassian Rovo MCP 가 등록돼 있으면 우선 사용하고, 미등록·호출 실패·결과 0건이면 로컬 `docs/` grep 으로 폴백합니다 — MCP 는 필수가 아닙니다.
+- 동기화하려는 대상 페이지의 *URL 또는 page ID*, 혹은 *검색 키워드* 를 알고 있어야 합니다.
+
+!!! info "인자로 모드를 판별합니다"
+    `/pilot:confl` 에는 `search` 같은 리터럴 서브커맨드가 없습니다. `$ARGUMENTS` 를 순서대로 판별해 모드가 정해집니다 — `http(s)://` 시작 또는 순수 숫자 → **fetch** · `all` → **all** · `>` 포함 → **search+action** · `--local` 포함 → **search:local** · 그 외에는 **입력 텍스트 전체가 검색어**입니다.
 
 ## 작업 절차
 
-### 1. 단건 fetch (page ID 기반)
+### 1. 단건 fetch (URL 또는 page ID 기반)
 
 ```bash
 /pilot:confl 1234567890
@@ -28,26 +32,34 @@ workspace/projects/{PROJECT}/docs/1234567890_{slug}.md
 ### 2. 검색 모드 (search)
 
 ```bash
-/pilot:confl search "쿠폰 발급 정책"
+/pilot:confl 쿠폰 발급 정책
 ```
 
-CQL 검색을 수행하여 일치하는 페이지 목록을 조회하되, fetch를 직접 수행하지는 않습니다. 목록을 확인한 뒤 `search+action` 을 통해 일괄 fetch를 수행할 수 있습니다.
+키워드만 넘기면 검색 모드입니다 (입력 전체가 검색어이므로 `search` 라는 앞머리 인자를 붙이지 않습니다). Rovo MCP 우선 → 로컬 폴백 순으로 조회해 제목·page_id·스니펫을 출처 태그(`[source: rovo-mcp]` / `[source: local]`)와 함께 출력하며, **fetch 를 자동으로 수행하지는 않습니다**. 원문 인용이 필요하면 안내에 따라 page_id 로 fetch 하십시오.
 
-### 3. 검색 및 일괄 가져오기 (search+action)
+MCP 를 건너뛰고 로컬 `docs/` 만 검색하려면 `--local` 을 포함합니다:
 
 ```bash
-/pilot:confl search+action "쿠폰 발급 정책"
+/pilot:confl 쿠폰 발급 정책 --local
 ```
 
-검색 결과에 해당하는 모든 페이지를 한 번에 fetch합니다. 사용자 확인을 거친 뒤 실행하며, 대상 페이지 수가 많을 경우 API 호출 비용이나 불필요한 파일이 유입되지 않도록 유의합니다.
+기획서와 구현을 대조하는 정책 이행 점검처럼 원문 인용이 필수인 경우에는 `--local` 또는 `all` 을 사용하십시오 — Rovo 응답은 요약·랭킹이 개입해 인용 근거로 부적합합니다.
 
-### 4. 동기화된 docs 목록 전체 확인 (all)
+### 3. 검색 결과 위에서 작업 수행 (search+action)
+
+```bash
+/pilot:confl 쿠폰 발급 정책 > project.md에 요구사항 정리
+```
+
+`>` 를 포함하면 `{검색어} > {작업지시}` 로 분리됩니다. 검색을 먼저 실행한 뒤 **그 결과를 컨텍스트로 삼아 뒤쪽 작업지시를 수행**하는 모드이며, 검색된 페이지를 일괄 fetch 하는 기능이 아닙니다 (`docs/` 에 파일을 쓰는 모드는 fetch 뿐입니다). 결과가 없으면 검색 안내만 출력하고 종료합니다. `rovo-mcp` 출처는 산출물에 직접 인용하지 않고 요약·참조만 하며, 원문이 필요하면 fetch 후 재실행합니다.
+
+### 4. 저장된 docs 전체 확인 (all)
 
 ```bash
 /pilot:confl all
 ```
 
-현재 `docs/` 디렉터리에 로컬 저장된 문서 파일의 목록(파일명, 제목, fetch 일시 등)을 표 형태로 출력합니다.
+현재 `docs/` 디렉터리에 저장된 모든 문서 파일의 **전체 내용**을 출력합니다.
 
 ### 5. feature 단위로 분할 가공
 

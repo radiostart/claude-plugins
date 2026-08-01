@@ -22,9 +22,10 @@ pilot은 `workspace/context/{domain}.md` 경로에 도메인 지식을 문서화
 
 | 폴더 | 역할 |
 |---|---|
-| `STATE.md` | 현재 활성화된 active project 목록 (1개만 활성화 가능) |
+| `STATE.md` | 현재 활성화된 작업 1건 (project 또는 issue — 진행중 1행만 유지) |
 | `context/` | 도메인 지식의 SSOT (`MANIFEST.md` 인덱스 및 세부 도메인 파일) |
 | `projects/{P}/` | project별 산출물 (`.agent-state.yml`, `features/`, `docs/`, `prompts/`, `.focus.md` 등) |
+| `issues/{slug}/` | issue별 산출물 (`issue.md` + 사이클 사용 시 `issue.plan.md`, `issue.plan.critic.md`, `issue.eval.md`, `.focus.md`) |
 
 ### `pilot/` — 플러그인 SSOT
 
