@@ -69,7 +69,7 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 | ---------------- | --- | -- | -- | -- | -- |
 | `project`        | ✅  | ✅ |    | ✅ | ✅ |
 | `issue`          | ✅  | ✅ |    | ✅ | ✅ |
-| `init`           |     |    |    |    |    |
+| `pilot-init`     |     |    |    |    |    |
 | `analyze`        | ✅  | ✅ | ✅ |    |    |
 | `confl`          |     |    | ✅ |    |    |
 | `tdd`            |     |    | ✅ |    |    |
@@ -83,9 +83,9 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 | `pr`             | ✅  |    | ✅ |    |    |
 | `slack`          |     |    | ✅ |    |    |
 | `code-review-init` |   |    |    |    |    |
-| `review`         |     |    |    |    |    |
+| `pilot-review`   |     |    |    |    |    |
 
-> `init` 은 workspace 가 없는 상태에서 실행되므로 P1 을 수행하지 않는다 (workspace/STATE.md 를 처음 생성하는 스킬).
+> `pilot-init` 은 workspace 가 없는 상태에서 실행되므로 P1 을 수행하지 않는다 (workspace/STATE.md 를 처음 생성하는 스킬).
 >
 > `pilot-doctor` 는 P 절차를 수행하지 않는다 — doctor.py 가 워크스페이스·프로젝트 해석을 자체 수행한다.
 >
@@ -93,7 +93,7 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 >
 > `code-review-init` 은 활성 프로젝트가 아니라 `workspace/context/` 존재 여부만 확인한다 (`messages.md` 의 `workspace_missing` 참조) — P1 미적용.
 >
-> `review` 는 사전 확인 없이 target 을 결정해 `@pilot-code-review` 에 위임한다 (그 에이전트가 self-contained).
+> `pilot-review` 는 사전 확인 없이 target 을 결정해 `@pilot-code-review` 에 위임한다 (그 에이전트가 self-contained).
 
 ---
 

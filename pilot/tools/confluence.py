@@ -213,7 +213,7 @@ CONFLUENCE_HOST = os.environ.get("CONFLUENCE_HOST", "").rstrip("/")
 def get_active_project() -> str:
     state_file = WORKSPACE_ROOT / "workspace" / "STATE.md"
     if not state_file.exists():
-        raise RuntimeError("workspace/STATE.md 가 없습니다. `/pilot:init` 후 `/pilot:project {프로젝트명}` 으로 활성화하세요.")
+        raise RuntimeError("workspace/STATE.md 가 없습니다. `/pilot:pilot-init` 후 `/pilot:project {프로젝트명}` 으로 활성화하세요.")
     for line in state_file.read_text().splitlines():
         if "진행중" in line:
             parts = [p.strip() for p in line.split("|") if p.strip()]

@@ -107,5 +107,5 @@ MANIFEST 자유 형식 — **기존 정의가 있으면 그에 따르고, 없을
 
 ## 참고
 
-- `/pilot:analyze` — docs/ 기획서를 features/ 로 가공 (짝). `/pilot:init` — workspace 스켈레톤 (선행 1회).
+- `/pilot:analyze` — docs/ 기획서를 features/ 로 가공 (짝). `/pilot:pilot-init` — workspace 스켈레톤 (선행 1회).
 - 구조 결정 휴리스틱: [`references/heuristics.md`](references/heuristics.md) · cross-domain detect: [`references/cross-domain.md`](references/cross-domain.md)
