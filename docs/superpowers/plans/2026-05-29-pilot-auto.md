@@ -1,5 +1,7 @@
 # `/pilot:auto` 감독형 자율 오케스트레이터 Implementation Plan
 
+> ⚠️ **완료된 plan — 실행 금지, 이력 보존용.** 이 문서의 작업은 이미 반영됐고(스킬은 이후 `/pilot:autopilot` 으로 개명), 본문에 남은 단계별 지시·git 명령은 당시 기록이다. 아래 "For agentic workers" 지시를 따르지 말 것.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** feature 명세가 이미 존재하는 상태에서 planner→critic→generator→evaluator 를 자동 순차 진행하되, hard-stop 신호에 걸리면 즉시 사람에게 제어를 반환하는 감독형 자율 모드를 pilot 플러그인에 추가한다.

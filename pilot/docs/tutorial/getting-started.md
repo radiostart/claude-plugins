@@ -280,14 +280,16 @@ config 표가 비어 있는 경우 `/pilot:pilot-init` 명령어를 다시 실�
 
 ### 2. wizard 잘못 매핑 정정 경로 { #2-wizard-잘못-매핑-정정-경로 }
 
-**증상:** wizard 실행 결과 "scope 후보: M개 매핑 ({폴더목록})" 항목에 `controllers/`와 같이 도메인 분류와 무관한 폴더가 포함되는 현상. 이는 wizard가 파일 빈도가 1 이상인 폴더를 자동으로 매핑하는 탐색 규칙을 가지고 있기 때문입니다. (샘플 저장소에서는 발생하지 않으나, 실제 서비스 저장소에서 나타날 수 있습니다.)
+**증상:** wizard 실행 결과 "scope 후보: M개 매핑 ({폴더목록})" 항목에 `spec/models/`처럼 도메인 분류와 무관한 폴더가 포함되거나, 반대로 실제 도메인 폴더가 목록에서 빠지는 현상.
+
+wizard는 저장소 루트 직속(depth 1)과 그 하위(depth 2) 폴더 중 **고정 폴더명과 일치하는 것만** 매핑합니다 — `controllers`·`routes` → Endpoints, `models`·`entities` → Models, `services`·`workers`·`jobs` → Services. 따라서 `spec/models/`·`test/services/`처럼 이름만 겹치는 비도메인 폴더가 잡히거나, `handlers/`·`usecases/`처럼 목록에 없는 이름이 누락될 수 있습니다. 후보가 0건이면 default 3행(Routes/Models/Services)이 대신 주입됩니다. (샘플 저장소에서는 발생하지 않으나, 실제 서비스 저장소에서 나타날 수 있습니다.)
 
 **해결 방법:**
 
 `workspace/context/config.md` 파일을 수동으로 편집합니다.
 
-1. `## scope 카테고리` 표에서 오인식된 행 (예: `| ## Controllers | ... |`)을 제거합니다.
-2. `## Ignore` 표에 제외할 경로 패턴(예: `controllers/`)을 추가합니다.
+1. `## scope 카테고리` 표에서 불필요한 행 (예: `| ## Models | Models | Class, DB, 목적 |`)을 제거하거나, 누락된 카테고리를 3컬럼 형식(`scope 헤더` / `project.md 대상 H3` / `표 헤더`)에 맞춰 직접 추가합니다.
+2. 해당 경로를 이후 탐색·분석 대상에서도 빼려면 `## Ignore` 표에 패턴(예: `spec/**`)을 추가합니다. 이 표는 `hooks/scope-guard.sh` 가 파싱해 수정 차단에도 사용합니다.
 
 ---
 
