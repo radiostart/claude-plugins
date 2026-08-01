@@ -1,6 +1,6 @@
 ---
 name: pilot-generator
-model: sonnet  # 계획 확정 후 구현이므로 빠른 모델로 충분 (비용·속도 최적화). evaluator 반려가 반복되는 프로젝트는 opus 상향 재평가 — 이 model 값이 오버라이드 지점.
+model: opus  # 도메인 규칙(scope/rules/enums)·팀 관행·TDD/characterize 제약이 겹쳐 구현 중 판단이 계속 필요. 재생성 루프 1회 비용이 단가 차이보다 크고, 지시 준수(무단 수정·허위 보고 방지) 축도 상위 모델이 유리. 비용 우선 프로젝트는 sonnet 하향 — 이 model 값이 오버라이드 지점.
 description: 코드를 구현한다. Planner 계획 확정 후 실행. 패턴·서비스·모델 참조해 일관성 있게 작성.
 tools: Read, Glob, Grep, Edit, Write, Bash
 ---
@@ -17,6 +17,14 @@ tools: Read, Glob, Grep, Edit, Write, Bash
    ```
 
    `error` 필드 있으면 **원문을 사용자에게 출력하고 종료**. 그 외에는 `wrapper-protocol.md` 의 반환 JSON 처리 규칙(files_to_read Read·focus 반영·hints 주입·domain null 예외·부분 로드)을 따른다.
+
+   **[필수] work_mode 확인** — step 1 JSON 의 `work_mode` 가 `issue` 면 아래 **이슈 수정 모드** 블록을 활성화한다 (issue 는 standard 고정 — stateless 라 tdd/characterize 와 동시 활성 없음). `project`(또는 필드 부재 — 구버전 출력)면 평소대로 진행.
+
+   **이슈 수정 모드 (work_mode == issue).** 활성 issue (`workspace/issues/{이슈명}/`) 의 운영 결함 1 건 국소 수정 only.
+   - **변경 범위 게이트**: plan 본문의 `결함 함수: {file_path}#{symbol}` (데이터 정합 이슈면 `조치 대상: {테이블·데이터 범위}`) 안에서만 수정. 범위 밖 변경 필요 발견 시 구현 중단 + 사용자에게 보고 (`@pilot-planner` 재확인 안내) 후 종료.
+   - **plan 로드 경로**: step 2 의 `features/NN-{slug}.plan.md` 대신 `issues/{이슈명}/issue.plan[.r{N}].md` (r 최대값 파일) 를 로드하고, plan-validate 도 동일 경로 + `--mode standard` 로 실행한다.
+   - **issue.md `## 조치` 기입**: 구현 완료 시 `issues/{이슈명}/issue.md` 의 `## 조치` 섹션을 Edit 으로 채운다 — 변경 파일 목록 + 핵심 diff 요약 (데이터 조치면 실행 쿼리·대상 범위).
+   - **회귀 재현 테스트**: plan 의 "회귀 재현 테스트" 스텝대로 작성한다 (evaluator 가 직접 실행해 test_run 에 기록).
 
 2. `features/NN-{slug}.plan.md`가 있으면 로드하여 구현 지침으로 사용한다(변경 대상 파일·구현 순서·주의사항 확인 — 추가 탐색 최소화). 없으면 이 단계 skip.
 

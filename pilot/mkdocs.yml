@@ -95,6 +95,7 @@ nav:
           - 워크스페이스 설정: how-to/workspace-config.md
           - 언어 컨벤션 공급: how-to/language-conventions.md
       - 운영:
+          - 운영 이슈 단건 처리: how-to/issue-cycle.md
           - Doctor 진단·마이그레이션: how-to/doctor-migration.md
           - Confluence 동기화: how-to/confluence-sync.md
           - Slack 알림 설정: how-to/slack-notify.md
@@ -119,4 +120,4 @@ nav:
           - 릴리스·업그레이드: explanation/release-and-upgrade.md
 
 extra:
-  version: "0.10.1"  # 릴리스마다 .claude-plugin/plugin.json 의 version 과 맞춘다
+  version: "0.13.0"  # 릴리스마다 .claude-plugin/plugin.json 의 version 과 맞춘다

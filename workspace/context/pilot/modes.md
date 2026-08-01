@@ -30,7 +30,7 @@ TDD 모드를 사후 활성화·비활성화·정합성 보정·상태 보고한
 - **사전 확인**: P1 — `{PROJECT}` 획득 (`pilot/skills/characterize/SKILL.md:18-22`).
 - **동작** (`pilot/skills/characterize/SKILL.md:34-49`):
   1. `workspace/projects/{PROJECT}/.agent-state.yml` Read.
-  2. 파일 없거나 schema < `v1.1` → "프로젝트 상태 파일 누락 또는 구버전. `/pilot:doctor --fix` 실행 후 재시도" 출력 후 종료.
+  2. 파일 없거나 schema < `v1.1` → "프로젝트 상태 파일 누락 또는 구버전. `/pilot:pilot-doctor --fix` 실행 후 재시도" 출력 후 종료.
   3. 모드 전환 — **on**: `mode: characterize` 라인 추가 (기존 `mode:` 키 있으면 값 교체) / **off**: `mode:` 라인 제거 또는 `mode: null`.
   4. 결과 안내 — `mode: {characterize|null}`, `tdd: {true|false}` 표시 + 참조 `${CLAUDE_PLUGIN_ROOT}/skills/context/modes/characterize.md`.
 - **주의** (`pilot/skills/characterize/SKILL.md:52-56`):

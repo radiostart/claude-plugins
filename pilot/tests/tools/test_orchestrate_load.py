@@ -67,7 +67,22 @@ class ComparePluginVersion(unittest.TestCase):
 
 
 class ParseStateMdActive(unittest.TestCase):
-    def test_extracts_active_project_names(self):
+    def test_extracts_active_mode_name_pairs(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8") as f:
+            f.write(
+                "| 모드 | 이름 | 상태 |\n"
+                "| --- | ----- | ------ |\n"
+                "| project | ProjA | 진행중 |\n"
+                "| issue | hotfix-1 | 진행중 |\n"
+                "| project | ProjB | 완료 |\n"
+            )
+            p = Path(f.name)
+        active = m.parse_state_md_active(p)
+        self.assertEqual(active, [("project", "ProjA"), ("issue", "hotfix-1")])
+
+    def test_legacy_numeric_mode_column_passthrough(self):
+        """legacy 표 (| 순번 | 이름 | 상태 | 비고 |) — 첫 칸 순번이 mode 로
+        그대로 전달되고, 소비부 (main) 가 `issue` 외 값을 project 로 폴백한다."""
         with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8") as f:
             f.write(
                 "| 순번 | 이름  | 상태   | 비고 |\n"
@@ -78,7 +93,7 @@ class ParseStateMdActive(unittest.TestCase):
             )
             p = Path(f.name)
         active = m.parse_state_md_active(p)
-        self.assertEqual(active, ["ProjA", "ProjC"])
+        self.assertEqual(active, [("1", "ProjA"), ("3", "ProjC")])
 
     def test_no_state_md_returns_empty(self):
         self.assertEqual(m.parse_state_md_active(Path("/nonexistent")), [])
@@ -189,6 +204,11 @@ class DetermineDomain(unittest.TestCase):
     def test_domain_with_backticks(self):
         p = self._write("- domain: `admin`\n")
         self.assertEqual(m.determine_domain(p), "admin")
+
+    def test_korean_domain_label(self):
+        """issue.md 상단의 `도메인: {값}` 라인도 파싱한다 (work_mode 계약)."""
+        p = self._write("# 이슈 제목\n\n도메인: orders\n\n## 현상\n")
+        self.assertEqual(m.determine_domain(p), "orders")
 
     def test_no_domain_returns_none(self):
         p = self._write("# foo\n\n내용\n")
@@ -656,6 +676,124 @@ class MainStateErrors(unittest.TestCase):
             rc, out = self._run(ws)
             self.assertEqual(rc, 1)
             self.assertIn("허용되지 않는 문자", out["error"])
+
+
+class MainIssueMode(unittest.TestCase):
+    """main() 의 issue 모드 (STATE.md `| issue | {이슈명} | 진행중 |`) 계약.
+
+    상태 파일 없이 issues/{이슈명}/issue.md 가 단건 명세 (stateless).
+    analyzed=false·tdd=false·mode=null 고정, project.md·prompts/ 미로드,
+    focus 는 issues/ 경로. 계약 상세: docs/how-to/issue-cycle.md.
+    """
+
+    def _run(self, workspace: Path, *extra: str) -> tuple[int, dict]:
+        import json
+        import subprocess
+
+        proc = subprocess.run(
+            ["python3", str(TOOL_PATH), "--phase", "planner",
+             "--workspace", str(workspace), *extra],
+            capture_output=True, text=True,
+        )
+        return proc.returncode, json.loads(proc.stdout)
+
+    def _scaffold(self, td: str, issue: str = "hotfix-1", state_row: str | None = None) -> Path:
+        ws = Path(td)
+        (ws / "context").mkdir(parents=True)
+        (ws / "context" / "MANIFEST.md").write_text(
+            "## 도메인 분류\n\n"
+            "| 도메인 | 진입 파일 | 설명 |\n"
+            "| --- | --- | --- |\n"
+            "| orders | `orders.md` | 주문 |\n",
+            encoding="utf-8",
+        )
+        (ws / "context" / "orders.md").write_text("# orders\n", encoding="utf-8")
+        row = state_row if state_row is not None else f"| issue | {issue} | 진행중 |"
+        (ws / "STATE.md").write_text(
+            "| 모드 | 이름 | 상태 |\n| --- | --- | --- |\n" + row + "\n",
+            encoding="utf-8",
+        )
+        issue_dir = ws / "issues" / issue
+        issue_dir.mkdir(parents=True)
+        (issue_dir / "issue.md").write_text(
+            "# 제목\n\n도메인: orders\n\n## 현상\n\n- 증상\n", encoding="utf-8"
+        )
+        return ws
+
+    def test_issue_mode_contract_fields_and_files(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._scaffold(td)
+            rc, out = self._run(ws)
+            self.assertEqual(rc, 0, out.get("error"))
+            self.assertEqual(out["work_mode"], "issue")
+            self.assertEqual(out["project"], "hotfix-1")
+            self.assertIs(out["analyzed"], False)
+            self.assertIs(out["tdd"], False)
+            self.assertIsNone(out["mode"])
+            self.assertEqual(out["domain"], "orders")  # issue.md `도메인:` 라인
+            self.assertIn("workspace/issues/hotfix-1/issue.md", out["files_to_read"])
+            self.assertIn("workspace/context/orders.md", out["files_to_read"])
+            # project 전제 항목 억제 — project.md·prompts/ 미로드, 부재 힌트도 없음
+            self.assertFalse(any("project.md" in f for f in out["files_to_read"]))
+            self.assertFalse(any("prompts/" in f for f in out["files_to_read"]))
+            self.assertFalse(any("project.md 없음" in h for h in out["hints"]))
+            self.assertFalse(any("prompts/" in h for h in out["hints"]))
+            self.assertTrue(any("[work_mode] issue" in h for h in out["hints"]))
+
+    def test_issue_mode_all_phases_exit_zero(self):
+        """4 phase 전부 issue 모드 계약으로 exit 0 (spec smoke 게이트의 자동화)."""
+        import json
+        import subprocess
+
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._scaffold(td)
+            for phase in ("planner", "planner-critic", "generator", "evaluator"):
+                proc = subprocess.run(
+                    ["python3", str(TOOL_PATH), "--phase", phase,
+                     "--workspace", str(ws)],
+                    capture_output=True, text=True,
+                )
+                out = json.loads(proc.stdout)
+                self.assertEqual(proc.returncode, 0, (phase, out.get("error")))
+                self.assertEqual(out["work_mode"], "issue", phase)
+
+    def test_issue_focus_read_from_issues_dir(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._scaffold(td)
+            (ws / "issues" / "hotfix-1" / ".focus.md").write_text(
+                "# Focus\n\n롤백 스크립트 먼저\n", encoding="utf-8"
+            )
+            rc, out = self._run(ws)
+            self.assertEqual(rc, 0, out.get("error"))
+            self.assertEqual(out["focus"], "롤백 스크립트 먼저")
+
+    def test_missing_issue_md_reports_issue_context_error(self):
+        """이슈 폴더 부재 → issue 맥락 에러. 오도성 처방 (.agent-state·projects/) 금지."""
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._scaffold(td, state_row="| issue | ghost | 진행중 |")
+            rc, out = self._run(ws)
+            self.assertEqual(rc, 1)
+            self.assertIn("issues/ghost/issue.md 없음", out["error"])
+            self.assertNotIn(".agent-state", out["error"])
+            self.assertNotIn("projects/", out["error"])
+
+    def test_bare_issue_row_unsupported(self):
+        """`| issue | - |` (이슈명 없는 bare 진입) 는 사이클 비지원 안내."""
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._scaffold(td, state_row="| issue | - | 진행중 |")
+            rc, out = self._run(ws)
+            self.assertEqual(rc, 1)
+            self.assertIn("사이클 비지원", out["error"])
+
+    def test_explicit_project_flag_forces_project_mode(self):
+        """issue 활성 중에도 --project 명시는 STATE 우회 project 강제
+        (corrupt-state 탈출구 보존)."""
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._scaffold(td)
+            rc, out = self._run(ws, "--project", "SomeProj")
+            self.assertEqual(rc, 1)  # 프로젝트 state 부재 에러 (project 경로로 감)
+            self.assertEqual(out["work_mode"], "project")
+            self.assertIn(".agent-state.yml", out["error"])
 
 
 class SsotLoad(unittest.TestCase):

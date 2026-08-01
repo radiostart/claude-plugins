@@ -1,12 +1,12 @@
 ---
-name: init
+name: pilot-init
 description: >-
   새 워크스페이스 셋업 — `workspace/` 구조를 초기화한다.
   `workspace/STATE.md` 와 `workspace/context/` 하위의 `MANIFEST.md`·`config.md`
   스켈레톤을 일괄 생성한다. 처음 pilot 을 도입·셋업할 때 사용한다.
 ---
 
-# /pilot:init
+# /pilot:pilot-init
 
 워크스페이스 구조를 일괄 생성한다.
 

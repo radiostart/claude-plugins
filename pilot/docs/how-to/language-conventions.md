@@ -14,7 +14,7 @@ Ruby/Rails의 관례적 매크로, Kotlin의 코루틴 설계 규약, 레이어 
 
 ## 전제 조건
 
-- `/pilot:init` 을 실행하여 `workspace/context/config.md` 파일이 존재해야 합니다 ([워크스페이스 설정](workspace-config.md) 참고).
+- `/pilot:pilot-init` 을 실행하여 `workspace/context/config.md` 파일이 존재해야 합니다 ([워크스페이스 설정](workspace-config.md) 참고).
 
 ## 작업 절차
 
@@ -72,4 +72,4 @@ Ruby/Rails의 관례적 매크로, Kotlin의 코루틴 설계 규약, 레이어 
 
 - :material-file-cog: How-to: [워크스페이스 설정](workspace-config.md) — `conventions_doc` 및 `conventions_evals` 키 설정 방법.
 - :material-gavel: How-to: [도메인 규칙 작성](authoring-domain-rules.md) — 비즈니스 도메인 관점의 정책 수립 방법.
-- :material-book-open-variant: Reference: [`/pilot:doctor`](../reference/skills/doctor.md)
+- :material-book-open-variant: Reference: [`/pilot:pilot-doctor`](../reference/skills/pilot-doctor.md)

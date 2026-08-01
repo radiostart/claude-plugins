@@ -5,7 +5,7 @@
 
 ## 전제 조건
 
-- `workspace/` 디렉터리가 이미 존재해야 합니다 (`/pilot:init` 실행 완료 상태).
+- `workspace/` 디렉터리가 이미 존재해야 합니다 (`/pilot:pilot-init` 실행 완료 상태).
 - 다음과 같이 정기 점검이 필요하거나 정합성이 의심되는 상황에 사용합니다:
     - 새 버전의 plugin으로 업그레이드한 후 첫 작업을 시작하기 전
     - subagent 호출 과정에서 원인을 알 수 없는 에러가 지속적으로 발생할 때
@@ -16,7 +16,7 @@
 ### 1. 정합성 검사 (기본)
 
 ```bash
-/pilot:doctor
+/pilot:pilot-doctor
 ```
 
 검사 범위는 세 카테고리로 나뉩니다:
@@ -30,7 +30,7 @@
 ### 2. 자동 수정 (`--fix`)
 
 ```bash
-/pilot:doctor --fix
+/pilot:pilot-doctor --fix
 ```
 
 `--fix` 로 자동 수정되는 항목은 정확히 3종입니다:
@@ -53,14 +53,14 @@
 ### 3. 수정 후 검증
 
 ```bash
-/pilot:doctor
+/pilot:pilot-doctor
 ```
 
 모든 검사 항목이 `PASS` 로 출력되는지 확인합니다. `WARN` 상태가 일부 남아있더라도 플러그인 동작은 가능하지만, 추후 정상 작동을 위해 가급적이면 조치하는 것을 권장합니다.
 
 ### 4. 실패 진단 (`--diagnose`)
 
-`--diagnose` 는 `doctor.py` 스크립트의 플래그가 **아닙니다.** `python3 doctor.py --diagnose` 처럼 스크립트에 직접 넘기면 인식하지 못하는 인자로 실패합니다. `/pilot:doctor --diagnose` 로 슬래시 커맨드를 경유했을 때만 동작하는 모델 지시문 모드입니다 — 정합성 검사와 독립적으로, 진행 중인 작업이 반복 실패하는 패턴을 진단합니다.
+`--diagnose` 는 `doctor.py` 스크립트의 플래그가 **아닙니다.** `python3 doctor.py --diagnose` 처럼 스크립트에 직접 넘기면 인식하지 못하는 인자로 실패합니다. `/pilot:pilot-doctor --diagnose` 로 슬래시 커맨드를 경유했을 때만 동작하는 모델 지시문 모드입니다 — 정합성 검사와 독립적으로, 진행 중인 작업이 반복 실패하는 패턴을 진단합니다.
 
 호출 시점: evaluator 가 `NOT_READY` 를 2회 반복했을 때, 동일 도구를 반복 호출하는 듯 의심될 때, 또는 완료를 선언했는데 체크리스트·REPORT 가 비어 있을 때.
 
@@ -76,9 +76,9 @@ python3 doctor.py --schema
 
 ## Onboarding Health
 
-`doctor.py` 자체 출력에는 온보딩 점검 섹션이 없습니다. `/pilot:doctor` **스킬 경유 호출에서만**, `MANIFEST.md` 의 `## 도메인 분류` 표가 비어 있거나 `STATE.md` 에 등록된 프로젝트가 하나도 없을 때 모델이 직접 5가지 항목(config 필수 섹션 채움·scope 파일 존재·활성 프로젝트 유무·도메인 분류 표 유무·features 파일 유무)을 점검하고 다음 단계(`/pilot:learn`·`/pilot:project`·`/pilot:create-feature`)를 안내합니다. `project`·`create-feature`·`analyze`·TDD 활성화 절차 등 다른 스킬이 내부에서 doctor 를 호출하는 경우에는 이 온보딩 안내가 나오지 않습니다.
+`doctor.py` 자체 출력에는 온보딩 점검 섹션이 없습니다. `/pilot:pilot-doctor` **스킬 경유 호출에서만**, `MANIFEST.md` 의 `## 도메인 분류` 표가 비어 있거나 `STATE.md` 에 등록된 프로젝트가 하나도 없을 때 모델이 직접 5가지 항목(config 필수 섹션 채움·scope 파일 존재·활성 프로젝트 유무·도메인 분류 표 유무·features 파일 유무)을 점검하고 다음 단계(`/pilot:learn`·`/pilot:project`·`/pilot:create-feature`)를 안내합니다. `project`·`create-feature`·`analyze`·TDD 활성화 절차 등 다른 스킬이 내부에서 doctor 를 호출하는 경우에는 이 온보딩 안내가 나오지 않습니다.
 
 ## 다음 단계
 
-- :material-book-open-variant: Reference: [`/pilot:doctor`](../reference/skills/doctor.md) · [state-schema](https://github.com/radiostart/claude-plugins/blob/main/pilot/skills/context/lifecycle/state-schema.md)
+- :material-book-open-variant: Reference: [`/pilot:pilot-doctor`](../reference/skills/pilot-doctor.md) · [state-schema](https://github.com/radiostart/claude-plugins/blob/main/pilot/skills/context/lifecycle/state-schema.md)
 - :material-lightbulb-on: Explanation: schema 호환성 및 업그레이드 정책에 관한 내용은 [릴리스 및 업그레이드](../explanation/release-and-upgrade.md) 문서에서 다룹니다.

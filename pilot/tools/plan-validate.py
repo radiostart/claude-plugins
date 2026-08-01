@@ -33,6 +33,37 @@ from pathlib import Path
 
 MODES = ("standard", "tdd", "characterize")
 
+# 분량 가드 (WARN, 비차단) — 스펙: skills/context/lifecycle/plan-schema.md § 분량 가드
+# 근거: 정상 plan 20~27k자. 초과분은 대부분 회차 이력 잔재
+# (실사례: 이력 누적 plan 135k자 ≈ 토큰 65k — 후속 에이전트가 매 라운드 전문 재로딩).
+SIZE_WARN_CHARS = 30_000
+LINE_WARN_CHARS = 1_500  # Read 툴 라인 절단(2,000자) 안전 마진
+
+
+def size_warnings(text: str) -> list[str]:
+    """분량 가드 — 임계 초과를 WARN 메시지 리스트로 반환 (빈 리스트 = 통과).
+
+    exit code 에 영향을 주지 않는다. planner 는 WARN 시 회차 이력 잔재
+    (`N차 갱신` 헤더·`1회차 대비 정정` 주석·기각 사유 장문)를 정리하고
+    최신 확정 상태만 남긴다 — 이력 SSOT 는 critic 합의 표.
+    """
+    warnings: list[str] = []
+    total = len(text)
+    if total > SIZE_WARN_CHARS:
+        warnings.append(
+            f"plan 분량 {total:,}자 — 상한 {SIZE_WARN_CHARS:,}자 초과. "
+            "회차 이력 잔재를 정리하고 최신 확정 상태만 남길 것 "
+            "(스펙: plan-schema.md § 분량 가드)"
+        )
+    longest = max((len(ln) for ln in text.splitlines()), default=0)
+    if longest > LINE_WARN_CHARS:
+        warnings.append(
+            f"최장 라인 {longest:,}자 — {LINE_WARN_CHARS:,}자 초과. "
+            "Read 툴 라인 절단(2,000자) 위험 — 표·문단 분리 필요"
+        )
+    return warnings
+
+
 # 모드별 필수 H3 섹션 — doc-level 형식은 느슨하게, step section 만 강제
 # (실 운영 plan 들이 자유로운 doc 구성을 사용 — `포착 대상 요약`·인라인 경계 노트 등)
 REQUIRED_SECTIONS = {
@@ -358,6 +389,7 @@ def validate(plan_path: Path, mode: str) -> dict:
         "missing_sections": [],
         "step_errors": [],
         "errors": [],
+        "warnings": [],
         "oq": _empty_oq_result(),
     }
 
@@ -365,6 +397,8 @@ def validate(plan_path: Path, mode: str) -> dict:
         result["valid"] = False
         result["errors"].append("file is empty")
         return result
+
+    result["warnings"] = size_warnings(text)
 
     if not has_plan_title(text):
         result["valid"] = False
@@ -436,6 +470,9 @@ def main() -> int:
     result = validate(path, args.mode)
 
     print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    for warn in result.get("warnings", []):
+        print(f"[WARN] {warn}", file=sys.stderr)
 
     if not result["valid"]:
         print(format_human_summary(result, path), file=sys.stderr)

@@ -76,14 +76,28 @@ while IFS= read -r pattern; do
 done < <(
   awk '/^## Ignore/{flag=1; next} /^## /{flag=0} flag && /^\| `/' "$CONFIG_FILE" \
     | sed -E 's/^\|[[:space:]]*`([^`]+)`.*/\1/' \
-    | sed -E 's|/\*\*$|/|; s|^\*\*/||; s|\*||g'
+    | sed -E 's|/\*\*$|/|; s|^\*\*/||; s|\*||g; s|^/||'
 )
 
 # Ignore 섹션이 비어있으면 통과
 [[ ${#IGNORE_PATTERNS[@]} -eq 0 ]] && exit 0
 
+# REL_PATH 앞에 "/" 를 붙여 최상위 세그먼트도 "/" 로 시작하게 만든다 (세그먼트 경계 매칭용).
+CANDIDATE="/$REL_PATH"
+
 for pattern in "${IGNORE_PATTERNS[@]}"; do
-  if [[ "$REL_PATH" == *"$pattern"* ]]; then
+  matched=false
+  if [[ "$pattern" == */* ]]; then
+    # 디렉토리 경로 패턴 (예: `log/`, `src/config/`): 앞에 "/" 를 요구해
+    # 경로 세그먼트 경계에서만 매칭한다. 이렇게 하면 패턴 `log/` 가
+    # `dialog/` 같은 상위 세그먼트를 substring 으로 오매칭하지 않는다.
+    [[ "$CANDIDATE" == *"/$pattern"* ]] && matched=true
+  else
+    # 파일명·확장자 패턴 (예: `.env`, `.log`): 경로 어디든 substring 매칭.
+    [[ "$REL_PATH" == *"$pattern"* ]] && matched=true
+  fi
+
+  if [[ "$matched" == true ]]; then
     echo "❌ Scope 외 파일 수정 차단: $REL_PATH" >&2
     echo "   config.md Ignore 패턴에 해당합니다: $pattern" >&2
     echo "   이 파일을 수정해야 한다면 사용자에게 확인을 받으세요." >&2

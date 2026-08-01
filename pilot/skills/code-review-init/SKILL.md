@@ -35,7 +35,7 @@ description: >-
 
 ## 결과 출력
 
-생성 경로·전략·룰 섹션 수·유지된 프레임워크 섹션 + 다음 단계(본문 검토·편집 → `/pilot:review` 실행 시 자동 로드) 안내.
+생성 경로·전략·룰 섹션 수·유지된 프레임워크 섹션 + 다음 단계(본문 검토·편집 → `/pilot:pilot-review` 실행 시 자동 로드) 안내.
 
 ## Do-NOT
 
@@ -46,5 +46,5 @@ description: >-
 
 ## 호출 시점
 
-- `/pilot:review` 결과에서 `{lang}.md` 부재로 baseline 만 적용됐음을 인지 → 사용자가 명시 호출
-- 새 언어 도입 시 선제적 호출 · `/pilot:init` 후 주력 언어 셋업
+- `/pilot:pilot-review` 결과에서 `{lang}.md` 부재로 baseline 만 적용됐음을 인지 → 사용자가 명시 호출
+- 새 언어 도입 시 선제적 호출 · `/pilot:pilot-init` 후 주력 언어 셋업

@@ -8,12 +8,12 @@ hide:
 
 도메인 지식 기반의 agent workflow 플러그인입니다. Claude Code 내에서 *plan → critic → generate → evaluate*의 명시적 cycle로 project를 진행합니다.
 
-!!! tip "v0.10.1 highlights"
-    - **doctor 오탐 2건 수정** — config 값 셀의 예시 표기(`예: \`context/conventions.md\``)를 선언으로 오인하던 건, features 카운트가 `.plan.md`·`.plan.critic.md` 파생 산출물을 spec 으로 세던 건. 실측 `4 WARN` → `1 WARN` (남은 1건은 `plugin_version` 정상 감지)
-    - **판정을 구조 기반으로** — 값 셀은 "코드 스팬 단독 또는 공백 없는 평문" 일 때만 선언으로 인정하고, 그 외는 미선언 + INFO 로 강등. 한국어 `예:` 같은 문자열 규약에 의존하지 않는다
-    - **파생 산출물 판정 SSOT 1곳** — `is_feature_spec_file()` 이 "stem 에 `.` 이 있으면 파생" 규칙을 단독 보유. 새 접미사가 늘어도 파서 수정이 필요 없다
-    - v0.10.0 의 정비 3부작(#18 prune · #19 rewrite · #20 slim)이 dogfooding 게이트 통과로 전부 마감
-    - 상세 변경사항: [Explanation → Release Note](explanation/index.md)
+!!! tip "v0.13.0 highlights"
+    - **issue 단건 사이클** — `/pilot:issue` 가 경량 모드에서 사이클 지원으로 재정의. orchestrate-load 가 STATE.md 의 `| issue | {이슈명} |` 행을 인식해 (`work_mode` 계약) planner→critic→generator→evaluator 를 `issues/{이슈명}/` 기반으로 구동 — 이슈명을 프로젝트로 오인하던 오도성 에러·doctor 오진 제거
+    - **이슈 폴더 slug 자동 명명** — 폴더명(영문 kebab slug ≤40자)과 표시명(issue.md H1 한글 요약) 분리, 팀 용어는 도메인 문서의 코드 표기 우선. 유사 이슈 검색은 폴더명 `ls` + H1 `grep` 병행
+    - **issues/ 훅 보호 확장** — 기존 이슈 파일 Write·destructive 차단 (Edit·신규 파생 산출물·`.focus.*` 통과), issues/ 상위 폴더 차단
+    - **focus·commit issue 모드 지원** — focus 는 `issues/{이슈명}/.focus.md` 로 분기, commit 은 P1 issue 판정 예외로 계속 동작. 나머지 project 전용 스킬은 issue 행에서 명확히 종료
+    - 가이드: [운영 이슈 단건 처리](how-to/issue-cycle.md)
 
 ---
 

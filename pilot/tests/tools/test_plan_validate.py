@@ -545,5 +545,35 @@ class OpenQuestionsGate(unittest.TestCase):
             self.assertIn("(b)", proc.stderr)
 
 
+class SizeWarnings(unittest.TestCase):
+    """분량 가드 — WARN 비차단 (plan-schema.md § 분량 가드)."""
+
+    def test_under_thresholds_no_warning(self):
+        self.assertEqual(m.size_warnings("## 구현 계획: 짧은 plan\n\n- 항목\n"), [])
+
+    def test_over_total_warns(self):
+        text = ("a" * 100 + "\n") * 301  # 30,401자 — 라인은 임계 이하
+        warns = m.size_warnings(text)
+        self.assertEqual(len(warns), 1)
+        self.assertIn("분량", warns[0])
+
+    def test_long_line_warns(self):
+        text = "x" * 1_501 + "\n짧은 본문\n"
+        warns = m.size_warnings(text)
+        self.assertEqual(len(warns), 1)
+        self.assertIn("최장 라인", warns[0])
+
+    def test_warnings_do_not_affect_validity(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "01-a.plan.md"
+            p.write_text(
+                "## 구현 계획: #1 대형 plan\n\n" + ("a" * 100 + "\n") * 301,
+                encoding="utf-8",
+            )
+            r = m.validate(p, "standard")
+            self.assertTrue(r["valid"])
+            self.assertEqual(len(r["warnings"]), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
