@@ -77,7 +77,7 @@
 | `issue.md` 가 없는 경우                                    | 사용자에게 파일 생성 여부를 확인 후 진행                                              |
 | MANIFEST 에 도메인 진입 파일이 등록되지 않은 경우 | `/pilot:learn {진입점}` 으로 부트스트랩 안내 또는 사용자에게 MANIFEST 행 추가 요청 |
 | `workspace/context/MANIFEST.md` 가 미존재인 경우 | 사용자에게 컨텍스트를 먼저 설정하라고 안내하고 종료 |
-| `workspace/context/config.md` 가 미존재인 경우 | 파서 (`scope-guard`·`commit-format`·`orchestrate-load`) 가 해당 검증만 skip 하고 통과. toolchain 키 fallback 으로 Ruby 만 동작. 다른 언어는 `/pilot:doctor` 가 WARN |
+| `workspace/context/config.md` 가 미존재인 경우 | 파서 (`scope-guard`·`commit-format`·`orchestrate-load`) 가 해당 검증만 skip 하고 통과. toolchain 키 fallback 으로 Ruby 만 동작. 다른 언어는 `/pilot:pilot-doctor` 가 WARN |
 
 ## 코드 생성 정책
 

@@ -43,7 +43,7 @@ docs/
 │   ├── analyze-docs.md             # docs→features (skills/analyze)
 │   ├── create-feature.md           # 단건 추가 (skills/create-feature)
 │   ├── cross-domain-learn.md       # 외부 도메인 부트스트랩 (skills/learn)
-│   ├── doctor-migration.md         # 스키마 마이그레이션 (skills/doctor/references)
+│   ├── doctor-migration.md         # 스키마 마이그레이션 (skills/pilot-doctor/references)
 │   ├── confluence-sync.md          # Confluence 연동 (skills/confl)
 │   ├── slack-notify.md             # Slack 알림 (skills/slack)
 │   └── moai-adk-integration.md     # ← docs/INTEGRATION-MOAI-ADK.md

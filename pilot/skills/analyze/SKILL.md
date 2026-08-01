@@ -84,6 +84,8 @@ scope 부재 + MANIFEST 진입파일에 매칭 H2 존재 시 자동 생성. 상�
 
 `분석 완료: {원본 파일명}` + 생성된 features 목록 + `총 N개` + 갱신 파일(project.md/prompts/*.md/.agent-state.yml) + 검증 한 줄 + (7.5 발동 시) `인터뷰: 해소 N건 / 이월 M건` 줄. 해소 ≥1건이면 `[INFO] 인터뷰 답변이 spec 에 반영됨 — /pilot:analyze --regen-agents 권장` 추가.
 
+**다음 단계 1줄** — `/pilot:autopilot {NN}` (feature 1건 자동 진행) 또는 `@pilot-planner` (수동 시작) 병기.
+
 ## 참고
 
 - `features/` 파일은 프로젝트 에이전트(@pilot-planner, @pilot-generator)가 직접 Read하여 사용한다.

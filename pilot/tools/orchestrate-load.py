@@ -8,12 +8,14 @@ workspace 를 조사해서 어떤 파일을 Read 해야 하는지 결정하는 �
 입력:
     --phase {planner|planner-critic|generator|evaluator}
     --workspace PATH          (default: ./workspace)
-    --project NAME            (optional — 미지정 시 STATE.md 진행중)
+    --project NAME            (optional — 미지정 시 STATE.md 진행중.
+                               명시 시 STATE 우회 project 모드 강제)
 
 출력 (stdout, JSON):
     {
       "phase": "planner",
-      "project": "MyProject",
+      "project": "MyProject",              # issue 모드에서는 이슈명
+      "work_mode": "project" | "issue",    # STATE.md mode 열 (issue 외 → project 폴백)
       "domain": "<domain-name>" | null,
       "analyzed": bool,
       "tdd": bool,
@@ -29,6 +31,12 @@ workspace 를 조사해서 어떤 파일을 Read 해야 하는지 결정하는 �
 `instructions` 는 wrapper 4종에 공통이던 JSON 처리 지시의 정본이다 — wrapper .md 에
 전문을 복제하지 않는다 (drift 방지). phase 별 focus 반영 지시만 값이 다르다.
 
+issue 모드 (STATE.md `| issue | {이슈명} | 진행중 |`):
+    상태 파일 없이 `issues/{이슈명}/issue.md` 가 단건 명세다 (stateless).
+    analyzed=false, tdd=false, mode=null 고정 (`.agent-state.yml` 안 읽음).
+    domain 은 issue.md 의 `도메인:`/`domain:` 라인에서 파싱.
+    project.md·prompts/* 는 로드하지 않는다. 계약 상세: docs/how-to/issue-cycle.md.
+
 Exit:
     0 — 성공
     1 — 치명 오류 (error 필드 참조)
@@ -43,16 +51,21 @@ import re
 import sys
 from pathlib import Path
 
-# tools/ 를 sys.path 에 추가 — `doctor._common` 의 parse_state_yml·_parse_semver 를
-# 재사용하기 위해 (dedup, #20 스텝 6-②, 근거: docs/audits/2026-07-24-audit-4-python.md
-# § A). doctor.py 와 동일한 sys.path 패턴. 두 모듈 다 플러그인 tools/ 안에 함께
-# 배포되므로 doctor 패키지 부재는 곧 doctor.py 자체도 못 쓰는 상태 — 같은 실패
-# 모드를 공유한다 (dedup 이 새 결합 리스크를 추가하지 않음).
+# tools/ 를 sys.path 에 추가 — `doctor._common` 의 parse_state_yml·_parse_semver·
+# parse_state_md_all_rows 를 재사용하기 위해 (dedup, #20 스텝 6-②, 근거:
+# docs/audits/2026-07-24-audit-4-python.md § A). doctor.py 와 동일한 sys.path 패턴.
+# 두 모듈 다 플러그인 tools/ 안에 함께 배포되므로 doctor 패키지 부재는 곧
+# doctor.py 자체도 못 쓰는 상태 — 같은 실패 모드를 공유한다 (dedup 이 새 결합
+# 리스크를 추가하지 않음).
 _TOOLS_DIR = Path(__file__).resolve().parent
 if str(_TOOLS_DIR) not in sys.path:
     sys.path.insert(0, str(_TOOLS_DIR))
 
-from doctor._common import parse_state_yml, _parse_semver as parse_semver  # noqa: E402
+from doctor._common import (  # noqa: E402
+    parse_state_md_all_rows,
+    parse_state_yml,
+    _parse_semver as parse_semver,
+)
 
 SCHEMA_VERSION = "v1.2"
 SUPPORTED_SCHEMAS = ["v1.1", "v1.2"]  # v1.1 도 읽기 허용 (하위호환). v1 은 doctor --fix 로 강제 업그레이드
@@ -108,17 +121,18 @@ def compare_plugin_version(state_ver: str | None, current_ver: str | None) -> tu
     )
 
 
-def parse_state_md_active(state_md: Path) -> list[str]:
-    """STATE.md 에서 진행중 행들의 이름 목록 반환."""
-    if not state_md.is_file():
-        return []
-    active = []
-    for line in state_md.read_text(encoding="utf-8").splitlines():
-        if line.strip().startswith("|") and "진행중" in line:
-            cells = [c.strip() for c in line.strip().strip("|").split("|")]
-            if len(cells) >= 3 and cells[2] == "진행중":
-                active.append(cells[1])
-    return active
+def parse_state_md_active(state_md: Path) -> list[tuple[str, str]]:
+    """STATE.md 에서 진행중 행들의 (mode, 이름) 목록 반환.
+
+    mode 열 값: `project` | `issue`. legacy 표 (`| 순번 | 이름 | 상태 |`) 는
+    첫 칸이 순번 숫자 — 소비부가 `issue` 외 값을 project 로 폴백해 하위호환.
+    행 파싱 SSOT 는 doctor/_common.parse_state_md_all_rows.
+    """
+    return [
+        (mode, name)
+        for mode, name, status in parse_state_md_all_rows(state_md)
+        if status == "진행중"
+    ]
 
 
 LANG_KEYS = (
@@ -200,19 +214,21 @@ def parse_lang_override(project_md: Path) -> dict[str, str]:
     return result
 
 
-def determine_domain(project_md: Path) -> str | None:
+def determine_domain(spec_md: Path) -> str | None:
     """
-    project.md 의 제한사항 등에서 `domain: xxx` 패턴 추출.
-    MANIFEST 기반 키워드 매칭은 여기서 안 함 (LLM/사용자 판단이 더 정확).
-    판단 불가 시 None 반환 — wrapper 가 사용자에게 확인 요청.
+    project.md 제한사항 또는 issue.md 상단에서 `domain: xxx` / `도메인: xxx`
+    패턴 추출. MANIFEST 기반 키워드 매칭은 여기서 안 함 (LLM/사용자 판단이
+    더 정확). 판단 불가 시 None 반환 — wrapper 가 사용자에게 확인 요청.
     """
-    if not project_md.is_file():
+    if not spec_md.is_file():
         return None
     try:
-        text = project_md.read_text(encoding="utf-8")
+        text = spec_md.read_text(encoding="utf-8")
     except Exception:
         return None
-    m = re.search(r"^\s*-?\s*\*?\*?domain\*?\*?\s*:\s*(\S+)", text, re.MULTILINE)
+    m = re.search(
+        r"^\s*-?\s*\*?\*?(?:domain|도메인)\*?\*?\s*:\s*(\S+)", text, re.MULTILINE
+    )
     if m:
         return m.group(1).strip("`*")
     return None
@@ -378,6 +394,7 @@ def build_load_plan(
     tdd: bool,
     phase: str,
     mode: str | None = None,
+    work_mode: str = "project",
 ) -> tuple[list[str], list[str], dict[str, str]]:
     """
     Returns (files_to_read, hints, config).
@@ -388,8 +405,8 @@ def build_load_plan(
     존재하지 않는 파일은 목록에 포함하지 않는다.
 
     config 는 언어·도구 기본값 병합 결과:
-      `workspace/context/config.md` → `project.md` 제한사항 (프로젝트 override).
-    지원 키는 `LANG_KEYS` 참조.
+      `workspace/context/config.md` → 작업 명세 (project.md / issue.md) 제한사항
+    (프로젝트 override). 지원 키는 `LANG_KEYS` 참조.
     `conventions_doc` / `conventions_evals` 는 workspace-상대 경로이며
     generator·evaluator phase 에서 존재 시 자동으로 `files_to_read` 에 추가된다.
     """
@@ -435,34 +452,41 @@ def build_load_plan(
         else:
             config.update(parsed)
 
-    # 2) project.md (always if exists)
-    project_md_abs = workspace / "projects" / project / "project.md"
-    project_md_exists = add_if_exists(
-        project_md_abs, f"workspace/projects/{project}/project.md"
-    )
-    if not project_md_exists:
-        hints.append("project.md 없음 — 에이전트 가이드만으로 작업")
+    # 2) 작업 명세 — project: project.md (없어도 진행) / issue: issue.md
+    #    (issue.md 존재는 main 의 issue 분기가 이미 확인 — 부재면 여기 도달 전 에러)
+    if work_mode == "issue":
+        spec_md_abs = workspace / "issues" / project / "issue.md"
+        add_if_exists(spec_md_abs, f"workspace/issues/{project}/issue.md")
+    else:
+        spec_md_abs = workspace / "projects" / project / "project.md"
+        project_md_exists = add_if_exists(
+            spec_md_abs, f"workspace/projects/{project}/project.md"
+        )
+        if not project_md_exists:
+            hints.append("project.md 없음 — 에이전트 가이드만으로 작업")
 
-    # 3) prompts/{phase}.md (if exists)
+    # 3) prompts/{phase}.md (if exists) — issue 모드는 프로젝트별 prompts/ 트윈이
+    #    없으므로 전체 skip (부재 힌트도 미출력 — project 전제 힌트 억제).
     #    planner-critic 는 critic 전용 가이드(prompts/planner-critic.md) 가 있으면 우선,
     #    없으면 planner 와 동일한 prompts/planner.md 로 fallback — 같은 계획 기준 위에서 챌린지.
-    prompt_phase = phase
-    prompt_abs = workspace / "projects" / project / "prompts" / f"{phase}.md"
-    if phase == "planner-critic" and not prompt_abs.is_file():
-        prompt_phase = "planner"
-        prompt_abs = workspace / "projects" / project / "prompts" / "planner.md"
-    prompt_exists = add_if_exists(
-        prompt_abs,
-        f"workspace/projects/{project}/prompts/{prompt_phase}.md",
-    )
-    if not prompt_exists:
-        hints.append(
-            f"prompts/{prompt_phase}.md 없음 — project.md 만으로 작업"
+    if work_mode != "issue":
+        prompt_phase = phase
+        prompt_abs = workspace / "projects" / project / "prompts" / f"{phase}.md"
+        if phase == "planner-critic" and not prompt_abs.is_file():
+            prompt_phase = "planner"
+            prompt_abs = workspace / "projects" / project / "prompts" / "planner.md"
+        prompt_exists = add_if_exists(
+            prompt_abs,
+            f"workspace/projects/{project}/prompts/{prompt_phase}.md",
         )
-    elif phase == "planner-critic" and prompt_phase == "planner":
-        hints.append(
-            "prompts/planner-critic.md 없음 — prompts/planner.md 로 대체 (같은 계획 기준 위에서 챌린지)"
-        )
+        if not prompt_exists:
+            hints.append(
+                f"prompts/{prompt_phase}.md 없음 — project.md 만으로 작업"
+            )
+        elif phase == "planner-critic" and prompt_phase == "planner":
+            hints.append(
+                "prompts/planner-critic.md 없음 — prompts/planner.md 로 대체 (같은 계획 기준 위에서 챌린지)"
+            )
 
     # 4) MANIFEST 의 도메인 진입 파일 자동 로드
     #    MANIFEST 의 `## 도메인 분류` 표에서 해당 domain 의 entry 파일 경로 추출.
@@ -564,9 +588,10 @@ def build_load_plan(
     else:
         hints.append("비 TDD 프로젝트")
 
-    # 8) project.md 제한사항의 언어·도구 override 적용 (base 위에 덮어쓰기)
-    project_md_abs = workspace / "projects" / project / "project.md"
-    config.update(parse_lang_override(project_md_abs))
+    # 8) 작업 명세 (project.md / issue.md) 제한사항의 언어·도구 override 적용
+    #    spec_md_abs 는 위 2) 에서 이미 구성됨 — 재사용 (issue.md 는 통상
+    #    제한사항 섹션이 없어 빈 dict, graceful).
+    config.update(parse_lang_override(spec_md_abs))
     if config:
         summary = " · ".join(f"{k}={v}" for k, v in config.items())
         hints.append(f"언어·도구: {summary}")
@@ -598,7 +623,7 @@ def build_instructions(phase: str) -> list[str]:
         "files_to_read 를 순서대로 Read 한다 (존재 확인된 파일들)",
         PHASE_FOCUS_DIRECTIVE[phase],
         "hints 내용을 본 세션 컨텍스트로 주입",
-        "analyzed / tdd / mode / domain 값을 이후 분기에 사용",
+        "analyzed / tdd / mode / domain / work_mode 값을 이후 분기에 사용",
     ]
 
 
@@ -613,7 +638,9 @@ def main() -> int:
     )
     parser.add_argument("--workspace", default="workspace", help="workspace/ 경로")
     parser.add_argument(
-        "--project", default=None, help="프로젝트명 (생략 시 STATE.md 진행중)"
+        "--project",
+        default=None,
+        help="프로젝트명 (생략 시 STATE.md 진행중. 명시 시 STATE 우회 project 모드 강제)",
     )
     args = parser.parse_args()
 
@@ -621,6 +648,7 @@ def main() -> int:
     result: dict = {
         "phase": args.phase,
         "project": None,
+        "work_mode": "project",
         "domain": None,
         "analyzed": None,
         "tdd": None,
@@ -635,30 +663,45 @@ def main() -> int:
 
     if not workspace.is_dir():
         result["error"] = (
-            f"workspace not found: {workspace}. `/pilot:init` 실행 필요."
+            f"workspace not found: {workspace}. `/pilot:pilot-init` 실행 필요."
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 1
 
-    # P1: 활성 프로젝트
-    active = parse_state_md_active(workspace / "STATE.md")
+    # P1: 활성 작업 단위 (project / issue) — STATE.md mode 열 판정.
+    #     `--project` 명시 시 활성 조회 자체를 건너뛰어 project 모드 강제
+    #     (corrupt-state 탈출구 — 아래 multi-active 에러의 안내와 동일 의미 유지).
     project = args.project
+    work_mode = "project"
     if not project:
+        active = parse_state_md_active(workspace / "STATE.md")
         if len(active) == 1:
-            project = active[0]
+            active_mode, project = active[0]
+            # `issue` 외 값 (project·legacy 순번 숫자) 은 project 로 폴백.
+            if active_mode == "issue":
+                work_mode = "issue"
         elif len(active) == 0:
             result["error"] = (
-                "활성 프로젝트 없음. `/pilot:project {이름}` 으로 활성화."
+                "활성 project/issue 없음. `/pilot:project {이름}` 또는 "
+                "`/pilot:issue {이슈명}` 으로 활성화."
             )
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 1
         else:
+            names = ", ".join(name for _, name in active)
             result["error"] = (
-                f"STATE.md 에 진행중 {len(active)} 개 ({', '.join(active)}). "
+                f"STATE.md 에 진행중 {len(active)} 개 ({names}). "
                 "1 개만 허용. STATE.md 수정 후 재시도 또는 --project 로 명시."
             )
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 1
+    if work_mode == "issue" and project == "-":
+        result["error"] = (
+            "이슈명 없는 issue 모드 (STATE.md `| issue | - |`) 는 사이클 비지원. "
+            "`/pilot:issue {이슈명}` 으로 이슈를 생성한 뒤 재시도."
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 1
     if has_path_traversal(project):
         result["error"] = (
             f"프로젝트명에 허용되지 않는 문자(`/` `\\` `..`): {project!r}"
@@ -666,65 +709,88 @@ def main() -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 1
     result["project"] = project
+    result["work_mode"] = work_mode
 
-    # state.yml — 누락 / 읽기 실패 / 빈 파일을 각각 구분해 안내한다.
-    state_yml = workspace / "projects" / project / ".agent-state.yml"
-    state = parse_state_yml(state_yml)
-    if not state:
-        if not state_yml.is_file():
+    if work_mode == "issue":
+        # issue 모드 — 상태 파일 없음 (stateless). issues/{이슈명}/issue.md 가
+        # 단건 명세다. 부재 시 issue 맥락 에러 (mode 미판정 시절에는 projects/
+        # 경로의 .agent-state.yml 부재로 오도성 처방이 나갔다).
+        issue_md = workspace / "issues" / project / "issue.md"
+        if not issue_md.is_file():
             result["error"] = (
-                f".agent-state.yml 누락. `/pilot:project {project}` 재실행 또는 직접 작성."
+                f"workspace/issues/{project}/issue.md 없음 — "
+                f"`/pilot:issue {project}` 로 이슈 폴더를 생성한 뒤 재시도."
             )
-        elif state is None:
-            result["error"] = (
-                f".agent-state.yml 읽기 실패 (인코딩·권한 등 확인 필요): {state_yml}"
-            )
-        else:
-            result["error"] = (
-                f".agent-state.yml 가 비어 있거나 유효한 `key: value` 가 없음: "
-                f"{state_yml}. 내용을 확인하거나 `/pilot:project {project}` 로 재생성."
-            )
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 1
-
-    schema = state.get("schema")
-    if schema not in SUPPORTED_SCHEMAS:
-        result["error"] = (
-            f".agent-state.yml schema={schema!r} 가 이 플러그인에서 지원되지 않음 "
-            f"(지원 버전: {', '.join(SUPPORTED_SCHEMAS)}). "
-            "플러그인 업그레이드 또는 마이그레이션 필요."
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 1
+        # stateless 고정 — `.agent-state.yml` 안 읽음 (mode 는 초기값 None 유지).
+        result["analyzed"] = False
+        result["tdd"] = False
+        result["hints"].append(
+            "[work_mode] issue — 이슈 수정 모드: 최소 변경·롤백 가능. "
+            "issue.md 가 단건 명세 (planner=원인, generator=조치 기입)"
         )
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 1
-
-    result["analyzed"] = bool(state.get("analyzed"))
-    result["tdd"] = bool(state.get("tdd"))
-
-    # plugin_version drift 체크 (optional 필드 — 없어도 INFO 힌트만)
-    pv_check = compare_plugin_version(
-        state.get("plugin_version"), read_plugin_version()
-    )
-    if pv_check:
-        level, msg = pv_check
-        result["hints"].append(f"[{level}] {msg}")
-
-    # mode: null | "characterize" (optional, v1.1+)
-    state_mode = state.get("mode")
-    if isinstance(state_mode, str) and state_mode:
-        result["mode"] = state_mode
-        if state_mode != "characterize":
-            result["hints"].append(
-                f"[WARN] state.mode={state_mode!r} 는 인식되지 않는 모드 — "
-                "표준 모드로 처리됨. 유효 값: 'characterize' 또는 미설정."
-            )
-
-    # Domain — state 의 domain 필드 우선, null 이면 project.md 에서 추출
-    project_md = workspace / "projects" / project / "project.md"
-    state_domain = state.get("domain")
-    if isinstance(state_domain, str) and state_domain:
-        result["domain"] = state_domain
+        result["domain"] = determine_domain(issue_md)
     else:
-        result["domain"] = determine_domain(project_md)
+        # state.yml — 누락 / 읽기 실패 / 빈 파일을 각각 구분해 안내한다.
+        state_yml = workspace / "projects" / project / ".agent-state.yml"
+        state = parse_state_yml(state_yml)
+        if not state:
+            if not state_yml.is_file():
+                result["error"] = (
+                    f".agent-state.yml 누락. `/pilot:project {project}` 재실행 또는 직접 작성."
+                )
+            elif state is None:
+                result["error"] = (
+                    f".agent-state.yml 읽기 실패 (인코딩·권한 등 확인 필요): {state_yml}"
+                )
+            else:
+                result["error"] = (
+                    f".agent-state.yml 가 비어 있거나 유효한 `key: value` 가 없음: "
+                    f"{state_yml}. 내용을 확인하거나 `/pilot:project {project}` 로 재생성."
+                )
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 1
+
+        schema = state.get("schema")
+        if schema not in SUPPORTED_SCHEMAS:
+            result["error"] = (
+                f".agent-state.yml schema={schema!r} 가 이 플러그인에서 지원되지 않음 "
+                f"(지원 버전: {', '.join(SUPPORTED_SCHEMAS)}). "
+                "플러그인 업그레이드 또는 마이그레이션 필요."
+            )
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 1
+
+        result["analyzed"] = bool(state.get("analyzed"))
+        result["tdd"] = bool(state.get("tdd"))
+
+        # plugin_version drift 체크 (optional 필드 — 없어도 INFO 힌트만)
+        pv_check = compare_plugin_version(
+            state.get("plugin_version"), read_plugin_version()
+        )
+        if pv_check:
+            level, msg = pv_check
+            result["hints"].append(f"[{level}] {msg}")
+
+        # mode: null | "characterize" (optional, v1.1+)
+        state_mode = state.get("mode")
+        if isinstance(state_mode, str) and state_mode:
+            result["mode"] = state_mode
+            if state_mode != "characterize":
+                result["hints"].append(
+                    f"[WARN] state.mode={state_mode!r} 는 인식되지 않는 모드 — "
+                    "표준 모드로 처리됨. 유효 값: 'characterize' 또는 미설정."
+                )
+
+        # Domain — state 의 domain 필드 우선, null 이면 project.md 에서 추출
+        project_md = workspace / "projects" / project / "project.md"
+        state_domain = state.get("domain")
+        if isinstance(state_domain, str) and state_domain:
+            result["domain"] = state_domain
+        else:
+            result["domain"] = determine_domain(project_md)
+
     # domain 은 scope/rules 경로에 보간되므로 traversal 문자가 있으면 무시한다.
     if result["domain"] and has_path_traversal(result["domain"]):
         result["hints"].append(
@@ -733,8 +799,9 @@ def main() -> int:
         )
         result["domain"] = None
 
-    # Focus
-    focus_md = workspace / "projects" / project / ".focus.md"
+    # Focus — 활성 작업 폴더 (projects/ 또는 issues/) 의 .focus.md
+    focus_base = "issues" if work_mode == "issue" else "projects"
+    focus_md = workspace / focus_base / project / ".focus.md"
     result["focus"] = read_focus(focus_md)
     if result["focus"]:
         result["hints"].append(
@@ -749,6 +816,7 @@ def main() -> int:
         tdd=result["tdd"],
         phase=args.phase,
         mode=result["mode"],
+        work_mode=work_mode,
     )
     result["files_to_read"] = files
     result["hints"].extend(phase_hints)

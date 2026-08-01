@@ -127,7 +127,7 @@ Confluence 기획서 fetch / 검색 (`pilot/skills/confl/SKILL.md:9`).
   - 파일 수 cap — 발견 파일 > **50** 면 좁히기 권유
 - **추출 시 추측 금지** (`pilot/skills/learn/SKILL.md:181-186`):
   - 코드에 문자 그대로 있는 것만 인용. "아마 이런 의도" 같은 해석 금지.
-  - 모든 항목에 `file:line` 인용 — `/pilot:doctor` 가 mtime drift 로 stale 감지.
+  - 모든 항목에 `file:line` 인용 — `/pilot:pilot-doctor` 가 mtime drift 로 stale 감지.
 - **제약** (`pilot/skills/learn/SKILL.md:305-312`):
   - v1 — 단일 언어·단일 진입점 가정. 멀티 언어 모노레포는 분할 호출.
   - diff 모드 없음. 갱신은 `--force` 또는 sub-domain 추가.

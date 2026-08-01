@@ -19,7 +19,7 @@ description: >-
 
 `$ARGUMENTS` 가 (빈 문자열) 또는 `on` 이면 `.agent-state.yml` 에 `mode: characterize` 설정, `off` 면 `mode` 를 `null`(또는 키 제거)로 설정.
 
-1. `.agent-state.yml` Read. 없거나 `schema` 가 `v1.1` 미만이면 에러 후 종료: "프로젝트 상태 파일 누락 또는 구버전. `/pilot:doctor --fix` 실행 후 재시도."
+1. `.agent-state.yml` Read. 없거나 `schema` 가 `v1.1` 미만이면 에러 후 종료: "프로젝트 상태 파일 누락 또는 구버전. `/pilot:pilot-doctor --fix` 실행 후 재시도."
 2. 모드 전환 (on: `mode: characterize` 라인 추가/교체 · off: `mode:` 제거 또는 `null`).
 3. 결과 안내: `characterize 모드 {ON|OFF}` + `mode`/`tdd` 현재 값 + 적용될 절차(characterize.md|rgr.md|표준) + 정본 경로.
 

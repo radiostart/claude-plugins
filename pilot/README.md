@@ -60,7 +60,7 @@ subagent 호출이 가능해진다.
 작업할 저장소에서 한 줄이면 전체 구조가 생성된다 (idempotent):
 
 ```
-/pilot:init
+/pilot:pilot-init
 ```
 
 ```
@@ -78,7 +78,7 @@ workspace/
 ## Quick Start — 최소 시퀀스
 
 ```
-/pilot:init                                  # (1회) 워크스페이스 부트스트랩
+/pilot:pilot-init                                  # (1회) 워크스페이스 부트스트랩
 /pilot:project MyFeature                     # 프로젝트 생성·활성화
 /pilot:create-feature "지연 주문 목록 UI"      # feature 명세 단건 추가
 
@@ -94,6 +94,10 @@ workspace/
 따라하기는 [Tutorial](https://radiostart.github.io/claude-plugins/tutorial/quick-start/) 참조.
 
 > 저위험·소규모 feature 의 호출 마찰을 줄이고 싶으면 `/pilot:autopilot NN` (감독형 자율 모드) 으로 위 4-에이전트 흐름을 자동 순차 진행할 수 있다 — critic blocking·재시도 소진 등 hard-stop 신호에 걸리면 즉시 사람에게 제어를 반환한다. opt-in 예외 모드이며 기본은 수동 호출이다.
+
+### 모델·effort 기본값과 상위 모델 선택 사용
+
+에이전트별 모델·effort 는 `agents/*.md` frontmatter 가 기본값이다 — `generator` 만 `model: opus` 명시 (나머지는 미지정 = 기본 모델), 계획 단계 2종 (planner·planner-critic) 은 `effort: xhigh` (나머지는 세션 상속). fable 은 토큰 소모가 커서 frontmatter 기본값으로 넣지 않는다. 특별히 어려운 feature 에서만 선택 사용한다: 메인 세션에 "이번 계획은 fable 로 돌려줘" 라고 요청하면 호출 단위 `model` 파라미터가 frontmatter 를 override 한다 (해석 순서: `CLAUDE_CODE_SUBAGENT_MODEL` env > 호출 파라미터 > frontmatter > 메인 세션 모델 — [sub-agents § Choose a model](https://code.claude.com/docs/en/sub-agents)). `effort:` frontmatter 반영은 Claude Code CLI **v2.1.78+** (플러그인 에이전트 지원 도입 버전) 이 필요하다.
 
 ---
 

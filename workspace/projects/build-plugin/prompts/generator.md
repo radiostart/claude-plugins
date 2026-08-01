@@ -49,6 +49,7 @@
 | doctor 파서 오탐 | `pilot/tools/doctor/integrity.py` (`check_conventions_paths`) · `pilot/tools/doctor/_common.py` (`count_real_features`) | (A) config 표 플레이스홀더를 실선언으로 오탐 (B) `.plan.critic.md` 를 feature 로 계수 — 둘 다 파서 수정 (#23) |
 | 업그레이드 도구 | `pilot/tools/pilot-update.sh` · `pilot/README.md` · `pilot/docs/tutorial/getting-started.md` | stale 경로 수정 + 존치 결정 반영 + 잘못된 안내 정정. 전역 설치본 직접 조작 금지 (#24) |
 | 스키마 검사 중복 | `pilot/tools/doctor/schema.py` · `.github/workflows/validate.yml` | `claude plugin validate` 와 중복 정리. CI 차단 강도 유지가 제약 (#25) |
+| issue 사이클 + slug | `pilot/tools/orchestrate-load.py` · `pilot/agents/pilot-*.md` 4종 · `preamble.md`·`messages.md`·`wrapper-protocol.md` · `pilot/hooks/protect-managed.sh` · `pilot/skills/{focus,issue}/SKILL.md` · `issues/GUIDE.md` · `pilot/tools/doctor/integrity.py` · 테스트 3종 · `docs/how-to/issue-cycle.md` | dp-skills 0.25.0/0.30.0 포팅 — work_mode 계약·이슈 블록 자기완결 인라인·slug 규약. qa/lint/인터뷰/oq-gate 이식 제외, 사내 식별자 0건 (#26) |
 
 ---
 

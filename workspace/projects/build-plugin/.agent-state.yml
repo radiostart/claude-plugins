@@ -1,8 +1,8 @@
 schema: v1.2
 analyzed: true
-analyzed_at: "2026-07-25T01:21:31Z"
-last_analyzed_features: 26
+analyzed_at: "2026-07-31T12:00:00Z"
+last_analyzed_features: 27
 tdd: false
 domain: pilot
-plugin_version: "0.1.0"
+plugin_version: "0.11.0"
 pr_base_branch: main
