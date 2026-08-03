@@ -75,7 +75,7 @@ tools: Read, Glob, Grep, Edit, Bash
 
    **metrics.domain_impact** 는 참고 지표(gate 아님). 판정 기준·기록 절차 SSOT: [`knowledge-sync.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/knowledge-sync.md). `status: READY` + `detected` 시 **REPORT 출력 직후 (step 8 Slack 진행 전)** knowledge-sync.md § 수동 사이클의 "도메인 지식 환류 제안" 안내 블록을 **반드시** 출력한다 (생략 금지 — step 8 Slack 과 동급 의무). 질의·기록 여부는 사용자가 결정하며, 기록 주체는 승인 후 메인 대화다 — evaluator 는 감지·보고까지만. `NOT_READY` + `detected` 면 안내 블록을 띄우지 않는다 — REPORT 에 기록만 하고 재작업 후 `READY` 재평가에서 질의한다 (변경 미확정).
 
-   **REPORT 출력 직전 형식 자기 점검** (구 `verify-report-lint.py` 스키마 검증 이관, 근거: `docs/audits/2026-07-24-audit-4-python.md` § C-5): `status` 값이 `READY`|`NOT_READY` 중 하나인지 · `gates` 의 7개 키(`requirements`·`tdd_evidence`·`capture_lockdown`·`test_run`·`scope`·`open_questions`·`drift`)가 모두 존재하고 각 값이 위 enum 범위 안인지 · work_mode=issue 면 `test_run` 이 `pass|fail` 만 허용 (skip 금지) 인지 확인 후 출력한다.
+   **REPORT 출력 직전 형식 자기 점검** (구 `verify-report-lint.py` 스키마 검증 이관): `status` 값이 `READY`|`NOT_READY` 중 하나인지 · `gates` 의 7개 키(`requirements`·`tdd_evidence`·`capture_lockdown`·`test_run`·`scope`·`open_questions`·`drift`)가 모두 존재하고 각 값이 위 enum 범위 안인지 · work_mode=issue 면 `test_run` 이 `pass|fail` 만 허용 (skip 금지) 인지 확인 후 출력한다.
 
    REPORT 출력 직후 step 4·5 결과와 REPORT 가 모순되면 [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md) § SSOT — REPORT vs 체크박스 룰로 정정한 뒤 8번으로 진행한다.
 

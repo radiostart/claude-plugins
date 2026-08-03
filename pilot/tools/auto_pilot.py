@@ -14,7 +14,7 @@ pilot auto_pilot — 감독형 자율 오케스트레이터의 전이 결정 로
 액션 종류:
   proceed | reflect | retry | done | stop
 
-스펙: docs/superpowers/specs/2026-05-29-pilot-auto-design.md
+스펙: repo 루트 docs/superpowers/specs/2026-05-29-pilot-auto-design.md
 """
 
 from __future__ import annotations
@@ -84,7 +84,7 @@ _THIS_DIR = Path(__file__).resolve().parent
 # 원본은 REQUIRED_TOP_KEYS 스키마 검증(validate)·렌더링·CLI 를 갖춘 독립
 # lint 도구였으나 런타임 소비자가 auto_pilot(본 파서 2함수)뿐이라 스키마
 # 검증 로직은 삭제하고 파서만 원문 이식했다 (근거:
-# docs/audits/2026-07-24-audit-4-python.md § C-5). evaluator REPORT 형식
+# repo 루트 docs/audits/2026-07-24-audit-4-python.md § C-5). evaluator REPORT 형식
 # 자기 점검은 agents/pilot-evaluator.md 의 출력 직전 self-check 로 대체.
 # ---------------------------------------------------------------------------
 

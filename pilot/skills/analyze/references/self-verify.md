@@ -16,7 +16,7 @@
 
 ## 7-2. 구조 완성도
 
-각 features/*.md (`.plan.md` 제외) 에 아래 섹션이 존재해야 한다:
+각 features/*.md (`.plan.md`·`.plan.critic.md`·`.auto.md`·`.eval.md` 제외) 에 아래 섹션이 존재해야 한다:
 
 - 필수: `## 요구사항`, `## 비즈니스 규칙`, `## 예외 케이스`
 - 선택: `## 상태 전환` (상태값 변화가 있는 기능만)
@@ -27,7 +27,7 @@
 
 아래 3 값이 일치해야 한다:
 
-- `features/*.md` 개수 (`.plan.md` 제외)
+- `features/*.md` 개수 (`.plan.md`·`.plan.critic.md`·`.auto.md`·`.eval.md` 제외)
 - `project.md` 의 `## 목표` 체크리스트 항목 개수
 - `.agent-state.yml` 의 `last_analyzed_features`
 
