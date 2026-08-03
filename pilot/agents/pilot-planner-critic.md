@@ -47,7 +47,7 @@ tools: Read, Glob, Grep, Bash, Write, Edit
 
    **취향/스타일 차이를 blocking 으로 격상 금지** ([identity.yml](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) forbid). **변경 파일 밖·무관 일반론 금지.** **빠진 게 없으면 챌린지 0개로 보고** — 억지로 만들지 않는다.
 
-5. **[출력]** `features/NN-{slug}.plan.critic.md` 를 다음 형식으로 Write (기존 파일 있으면 덮어쓴다 — 누적은 합의 표, 본문 챌린지는 최신 상태만). work_mode=issue 면 출력은 `issues/{이슈명}/issue.plan.critic[.r{N}].md` (r 은 대상 plan 과 동일):
+5. **[출력]** `features/NN-{slug}.plan.critic.md` 를 다음 형식으로 작성한다 — **신규면 Write, 기존 파일이 있으면 Edit** 로 `## 챌린지` 섹션 본문만 교체하고 헤더의 검토 시각을 갱신한다. `## 합의` 표는 보존한다 (기존 파일 Write 는 protect-managed 훅이 차단하며, 합의 이력은 잃지 않는다. 본문 챌린지는 최신 상태만 유지). **Edit 후 자기 점검**: 파일에 이번 라운드의 `### C` 항목·severity 줄만 남았는지 확인 — 이전 라운드 잔존 시 autopilot 신호 파서가 해소된 blocking 을 다시 읽는다. work_mode=issue 면 출력은 `issues/{이슈명}/issue.plan.critic[.r{N}].md` (r 은 대상 plan 과 동일):
 
    ```markdown
    # Plan Critic — #NN {제목}
@@ -72,7 +72,7 @@ tools: Read, Glob, Grep, Bash, Write, Edit
    |----|------|------|
    ```
 
-   챌린지 0개면 `## 챌린지` 아래 "검출된 결함 없음. plan 통과." 한 줄만 적고 `## 합의` 표는 생략.
+   챌린지 0개면 `## 챌린지` 아래 "검출된 결함 없음. plan 통과." 한 줄만 적는다. `## 합의` 표는 신규 파일이면 생략, 기존 파일에 이미 표가 있으면 보존.
 
 6. **[보고]** 사용자에게 3가지만: 작성한 파일 경로 · blocking/suggestion/nit 개수 · 다음 권장(`blocking≥1`→"`@pilot-planner` 재호출 권장" / `blocking==0`+`suggestion+nit≥1`→"선택적 반영, generator 진행 또는 planner 재호출" / 0개→"`@pilot-generator` 로 진행 가능").
 

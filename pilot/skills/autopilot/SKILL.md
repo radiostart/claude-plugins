@@ -71,7 +71,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase evaluator --report-fil
 
 ## 감사 로그 · STOP 보고
 
-`{AUTO_LOG}` 에 매 전이마다 한 줄 append(단계 종료 즉시 — 중단돼도 흔적이 남도록). 새 실행은 새 `## Run N — {날짜}` 섹션. 필드: `[planner]`·`[critic]`·`[generator]`·`[evaluator]` 단계별 결과 + 최종 `✅ DONE` 또는 `❌ STOP: {사유} (hard-stop)` + 사람 판단 필요 항목.
+`{AUTO_LOG}` 에 매 전이마다 한 줄 append(단계 종료 즉시 — 중단돼도 흔적이 남도록). **append 는 Edit 도구로 수행** — 셸 `>>` 와 기존 파일 Write 는 protect-managed 훅이 차단한다(신규 `{AUTO_LOG}` 생성만 Write). 새 실행은 새 `## Run N — {날짜}` 섹션. 필드: `[planner]`·`[critic]`·`[generator]`·`[evaluator]` 단계별 결과 + 최종 `✅ DONE` 또는 `❌ STOP: {사유} (hard-stop)` + 사람 판단 필요 항목.
 
 완료·정지 어느 쪽이든 **게이트 이력 1줄을 사용자 대면 텍스트로 출력**한다 — 컨텍스트 자동 요약 후에도 재시도 카운트·대상 feature 가 대화 앵커로 복원된다(상태 파일 아님, `{AUTO_LOG}` 와 별개 채널):
 
