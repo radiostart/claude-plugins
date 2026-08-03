@@ -473,6 +473,15 @@ class EvalReportExceptions(unittest.TestCase):
             proc = _run_hook(root, _bash("echo done >> workspace/projects/P/features/01-a.auto.md"))
             self.assertEqual(proc.returncode, 2, proc.stderr)
 
+    def test_write_existing_evaluate_style_still_blocked(self):
+        """`.evaluate.md` 류 이름은 REPORT 산출물이 아니다 — 서브스트링 오매치 방지."""
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            p = root / "workspace" / "projects" / "P" / "features" / "01-a.evaluate.md"
+            p.write_text("x\n", encoding="utf-8")
+            proc = _run_hook(root, _write(root, "workspace/projects/P/features/01-a.evaluate.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

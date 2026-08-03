@@ -47,9 +47,9 @@ check_path() {
   [[ "$rel_path" == *".focus.history/"* ]] && return 0
 
   # evaluator REPORT 산출물은 통과 — 재평가마다 전체 재생성 (agents/pilot-evaluator step 7,
-  # 이슈 규약 issues/GUIDE.md). 이력은 git 이 보존. `*.eval*.md` 는 .eval.r{N}.md 까지 커버.
-  [[ "$rel_path" == */features/*.eval*.md ]] && return 0
-  [[ "$rel_path" == */issues/*/issue.eval*.md ]] && return 0
+  # 이슈 규약 issues/GUIDE.md). 이력은 git 이 보존. 접미 고정 매치 — `.evaluate.md` 류 서브스트링 오매치 방지.
+  [[ "$rel_path" == */features/*.eval.md || "$rel_path" == */features/*.eval.r*.md ]] && return 0
+  [[ "$rel_path" == */issues/*/issue.eval.md || "$rel_path" == */issues/*/issue.eval.r*.md ]] && return 0
 
   # projects/ 상위 폴더 자체 — destructive 대상이면 차단 (모든 프로젝트 소실 경로)
   if [[ "$rel_path" =~ ^(workspace/projects)/?$ ]]; then
