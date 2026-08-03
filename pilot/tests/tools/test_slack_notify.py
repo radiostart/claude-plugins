@@ -133,6 +133,7 @@ class NoopCases(unittest.TestCase):
 class PostCases(unittest.TestCase):
     """정상 POST 및 네트워크 실패 경로."""
 
+    # 제품 기본값(complete,approval,pr)이 아니라 명시 필터링 검증용 고정값.
     def _env_content(self, events: str = "complete,approval") -> str:
         return (
             "SLACK_WEBHOOK_URL=https://hooks.slack.test/abc\n"

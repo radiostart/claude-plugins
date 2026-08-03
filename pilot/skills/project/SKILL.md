@@ -1,11 +1,9 @@
 ---
 name: project
 description: >-
-  새 프로젝트를 시작하거나 기존 프로젝트를 재개할 때 사용한다.
-  `workspace/projects/{PROJECT}/` 폴더를 생성·로드하고 STATE.md 를
-  갱신한 뒤 도메인 컨텍스트를 적재한다. 인자로 Confluence URL 이 오면
-  내부적으로 confl·analyze 를 위임 호출하고, `--tdd` 플래그로 TDD 모드를
-  켤 수 있다. 단발 이슈는 `/pilot:issue` 를 사용한다.
+  새 프로젝트를 시작하거나 기존 프로젝트를 재개한다. 프로젝트 폴더 생성·로드,
+  STATE.md 갱신, 도메인 컨텍스트 적재. Confluence URL 인자는 confl·analyze
+  위임, `--tdd` 는 TDD 모드. 단발 이슈는 `/pilot:issue`.
 ---
 
 프로젝트 개발 모드를 활성화한다.

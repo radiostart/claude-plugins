@@ -53,7 +53,7 @@ from pathlib import Path
 
 # tools/ 를 sys.path 에 추가 — `doctor._common` 의 parse_state_yml·_parse_semver·
 # parse_state_md_all_rows 를 재사용하기 위해 (dedup, #20 스텝 6-②, 근거:
-# docs/audits/2026-07-24-audit-4-python.md § A). doctor.py 와 동일한 sys.path 패턴.
+# repo 루트 docs/audits/2026-07-24-audit-4-python.md § A). doctor.py 와 동일한 sys.path 패턴.
 # 두 모듈 다 플러그인 tools/ 안에 함께 배포되므로 doctor 패키지 부재는 곧
 # doctor.py 자체도 못 쓰는 상태 — 같은 실패 모드를 공유한다 (dedup 이 새 결합
 # 리스크를 추가하지 않음).

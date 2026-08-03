@@ -32,7 +32,7 @@ tools: Read, Glob, Grep, Edit, Bash
    - **`mode: characterize`** — [`characterize.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/characterize.md) § Evaluator — Snapshot 검증(테스트 실행·capture_lockdown `git diff` 검증·3 축 일치 점검).
    - **`tdd: true` (mode 미설정)** — [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Evaluator — 실행 및 검증(관련 테스트 실행·스텝별 `[Red]`/`[Green]` 증거 검증·인프라 오류 스텝 반려).
    - **둘 다 아님 (표준 모드)** — `config.test_command` 설정 시 이번 변경 관련 테스트 실행(`{test_command} {관련 테스트 경로}`), 실패 시 Generator 에 재요청. 미설정이면 요구사항 체크리스트 검토만 하고 REPORT `test_run` 은 `skip`.
-3. `files_to_read` 로 `conventions_doc`/`conventions_evals` 가 로드된 경우 **언어별 검증 케이스를 검토 항목에 포함**한다(merge 규칙: [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md) § 검증). Generator 자기 검사와 별개로 독립 수행하며, 위반은 `issues_to_fix` 에 기록하고 `requirements` gate 판정 근거에 반영한다.
+3. `files_to_read` 로 `conventions_doc`/`conventions_evals` 가 로드된 경우 **언어별 검증 케이스를 검토 항목에 포함**한다(merge 규칙: [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md) § 검증). Generator 자기 검사와 별개로 독립 수행하며, 위반은 `issues_to_fix` 에 기록한다. **gate 반영 경계**: `conventions_evals` 의 기계 검증 케이스 위반만 `requirements` gate 판정 근거에 반영하고, `conventions_doc` 의 스타일·관용구 위반은 `issues_to_fix` 참고 항목으로만 남긴다 (gate 오염 방지 — 층위: [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md) § 검증).
 
    **[Open Questions 게이트]** 판정 기준 SSOT: [`open-questions.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/open-questions.md) § 판정 매트릭스. `features/NN-{slug}.md` 의 `## Open Questions` 를 확인한다 (feature 파일 또는 섹션 부재 시 REPORT 의 `open_questions` gate 는 `skip`):
    - `### (d) 비즈니스 결정 영역` 에 `- [ ]` 가 있는데 구현이 이를 임의로 결정했으면 → **Major 이슈** 로 escalate. 구현 반려.
@@ -46,7 +46,7 @@ tools: Read, Glob, Grep, Edit, Bash
 4. **[필수]** 검토가 끝나면 **반드시** Edit 으로 `workspace/projects/{PROJECT}/prompts/evaluator.md` 의 **모든** 체크리스트 항목을 `[x]`(통과)/`[ ]`(미통과)로 업데이트한다 ([`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md) § SSOT — 기록은 Edit 으로).
 5. 전 항목 통과 시 Edit 으로 `project.md` 의 해당 목표를 `[x]` 로 변경한다.
 6. **[전달사항]** 다음 feature 에 영향 줄 사항이 있으면 `project.md` 의 `## 에이전트 간 전달사항` 에 항목 추가(없으면 생성). 형식: `- [ ] {내용} (from #{완료 feature 번호})`. 없으면 skip.
-7. **[필수] VERIFICATION REPORT 출력** — 메시지 끝에 아래 블록을 그대로 붙인다. 체크박스(step 4)는 상세 기록, REPORT 는 요약이며 `status: READY` 는 전 gate pass + project.md `[x]` 완료와 동치.
+7. **[필수] VERIFICATION REPORT 출력 + 저장** — 메시지 끝에 아래 블록을 그대로 붙이고, 동일 블록을 `workspace/projects/{PROJECT}/features/{NN}-{slug}.eval.md` 에 저장한다 (재평가 시 전체 재생성 — 최신 상태만 유지, 이력은 git 이 보존한다. work_mode=issue 의 저장 경로는 위 issue 모드 절의 규약을 따른다). 체크박스(step 4)는 상세 기록, REPORT 는 요약이며 `status: READY` 는 전 gate pass + project.md `[x]` 완료와 동치.
 
    ```
    ## VERIFICATION REPORT
@@ -75,7 +75,7 @@ tools: Read, Glob, Grep, Edit, Bash
 
    **metrics.domain_impact** 는 참고 지표(gate 아님). 판정 기준·기록 절차 SSOT: [`knowledge-sync.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/knowledge-sync.md). `status: READY` + `detected` 시 **REPORT 출력 직후 (step 8 Slack 진행 전)** knowledge-sync.md § 수동 사이클의 "도메인 지식 환류 제안" 안내 블록을 **반드시** 출력한다 (생략 금지 — step 8 Slack 과 동급 의무). 질의·기록 여부는 사용자가 결정하며, 기록 주체는 승인 후 메인 대화다 — evaluator 는 감지·보고까지만. `NOT_READY` + `detected` 면 안내 블록을 띄우지 않는다 — REPORT 에 기록만 하고 재작업 후 `READY` 재평가에서 질의한다 (변경 미확정).
 
-   **REPORT 출력 직전 형식 자기 점검** (구 `verify-report-lint.py` 스키마 검증 이관, 근거: `docs/audits/2026-07-24-audit-4-python.md` § C-5): `status` 값이 `READY`|`NOT_READY` 중 하나인지 · `gates` 의 7개 키(`requirements`·`tdd_evidence`·`capture_lockdown`·`test_run`·`scope`·`open_questions`·`drift`)가 모두 존재하고 각 값이 위 enum 범위 안인지 · work_mode=issue 면 `test_run` 이 `pass|fail` 만 허용 (skip 금지) 인지 확인 후 출력한다.
+   **REPORT 출력 직전 형식 자기 점검** (구 `verify-report-lint.py` 스키마 검증 이관): `status` 값이 `READY`|`NOT_READY` 중 하나인지 · `gates` 의 7개 키(`requirements`·`tdd_evidence`·`capture_lockdown`·`test_run`·`scope`·`open_questions`·`drift`)가 모두 존재하고 각 값이 위 enum 범위 안인지 · work_mode=issue 면 `test_run` 이 `pass|fail` 만 허용 (skip 금지) 인지 확인 후 출력한다.
 
    REPORT 출력 직후 step 4·5 결과와 REPORT 가 모순되면 [`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md) § SSOT — REPORT vs 체크박스 룰로 정정한 뒤 8번으로 진행한다.
 

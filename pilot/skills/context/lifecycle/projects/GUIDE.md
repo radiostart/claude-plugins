@@ -222,7 +222,7 @@ projects/{PROJECT}/
 - `## 구현 패턴` / `## 주의사항` — 이 프로젝트 고유 패턴·엣지 케이스. 사용자가 직접 기술.
 - `## 코드 생성 후 검증` — [`evals/coding.json`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/evals/coding.json) 참조 (필수 · 템플릿에 포함).
 
-> **TDD 모드**일 때: `/pilot:tdd` 가 파일 최상단에 경고 앵커를 추가한다 — Planner 실패 테스트를 통과시키는 방향으로 구현.
+> **TDD 모드**일 때: `/pilot:tdd` 가 파일 최상단에 경고 앵커를 추가한다 — Red(실패 테스트 작성·실패 확인) → Green(최소 구현) → Refactor 를 순환. 앵커 문구 정본: [`tdd-activation.md`](../../modes/tdd-activation.md) § 3.
 
 ---
 

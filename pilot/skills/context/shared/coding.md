@@ -66,3 +66,5 @@
 **Merge 규칙:** 프로젝트 evals 가 공통 evals 에 `append`. 동일 `id` 는 프로젝트가 `override`. 작업 유형에 해당하는 케이스의 `criteria` 를 체크리스트로 확인. 미충족 항목은 수정 후 재확인한다.
 
 `conventions_evals` 미선언이면 플러그인 공통 케이스만 적용 — 언어별 가드는 생략되므로 Generator 가 관행 문서 (`conventions_doc`) 를 스스로 숙지해야 한다.
+
+**리뷰 룰과의 층위 분리:** `conventions_doc`/`conventions_evals` 는 **구현·기계 검증 축**(Generator 자기 검사·Evaluator 독립 검증)이고, `workspace/context/review/{lang}.md` 는 **리뷰 룰 축**(`pilot-code-review` 전용, 사람 판단 기준)이다. 같은 언어 지식이라도 소비 주체가 다르다 — 조항이 겹치면 리뷰 룰 쪽에서 conventions 문서를 참조로 대체한다 (이중 유지 금지).

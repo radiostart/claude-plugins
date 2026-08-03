@@ -1,11 +1,9 @@
 ---
 name: analyze
 description: >-
-  이미 저장된 docs/ 기획서를 features/ 기능 명세로 분할·구조화할 때 사용한다.
-  PM 작성 표 중심 기획서를 기능 단위 문서로 변환하고 project.md 의 목표 섹션
-  과 prompts/ 파일(planner·generator·evaluator)을 자동 갱신한다. 기획서 fetch 는
-  `/pilot:confl`, 프롬프트 기반 단일 기능 추가는 `/pilot:create-feature`
-  를 사용한다.
+  저장된 docs/ 기획서를 features/ 기능 명세로 분할·구조화하고 project.md
+  목표·prompts/*(planner·generator·evaluator)를 자동 갱신한다. 기획서 fetch 는
+  `/pilot:confl`, 프롬프트 기반 단일 기능 추가는 `/pilot:create-feature`.
 ---
 
 # /pilot:analyze

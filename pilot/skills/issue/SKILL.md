@@ -1,11 +1,9 @@
 ---
 name: issue
 description: >-
-  운영 이슈 처리 모드 활성화 — `workspace/issues/{이슈명}/` 를 생성·로드하고
-  누적 컨텍스트 위에서 문제 1건을 해결한다. 코드 수정 시 project 와 동일한
-  planner→critic→generator→evaluator 사이클을 issue 단위로 사용 가능.
-  버그 대응·장애 분석·핫픽스 등 단발성 작업용. 지속적인 기능 개발·feature
-  단위 작업은 `/pilot:project` 를 사용한다.
+  운영 이슈 처리 모드 — `workspace/issues/{이슈명}/` 를 생성·로드해 버그
+  대응·장애 분석·핫픽스 등 단발성 문제 1건을 해결한다. 필요 시 project 와
+  동일한 4-에이전트 사이클을 issue 단위로 사용. 지속 기능 개발은 `/pilot:project`.
 ---
 
 운영 이슈 처리 모드를 활성화한다.

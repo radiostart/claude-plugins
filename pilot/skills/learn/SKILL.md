@@ -1,15 +1,10 @@
 ---
 name: learn
 description: >-
-  기존 소스 코드에서 진입점(컨트롤러·서비스 파일 또는 폴더)을 받아
-  `workspace/context/` 의 도메인 문서를 부트스트랩한다. `/pilot:analyze`
-  가 docs/ 기획서를 features/ 로 가공하는 짝이라면, 이 스킬은 코드를
-  읽어 컨텍스트를 만든다. 의존성을 N 단계까지 따라가며 파일 분류·정적
-  추출(메서드·라우트·상태값·검증 규칙) 후 코드의 자연스러운 모양에
-  맞춘 `{domain}.md` 또는 `{domain}/` 폴더를 생성하고 MANIFEST.md 색인을
-  갱신한다. `--boundary B --from A` 는 외부 도메인 B 전체 대신 A 가 호출하는
-  표면만 `boundaries/{A}--{B}.md` 로 포착한다 (cross-domain 경량 학습).
-  추측 금지 — 코드에 적힌 것만 file:line 인용으로 정리한다.
+  기존 소스 코드의 진입점(컨트롤러·서비스 파일 또는 폴더)을 받아 의존성을
+  따라 읽고 `workspace/context/` 도메인 문서를 부트스트랩한다 — 추측 금지,
+  file:line 인용만. `--boundary B --from A` 는 A 가 호출하는 표면만
+  `boundaries/{A}--{B}.md` 로 포착한다. docs/ 기획서 가공은 `/pilot:analyze`.
 ---
 
 # /pilot:learn

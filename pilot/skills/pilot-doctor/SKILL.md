@@ -1,11 +1,9 @@
 ---
 name: pilot-doctor
 description: >-
-  pilot 워크스페이스·프로젝트의 정합성을 검사한다. 상태 이상·드리프트·
-  부분 설정이 의심될 때, 또는 정기 점검·진단을 원할 때 사용한다.
-  STATE.md·MANIFEST.md·config.md 존재 여부, `.agent-state.yml` 스키마,
-  `analyzed`·`tdd` 플래그가 실제 파일 상태와 일치하는지 검사해 STATE
-  corrupt 같은 조용한 문제를 조기 감지한다.
+  pilot 워크스페이스·프로젝트의 정합성을 검사한다. 상태 이상·드리프트·부분
+  설정이 의심될 때, 또는 정기 점검·진단을 원할 때 사용한다. STATE corrupt
+  같은 조용한 문제를 조기 감지한다.
 ---
 
 # /pilot:pilot-doctor
@@ -15,7 +13,7 @@ description: >-
 > - phrasing: "FAIL: <증상> · 근거: <파일:라인> · 처방: <명령>"
 > - forbid: "근거 없는 단정 처방" / "증상 없이 처방만 출력"
 
-워크스페이스·프로젝트 정합성을 검사한다. 검사 범위·판정 기준·출력 형식·처방은 스크립트가 출력에 전부 포함한다 — 로직 SSOT 는 `tools/doctor.py`. 진단 모드(`--diagnose`)는 스크립트 없이 본 SKILL 지시문(§ 진단 모드)이 직접 수행한다 (모델이 더 잘 판단하는 휴리스틱 패턴 매칭 — 근거: `docs/audits/2026-07-24-audit-4-python.md` § C-6).
+워크스페이스·프로젝트 정합성을 검사한다. 검사 범위·판정 기준·출력 형식·처방은 스크립트가 출력에 전부 포함한다 — 로직 SSOT 는 `tools/doctor.py`. 진단 모드(`--diagnose`)는 스크립트 없이 본 SKILL 지시문(§ 진단 모드)이 직접 수행한다 (모델이 더 잘 판단하는 휴리스틱 패턴 매칭).
 
 대상: $ARGUMENTS (생략 시 STATE.md 의 `진행중` 프로젝트)
 
@@ -67,7 +65,7 @@ exit code: `0` — ERROR 없음 (PASS / WARN 만) · `1` — ERROR 1 건 이상.
 
 ## Onboarding Health (모델 점검)
 
-`doctor.py` 출력 자체에는 온보딩 점검 섹션이 없다 (v0.9.0+ 구조 정합성 검사로 축소 — 근거: `docs/audits/2026-07-24-audit-4-python.md` § B). `/pilot:pilot-doctor` **스킬 경유 호출**에서만 아래 조건으로 모델이 직접 점검·안내한다. **임베디드 호출**(`project`·`create-feature`·`analyze` 6-5·`tdd-activation` §6)에서는 이 nudge 가 발화하지 않는다 — 의도된 다운그레이드이며, 신규 사용자 온보딩 funnel 은 [`docs/tutorial/getting-started.md`](../../docs/tutorial/getting-started.md) 가 커버한다.
+`doctor.py` 출력 자체에는 온보딩 점검 섹션이 없다 (v0.9.0+ 구조 정합성 검사로 축소). `/pilot:pilot-doctor` **스킬 경유 호출**에서만 아래 조건으로 모델이 직접 점검·안내한다. **임베디드 호출**(`project`·`create-feature`·`analyze` 6-5·`tdd-activation` §6)에서는 이 nudge 가 발화하지 않는다 — 의도된 다운그레이드이며, 신규 사용자 온보딩 funnel 은 [`docs/tutorial/getting-started.md`](../../docs/tutorial/getting-started.md) 가 커버한다.
 
 - **발동 조건**: `context/MANIFEST.md` 의 `## 도메인 분류` 표 행 0건 **또는** `STATE.md` 등록 프로젝트(진행중/대기) 0건.
 - **점검 5항목**: (1) `config.md` 의 `## learn 언어 패턴`·`## scope 카테고리`·`## Ignore` 3섹션 채움 여부 (2) `context/scope/` 에 `*.md` 존재 여부 (3) `STATE.md` 진행중/대기 프로젝트 ≥1 여부 (4) `MANIFEST.md` `## 도메인 분류` 표 행 ≥1 여부 (5) 활성 프로젝트 `features/` 에 `*.md` ≥1 여부.

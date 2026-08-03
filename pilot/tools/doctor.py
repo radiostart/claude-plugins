@@ -10,7 +10,7 @@ pilot doctor — workspace / project 정합성 검사.
 
 진단 모드(과거 `--diagnose`)는 스크립트 없이
 `skills/pilot-doctor/SKILL.md` § 진단 모드 지시문이 모델 판단으로 직접
-수행한다 (근거: `docs/audits/2026-07-24-audit-4-python.md` § C-6).
+수행한다 (근거: repo 루트 `docs/audits/2026-07-24-audit-4-python.md` § C-6).
 
 Usage:
     python3 doctor.py [WORKSPACE_PATH] [--project PROJECT] [--fix]

@@ -16,6 +16,7 @@
 #   - Edit 도구 (splice 방식 — 안전)
 #   - 신규 파일 생성 (대상 경로에 파일 없음)
 #   - .prompts.bak/ · .bak.* 경로 (백업물)
+#   - features/*.eval[.rN].md · issues/*/issue.eval[.rN].md (evaluator REPORT — 재생성 산출물)
 #   - 프로젝트 폴더 외부 경로
 #
 # 명시 우회: PILOT_PROTECT_BYPASS=1 환경변수 (의도적 destructive 시).
@@ -44,6 +45,11 @@ check_path() {
   # focus 수명주기 경로는 통과 (focus 스킬의 아카이브 mv/삭제/재작성 흐름)
   [[ "$rel_path" == */.focus.md ]] && return 0
   [[ "$rel_path" == *".focus.history/"* ]] && return 0
+
+  # evaluator REPORT 산출물은 통과 — 재평가마다 전체 재생성 (agents/pilot-evaluator step 7,
+  # 이슈 규약 issues/GUIDE.md). 이력은 git 이 보존. 접미 고정 매치 — `.evaluate.md` 류 서브스트링 오매치 방지.
+  [[ "$rel_path" == */features/*.eval.md || "$rel_path" == */features/*.eval.r[0-9]*.md ]] && return 0
+  [[ "$rel_path" == */issues/*/issue.eval.md || "$rel_path" == */issues/*/issue.eval.r[0-9]*.md ]] && return 0
 
   # projects/ 상위 폴더 자체 — destructive 대상이면 차단 (모든 프로젝트 소실 경로)
   if [[ "$rel_path" =~ ^(workspace/projects)/?$ ]]; then

@@ -19,7 +19,7 @@
 
 인자 없이 호출하면 활성화 모드입니다. 대화식으로 아래 절차를 밟습니다:
 
-- 채널명(필수)과 알림 이벤트(기본 `complete,approval`, 쉼표 구분)를 입력 받습니다.
+- 채널명(필수)과 알림 이벤트(기본 `complete,approval,pr`, 쉼표 구분)를 입력 받습니다.
 - `workspace/projects/{PROJECT}/.slack.env` 파일에 `SLACK_WEBHOOK_URL`·`SLACK_CHANNEL`·`SLACK_EVENTS` 를 기록하고 퍼미션을 `0600` 으로 설정합니다. webhook URL 값 자체는 사용자가 파일에 직접 붙여넣습니다.
 - 테스트 메시지는 자동 발송하지 않습니다 — URL 을 붙여넣은 뒤 `/pilot:slack test` 로 검증하십시오.
 
@@ -40,8 +40,8 @@
 | `approval` (hook 릴레이) | harness 의 `Notification` 훅 (`permission_prompt` · `idle_prompt` 등) — 위와 동일한 어댑터 경로로 릴레이 | `⏸ [Proj] 승인 필요: {알림 본문}` |
 | `pr` | `/pilot:pr` 이 Pull Request 를 생성한 직후 | `🔀 [Proj] {제목} — {PR URL}` |
 
-!!! warning "`pr` 은 설정에 직접 추가해야 합니다"
-    `/pilot:slack` 활성화 절차가 제안하는 기본값은 `complete,approval` 이라 **`pr` 이 빠집니다**. PR 생성 알림을 받으려면 `.slack.env` 의 `SLACK_EVENTS` 를 `complete,approval,pr` 로 직접 지정하세요 (`SLACK_EVENTS` 행 자체가 없는 수기 작성 파일은 세 이벤트가 모두 활성입니다).
+!!! note "기본값에 `pr` 포함"
+    `/pilot:slack` 활성화 절차가 제안하는 기본값은 `complete,approval,pr` 입니다. PR 생성 알림을 받으려면 별도 설정이 필요 없습니다 (이미 기본값에 포함).
 
 hook 릴레이 경로는 `hooks/hooks.json` 이 `PermissionRequest` · `Notification` 두 harness 이벤트에 `hooks/slack-notify.sh` 를 배선해 동작하며, `--from-hook` 처리(`tools/slack-notify.py`)에서 이벤트가 **항상 `approval` 로 분류**됩니다. 따라서 `.slack.env` 의 `SLACK_EVENTS` 에서 `approval` 을 제외하면 planner 명시 발송과 hook 릴레이 알림이 함께 비활성화됩니다.
 

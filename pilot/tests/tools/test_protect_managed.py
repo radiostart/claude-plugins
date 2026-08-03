@@ -418,5 +418,88 @@ class ProtectManagedIssues(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr)
 
 
+class EvalReportExceptions(unittest.TestCase):
+    """evaluator REPORT 산출물(.eval[.rN].md) — 재평가 전체 재생성 허용."""
+
+    def test_write_existing_feature_eval_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            p = root / "workspace" / "projects" / "P" / "features" / "01-a.eval.md"
+            p.write_text("## VERIFICATION REPORT\n", encoding="utf-8")
+            proc = _run_hook(root, _write(root, "workspace/projects/P/features/01-a.eval.md"))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_bash_redirect_existing_feature_eval_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            p = root / "workspace" / "projects" / "P" / "features" / "01-a.eval.md"
+            p.write_text("old\n", encoding="utf-8")
+            proc = _run_hook(root, _bash("cat > workspace/projects/P/features/01-a.eval.md"))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_write_existing_issue_eval_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            d = root / "workspace" / "issues" / "login-bug"
+            d.mkdir(parents=True)
+            (d / "issue.eval.md").write_text("old\n", encoding="utf-8")
+            proc = _run_hook(root, _write(root, "workspace/issues/login-bug/issue.eval.md"))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_write_existing_issue_eval_rn_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            d = root / "workspace" / "issues" / "login-bug"
+            d.mkdir(parents=True)
+            (d / "issue.eval.r2.md").write_text("old\n", encoding="utf-8")
+            proc = _run_hook(root, _write(root, "workspace/issues/login-bug/issue.eval.r2.md"))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_plan_critic_write_existing_still_blocked(self):
+        """critic 은 기존 파일이면 Edit 사용 (Task 2 개정 계약) — 훅 차단 유지."""
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            p = root / "workspace" / "projects" / "P" / "features" / "01-a.plan.critic.md"
+            p.write_text("# c\n", encoding="utf-8")
+            proc = _run_hook(root, _write(root, "workspace/projects/P/features/01-a.plan.critic.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+    def test_auto_md_shell_append_still_blocked(self):
+        """autopilot 로그 append 는 Edit 사용 (Task 2 개정 계약) — 훅 차단 유지."""
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            p = root / "workspace" / "projects" / "P" / "features" / "01-a.auto.md"
+            p.write_text("## Run 1\n", encoding="utf-8")
+            proc = _run_hook(root, _bash("echo done >> workspace/projects/P/features/01-a.auto.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+    def test_write_existing_evaluate_style_still_blocked(self):
+        """`.evaluate.md` 류 이름은 REPORT 산출물이 아니다 — 서브스트링 오매치 방지."""
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            p = root / "workspace" / "projects" / "P" / "features" / "01-a.evaluate.md"
+            p.write_text("x\n", encoding="utf-8")
+            proc = _run_hook(root, _write(root, "workspace/projects/P/features/01-a.evaluate.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+    def test_write_existing_eval_review_style_still_blocked(self):
+        """`.eval.review.md` 류 — r 뒤가 숫자가 아니면 REPORT 산출물이 아니다."""
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            p = root / "workspace" / "projects" / "P" / "features" / "01-a.eval.review.md"
+            p.write_text("x\n", encoding="utf-8")
+            proc = _run_hook(root, _write(root, "workspace/projects/P/features/01-a.eval.review.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+    def test_write_existing_issue_eval_raw_still_blocked(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            d = root / "workspace" / "issues" / "login-bug"
+            d.mkdir(parents=True)
+            (d / "issue.eval.raw.md").write_text("x\n", encoding="utf-8")
+            proc = _run_hook(root, _write(root, "workspace/issues/login-bug/issue.eval.raw.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

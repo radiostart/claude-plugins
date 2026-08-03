@@ -18,6 +18,7 @@ description: >-
 1. `$ARGUMENTS` 첫 토큰을 `{lang}` 슬러그로 사용 (`python`/`typescript`/`ruby`/`java`/`go` 등). 비어있으면 `git ls-files | awk -F. '{print $NF}' | sort | uniq -c | sort -rn | head -5` 로 dominant 확장자를 감지해 슬러그 추론(`.py→python`·`.ts/.tsx→typescript`·`.rb→ruby` 등, 매칭 없으면 사용자 질의) 후 "**{추정 lang} 로 진행할까요?**" 확인.
 2. `workspace/context/` 없으면 [`messages.md`](../context/shared/messages.md) 의 `workspace_missing` 안내 후 종료.
 3. 대상 경로 `workspace/context/review/{lang}.md` (폴더 없으면 생성). **이미 존재하면 사용자 확인 없이 덮어쓰지 않는다** — "덮어쓰기 / 백업 후 새로 생성(`{경로}.bak.{timestamp}`) / 취소" 질의.
+4. `workspace/context/config.md` 의 `conventions_doc` 선언 여부를 확인한다 — 선언되어 있으면 그 문서가 이미 다루는 조항(명명·관용구·금지 패턴)은 룰 파일에 중복 기재하지 말고 참조로 대체하도록 안내한다 (층위 정의: [`coding.md`](../context/shared/coding.md) § 검증).
 
 ## 동작 — 시작 전략 3 종 (택 1 질의)
 

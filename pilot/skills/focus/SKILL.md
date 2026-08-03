@@ -50,7 +50,7 @@ description: >-
 
 ### 제거 모드 (`--clear`)
 
-`.focus.md` 없으면 "활성 focus 가 없습니다" 후 종료. 있으면 `.focus.history/{timestamp}.md` 로 이동 후 삭제 → "focus 제거됨 (아카이브됨: {경로})" 출력.
+`.focus.md` 없으면 "활성 focus 가 없습니다" 후 종료. 있으면 `.focus.history/{timestamp}.md` 로 이동(mv — 이동이 곧 제거, 별도 rm 불필요) → "focus 제거됨 (아카이브됨: {경로})" 출력.
 
 ## 래퍼와의 상호작용
 

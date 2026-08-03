@@ -8,6 +8,12 @@ hide:
 
 도메인 지식 기반의 agent workflow 플러그인입니다. Claude Code 내에서 *plan → critic → generate → evaluate*의 명시적 cycle로 project를 진행합니다.
 
+!!! tip "v0.15.0 highlights"
+    - 프로젝트 모드 evaluator REPORT 영속화 — `features/NN-{slug}.eval.md` 저장 + protect-managed 훅 재생성 예외
+    - critic·autopilot·focus 갱신 절차를 훅과 양립하게 개정 — 기존 파일 갱신은 Edit 기반
+    - Slack 활성화 기본 이벤트에 `pr` 포함 — `complete,approval,pr` 로 통일
+    - 스킬 description 7종 감량 — 상시 시스템 프롬프트 비용 3,777B → 2,208B
+
 !!! tip "v0.14.0 highlights"
     - **issue 단건 사이클 + 폴더 slug** — `/pilot:issue` 가 경량 모드에서 사이클 지원으로 재정의. orchestrate-load 가 STATE.md 의 `| issue | {이슈명} |` 행을 인식해 (`work_mode` 계약) planner→critic→generator→evaluator 를 `issues/{이슈명}/` 기반으로 구동한다. 폴더명(영문 kebab slug ≤40자)과 표시명(issue.md H1)을 분리해 유사 이슈 검색을 폴더명 `ls` + H1 `grep` 병행으로 수행 → [운영 이슈 단건 처리](how-to/issue-cycle.md)
     - **Open Questions fail-closed 게이트** — 미해결 `- [ ]` 항목에 plan 처리 마커(`추정 구현`/`범위 제외`)가 없으면 `plan-validate` 가 차단. evaluator REPORT 에 `open_questions` gate 추가 (7 gates)

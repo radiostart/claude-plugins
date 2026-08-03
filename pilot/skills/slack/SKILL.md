@@ -33,7 +33,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace 2>&1 | grep -E "\.gitign
 
 ### (없음) — 활성화
 
-`.slack.env` 이미 존재하면 [messages.md](../context/shared/messages.md) 의 `slack.already_active` 출력 후 종료 (파일 편집·`status`·`disable` 안내). 없으면 채널명(필수)·이벤트(기본 `complete,approval`, 쉼표 구분) 대화식 입력 후 아래 env 필드로 `{PROJECT_DIR}/.slack.env` Write + `chmod 600`:
+`.slack.env` 이미 존재하면 [messages.md](../context/shared/messages.md) 의 `slack.already_active` 출력 후 종료 (파일 편집·`status`·`disable` 안내). 없으면 채널명(필수)·이벤트(기본 `complete,approval,pr`, 쉼표 구분) 대화식 입력 후 아래 env 필드로 `{PROJECT_DIR}/.slack.env` Write + `chmod 600`:
 
 ```env
 SLACK_WEBHOOK_URL=

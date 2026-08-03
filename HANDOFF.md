@@ -102,7 +102,7 @@ pilot/tools/release.sh
 - **사내 원본 미포팅 백로그** — greenfield 즉석 등재 · HOTL 다중 순회 · AskUserQuestion 기반 사전 인터뷰 (pilot 의 OQ 소비형 인터뷰와는 다른 설계라 통째 이식 금지).
 - **신규 기능 사용자 문서** — knowledge-sync(`metrics.domain_impact` 승인 블록)와 Open Questions fail-closed 게이트는 랜딩 highlights·생성 reference 에만 있고 how-to 가 없다.
 - **`orchestrate-load` placeholder leak** — `parse_lang_tools` 가 config 표의 예시 표기를 실값으로 반환 (doctor 의 구조 기반 판정을 재사용해 해소 가능).
-- **Slack `pr` 이벤트가 기본값에서 누락** — `tools/slack-notify.py` 는 `complete`·`approval`·`pr` 3종을 지원하고 `/pilot:pr` 이 실제로 `pr` 을 발송하는데, `/pilot:slack` 활성화 절차가 제안하는 기본값은 `complete,approval` 이라 스킬로 설정한 사용자는 PR 알림을 받지 못한다. 문서에는 경고를 달았으나(how-to § 지원 이벤트) 기본값 자체를 바꿀지는 제품 판단 필요.
+- ~~Slack pr 기본값~~ — 해소 (2026-08-03, 기본값 complete,approval,pr 로 통일 — 사용자 제품 판단).
 - **영어 README** — 보류 (사용자 판단).
 
 ## 이력 — v1 dogfooding 검증 (2026-04-30)
