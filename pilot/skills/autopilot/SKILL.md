@@ -24,7 +24,7 @@ description: >-
 
 [preamble.md](../context/shared/preamble.md) 의 **P1** 수행. 실패 시 [messages.md](../context/shared/messages.md) 의 `workspace_missing`/`no_active_project` 출력 후 종료.
 
-`$ARGUMENTS` 비어있으면 안내 후 종료. `{NN}` = 입력 번호 2자리 zero-pad. `{FEAT}` = `features/{NN}-*.md`(`.plan.md`·`.plan.critic.md`·`.auto.md` 제외) — 없으면 "`/pilot:create-feature` 로 먼저 생성하세요" 후 종료(hard-stop: feature 부재). `{AUTO_LOG}` = `features/{NN}-{slug}.auto.md`.
+`$ARGUMENTS` 비어있으면 안내 후 종료. `{NN}` = 입력 번호 2자리 zero-pad. `{FEAT}` = `features/{NN}-*.md`(`.plan.md`·`.plan.critic.md`·`.auto.md`·`.eval.md` 제외) — 없으면 "`/pilot:create-feature` 로 먼저 생성하세요" 후 종료(hard-stop: feature 부재). `{AUTO_LOG}` = `features/{NN}-{slug}.auto.md`.
 
 **재개 확인** — `{AUTO_LOG}` 존재 시 마지막 `## Run` 섹션의 마지막 줄(stop 사유 또는 ✅ DONE)을 읽고 **사용자 1회 확인** 없이는 진행하지 않는다(이미 DONE 이어도 동일: "재개/처음부터/취소" 3지선다). 부재 시 처음부터(planner) 시작 + 새 `## Run` 섹션.
 
@@ -59,7 +59,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase critic --critic-file w
 
 ### 4. evaluator
 
-`@pilot-evaluator` 호출 → VERIFICATION REPORT 를 파일로 저장 후:
+`@pilot-evaluator` 호출 — evaluator 가 REPORT 를 `features/{NN}-{slug}.eval.md` 로 저장한다(에이전트 계약 step 7). `{REPORT_PATH}` = 그 경로:
 
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase evaluator --report-file {REPORT_PATH} --retries-used {R}

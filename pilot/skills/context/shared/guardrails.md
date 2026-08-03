@@ -56,6 +56,8 @@ feature 의 `## Open Questions` 미해결 항목이 [`open-questions.md`](open-q
 
 체크·증거·합의 결과는 텍스트 보고가 아니라 **Edit 으로 파일에 기록**한다 — 서브에이전트 간 인수인계의 SSOT 는 대화가 아니라 파일 상태다 (체크박스 `[x]`, `.plan.md` 증거, `.plan.critic.md` 합의 표 모두 해당).
 
+예외: evaluator REPORT 산출물(`features/NN-*.eval.md` · `issues/*/issue.eval[.r{N}].md`)은 재평가마다 전체 재생성 — Write/Bash 재작성이 정본이며 이력은 git 이 보존한다.
+
 ## SSOT — REPORT vs 체크박스
 
 VERIFICATION REPORT (요약) 와 evaluator.md 체크리스트 (상세) 는 **동일 검토 결과의 두 표현**. 모순이 발생하면 **REPORT 의 gate 판정을 진실로 보고 체크박스를 재정렬**한다.

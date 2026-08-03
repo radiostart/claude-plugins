@@ -34,7 +34,7 @@ graph TD
     P1_STATE[".agent-state.yml<br/>(schema·tdd·mode·domain·plugin_version)"]
     P1_PROJECT["project.md<br/>(목표·제한사항·[analyze-managed])"]
     P1_PROMPTS["prompts/<br/>(planner.md·generator.md·evaluator.md)"]
-    P1_FEATURES["features/<br/>(NN-*.md · NN-*.plan.md · NN-*.plan.critic.md)"]
+    P1_FEATURES["features/<br/>(NN-*.md · NN-*.plan.md · NN-*.plan.critic.md · NN-*.eval.md)"]
     P1_DOCS["docs/<br/>(Confluence fetch 또는 사용자 작성 원본)"]
     P1_FOCUS[".focus.md<br/>(사용자 최근 지시)"]
 
@@ -89,6 +89,7 @@ graph TD
 | `projects/{P}/project.md` · `prompts/*.md` · `features/NN-*.md` | 영구 파일 | tracked |
 | `.agent-state.yml` | 영구 파일 (machine-readable 상태) | 추적 여부는 사용자 정책 (state-schema.md — 공유가 필요하면 commit, 개인 전용이면 ignore) |
 | `features/NN-*.plan.md` · `.plan.critic.md` | 영구 파일 (작업 이력 기록) | tracked |
+| `features/NN-*.eval.md` | 영구 파일 (evaluator 최종 REPORT — 재평가 시 최신으로 교체) | tracked |
 | `issues/{slug}/issue.md` | 영구 파일 (이슈 단건 명세이자 기록) | tracked |
 | `issues/{slug}/issue.plan[.r{N}].md` · `issue.plan.critic[.r{N}].md` · `issue.eval[.r{N}].md` | 영구 파일 (이슈 사이클 산출물) | tracked |
 | `.focus.md` | 일시 파일 (새로운 focus로 덮어쓰기 가능) | 프로젝트 정책에 따라 tracked 혹은 gitignored 설정 |

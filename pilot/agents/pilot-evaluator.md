@@ -46,7 +46,7 @@ tools: Read, Glob, Grep, Edit, Bash
 4. **[필수]** 검토가 끝나면 **반드시** Edit 으로 `workspace/projects/{PROJECT}/prompts/evaluator.md` 의 **모든** 체크리스트 항목을 `[x]`(통과)/`[ ]`(미통과)로 업데이트한다 ([`guardrails.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/guardrails.md) § SSOT — 기록은 Edit 으로).
 5. 전 항목 통과 시 Edit 으로 `project.md` 의 해당 목표를 `[x]` 로 변경한다.
 6. **[전달사항]** 다음 feature 에 영향 줄 사항이 있으면 `project.md` 의 `## 에이전트 간 전달사항` 에 항목 추가(없으면 생성). 형식: `- [ ] {내용} (from #{완료 feature 번호})`. 없으면 skip.
-7. **[필수] VERIFICATION REPORT 출력** — 메시지 끝에 아래 블록을 그대로 붙인다. 체크박스(step 4)는 상세 기록, REPORT 는 요약이며 `status: READY` 는 전 gate pass + project.md `[x]` 완료와 동치.
+7. **[필수] VERIFICATION REPORT 출력 + 저장** — 메시지 끝에 아래 블록을 그대로 붙이고, 동일 블록을 `workspace/projects/{PROJECT}/features/{NN}-{slug}.eval.md` 에 저장한다 (재평가 시 전체 재생성 — 최신 상태만 유지, 이력은 git 이 보존한다. work_mode=issue 의 저장 경로는 위 issue 모드 절의 규약을 따른다). 체크박스(step 4)는 상세 기록, REPORT 는 요약이며 `status: READY` 는 전 gate pass + project.md `[x]` 완료와 동치.
 
    ```
    ## VERIFICATION REPORT
