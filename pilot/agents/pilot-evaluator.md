@@ -32,7 +32,7 @@ tools: Read, Glob, Grep, Edit, Bash
    - **`mode: characterize`** — [`characterize.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/characterize.md) § Evaluator — Snapshot 검증(테스트 실행·capture_lockdown `git diff` 검증·3 축 일치 점검).
    - **`tdd: true` (mode 미설정)** — [`rgr.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/rgr.md) § Evaluator — 실행 및 검증(관련 테스트 실행·스텝별 `[Red]`/`[Green]` 증거 검증·인프라 오류 스텝 반려).
    - **둘 다 아님 (표준 모드)** — `config.test_command` 설정 시 이번 변경 관련 테스트 실행(`{test_command} {관련 테스트 경로}`), 실패 시 Generator 에 재요청. 미설정이면 요구사항 체크리스트 검토만 하고 REPORT `test_run` 은 `skip`.
-3. `files_to_read` 로 `conventions_doc`/`conventions_evals` 가 로드된 경우 **언어별 검증 케이스를 검토 항목에 포함**한다(merge 규칙: [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md) § 검증). Generator 자기 검사와 별개로 독립 수행하며, 위반은 `issues_to_fix` 에 기록하고 `requirements` gate 판정 근거에 반영한다.
+3. `files_to_read` 로 `conventions_doc`/`conventions_evals` 가 로드된 경우 **언어별 검증 케이스를 검토 항목에 포함**한다(merge 규칙: [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md) § 검증). Generator 자기 검사와 별개로 독립 수행하며, 위반은 `issues_to_fix` 에 기록한다. **gate 반영 경계**: `conventions_evals` 의 기계 검증 케이스 위반만 `requirements` gate 판정 근거에 반영하고, `conventions_doc` 의 스타일·관용구 위반은 `issues_to_fix` 참고 항목으로만 남긴다 (gate 오염 방지 — 층위: [`coding.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/coding.md) § 검증).
 
    **[Open Questions 게이트]** 판정 기준 SSOT: [`open-questions.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/open-questions.md) § 판정 매트릭스. `features/NN-{slug}.md` 의 `## Open Questions` 를 확인한다 (feature 파일 또는 섹션 부재 시 REPORT 의 `open_questions` gate 는 `skip`):
    - `### (d) 비즈니스 결정 영역` 에 `- [ ]` 가 있는데 구현이 이를 임의로 결정했으면 → **Major 이슈** 로 escalate. 구현 반려.
