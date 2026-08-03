@@ -1,15 +1,11 @@
 ---
 name: autopilot
 description: >-
-  사용자가 자동 진행을 명시 요청했을 때만 사용한다 (`/pilot:autopilot`
-  호출 또는 그에 상당하는 지시) — "계속·이어서 진행해줘" 류 발화만으로
-  모델이 자발 발동하지 않는다 (자발 발동이 필요해 보이면 대상 feature 를
-  제시하고 확인 1회). 이미 생성된 단일 feature 를
+  사용자가 자동 진행을 명시 요청했을 때만 사용한다 — "계속 진행해줘" 류
+  발화만으로 자발 발동하지 않는다. 이미 생성된 단일 feature 를
   planner→critic→generator→evaluator 로 자동 순차 진행하는 감독형 자율
-  모드. hard-stop 신호(plan-validate 실패·critic blocking·재시도 소진·
-  신호 파싱 실패)에 걸리면 즉시 사람에게 제어를 반환한다. 모든 자동 결정은
-  features/NN-{slug}.auto.md 에 기록한다. feature 생성·명세 작업은
-  `/pilot:create-feature`·`/pilot:analyze` 가 담당한다.
+  모드로, hard-stop 신호에 걸리면 즉시 사람에게 제어를 반환한다. feature
+  생성·명세는 `/pilot:create-feature`·`/pilot:analyze` 담당.
 ---
 
 # /pilot:autopilot

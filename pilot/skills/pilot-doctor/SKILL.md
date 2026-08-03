@@ -1,11 +1,9 @@
 ---
 name: pilot-doctor
 description: >-
-  pilot 워크스페이스·프로젝트의 정합성을 검사한다. 상태 이상·드리프트·
-  부분 설정이 의심될 때, 또는 정기 점검·진단을 원할 때 사용한다.
-  STATE.md·MANIFEST.md·config.md 존재 여부, `.agent-state.yml` 스키마,
-  `analyzed`·`tdd` 플래그가 실제 파일 상태와 일치하는지 검사해 STATE
-  corrupt 같은 조용한 문제를 조기 감지한다.
+  pilot 워크스페이스·프로젝트의 정합성을 검사한다. 상태 이상·드리프트·부분
+  설정이 의심될 때, 또는 정기 점검·진단을 원할 때 사용한다. STATE corrupt
+  같은 조용한 문제를 조기 감지한다.
 ---
 
 # /pilot:pilot-doctor

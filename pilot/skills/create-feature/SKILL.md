@@ -1,12 +1,9 @@
 ---
 name: create-feature
 description: >-
-  활성 프로젝트에 사용자 프롬프트 한 줄로 단일 feature 명세를 추가할 때
-  사용한다. features/NN-{slug}.md 를 prompt-origin 템플릿으로 생성하고
-  `/pilot:analyze` 와 동일하게 project.md (목표·관련 파일) 와 prompts/*
-  (planner·generator·evaluator) 를 함께 동기화한다. 기획서(docs/) 기반
-  다건 분할은 `/pilot:analyze` 를 사용한다. 실행은 @pilot-planner 호출로 시작 —
-  자동 파이프라인 아님.
+  활성 프로젝트에 프롬프트 한 줄로 단일 feature 명세(features/NN-{slug}.md)를
+  추가하고 project.md·prompts/* 를 동기화한다. 기획서(docs/) 기반 다건 분할은
+  `/pilot:analyze`. 실행은 @pilot-planner 호출로 시작 — 자동 파이프라인 아님.
 ---
 
 # /pilot:create-feature
