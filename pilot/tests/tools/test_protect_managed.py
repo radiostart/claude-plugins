@@ -482,6 +482,24 @@ class EvalReportExceptions(unittest.TestCase):
             proc = _run_hook(root, _write(root, "workspace/projects/P/features/01-a.evaluate.md"))
             self.assertEqual(proc.returncode, 2, proc.stderr)
 
+    def test_write_existing_eval_review_style_still_blocked(self):
+        """`.eval.review.md` 류 — r 뒤가 숫자가 아니면 REPORT 산출물이 아니다."""
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            p = root / "workspace" / "projects" / "P" / "features" / "01-a.eval.review.md"
+            p.write_text("x\n", encoding="utf-8")
+            proc = _run_hook(root, _write(root, "workspace/projects/P/features/01-a.eval.review.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+    def test_write_existing_issue_eval_raw_still_blocked(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = _make_root(td)
+            d = root / "workspace" / "issues" / "login-bug"
+            d.mkdir(parents=True)
+            (d / "issue.eval.raw.md").write_text("x\n", encoding="utf-8")
+            proc = _run_hook(root, _write(root, "workspace/issues/login-bug/issue.eval.raw.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

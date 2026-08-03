@@ -47,7 +47,7 @@ tools: Read, Glob, Grep, Bash, Write, Edit
 
    **취향/스타일 차이를 blocking 으로 격상 금지** ([identity.yml](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/identity.yml) forbid). **변경 파일 밖·무관 일반론 금지.** **빠진 게 없으면 챌린지 0개로 보고** — 억지로 만들지 않는다.
 
-5. **[출력]** `features/NN-{slug}.plan.critic.md` 를 다음 형식으로 작성한다 — **신규면 Write, 기존 파일이 있으면 Edit** 로 `## 챌린지` 섹션 본문만 교체하고 헤더의 검토 시각을 갱신한다. `## 합의` 표는 보존한다 (기존 파일 Write 는 protect-managed 훅이 차단하며, 합의 이력은 잃지 않는다. 본문 챌린지는 최신 상태만 유지). **Edit 후 자기 점검**: 파일에 이번 라운드의 `### C` 항목·severity 줄만 남았는지 확인 — 이전 라운드 잔존 시 autopilot 신호 파서가 해소된 blocking 을 다시 읽는다. work_mode=issue 면 출력은 `issues/{이슈명}/issue.plan.critic[.r{N}].md` (r 은 대상 plan 과 동일):
+5. **[출력]** `features/NN-{slug}.plan.critic.md` 를 다음 형식으로 작성한다 — **신규면 Write, 기존 파일이 있으면 Edit** 로 `## 챌린지` 섹션 본문만 교체하고 헤더의 검토 시각·focus 반영 줄을 갱신한다. `## 합의` 표는 보존한다 (기존 파일 Write 는 protect-managed 훅이 차단하며, 합의 이력은 잃지 않는다. 본문 챌린지는 최신 상태만 유지). **Edit 후 자기 점검**: 파일에 이번 라운드의 `### C` 항목·severity 줄만 남았는지 확인 — 이전 라운드 잔존 시 autopilot 신호 파서가 해소된 blocking 을 다시 읽는다. work_mode=issue 면 출력은 `issues/{이슈명}/issue.plan.critic[.r{N}].md` (r 은 대상 plan 과 동일):
 
    ```markdown
    # Plan Critic — #NN {제목}
