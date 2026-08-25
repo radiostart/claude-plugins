@@ -32,14 +32,15 @@ description: >-
 
 ### 1. planner
 
-`@pilot-planner` 호출 → `.plan.md` 작성. mode 는 `.agent-state.yml` 로 결정(tdd:true→`tdd`, mode:characterize→`characterize`, 그 외→`standard`):
+`@pilot-planner` 호출 → `.plan.md` 작성. 판정은 아래 한 명령 — plan-validate 실행과 mode 도출(`.agent-state.yml`)을 CLI 가 직접 수행한다 (모델이 exit code·mode 를 옮겨 적지 않는다 — 옮기는 것은 경로뿐):
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/tools/plan-validate.py workspace/projects/{PROJECT}/features/{NN}-{slug}.plan.md --mode {MODE}
-python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase planner --plan-valid {true|false}
+python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase planner \
+  --plan-file workspace/projects/{PROJECT}/features/{NN}-{slug}.plan.md \
+  --state-file workspace/projects/{PROJECT}/.agent-state.yml
 ```
 
-`kind=proceed` → 2번. `kind=stop`(reason=plan-validate) → **STOP**.
+`kind=proceed` → 2번. `kind=stop`(reason=plan-validate — plan 형식 결함, 누락 항목은 stderr) → **STOP**. `kind=stop`(reason=agent-error — 경로·state 결함으로 검증 실행 불능) → **STOP**.
 
 ### 2. critic
 
@@ -49,7 +50,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase planner --plan-valid {
 python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase critic --critic-file workspace/projects/{PROJECT}/features/{NN}-{slug}.plan.critic.md
 ```
 
-`kind=proceed`(챌린지 0건) → 3번. `kind=reflect`(suggestion/nit 만) → `@pilot-planner` 재호출해 챌린지 반영 + `## 합의` 표 채운 뒤 3번. `kind=stop`(reason=critic-blocking|signal-parse) → **STOP**.
+`kind=proceed`(챌린지 0건) → 3번. `kind=reflect`(suggestion/nit 만) → `@pilot-planner` 재호출해 챌린지 반영 + `## 합의` 표 채운 뒤 **1번의 판정 명령을 재실행**한다 — `kind=proceed` 면 3번, `kind=stop` 이면 **STOP** (반영 과정에서 plan 형식이 깨질 수 있다 — 재검증 없이 generator 로 가지 않는다. critic 은 reflect 후 재호출되지 않으므로 재검증은 실행당 최대 1회). `kind=stop`(reason=critic-blocking|signal-parse) → **STOP**.
 
 ### 3. generator
 

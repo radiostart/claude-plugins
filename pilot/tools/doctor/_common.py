@@ -150,8 +150,18 @@ def parse_state_yml(yml: Path) -> dict | None:
             k, v = line.split(":", 1)
             k = k.strip()
             v = v.strip()
-            if len(v) >= 2 and v[0] == v[-1] and v[0] in ('"', "'"):
-                v = v[1:-1]
+            if v[:1] in ('"', "'"):
+                # 따옴표 값 — 닫는 따옴표까지가 값, 그 뒤(인라인 주석)는 버린다
+                end = v.find(v[0], 1)
+                if end != -1:
+                    v = v[1:end]
+            else:
+                # 인라인 주석 제거 (YAML: 공백 뒤 '#' 부터 주석) — 미제거 시
+                # `tdd: false  # 주석` 이 truthy 문자열로 남아 bool() 소비부가
+                # TDD 모드로 오판한다. '#' 단독 시작 값은 전체가 주석 = 빈 값.
+                v = re.split(r"\s+#", v, 1)[0].rstrip()
+                if v.startswith("#"):
+                    v = ""
             if v in ("true", "True"):
                 data[k] = True
             elif v in ("false", "False"):

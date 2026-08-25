@@ -126,6 +126,30 @@ class ParseStateYml(unittest.TestCase):
     def test_missing_file_returns_none(self):
         self.assertIsNone(m.parse_state_yml(Path("/nonexistent.yml")))
 
+    def test_inline_comment_stripped_from_unquoted_value(self):
+        # 미제거 시 `false   # 주석` 이 truthy 문자열로 남아 bool() 소비부가
+        # TDD 모드로 오판하던 잠복 결함 (2026-08-25 autopilot 검토 중 발견).
+        p = self._write("tdd: false   # TDD 모드 활성 여부\nmode: null  # null | characterize\n")
+        d = m.parse_state_yml(p)
+        self.assertIs(d["tdd"], False)
+        self.assertIsNone(d["mode"])
+
+    def test_inline_comment_after_quoted_value(self):
+        p = self._write('plugin_version: "0.2.5"  # 마지막 기록 버전\n')
+        d = m.parse_state_yml(p)
+        self.assertEqual(d["plugin_version"], "0.2.5")
+
+    def test_value_that_is_only_comment_becomes_none(self):
+        p = self._write("mode: # 아직 미설정\n")
+        d = m.parse_state_yml(p)
+        self.assertIsNone(d["mode"])
+
+    def test_hash_without_leading_space_is_literal(self):
+        # YAML 규칙 — 공백 없이 이어진 '#' 는 값의 일부.
+        p = self._write("domain: shop#legacy\n")
+        d = m.parse_state_yml(p)
+        self.assertEqual(d["domain"], "shop#legacy")
+
 
 class ParseLangTools(unittest.TestCase):
     def _write_manifest(self, body: str) -> Path:
