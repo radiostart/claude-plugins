@@ -4,58 +4,36 @@ pilot의 *User-Facing 메타 구조*입니다. `workspace/` 디렉토리는 하�
 
 ## 전체 구조
 
-```mermaid
-graph TD
-    WS[workspace/]
-    STATE["STATE.md<br/>(활성 작업 표 — 진행중 1 행만)"]
-    CTX[context/]
-    PROJS[projects/]
-    ISSUES[issues/]
-
-    WS --> STATE
-    WS --> CTX
-    WS --> PROJS
-    WS --> ISSUES
-
-    CTX_MANIFEST["MANIFEST.md<br/>(도메인 색인)"]
-    CTX_CONFIG["config.md<br/>(언어·도구 기본값)"]
-    CTX_DOMAINS["{domain}.md 또는 {domain}/<br/>(/pilot:learn 결과)"]
-    CTX_BOUNDARIES["boundaries/{A}--{B}.md<br/>(/pilot:learn --boundary 경계 계약)"]
-    CTX --> CTX_MANIFEST
-    CTX --> CTX_CONFIG
-    CTX --> CTX_DOMAINS
-    CTX --> CTX_BOUNDARIES
-
-    P1["{ActiveProject}/"]
-    P2["{ArchivedProject}/"]
-    PROJS --> P1
-    PROJS --> P2
-
-    P1_STATE[".agent-state.yml<br/>(schema·tdd·mode·domain·plugin_version)"]
-    P1_PROJECT["project.md<br/>(목표·제한사항·[analyze-managed])"]
-    P1_PROMPTS["prompts/<br/>(planner.md·generator.md·evaluator.md)"]
-    P1_FEATURES["features/<br/>(NN-*.md · NN-*.plan.md · NN-*.plan.critic.md · NN-*.eval.md)"]
-    P1_DOCS["docs/<br/>(Confluence fetch 또는 사용자 작성 원본)"]
-    P1_FOCUS[".focus.md<br/>(사용자 최근 지시)"]
-
-    P1 --> P1_STATE
-    P1 --> P1_PROJECT
-    P1 --> P1_PROMPTS
-    P1 --> P1_FEATURES
-    P1 --> P1_DOCS
-    P1 --> P1_FOCUS
-
-    I1["{slug}/<br/>(영문 kebab slug — 40 자 이내)"]
-    ISSUES --> I1
-
-    I1_ISSUE["issue.md<br/>(현상·원인·조치 — 단건 명세이자 기록)"]
-    I1_CYCLE["issue.plan.md · issue.plan.critic.md · issue.eval.md<br/>(사이클 사용 시 · 재작업본은 .r{N} 접미)"]
-    I1_FOCUS[".focus.md<br/>(사용자 최근 지시)"]
-
-    I1 --> I1_ISSUE
-    I1 --> I1_CYCLE
-    I1 --> I1_FOCUS
+```text
+workspace/
+├── STATE.md                       # 활성 작업 표 — 진행중 1 행만
+├── context/                       # 도메인 지식 — 워크스페이스 공유
+│   ├── MANIFEST.md                # 도메인 색인 (진입 파일 표)
+│   ├── config.md                  # 언어·도구 기본값
+│   ├── {domain}.md 또는 {domain}/ # /pilot:learn 결과
+│   └── boundaries/
+│       └── {A}--{B}.md            # /pilot:learn --boundary 경계 계약
+├── projects/                      # 프로젝트별 산출물 — 격리
+│   ├── {ActiveProject}/
+│   │   ├── .agent-state.yml       # schema·tdd·mode·domain·plugin_version
+│   │   ├── project.md             # 목표 · 제한사항 · [analyze-managed]
+│   │   ├── .focus.md              # 사용자 최근 지시
+│   │   ├── prompts/               # planner.md · generator.md · evaluator.md
+│   │   ├── features/              # feature 명세와 파생 산출물
+│   │   └── docs/                  # Confluence fetch · 사용자 작성 원본
+│   └── {ArchivedProject}/         # 종료된 프로젝트 — 구조 동일
+└── issues/                        # 운영 이슈 산출물 — 격리
+    └── {slug}/                    # 영문 kebab slug — 40 자 이내
+        ├── issue.md               # 명세이자 기록 — 현상·원인·조치
+        ├── issue.plan.md          # 사이클을 쓸 때만 생성
+        ├── issue.plan.critic.md
+        ├── issue.eval.md
+        └── .focus.md              # 사용자 최근 지시
 ```
+
+활성 작업은 `STATE.md` 의 진행중 1 행이 가리키는 `projects/{P}/` **또는** `issues/{slug}/` 한 곳입니다. `context/` 는 그 선택과 무관하게 항상 공유됩니다.
+
+사이클 산출물의 파일명 규약 — 프로젝트는 명세 `features/NN-{slug}.md` 옆에 `NN-{slug}.plan.md`·`NN-{slug}.plan.critic.md`·`NN-{slug}.eval.md` 가 붙고, 이슈는 `issue.md` 옆에 같은 접미가 붙습니다. 재작업본에는 `.r{N}` 을 덧붙입니다 (`NN-{slug}.plan.r2.md`).
 
 ## 영역별 책임
 

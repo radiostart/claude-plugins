@@ -73,10 +73,11 @@ minor upgrade 시 wrapper contract의 호환성 변경이 의미하는 바는 �
 
 ## CHANGELOG
 
-본 문서 사이트의 [Reference](../reference/index.md) 및 GitHub Release Note가 모든 변경사항의 SSOT입니다. minor version 이상의 변경이 발생하면 수정 대상이 된 SSOT 정보를 밝히고, 사용자가 이를 derived 파일에 어떻게 동기화할 수 있는지 가이드를 함께 제공합니다.
+버전별 변경 요약은 [릴리스 노트](../release-notes.md)에 모여 있고, 커밋 단위의 원본 목록은 [GitHub Release Note](https://github.com/radiostart/claude-plugins/releases)가 SSOT입니다. minor version 이상의 변경이 발생하면 수정 대상이 된 SSOT 정보를 밝히고, 사용자가 이를 derived 파일에 어떻게 동기화할 수 있는지 가이드를 함께 제공합니다.
 
 ## 다음 단계
 
+- [릴리스 노트](../release-notes.md): 버전별 변경 이력
 - [SSOT와 Derived](ssot-and-derivation.md): 데이터 및 문서의 SSOT 기준과 파생 관계
 - How-to: [Doctor 진단·마이그레이션](../how-to/doctor-migration.md) — 실제 마이그레이션 실행 및 진단 흐름
 - Reference: [`/pilot:pilot-doctor`](../reference/skills/pilot-doctor.md) · [`state-schema.md`](https://github.com/radiostart/claude-plugins/blob/main/pilot/skills/context/lifecycle/state-schema.md)

@@ -123,6 +123,7 @@ nav:
       - SSOT·릴리스:
           - SSOT 와 derived: explanation/ssot-and-derivation.md
           - 릴리스·업그레이드: explanation/release-and-upgrade.md
+  - Releases: release-notes.md
 
 extra:
   version: "0.16.0"  # 릴리스마다 .claude-plugin/plugin.json 의 version 과 맞춘다
