@@ -26,15 +26,15 @@ pytest pilot/tests/ -q
 
 ## 현재 상태
 
-**v0.16.0** (태그 미발행 — main 에만 반영) — 스킬 20 · 에이전트 5 · 훅 6 · 도구 13 · 테스트 481.
+**v0.17.0** (태그 미발행 — main 에만 반영, v0.16.0 도 태그 없이 함께 롤업 예정) — 스킬 20 · 에이전트 5 · 훅 6 · 도구 13 · 테스트 504.
 
 사내 원본 플러그인에서 파생된 범용판이며, **범용화 리팩터는 완료**됐다 (사내 식별자 sweep 0건). 현재는 원본의 미포팅 기능을 선별 흡수하며 자체 dogfooding(`workspace/projects/build-plugin/`)으로 개발한다 — 미완 항목은 `#22 context 드리프트 재학습`.
 
 버전별 요약은 매뉴얼의 [릴리스 노트](https://radiostart.github.io/claude-plugins/release-notes/)(소스: `pilot/docs/release-notes.md`), 커밋 단위 원본은 [GitHub Releases](https://github.com/radiostart/claude-plugins/releases)가 SSOT.
 
+- **v0.17.0** — autopilot 신호 파서 fail-open 9경로 봉쇄 (적대적 검토 기반) · plan 판정 기계 소유 (`--plan-file`·`--state-file`, `--plan-valid` 폐지) · reflect 후 plan 재검증 · 정지 사유 `agent-error` 정밀화.
 - **v0.16.0** — 스킬 3종 신설 (`qa` Jira 결함 처리 phase · `switch` 작업 전환 · `ask` 구현 질의) · learn 기재 규격 (`extraction.md` — 층위 L1/L2/L3·Routes 선별 기재·인용 규격) · doctor 인용 drift 검사 · scope-guard 경로 판정·gitignore 규약 · `plan-target.md` SSOT · state schema **v1.3** (`phase`·`qa_started_at`).
 - **v0.15.0** — evaluator REPORT 영속화 (`features/NN-*.eval.md`) · critic·autopilot·focus 훅 양립 개정 · description 감량.
-- **v0.14.0** — issue 단건 사이클+slug · Open Questions fail-closed 게이트 · knowledge-sync · `pilot-init`/`pilot-review` 개명.
 
 ## 확정된 아키텍처 결정
 
@@ -104,6 +104,8 @@ pilot/tools/release.sh
 
 - **`#22` context 드리프트 재학습** — `workspace/context/pilot/` 이 삭제된 스크립트 3종(`memory-hint`·`init_detect`·`diagnose.py`)과 개명 전 스킬명, issue 경량 모드를 서술 중. `/pilot:learn ./pilot/skills` 재실행으로 일괄 해소한다 (**직접 Edit 금지** — drift-protocol § A). doctor 가 `spec.md` mtime drift 로 감지 중이며, v0.16.0 의 **인용 drift 검사**가 stale 인용까지 추가로 지목한다 (도그푸딩 워크스페이스에서 WARN 다건 예상 — 재학습이 정식 처방).
 - **미포팅 백로그** — greenfield 즉석 등재 · HOTL 다중 순회 (autopilot 은 단일 feature 한정 유지) · AskUserQuestion 기반 사전 인터뷰 (pilot 의 OQ 소비형 인터뷰와는 다른 설계라 통째 이식 금지).
+- **autopilot 재시도 카운터 보조 상한** — `{R}` 는 모델 컨텍스트 + 게이트 이력 1줄 앵커에 의존 (known limitation). `{AUTO_LOG}` 파생 상한을 도입하려면 먼저 SKILL.md 에 로그 행 문법을 기계 판정 가능하게 정본화(행 시작 `[generator]` 앵커)하고 "요약-유실 대비 보조 상한"(max 규칙)으로 설계할 것 — 2026-08-25 적대적 검토(R7)로 1차 안 기각.
+- **`doctor/_common.parse_state_yml` 인라인 주석 오독 (잠복)** — `tdd: false  # 주석` 을 truthy 문자열로 반환해 `bool()` 소비부(orchestrate-load)가 TDD 모드로 오판 가능. 실물 state 파일에 주석이 없어 잠복 상태. auto_pilot 의 `_mode_from_state` 는 자체 주석 제거로 회피했음 (2026-08-25 발견).
 - **`orchestrate-load` placeholder leak** — `parse_lang_tools` 가 config 표의 예시 표기를 실값으로 반환 (doctor 의 구조 기반 판정을 재사용해 해소 가능).
 - ~~Slack pr 기본값~~ — 해소 (2026-08-03, 기본값 complete,approval,pr 로 통일 — 사용자 제품 판단).
 - **영어 README** — 보류 (사용자 판단).

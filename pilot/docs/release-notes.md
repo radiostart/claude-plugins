@@ -17,7 +17,8 @@ pilot 의 버전별 변경 이력입니다. 버전 SSOT 는 `pilot/.claude-plugi
 
 | 버전 | 날짜 | 요약 |
 |---|---|---|
-| [**v0.16.0**](#v0160) | 2026-08-25 | 스킬 3종 신설 (qa · switch · ask) · learn 기재 규격 · scope-guard 경로 판정 |
+| [**v0.17.0**](#v0170) | 2026-08-25 | autopilot 신호 파서 fail-open 봉쇄 · plan 판정 기계 소유 · reflect 재검증 |
+| [v0.16.0](#v0160) | 2026-08-25 | 스킬 3종 신설 (qa · switch · ask) · learn 기재 규격 · scope-guard 경로 판정 |
 | [v0.15.0](#v0150) | 2026-08-03 | evaluator REPORT 영속화 · 훅 양립 갱신 절차 · 스킬 description 감량 |
 | [v0.14.0](#v0140) | 2026-08-01 | issue 단건 사이클 · Open Questions 게이트 · knowledge-sync · 스킬 리네임 |
 | [v0.11.0](#v0110) | 2026-07-31 | doctor 리네임 · Claude 5 하니스 정합 · 에이전트 모델·effort 조정 |
@@ -32,9 +33,27 @@ pilot 의 버전별 변경 이력입니다. 버전 SSOT 는 `pilot/.claude-plugi
 
 ---
 
-## v0.16.0
+## v0.17.0
 
 *2026-08-25 · **현재 버전** — 태그·GitHub Release 미발행 (main 과 이 사이트에만 반영된 상태)*
+
+`/pilot:autopilot` 의 전이 결정기(`tools/auto_pilot.py`)에 대한 HOTL 결함 수리 릴리스입니다. 파서에 실입력을 넣은 1차 검토와 독립 에이전트의 적대적(red-team) 검토로 확인된 fail-open 경로를 전부 정지(fail-closed)로 전환했습니다.
+
+- **신호 파서 fail-open 9경로 봉쇄** — 멈춰야 할 때 통과하던 경로 전부 실측 재현 후 차단:
+    - evaluator: 템플릿 에코 `- status: READY | NOT_READY` 가 첫-토큰 절삭으로 READY 판정되던 건 (status 는 이제 정확 매치) · 유보 붙은 `READY (조건부 …)` · 블록 내 `status` 키 중복 시 마지막 값 승 · REPORT 블록 복수(장식 헤더 `— 재평가 (2차)` 포함) 시 stale 블록 채택
+    - critic: 챌린지 일부의 severity 만 파싱 실패 시 나머지로 판정 (blocking 은닉) · 헤더 없이 비표준 severity 값만 있을 때 0건 통과 · 통과 문구 `plan 통과` 서브스트링 오탐 (전체-행 정확 매치로 교체)
+- **plan 판정 기계 소유** — planner 단계 판정을 `--plan-file`·`--state-file` 로 재정의: auto_pilot 이 plan-validate 를 직접 실행하고 mode 를 `.agent-state.yml` 에서 직접 도출한다 (`tdd: false` 의 인라인 주석도 정확 처리). `--plan-valid`(모델이 exit code 를 옮겨 적던 인자) 폐지. 잔존 신뢰 경계: 파일 경로 선택은 여전히 호출자 몫
+- **정지 사유 정밀화** — 검증 실행 불능(plan/state 파일 부재·mode 도출 실패·plan-validate 크래시·usage 오류)은 `plan-validate` 대신 `agent-error` 로 정지 — 처방표가 "plan 보완"을 오도하지 않는다. plan-validate 의 stdout(JSON)은 폐기해 결정 JSON 과의 혼선 차단, stderr(누락 항목)는 통과
+- **reflect 후 plan 재검증** — critic 챌린지 반영으로 plan 이 수정된 뒤 plan-validate 를 재실행해야 generator 로 진행 (실행당 최대 1회 — 루프 없음)
+- **대소문자 severity 허용** — `Severity:` 표기가 signal-parse 정지 대신 정상 파싱되어, blocking 이면 처방이 더 정확한 `critic-blocking` 으로 안내
+- 테스트 481 → 504 (적대적 입력 23종 추가 — 부분 파싱·decoy 재균형 등 파서가 못 잡는 자유형 일탈은 known limitation 으로 테스트에 명기)
+
+!!! note "의도된 조임"
+    계약을 지키는 산출물도 드물게 새로 정지할 수 있습니다 — 예: critic 제안 본문에 severity 인용 불릿, `- status: READY ✅` 글리프. 정지 비용은 사용자 확인 1회 + 해당 에이전트 재호출이며, [`stop-remediation.md`](https://github.com/radiostart/claude-plugins/blob/main/pilot/skills/autopilot/references/stop-remediation.md) 의 기존 처방이 그대로 적용됩니다.
+
+## v0.16.0
+
+*2026-08-25 · 태그 없음 — v0.17.0 릴리스에 포함*
 
 - **신규 스킬 3종** — `/pilot:qa` (Jira 결함 처리 phase — qa/ 사이클·features 읽기 전용 잠금·회귀영향 게이트) · `/pilot:switch` (최근 작업 목록 조회·전환 — 미완 이슈 재발견) · `/pilot:ask` (도메인 컨텍스트 → 소스 순 읽기 전용 구현 질의)
 - **learn 기재 규격 신설** — 기재 층위 L1/L2/L3 (구현 세부는 소스에 맡김) · Routes 표 선별 기재 + 고지 3줄 · 멀티 DB 귀속 전수 대조 · 부재 주장 반증 의무 · 심볼 앵커 우선 인용 → `learn/references/extraction.md`
