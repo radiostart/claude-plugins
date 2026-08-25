@@ -310,8 +310,9 @@ def _read_file_or_none(path_str):
         return None
 
 
-# .agent-state.yml 의 top-level `tdd:`·`mode:` 행. 값의 인라인 주석은 제거한다
-# (doctor/_common.parse_state_yml 은 인라인 주석을 값에 포함시켜 재사용 불가).
+# .agent-state.yml 의 top-level `tdd:`·`mode:` 행. 값의 인라인 주석은 제거한다.
+# doctor/_common.parse_state_yml 과 규칙 동일 — 본 모듈은 단독 로드되는
+# 스크립트라 doctor 패키지에 의존하지 않고 필요한 2키만 자체 추출한다.
 _STATE_KEY_RE = re.compile(r"^(tdd|mode)\s*:\s*(.*)$")
 
 

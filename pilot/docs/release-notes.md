@@ -35,7 +35,7 @@ pilot 의 버전별 변경 이력입니다. 버전 SSOT 는 `pilot/.claude-plugi
 
 ## v0.17.0
 
-*2026-08-25 · **현재 버전** — 태그·GitHub Release 미발행 (main 과 이 사이트에만 반영된 상태)*
+*2026-08-25 · **현재 버전** · [릴리스](https://github.com/radiostart/claude-plugins/releases/tag/pilot-v0.17.0)*
 
 `/pilot:autopilot` 의 전이 결정기(`tools/auto_pilot.py`)에 대한 HOTL 결함 수리 릴리스입니다. 파서에 실입력을 넣은 1차 검토와 독립 에이전트의 적대적(red-team) 검토로 확인된 fail-open 경로를 전부 정지(fail-closed)로 전환했습니다.
 
@@ -45,6 +45,7 @@ pilot 의 버전별 변경 이력입니다. 버전 SSOT 는 `pilot/.claude-plugi
 - **plan 판정 기계 소유** — planner 단계 판정을 `--plan-file`·`--state-file` 로 재정의: auto_pilot 이 plan-validate 를 직접 실행하고 mode 를 `.agent-state.yml` 에서 직접 도출한다 (`tdd: false` 의 인라인 주석도 정확 처리). `--plan-valid`(모델이 exit code 를 옮겨 적던 인자) 폐지. 잔존 신뢰 경계: 파일 경로 선택은 여전히 호출자 몫
 - **정지 사유 정밀화** — 검증 실행 불능(plan/state 파일 부재·mode 도출 실패·plan-validate 크래시·usage 오류)은 `plan-validate` 대신 `agent-error` 로 정지 — 처방표가 "plan 보완"을 오도하지 않는다. plan-validate 의 stdout(JSON)은 폐기해 결정 JSON 과의 혼선 차단, stderr(누락 항목)는 통과
 - **reflect 후 plan 재검증** — critic 챌린지 반영으로 plan 이 수정된 뒤 plan-validate 를 재실행해야 generator 로 진행 (실행당 최대 1회 — 루프 없음)
+- **state 파서 인라인 주석 오독 수정** — `doctor/_common.parse_state_yml` 이 `tdd: false  # 주석` 을 truthy 문자열로 반환해 소비부(orchestrate-load·doctor)가 TDD 모드로 오판할 수 있던 잠복 결함. 인라인 주석 제거 + 따옴표 값 뒤 주석 처리 (autopilot 검토의 부산물)
 - **대소문자 severity 허용** — `Severity:` 표기가 signal-parse 정지 대신 정상 파싱되어, blocking 이면 처방이 더 정확한 `critic-blocking` 으로 안내
 - 테스트 481 → 504 (적대적 입력 23종 추가 — 부분 파싱·decoy 재균형 등 파서가 못 잡는 자유형 일탈은 known limitation 으로 테스트에 명기)
 
