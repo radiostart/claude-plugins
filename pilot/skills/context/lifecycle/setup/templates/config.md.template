@@ -60,6 +60,7 @@
 | 키              | 값                                                  | 용도                                           |
 | --------------- | --------------------------------------------------- | ---------------------------------------------- |
 | commit_scopes   | `feat,fix,refactor,skills,chore,docs,test,wip`      | `hooks/commit-format.sh` 가 허용하는 커밋 scope 목록 (쉼표 구분) |
+| jira_qa_project_key | 예: `QAPRJ` | `/pilot:qa` 의 Jira 키 화이트리스트 (`tools/jira.py` 가 파싱). prefix 불일치 시 확인 질의. 미선언 시 모든 키 허용 |
 
 **작성 규칙:**
 

@@ -44,6 +44,12 @@
 
     미해결 전제가 남은 채로 구현이 시작되는 것을 차단합니다. 카테고리별 처리 방법과 plan 마커 작성 규칙을 다룹니다.
 
+-   :material-comment-question:{ .lg .middle } __[구현 질의](ask-code.md)__
+
+    ---
+
+    구현된 기능의 동작·위치를 도메인 컨텍스트 → 소스 순으로 탐색해 `file:line` 인용으로 답하는 읽기 전용 질의입니다.
+
 </div>
 
 ## 컨텍스트 관리
@@ -109,6 +115,18 @@
     ---
 
     누적 컨텍스트 기반으로 운영 이슈 1건을 진단·수정합니다. 코드 수정 시 project 와 동일한 4-에이전트 사이클을 이슈 단위로 사용합니다.
+
+-   :material-bug-check:{ .lg .middle } __[QA 결함 처리](qa-cycle.md)__
+
+    ---
+
+    Jira 결함 티켓 1건을 qa phase 사이클로 처리합니다. features 읽기 전용 잠금·회귀영향 평가 게이트·qa/ 산출물 규약을 다룹니다.
+
+-   :material-swap-horizontal:{ .lg .middle } __[작업 전환·재발견](switch-work.md)__
+
+    ---
+
+    최근 진행한 project·issue 목록을 조회하고 전환합니다. 하다 만 이슈가 `미완` 으로 표시되어 재발견됩니다.
 
 -   :material-doctor:{ .lg .middle } __[Doctor 마이그레이션](doctor-migration.md)__
 

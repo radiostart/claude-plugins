@@ -8,6 +8,14 @@ hide:
 
 도메인 지식 기반의 agent workflow 플러그인입니다. Claude Code 내에서 *plan → critic → generate → evaluate*의 명시적 cycle로 project를 진행합니다.
 
+!!! tip "v0.16.0 highlights"
+    - **신규 스킬 3종** — `/pilot:qa` (Jira 결함 처리 phase — qa/ 사이클·features 읽기 전용 잠금·회귀영향 게이트) · `/pilot:switch` (최근 작업 목록 조회·전환 — 미완 이슈 재발견) · `/pilot:ask` (도메인 컨텍스트 → 소스 순 읽기 전용 구현 질의)
+    - **learn 기재 규격 신설** — 기재 층위 L1/L2/L3 (구현 세부는 소스에 맡김) · Routes 표 선별 기재 + 고지 3줄 · 멀티 DB 귀속 전수 대조 · 부재 주장 반증 의무 · 심볼 앵커 우선 인용 → `learn/references/extraction.md`
+    - **doctor 인용 drift 검사** — context 문서의 소스 인용 mtime 대조로 stale 산출물 감지 (learn 재실행 처방)
+    - **scope-guard 경로 판정·gitignore 규약** — 심링크·비정규 표기에서의 무음 해제 차단, 루트 앵커 vs `**/` 임의 깊이 구분, substring 오차단 해소 (테스트 24종)
+    - **대상 plan 확정 SSOT (`plan-target.md`)** — wrapper 3종의 후보 조사·집계 규칙 단일화 (READY eval 필터·셸 글롭 금지), autopilot 은 wrapper 호출 프롬프트에 대상 명시 의무
+    - **Slack 이슈 오전송 차단** — 활성 행이 issue 면 동명 프로젝트 채널로 새지 않음. description 예산·preamble 커버리지 기계 게이트 신설
+
 !!! tip "v0.15.0 highlights"
     - 프로젝트 모드 evaluator REPORT 영속화 — `features/NN-{slug}.eval.md` 저장 + protect-managed 훅 재생성 예외
     - critic·autopilot·focus 갱신 절차를 훅과 양립하게 개정 — 기존 파일 갱신은 Edit 기반

@@ -48,13 +48,17 @@ projects/{PROJECT}/
 
 ### pre / post-analyze 게이트
 
-래퍼는 프로젝트의 **`.agent-state.yml` 의 `analyzed` 필드** 를 "analyze 가 이미 실행됐는가?" 의 시그널로 사용한다.
+`.agent-state.yml` 의 **`analyzed` 필드** 는 "analyze 가 이미 실행됐는가?" 의 시그널이다.
 
-| `analyzed` 값 | 래퍼 동작 |
-| ------------- | --------- |
-| `true` (post-analyze) | prompts/*.md 가 analyze 주입 압축본이라 신뢰. MANIFEST 진입 파일 재로드 생략 |
-| `false` (pre-analyze) | MANIFEST 진입 파일 fallback 로드 |
-| state.yml 부재 | 에러 + 마이그레이션 안내 후 종료 |
+| `analyzed` 값 | 의미 | 도메인 지식 로드 |
+| ------------- | --- | --- |
+| `true` (post-analyze) | prompts/*.md 에 analyze 압축본이 주입된 상태 | **차이 없음** |
+| `false` (pre-analyze) | prompts/*.md 가 example 템플릿 원본에 가까움 | **차이 없음** |
+| state.yml 부재 | — | 에러 + 재생성 안내 후 종료 (`/pilot:project {PROJECT}` 재실행) |
+
+> **`analyzed` 는 로드 분기 필드가 아니다.** MANIFEST 와 도메인 진입 파일·`boundaries/*.md` 는 domain 이 결정돼 있으면 `analyzed` 와 무관하게 **항상** 로드된다 — fallback 이 아니라 **primary 참조**다 (`tools/orchestrate-load.py` 의 `build_load_plan` 시그니처에 `analyzed` 파라미터 자체가 없다).
+>
+> 현재 `analyzed` 의 실소비처는 **doctor 의 정합성·drift 검사 3종** (`features/` 개수 대조 · context/docs mtime drift 게이팅 · `last_analyzed_features` 원장 검사 게이팅) 이다.
 
 스키마 상세: [state-schema.md](../state-schema.md).
 
@@ -203,7 +207,7 @@ projects/{PROJECT}/
 
 ### 포함 내용
 
-- `## 기능별 사전 확인 사항` — **pre-analyze 상태에선 빈 상태**. `/pilot:analyze` 가 feature 별 소항목 + 각 소항목 하위의 `**관련 파일 범위**` subsection (Routes/Models/Services) 을 자동 주입 (`[analyze-managed]` 영역). 래퍼의 pre/post-analyze 분기는 `.agent-state.yml` 의 `analyzed` 필드로 판정 — 위 "pre / post-analyze 게이트" 참조.
+- `## 기능별 사전 확인 사항` — **pre-analyze 상태에선 빈 상태**. `/pilot:analyze` 가 feature 별 소항목 + 각 소항목 하위의 `**관련 파일 범위**` subsection (Routes/Models/Services) 을 자동 주입 (`[analyze-managed]` 영역). 이 섹션이 채워졌는지 여부는 `.agent-state.yml` 의 `analyzed` 필드가 나타낸다 — 위 "pre / post-analyze 게이트" 참조 (로드 분기는 아니다).
 
 > **플래닝 프로세스 공통 가이드** (요구사항 파악 → 영향 범위 분석 → 계획 출력 형식) 는 래퍼 (`${CLAUDE_PLUGIN_ROOT}/agents/pilot-planner.md`) 가 제공한다. 프로젝트별 `prompts/planner.md` 는 프로젝트 고유 사전 확인 사항만 담는다 (공통 템플릿 반복 금지 — GUIDE "agent 파일 책임 경계" 원칙).
 

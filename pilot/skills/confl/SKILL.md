@@ -60,6 +60,8 @@ python3 {PLUGIN}/tools/confluence.py search-local "{검색어}"
 
 `$ARGUMENTS` 를 `>` 기준으로 `{검색어} > {작업지시}` 분리. `{검색어}` 로 Search 모드(MCP 우선→로컬 폴백, `--local` 포함 시 Search:local)를 먼저 실행 → 결과 있으면 컨텍스트로 `{작업지시}` 수행(`rovo-mcp` 출처는 산출물에 직접 인용 금지 — 요약·참조만, 원문 필요 시 fetch 후 재실행 권유) → 결과 없으면 Search 안내 후 종료.
 
+**`prompts/*.md` 의 `[analyze-managed]` 섹션은 편집 대상에서 제외한다** — `/pilot:analyze`·`/pilot:create-feature` 가 features 전체 기준으로 regen 하므로 여기서 추가한 항목은 다음 실행에서 소리 없이 유실된다. 도메인 지식을 남겨야 하면 `features/NN-*.md` 나 `project.md` 의 수동 편집 영역에 쓴다.
+
 예: `/pilot:confl 배송상태 > project.md에 요구사항 정리`
 
 ## All 모드

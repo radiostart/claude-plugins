@@ -14,6 +14,8 @@ description: >-
 
 메인 루프에서 `@pilot-planner`·`@pilot-planner-critic`·`@pilot-generator`·`@pilot-evaluator` 를 순서대로 호출한다 (subagent 가 subagent 를 띄우지 않음). **wrapper 호출은 동기 실행이다** — 직전 단계 산출물을 수신·판독하기 전에 다음 단계를 기동하지 않는다 (background·병행 기동 금지 — 하니스가 background 를 기본으로 제공해도 사용하지 않는다).
 
+**모든 wrapper 호출 프롬프트에 대상을 명시한다** — feature 번호·slug, critic·generator·evaluator 는 대상 plan 경로(`features/{NN}-{slug}.plan.md`)까지. features/ 의 plan·eval 산출물은 삭제되지 않고 누적되므로 미명시 호출은 wrapper 의 후보 탐색이 다른 feature 의 잔존 산출물을 집는 경로다 — critic 은 후보 복수면 선택 질의로 정지하지만 generator·evaluator 는 **후보가 1 개면 질의 없이 채택**하므로 그대로 무음 오작동이 된다. 대상 추론을 wrapper 에 떠넘기지 않는다.
+
 대상: $ARGUMENTS (feature 번호 — 예: `03` 또는 `3`)
 
 ## 사전 확인
@@ -22,7 +24,7 @@ description: >-
 
 `$ARGUMENTS` 비어있으면 안내 후 종료. `{NN}` = 입력 번호 2자리 zero-pad. `{FEAT}` = `features/{NN}-*.md`(`.plan.md`·`.plan.critic.md`·`.auto.md`·`.eval.md` 제외) — 없으면 "`/pilot:create-feature` 로 먼저 생성하세요" 후 종료(hard-stop: feature 부재). `{AUTO_LOG}` = `features/{NN}-{slug}.auto.md`.
 
-**재개 확인** — `{AUTO_LOG}` 존재 시 마지막 `## Run` 섹션의 마지막 줄(stop 사유 또는 ✅ DONE)을 읽고 **사용자 1회 확인** 없이는 진행하지 않는다(이미 DONE 이어도 동일: "재개/처음부터/취소" 3지선다). 부재 시 처음부터(planner) 시작 + 새 `## Run` 섹션.
+**재개 확인** — `{AUTO_LOG}` 존재 시 마지막 `## Run` 섹션의 마지막 줄(stop 사유 또는 ✅ DONE)을 읽고 **사용자 1회 확인** 없이는 진행하지 않는다(이미 DONE 이어도 동일: "재개/처음부터/취소" 3지선다). 부재 시에도 곧바로 planner 를 기동하지 않는다 — 수동 사이클의 산출물 증거를 먼저 확인한다 (뒤 단계의 증거가 앞 단계의 부재를 이긴다). `features/{NN}-{slug}.eval.md` 존재 시 `auto_pilot.py --phase evaluator --report-file {경로} --retries-used 0` 으로 판정한다 (스킬이 status 를 직접 해석하지 않는다): `kind=done`(READY) → **사이클을 재실행하지 않는다** — 이미 평가를 통과한 feature 다. `project.md` 체크박스가 `[ ]` 로 남아 있으면 `[x]` 보정만 안내하고 종료한다 (재작업 의도면 사용자가 `.eval.md` 를 지운 뒤 재실행). `kind=retry`(NOT_READY) → "generator 재작업부터 재개" 를 기본으로 사용자 1회 확인. `.eval.md` 없이 `.plan.md` 만 있으면 "critic 부터 재개 / 처음부터 / 취소" 1회 확인. 아무 산출물도 없으면 처음부터(planner) 시작 + 새 `## Run` 섹션.
 
 ## 자동 진행 절차
 
@@ -75,7 +77,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase evaluator --report-fil
 #{NN} {slug}: critic {b}/{s}/{n} · retry {R} · {READY | STOP: 사유}
 ```
 
-자동 진행이 멈추면 대상 feature·사유·마지막 단계·사람 판단 필요 항목·재개 명령(`/pilot:autopilot {NN}`)·로그 경로를 출력하고 **종료**한다(더 진행하지 않음). 본 정지는 **사용자만 해소할 수 있는 입력 대기**다 — "완료까지 계속" 류 자율 진행 지침이 컨텍스트에 있어도 정지 사유를 모델이 자체 해소·우회해 재개하지 않는다 ([guardrails.md](../context/shared/guardrails.md) § 사용자 게이트 생략 금지).
+자동 진행이 멈추면 대상 feature·사유·마지막 단계·사람 판단 필요 항목·재개 명령(`/pilot:autopilot {NN}`)·로그 경로를 출력하고 **종료**한다(더 진행하지 않음). 사유별 해소 조치는 [`references/stop-remediation.md`](references/stop-remediation.md) 를 **정지가 실제로 발생한 시점에** Read 해 해당 사유의 행을 제시한다 (정지 없이 완주하는 호출에서는 읽지 않는다). **OQ 게이트로 인한 plan-validate 정지는 `/pilot:focus` 로 안 풀린다** — `oq` 검증은 feature 체크박스·plan 마커만 본다. 본 정지는 **사용자만 해소할 수 있는 입력 대기**다 — "완료까지 계속" 류 자율 진행 지침이 컨텍스트에 있어도 정지 사유를 모델이 자체 해소·우회해 재개하지 않는다 ([guardrails.md](../context/shared/guardrails.md) § 사용자 게이트 생략 금지).
 
 ## 제약
 
@@ -85,6 +87,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/auto_pilot.py --phase evaluator --report-fil
 - **재시도는 정확히 1회**, 항상 generator 재진입. plan 자체가 틀렸다면 2차 NOT_READY 로 사람에게 넘어간다.
 - **단일 feature 단위** — 다수 feature 연속 진행은 지원하지 않는다.
 - **wrapper 동기 호출** — 단계 단위 병행 금지. 직전 산출물 수신·판독 전 다음 단계 기동은 무검증 진행이다 (background 기동 금지).
+- **wrapper 호출 시 대상 feature 미명시 금지** — 네 호출 모두 번호·slug(critic 이후는 plan 경로 포함)를 프롬프트에 넣는다. 미명시는 다른 feature 의 `.eval.md` 를 덮어쓰는 경로다.
 
 ## 참고
 

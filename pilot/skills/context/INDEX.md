@@ -7,7 +7,7 @@
 
 ## Work Mode
 
-우선순위: **명령어** (`/pilot:project {이름}`·`/pilot:issue` 등 명시적 선언) > **현재 모드** (`STATE.md` 등록 컨텍스트) > **기본값** (둘 다 없으면 이슈 모드).
+우선순위: **명령어** (`/pilot:project {이름}`·`/pilot:issue` 등 명시적 선언) > **현재 모드** (`STATE.md` 등록 컨텍스트). 기본 모드로의 폴백은 **없다** — 둘 다 해당 없을 때의 동작은 스킬마다 다르며, [`shared/preamble.md`](shared/preamble.md) § 스킬별 P 절차 적용표 가 유일 SSOT 다: P1 적용 스킬은 `no_active_project` 출력 후 **종료**하고, `project`·`issue` 만 P2 로 활성 행을 갱신·등록한다.
 
 ## 컨텍스트 (도메인별 컨텍스트 로딩)
 
@@ -70,13 +70,13 @@
 
 | 상황                                                       | 동작                                                                                  |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `STATE.md` 가 없는 경우                                    | `messages.md` 의 `workspace_missing` 안내 출력 후 종료                    |
+| `STATE.md` 가 없는 경우                                    | 파일 생성은 `/pilot:pilot-init` (스켈레톤) 담당. `project`·`issue` 의 [P2](shared/preamble.md) 는 **활성 행 갱신만** 한다. 그 외 스킬은 `messages.md` 의 `workspace_missing` 출력 후 **즉시 종료** (미셋업은 정상 상태 — 추가 탐색 금지) |
 | `STATE.md` 형식이 깨진 경우                                | `/pilot:project` 또는 `/pilot:issue`로 초기화하도록 안내하고 종료             |
 | `project.md` 가 없는 경우                                  | 사용자에게 파일 생성 여부를 확인 후 진행                                              |
 | `prompts/` 폴더 또는 파일이 없는 경우                      | `project.md`만으로 작업한다                                                           |
 | `issue.md` 가 없는 경우                                    | 사용자에게 파일 생성 여부를 확인 후 진행                                              |
 | MANIFEST 에 도메인 진입 파일이 등록되지 않은 경우 | `/pilot:learn {진입점}` 으로 부트스트랩 안내 또는 사용자에게 MANIFEST 행 추가 요청 |
-| `workspace/context/MANIFEST.md` 가 미존재인 경우 | 사용자에게 컨텍스트를 먼저 설정하라고 안내하고 종료 |
+| `workspace/context/MANIFEST.md` 가 미존재인 경우 | 사용자에게 컨텍스트를 먼저 설정하라고 안내하고 종료. **예외:** `ask` 는 best-effort — 도메인 컨텍스트 탐색만 생략하고 소스 직행 (degrade 1줄 고지, 소스 인용 규율은 유지) |
 | `workspace/context/config.md` 가 미존재인 경우 | 파서 (`scope-guard`·`commit-format`·`orchestrate-load`) 가 해당 검증만 skip 하고 통과. toolchain 키 fallback 으로 Ruby 만 동작. 다른 언어는 `/pilot:pilot-doctor` 가 WARN |
 
 ## 코드 생성 정책

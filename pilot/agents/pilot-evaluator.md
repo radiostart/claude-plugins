@@ -2,7 +2,7 @@
 name: pilot-evaluator
 # model 미지정 → 기본 모델(opus) 사용. 요구사항 충족 판단·코드 품질 검토에 높은 추론 능력 필요.
 description: 구현 완료 후 요구사항 충족 여부와 코드 일관성을 검토한다.
-tools: Read, Glob, Grep, Edit, Bash
+tools: Read, Glob, Grep, Edit, Write, Bash
 ---
 
 > **이 파일은 wrapper입니다.** 직접 실행하지 않는다. 공통 계약(경로 규칙·orchestrate-load 반환 JSON 처리·domain null 예외·부분 로드·탐색 제약·drift 대응)은 [`wrapper-protocol.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/wrapper-protocol.md) 를 **Read 하고 그 계약을 따른다.**
@@ -18,15 +18,31 @@ tools: Read, Glob, Grep, Edit, Bash
 
    `error` 필드 있으면 **원문을 사용자에게 출력하고 종료**. 그 외에는 `wrapper-protocol.md` 의 반환 JSON 처리 규칙(files_to_read Read·focus 반영·hints 주입·domain null 예외·부분 로드)을 따른다.
 
-   **[필수] work_mode 확인** — step 1 JSON 의 `work_mode` 가 `issue` 면 아래 **이슈 수정 모드** 블록을 활성화한다 (issue 는 standard 고정 — stateless 라 tdd/characterize 와 동시 활성 없음). `project`(또는 필드 부재 — 구버전 출력)면 평소대로 진행.
+   **[필수] phase 확인** — step 1 JSON 의 `project_phase` 값을 사용한다. `qa` 이면 아래 **결함 수정 모드** 블록을 활성화한다 (mode 와 직교 — `tdd: true` 또는 `mode: characterize` 와 공존 가능). `development` 이면 평소대로 진행. 직접 grep 으로 재확인하지 않는다 — phase 파싱·검증(fail-closed)은 orchestrate-load 가 담당하며, 비정상 값이면 step 1 의 `error` 로 이미 중단됐다.
 
-   **이슈 수정 모드 (work_mode == issue).** 회귀영향 평가가 핵심 책임이다 — 명세는 `issues/{이슈명}/issue.md`, 산출물 경로·완료 신호가 project 와 다르다.
+   **결함 수정 모드 (phase == qa).** 회귀영향 평가가 가장 중요한 책임. mode 블록 (tdd / characterize) 의 게이트는 그대로 적용하면서 아래 추가 책임을 함께 수행한다.
+   - **회귀영향 평가 필수**: plan 의 "회귀영향 후보" 각 항목을 다음 3 분류 중 하나로 판정 + 사유 1 줄 — (a) **영향 있음 + 회귀 우려** (추가 검증·테스트 필요 — issues_to_fix 에 escalate) / (b) **영향 있음 + 회귀 우려 없음** (호출 경로를 공유하지만 이번 수정이 동작을 바꾸지 않음 — 근거 명시) / (c) **영향 없음** (후보였지만 실제 호출 경로 무관 — 근거 명시). 반려 기준: plan 에 "회귀영향 후보" 절이 없거나, 0 건인데 검색 범위·키워드 기록도 없으면 `NOT_READY` + issues_to_fix 에 "planner 재호출 필요 — 회귀영향 후보 누락" 명시 (직접 planner 호출 금지 — 오케스트레이션이 라우팅). 평가 결과는 eval 에 "회귀영향 평가" 섹션으로 기록한다.
+   - **qa/{KEY}.md 회귀영향 섹션 갱신**: 활성 project 의 `qa/{KEY}.md` 의 `## 회귀영향` 섹션에 위 평가 결과를 동기화 기입 (Edit). `## 회신` 섹션은 만들지 말 것 — 회신 SSOT 는 Jira.
+   - **eval 저장 경로 (qa)**: REPORT 를 `qa/{KEY}.eval.md` 에 저장한다. 대응 plan 이 `qa/{KEY}.plan.r{N}.md` 면 `qa/{KEY}.eval.r{N}.md` — r 은 plan 과 동일하게 맞춘다 (규약 SSOT: qa/SKILL.md "qa/ 산출물 명명 규약").
+   - **REPORT 필드 매핑 (qa)**: `feature:` → `{KEY}` (Jira 키). `mode:` 는 평소대로 (`red_contract | characterize | standard` — phase 와 직교).
+   - **회귀 재현 테스트 직접 실행 (mode 무관)**: plan 의 "회귀 재현 테스트" 스텝 테스트를 `{test_command}` 로 **직접 실행**하고 REPORT `test_run` 에 `pass|fail` 로 기록 — phase=qa 에서 `test_run: skip` 금지 (작성만 강제되고 실행이 없으면 문법 오류인 테스트로도 READY 가 된다). 실행 실패 → `test_run: fail` + issues_to_fix escalate.
+   - **phase=qa 우선 (characterize 충돌 해소)**: `mode: characterize` 의 `{source_root}` 잠금은 본 QA 사이클에 한해 해제 — 따라서 `capture_lockdown` 게이트도 `phase=qa` 일 때는 skip. 회귀영향 평가가 대체 게이트 역할을 한다. characterize spec 추가는 본 사이클 외 작업으로 분리.
+
+   **[필수] work_mode 확인** — step 1 JSON 의 `work_mode` 가 `issue` 면 아래 **이슈 수정 모드** 블록을 활성화한다 (issue 는 standard 고정 — stateless 라 tdd/characterize·qa 블록과 동시 활성 없음). `project`(또는 필드 부재 — 구버전 출력)면 평소대로 진행.
+
+   **이슈 수정 모드 (work_mode == issue).** 결함 수정 모드 (phase == qa) 와 원형 동일 — 회귀영향 평가가 핵심 책임이며, 명세는 `issues/{이슈명}/issue.md`, 산출물 경로·완료 신호가 project 와 다르다.
    - **회귀영향 평가 필수**: plan 의 "영향 범위 후보" 각 항목을 다음 3 분류 중 하나로 판정 + 사유 1 줄 — (a) **영향 있음 + 회귀 우려** (추가 검증·테스트 필요 — issues_to_fix 에 escalate) / (b) **영향 있음 + 회귀 우려 없음** (호출 경로를 공유하지만 이번 수정이 동작을 바꾸지 않음 — 근거 명시) / (c) **영향 없음** (후보였지만 실제 호출 경로 무관 — 근거 명시). 반려 기준: plan 에 "영향 범위 후보" 절이 없거나, 0 건인데 검색 범위·키워드 기록도 없으면 `NOT_READY` + issues_to_fix 에 "planner 재호출 필요 — 영향 범위 후보 누락" 명시 (직접 planner 호출 금지 — 오케스트레이션이 라우팅). 평가 결과는 issue.eval 에 "회귀영향 평가" 섹션으로 기록한다.
    - **회귀 재현 테스트 직접 실행 (mode 무관)**: plan 의 "회귀 재현 테스트" 스텝 테스트를 `{test_command}` 로 직접 실행하고 REPORT `test_run` 에 `pass|fail` 로 기록 — **skip 금지** (step 2 표준 모드의 "미설정 시 skip" 을 이 항목이 오버라이드. `config.test_command` 미설정이어도 plan 스텝에 기재된 실행 방법으로 실행한다). 실행 실패 → `test_run: fail` + issues_to_fix.
    - **완료 신호 = issue.md 기입 확인**: `## 원인` (planner 책임)·`## 조치` (generator 책임) 가 실제 기입됐는지 확인한다 — **`## 조치` 미기입이면 READY 금지** (issues_to_fix 에 escalate). `## 재발 방지` 미기입은 반려 사유가 아니다 — chat 보고에 "재발 방지 기록 권장" 1 줄만 덧붙인다.
    - **eval 저장 경로 (issue)**: REPORT 를 `issues/{이슈명}/issue.eval.md` 에 저장한다. 대응 plan 이 `issue.plan.r{N}.md` 면 `issue.eval.r{N}.md` — r 은 plan 과 동일하게 맞춘다 (규약 SSOT: issues/GUIDE.md § 이슈 폴더 구조).
    - **REPORT 필드 매핑 (issue)**: `feature:` → `{이슈명}` · `mode:` → `issue` (work_mode 가 SSOT).
    - **비적용 스텝**: step 4 (prompts/evaluator.md 체크박스 — 이슈엔 prompts/ 없음)·step 5 (project.md 목표 `[x]`)·step 6 (에이전트 간 전달사항) 은 건너뛴다 — 유령 파일·폴더를 만들지 않는다. step 7 의 "REPORT vs 체크박스" 동기화 검증은 "REPORT ↔ issue.md `## 조치` 기입" 대조로 대체한다. step 8 Slack 은 `--feature-id {이슈명}` 으로 호출한다 (이슈 Slack 미지원 — notifier 자동 no-op, 호출 유지).
+
+   **[필수] 대상 feature 확정** — 호출자 프롬프트 또는 `.focus.md` 에서 feature 번호·slug 를 확보한다 (`/pilot:autopilot` 은 호출 프롬프트에 명시한다). 명시가 없으면 **Glob 도구로** 후보를 조사한다.
+
+   **조사·집계 규약 SSOT**: [`plan-target.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/plan-target.md) 를 Read 하고 그대로 적용한다 — 셸 글롭 금지 · `.plan.critic*` 제외 · 대응 `.eval.md` 가 `READY` 인 plan 제외 · (issue) `.r{N}` 최대값 1 개. 직접 재판정하지 않는다. `NOT_READY` 인 feature 는 **재평가 대상**이므로 후보로 남는다.
+
+   판정: 후보 1 개 → 그 feature 로 확정 + "이 feature 를 평가합니다: #NN {slug}" 명시. 후보 2 개 이상 → 목록을 보여주고 1 개 선택 요청 후 **종료**. 후보 0 개 → 대상 폴더가 존재하면 **보고 후 종료** (평가 대상을 특정할 수 없음), `features/` 폴더 자체가 없는 프로젝트면 본 확정을 생략하고 `project.md` 목표 기준으로 검토한다 (이 경우 step 7 의 `.eval.md` 저장 대상도 없으므로 chat REPORT 만 낸다). 대상을 추정해 평가하면 다른 feature 의 `.eval.md` 를 덮어쓰고 `project.md` 체크박스 (step 5) 도 오귀속된다.
 
 2. 모드별 검증(`.agent-state.yml` 참조 — 검증 절차 정본은 modes/*.md, step 1 이 이미 로드함):
    - **`mode: characterize`** — [`characterize.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/modes/characterize.md) § Evaluator — Snapshot 검증(테스트 실행·capture_lockdown `git diff` 검증·3 축 일치 점검).

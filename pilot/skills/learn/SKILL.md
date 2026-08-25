@@ -3,7 +3,7 @@ name: learn
 description: >-
   기존 소스 코드의 진입점(컨트롤러·서비스 파일 또는 폴더)을 받아 의존성을
   따라 읽고 `workspace/context/` 도메인 문서를 부트스트랩한다 — 추측 금지,
-  file:line 인용만. `--boundary B --from A` 는 A 가 호출하는 표면만
+  소스 인용만. `--boundary B --from A` 는 A 가 호출하는 표면만
   `boundaries/{A}--{B}.md` 로 포착한다. docs/ 기획서 가공은 `/pilot:analyze`.
 ---
 
@@ -11,10 +11,12 @@ description: >-
 
 > **페르소나 — ethnographer** (이 스킬 SSOT, 공통 톤 [`identity.yml`](../context/shared/identity.yml) 위에 덧씌움)
 > - voice: 코드에 적힌 것만. 추측은 빈 칸으로 둔다
-> - phrasing: 사실 + file:line 인용
+> - phrasing: 사실 + 소스 인용 (심볼 앵커 우선)
 > - forbid: "'아마도'·'~일 것이다' 같은 추정 표현" / "코드에 없는 동작 서술"
 
 소스 코드 진입점에서 도메인 컨텍스트를 부트스트랩한다.
+
+기록하는 것은 **위치와 계약·함정**이다 — 계산식·분기 순서 같은 **구현은 옮겨 적지 않고 소스에 맡긴다** (산출물은 소스로 가는 지도이지 소스의 대체물이 아니다). 층위 구분과 판정 문답: [`references/extraction.md`](references/extraction.md) § 기재 층위.
 
 대상: $ARGUMENTS
 
@@ -56,7 +58,7 @@ description: >-
 
 25k 토큰 거부 시 **limit 1/2 축소** 재시도 (소스 코드는 라인당 토큰 밀도가 낮아 1/2 로 충분 — analyze 의 표 중심 마크다운 1/3 규칙과 의도된 차이). 누적 ~50k 초과 시 진행 여부 재확인.
 
-**추출 항목**: 파일 목적 · public interface(시그니처·route·클래스·상속) · 의존성 · state enum · business rule · **cross-domain transaction nesting**(외부 namespace receiver 만 — [`references/cross-domain.md`](references/cross-domain.md) Phase 3). **추측 금지** — 코드 문자 그대로만 (주석 인용 허용 — 아래 식별자 배제 적용), 모든 항목 `file:line` 인용 (`/pilot:pilot-doctor` 의 mtime drift 감지 입력). 카테고리별(routes·controllers·services·models·enums·rules) 메모리 누적.
+**추출 항목**: 파일 목적 · public interface(시그니처·route·클래스·상속) · 의존성 · state enum · business rule · **cross-domain transaction nesting**(외부 namespace receiver 만 — [`references/cross-domain.md`](references/cross-domain.md) Phase 3). **추측 금지** — 코드 문자 그대로만 (주석 인용 허용 — 아래 식별자 배제 적용), 모든 항목 소스 인용 — **심볼 앵커 우선** (`` `file#symbol` ``, 라인 번호는 심볼로 짚을 수 없는 지점만·범위 인용 금지), 부재 주장은 반증 후에만. 기재·인용 규격: [`references/extraction.md`](references/extraction.md). 카테고리별(routes·controllers·services·models·enums·rules) 메모리 누적.
 
 **프로젝트 식별자 배제** — scope·rules·MANIFEST·enums 는 개별 프로젝트보다 오래 사는 공유 지식이다. 프로젝트 생애주기에 종속된 토큰 — feature ID (`F{숫자}`·`features/NN`·`#34`), 티켓 키 (`ABC-123`), PR·이슈 번호, 분기·스프린트 라벨 — 은 본문에 기록하지 않는다 (프로젝트 종료 후 "어느 프로젝트의 F9 인지" 알 수 없어 공유 지식을 오염). 주석 인용·요약 시에도 토큰을 벗겨 도메인 사실만 적는다: `# F14 B 승인 절차` → `B 승인 절차`. 이 규칙은 공유 context (`workspace/context/**`) 산출물에만 적용 — `projects/{P}/features/`·`*.plan.md` 등 프로젝트-스코프 산출물의 feature ID 표기는 정상이다.
 
@@ -65,7 +67,7 @@ description: >-
 1. **구조 결정** — 휴리스틱으로 폴더 구조 선택 (단일 도메인 소/대·sub-domain·Routes-Models-Services 분리·state machine 풍부 등). 상세: [`references/heuristics.md`](references/heuristics.md).
 2. **Cross-domain Transaction Contracts** — Phase 3 누적 건 있으면 `## 다중 DB` 직후 sub-section 삽입(0건이면 skip). [`references/cross-domain.md`](references/cross-domain.md) Phase 4.
 3. **파일 크기 정책**: 진입/index **≤100줄**, 본문 **≤200줄** (초과 시 sub-domain → 카테고리 → 알파벳 순 분할).
-4. 미리보기(생성 파일 tree + 샘플 1~2줄) → **사용자 확인 2** (`a) 이대로 b) 다르게 분할 c) 중단`).
+4. 미리보기(생성 파일 tree + 샘플 1~2줄) → **사용자 확인 2** (`a) 이대로 b) 다르게 분할 c) 중단`). 승인 전 기재 규격 3종을 점검한다 — Routes 표 선별·고지 3줄, 구현 세부 (계산식·분기 순서·키 전수·라인 범위 인용) 제거 후 심볼 앵커 대체, 프로젝트 식별자 배제 ([`references/extraction.md`](references/extraction.md)).
 5. **충돌 처리** — 기존 파일 존재 시 `--force` 면 덮어쓰기, 없으면 3-way 질의(overwrite/sub-domain 추가/중단).
 6. 승인 후 **batch Write** — [coding.md](../context/shared/coding.md) `## 독립 파일 배치 작업` 절차.
 
@@ -100,7 +102,16 @@ MANIFEST 자유 형식 — **기존 정의가 있으면 그에 따르고, 없을
 - **출력 구조는 codebase 따라 자유** — `scope/{domain}.md` 강제 안 함. **MANIFEST.md 가 discovery contract**.
 - `scope/{domain}.md`·`rules/{domain}.md` 는 **사용자 커스텀 layer** — 이 스킬은 직접 생성하지 않는다.
 
+## 규격이 바뀌었을 때 기존 산출물
+
+본 스킬의 추출·기재 규격은 릴리즈로 바뀐다. 그때 **이미 작성된 산출물은 자동으로 바뀌지 않는다** — 도메인 문서·MANIFEST 는 learn 을 명시 재실행해 미리보기 승인 게이트를 통과할 때만 갱신되고, 규격 불일치는 `/pilot:pilot-doctor` 의 검사 항목이 아니다 (doctor 의 context drift 검사는 파일 mtime 기준 — 기재 규격 준수를 보지 않는다). 규격 변경 후 기존 도메인이 신규격 미충족으로 남아 있는 것은 정상이며, 적용은 사용자가 택일한다:
+
+- **ⓐ 해당 도메인 learn 재실행 (`--force`)** — 표 내용까지 새로 뽑는다. 코드가 그동안 변한 도메인에 적합.
+- **ⓑ 수동 삽입** — 고지 문구처럼 **표 내용과 무관한 항목**은 재추출 없이 그 부분만 채운다. 코드는 그대로인데 규격만 바뀐 경우 비용이 훨씬 싸다.
+- **섞을 때는 순서** — learn 재실행은 덮어쓰기라 (diff 모드 없음) ⓑ 로 채운 수동 보강분이 사라진다. ⓐ 를 먼저 하고 ⓑ 를 다시 얹는다.
+- **규격 변경만을 이유로 기존 표 행·인용을 대량 삭제하지 않는다** — 도메인 문서의 클래스명·인용 경로는 boundary 모드 호출처 수집의 입력이다 ([`references/cross-domain.md`](references/cross-domain.md) § Boundary 모드 1).
+
 ## 참고
 
 - `/pilot:analyze` — docs/ 기획서를 features/ 로 가공 (짝). `/pilot:pilot-init` — workspace 스켈레톤 (선행 1회).
-- 구조 결정 휴리스틱: [`references/heuristics.md`](references/heuristics.md) · cross-domain detect: [`references/cross-domain.md`](references/cross-domain.md)
+- 구조 결정 휴리스틱: [`references/heuristics.md`](references/heuristics.md) · cross-domain detect: [`references/cross-domain.md`](references/cross-domain.md) · 기재 규격: [`references/extraction.md`](references/extraction.md)

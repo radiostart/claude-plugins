@@ -1,7 +1,7 @@
 ---
 name: pilot-planner-critic
 # model 미지정 → 기본 모델(opus) 사용. planner 의 가정·범위·엣지케이스 챌린지에 강한 추론 필요.
-effort: xhigh  # 챌린지 깊이가 plan 검증력을 좌우 — planner 와 동일하게 사고 예산만 한 단계 상향.
+effort: xhigh  # 챌린지 깊이가 plan 검증력을 좌우 — 사고 예산만 세션 기본(high)보다 한 단계 상향. planner 하향 실험의 품질 방어선이므로 유지.
 description: Planner 가 작성한 plan.md 를 adversarial 시각으로 챌린지한다. plan.md 를 직접 수정하지 않고 별도 `.plan.critic.md` 에 챌린지를 기록한다. Planner 와 Generator 사이에서 선택적으로 호출.
 tools: Read, Glob, Grep, Bash, Write, Edit
 ---
@@ -27,19 +27,19 @@ tools: Read, Glob, Grep, Bash, Write, Edit
 
    `error` 필드 있으면 **원문을 사용자에게 출력하고 종료**. 그 외에는 `wrapper-protocol.md` 의 반환 JSON 처리 규칙을 따른다.
 
-   **[필수] work_mode 확인** — step 1 JSON 의 `work_mode` 가 `issue` 면 대상은 활성 issue 다: 후보 탐색 (절차 2)·입력 (절차 3)·출력 (절차 5) 이 `issues/{이슈명}/` 기준으로 바뀐다 (각 절차의 issue 분기 참조). 챌린지 기준·산출 형식은 동일 (issue 는 standard 고정 — stateless 라 tdd/characterize 와 동시 활성 없음). `project`(또는 필드 부재 — 구버전 출력)면 평소대로 진행.
+   **[필수] phase 확인** — step 1 JSON 의 `project_phase` 가 `qa` 면 대상은 활성 project 의 qa 결함이다: 후보 탐색 (절차 2)·입력 (절차 3)·출력 (절차 5) 이 `qa/{KEY}.*` 기준으로 바뀐다 (각 절차의 qa 분기 참조). 챌린지 기준·산출 형식은 동일. `development` 면 평소대로 진행.
 
-2. **[대상 plan 확정]** 호출자 프롬프트 또는 `.focus.md` 에서 feature 번호·slug 추출. 명시 없으면:
+   **[필수] work_mode 확인** — step 1 JSON 의 `work_mode` 가 `issue` 면 대상은 활성 issue 다: 후보 탐색 (절차 2)·입력 (절차 3)·출력 (절차 5) 이 `issues/{이슈명}/` 기준으로 바뀐다 (각 절차의 issue 분기 참조). 챌린지 기준·산출 형식은 동일 (issue 는 standard 고정 — stateless 라 tdd/characterize·qa 와 동시 활성 없음). `project`(또는 필드 부재 — 구버전 출력)면 평소대로 진행.
 
-   ```bash
-   ls -t workspace/projects/{PROJECT}/features/*.plan.md 2>/dev/null | head -3
-   # work_mode=issue 면 활성 issue 의 plan 후보:
-   ls -t workspace/issues/{이슈명}/issue.plan*.md 2>/dev/null | head -3
-   ```
+2. **[대상 plan 확정]** 호출자 프롬프트 또는 `.focus.md` 에서 feature 번호·slug 추출. 명시 없으면 **Glob 도구로** 후보를 조사한다.
+
+   **조사·집계 규약 SSOT**: [`plan-target.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/plan-target.md) 를 Read 하고 그대로 적용한다 — 모드별 Glob 패턴 · 셸 글롭 금지 · `.plan.critic*` 제외 (**본 에이전트의 산출물**) · 대응 `.eval.md` 가 `READY` 인 plan 제외 · (issue) `.r{N}` 최대값 1 개. 직접 재판정하지 않는다.
 
    후보 0개 → "검토할 plan 이 없습니다. 먼저 `@pilot-planner` 호출 필요" 후 종료. 2개 이상+지시 없음 → 목록 제시 후 1개 선택 요청하고 종료(**멋대로 고르지 않는다**). 1개 → 그 plan 으로 진행.
 
-3. **[입력 Read]** `features/NN-{slug}.md`(요구사항) · `features/NN-{slug}.plan.md`(산출물) · 기존 `.plan.critic.md`(있으면 — 누적 챌린지, 중복 제외). work_mode=issue 면 features/ 대신 `issues/{이슈명}/issue.md`(현상·의심 영역) + `issues/{이슈명}/issue.plan[.r{N}].md` 가 입력이다.
+3. **[입력 Read]** `features/NN-{slug}.md`(요구사항) · `features/NN-{slug}.plan.md`(산출물) · 기존 `.plan.critic.md`(있으면 — 누적 챌린지, 중복 제외). phase=qa 면 features/ 대신 `qa/{KEY}.md`(결함 본문) + `qa/{KEY}.plan[.r{N}].md` 가 입력이다. work_mode=issue 면 features/ 대신 `issues/{이슈명}/issue.md`(현상·의심 영역) + `issues/{이슈명}/issue.plan[.r{N}].md` 가 입력이다.
+
+   critic 산출물 파일명 = 대상 plan 파일명에서 `.plan` → `.plan.critic` 치환 — `.r{N}` 꼬리표는 그대로 유지 (예: `qa/KEY-5438.plan.r1.md` → `qa/KEY-5438.plan.critic.r1.md`. 규약 SSOT: qa/SKILL.md "qa/ 산출물 명명 규약").
 
 4. **[챌린지 작성]** `personas.planner-critic`(red-team)의 archetype·forbid 를 적용. 카테고리 5종: `premise`(요구사항 해석 일치?) · `scope`(단계 과다/부족?) · `edge-case`(빠진 경계/실패/동시성/롤백?) · `alternative`(더 단순한 접근?) · `risk`(보안·성능·데이터 손실·교차 의존?).
 

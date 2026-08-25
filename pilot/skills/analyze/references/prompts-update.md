@@ -2,7 +2,7 @@
 
 features/ 분석 결과를 바탕으로 `workspace/projects/{PROJECT}/prompts/` 의 에이전트 파일을 자동 갱신한다. 에이전트 파일이 없으면 새로 생성하고, 이미 존재하면 features/ 내용을 반영하여 업데이트한다.
 
-이 6 단계는 래퍼의 pre/post-analyze 게이트 판정 필드 (`.agent-state.yml` 의 `analyzed`) 를 `true` 로 전환시키는 유일한 경로다 (6-4 단계에서 실제 전환 수행).
+이 6 단계는 `.agent-state.yml` 의 `analyzed` 를 `true` 로 전환시키는 유일한 경로다 (6-4 단계에서 실제 전환 수행). `analyzed` 는 doctor 정합성 검사의 판정 필드이며, 래퍼의 도메인 지식 로드 분기에는 쓰이지 않는다.
 
 ## `[analyze-managed]` 주석의 의미
 
@@ -172,7 +172,7 @@ evaluator.md 고유:
    - `domain: {사용자가 확인한 도메인}` — 5 단계에서 질의·확인한 값. null 로 두지 않는다 (null 이면 다음 analyze 가 다시 도메인 질의를 해 사용자가 같은 답을 두 번 입력하게 된다).
 4. 그 외 필드 (`schema`, `tdd`, `docs_last_fetched_at`) 는 건드리지 않는다. `schema` 가 `v1` 또는 `v1.1` 이면 이번 기회에 최신(`v1.2`) 으로 업그레이드 + `domain` 기록까지 한 번에 처리.
 
-이 단계를 통과해야 wrapper (`@pilot-planner`·`@pilot-generator`·`@pilot-evaluator`) 가 post-analyze 분기 (`scope` 원본 재로드 생략) 로 동작한다.
+이 단계를 통과해야 `/pilot:pilot-doctor` 의 `analyzed` ↔ `features/` 정합성 검사가 통과한다 (wrapper 의 도메인 컨텍스트 로드는 이 값과 무관하게 항상 수행된다 — [state-schema.md](../../context/lifecycle/state-schema.md) § `analyzed`).
 
 `analyzed_at` 과 `last_analyzed_features` 는 `/pilot:pilot-doctor` 가 **drift 감지** 에 사용한다:
 

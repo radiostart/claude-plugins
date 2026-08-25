@@ -1,0 +1,29 @@
+# {JIRA-KEY} — {요약}
+
+> jira: {URL}
+> reported: {YYYY-MM-DD}
+> reporter: {QA 담당}
+
+## 현상
+
+_(jira.py fetch 가 prefill)_
+
+## 연관 feature
+
+_(연관 features — features/NN-*.md grep 결과 또는 사용자 명시)_
+
+## 재현 경로
+
+_(Jira 본문에서 추출 또는 사용자 보강)_
+
+## 원인
+
+_(@pilot-planner 분석 후 기입)_
+
+## 조치
+
+_(@pilot-generator 구현 후 기입 — 변경 파일·핵심 diff 요약)_
+
+## 회귀영향
+
+_(@pilot-evaluator 가 채움 — 동일 코드 경로를 쓰는 다른 feature 영향 평가)_

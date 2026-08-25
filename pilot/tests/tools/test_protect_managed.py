@@ -501,5 +501,81 @@ class EvalReportExceptions(unittest.TestCase):
             self.assertEqual(proc.returncode, 2, proc.stderr)
 
 
+class QaPhaseLock(unittest.TestCase):
+    """phase=qa 동안 features/ 트리 읽기 전용 + qa/ 폴더 상시 쓰기 허용."""
+
+    def _qa_root(self, td: str, phase: str | None = "qa") -> Path:
+        root = _make_root(td)
+        proj = root / "workspace" / "projects" / "P"
+        body = "schema: v1.3\nanalyzed: true\ntdd: false\ndomain: orders\n"
+        if phase is not None:
+            body += f"phase: {phase}\n"
+        (proj / ".agent-state.yml").write_text(body, encoding="utf-8")
+        (proj / "qa").mkdir(exist_ok=True)
+        return root
+
+    def test_qa_phase_blocks_existing_feature_write(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._qa_root(td)
+            proc = _run_hook(root, _write(root, "workspace/projects/P/features/01-a.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+            self.assertIn("phase=qa", proc.stderr)
+
+    def test_qa_phase_blocks_new_feature_file(self):
+        # 신규 생성도 예외 아님 — features 트리 전체 읽기 전용
+        with tempfile.TemporaryDirectory() as td:
+            root = self._qa_root(td)
+            proc = _run_hook(root, _write(root, "workspace/projects/P/features/99-new.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+    def test_qa_phase_blocks_feature_edit(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._qa_root(td)
+            proc = _run_hook(root, _edit(root, "workspace/projects/P/features/01-a.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+
+    def test_qa_dir_always_writable(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._qa_root(td)
+            proc = _run_hook(root, _write(root, "workspace/projects/P/qa/KEY-1.md"))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            # 기존 qa 파일 Write 도 허용 (재작업 산출물)
+            (root / "workspace" / "projects" / "P" / "qa" / "KEY-1.md").write_text(
+                "x\n", encoding="utf-8"
+            )
+            proc = _run_hook(root, _write(root, "workspace/projects/P/qa/KEY-1.md"))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_development_phase_edit_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._qa_root(td, phase="development")
+            proc = _run_hook(root, _edit(root, "workspace/projects/P/features/01-a.md"))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_phase_absent_edit_passes(self):
+        # v1.2 이하 legacy state — phase 부재는 development 로 간주
+        with tempfile.TemporaryDirectory() as td:
+            root = self._qa_root(td, phase=None)
+            proc = _run_hook(root, _edit(root, "workspace/projects/P/features/01-a.md"))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_invalid_phase_fail_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._qa_root(td, phase="qaa")
+            proc = _run_hook(root, _write(root, "workspace/projects/P/features/01-a.md"))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+            self.assertIn("유효하지 않습니다", proc.stderr)
+
+    def test_qa_phase_bypass_env(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._qa_root(td)
+            proc = _run_hook(
+                root,
+                _write(root, "workspace/projects/P/features/01-a.md"),
+                extra_env={"PILOT_PROTECT_BYPASS": "1"},
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
