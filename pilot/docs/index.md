@@ -16,19 +16,7 @@ hide:
     - **대상 plan 확정 SSOT (`plan-target.md`)** — wrapper 3종의 후보 조사·집계 규칙 단일화 (READY eval 필터·셸 글롭 금지), autopilot 은 wrapper 호출 프롬프트에 대상 명시 의무
     - **Slack 이슈 오전송 차단** — 활성 행이 issue 면 동명 프로젝트 채널로 새지 않음. description 예산·preamble 커버리지 기계 게이트 신설
 
-!!! tip "v0.15.0 highlights"
-    - 프로젝트 모드 evaluator REPORT 영속화 — `features/NN-{slug}.eval.md` 저장 + protect-managed 훅 재생성 예외
-    - critic·autopilot·focus 갱신 절차를 훅과 양립하게 개정 — 기존 파일 갱신은 Edit 기반
-    - Slack 활성화 기본 이벤트에 `pr` 포함 — `complete,approval,pr` 로 통일
-    - 스킬 description 7종 감량 — 상시 시스템 프롬프트 비용 3,777B → 2,208B
-
-!!! tip "v0.14.0 highlights"
-    - **issue 단건 사이클 + 폴더 slug** — `/pilot:issue` 가 경량 모드에서 사이클 지원으로 재정의. orchestrate-load 가 STATE.md 의 `| issue | {이슈명} |` 행을 인식해 (`work_mode` 계약) planner→critic→generator→evaluator 를 `issues/{이슈명}/` 기반으로 구동한다. 폴더명(영문 kebab slug ≤40자)과 표시명(issue.md H1)을 분리해 유사 이슈 검색을 폴더명 `ls` + H1 `grep` 병행으로 수행 → [운영 이슈 단건 처리](how-to/issue-cycle.md)
-    - **Open Questions fail-closed 게이트** — 미해결 `- [ ]` 항목에 plan 처리 마커(`추정 구현`/`범위 제외`)가 없으면 `plan-validate` 가 차단. evaluator REPORT 에 `open_questions` gate 추가 (7 gates)
-    - **도메인 지식 환류 (knowledge-sync)** — evaluator 가 사이클 종료 시 이번 변경이 도메인 문서에 남길 지식을 감지해 `metrics.domain_impact` 로 보고. 기록 여부는 사용자 승인 후 메인 대화가 결정
-    - **`/pilot:init`·`/pilot:review` → `/pilot:pilot-init`·`/pilot:pilot-review`** — Claude Code 내장 `/init`·`/review` 와의 bare 별칭 충돌 해소
-    - **issue 모드 경계 집행** — issues/ 훅 보호(기존 파일 Write·destructive 차단, Edit·신규 산출물 통과), focus 는 `issues/{이슈명}/.focus.md` 로 분기, commit 은 계속 동작하고 나머지 project 전용 스킬은 issue 행에서 종료
-    - **하니스 정합·규율 보강** — 진행 보드 겸용 선로딩, 계획 단계 effort 상향, plan 분량 가드(WARN), 주석 규율 eval, 훅 결함 4건 수정, SessionStart 컨텍스트 훅
+    [:octicons-arrow-right-24: 전체 버전 이력](release-notes.md)
 
 ---
 
@@ -84,4 +72,4 @@ hide:
 
 pilot은 대화의 맥락과 domain context를 유지할 수 있도록 `workspace/` 구조와 독립된 4개의 agent(`planner` / `planner-critic` / `generator` / `evaluator`)를 활용해 명시적인 호출 flow를 유지합니다. 완전히 자동화된 pipeline이 아닌, 각 phase 사이에 사용자가 개입할 수 있는 workflow입니다.
 
-[GitHub](https://github.com/radiostart/claude-plugins){ .md-button } [CHANGELOG](https://github.com/radiostart/claude-plugins/releases){ .md-button }
+[GitHub](https://github.com/radiostart/claude-plugins){ .md-button } [릴리스 노트](release-notes.md){ .md-button }

@@ -131,11 +131,12 @@ workspace/
 
 ## 릴리스 및 업데이트
 
-릴리스는 `gh` CLI 로 진행한다. **버전을 올리는 PR 에서 아래 네 곳을 함께 갱신**한 뒤 main 에 머지한다 (버전 값은 `plugin.json` 과 `mkdocs.yml` 이 정확히 같아야 한다):
+릴리스는 `gh` CLI 로 진행한다. **버전을 올리는 PR 에서 아래 다섯 곳을 함께 갱신**한 뒤 main 에 머지한다 (버전 값은 `plugin.json` 과 `mkdocs.yml` 이 정확히 같아야 한다):
 
 - `pilot/.claude-plugin/plugin.json` 의 `version` — 버전 SSOT
 - `pilot/mkdocs.yml` 의 `extra.version` — 불일치 시 `release.sh` 가 릴리스를 중단
-- `pilot/docs/index.md` 의 `v{version} highlights` 블록 — 제목·변경 내용 (patch 릴리스면 생략 가능)
+- `pilot/docs/release-notes.md` — 새 버전 섹션 추가 + 상단 「버전 목록」 표에 1 행 추가 (전체 이력의 SSOT)
+- `pilot/docs/index.md` 의 `v{version} highlights` 블록 — **최신 1 개만 유지**한다. 직전 버전 블록은 지우고 `release-notes.md` 의 해당 섹션으로 옮긴다 (patch 릴리스면 생략 가능)
 - 루트 `.claude-plugin/marketplace.json` 의 `description` — plugin.json description 변경 시 동기화
 
 그다음:
