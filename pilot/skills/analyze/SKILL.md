@@ -68,7 +68,7 @@ scope 부재 + MANIFEST 진입파일에 매칭 H2 존재 시 자동 생성. 상�
 
 ### 6. prompts/ 자동 갱신
 
-`prompts/{planner,generator,evaluator}.md` 갱신 + `.agent-state.yml.analyzed: true` 게이트. 상세(6-1~6-5): [`references/prompts-update.md`](references/prompts-update.md).
+`prompts/{planner,generator,evaluator}.md` 갱신 + `.agent-state.yml` 의 `analyzed` 를 `true` 로 전환 (doctor 정합성·drift 검사의 판정 필드 — 래퍼 로드 분기는 아니다). 상세(6-1~6-5): [`references/prompts-update.md`](references/prompts-update.md).
 
 ### 7. 분석 품질 자가 검증
 

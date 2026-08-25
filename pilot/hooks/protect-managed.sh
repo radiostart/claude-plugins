@@ -12,9 +12,16 @@
 #   차단한다. Edit (원인·조치 기입)·신규 파일 (사이클 파생 산출물)·`.focus.*`
 #   는 통과. issues/ 상위 폴더 destructive 도 projects/ 와 대칭으로 차단.
 #
+# qa 규칙:
+#   workspace/projects/{PROJECT}/features/**/*.md 는 phase=qa 동안
+#   읽기 전용 (회귀영향 차단 — 신규 생성·Edit 포함 전부 차단).
+#   qa/ 폴더는 phase 와 무관하게 쓰기 허용 (명시 — 향후 실수 방지).
+#   fail-closed: phase 값이 development/qa 외이거나 state 를 읽을 수 없으면
+#   features/ 쓰기를 차단한다 (오타가 조용히 통과해 qa 게이트가 풀리는 것 방지).
+#
 # 예외 (통과):
-#   - Edit 도구 (splice 방식 — 안전)
-#   - 신규 파일 생성 (대상 경로에 파일 없음)
+#   - Edit 도구 (splice 방식 — 안전) — phase=qa features/ 트리는 예외 아님
+#   - 신규 파일 생성 (대상 경로에 파일 없음) — phase=qa features/ 트리는 예외 아님
 #   - .prompts.bak/ · .bak.* 경로 (백업물)
 #   - features/*.eval[.rN].md · issues/*/issue.eval[.rN].md (evaluator REPORT — 재생성 산출물)
 #   - 프로젝트 폴더 외부 경로
@@ -29,6 +36,26 @@ TOOL=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).g
 [[ "${PILOT_PROTECT_BYPASS:-}" == "1" ]] && exit 0
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+
+# 인자: $1 = workspace/projects/{PROJECT}/ prefix (rel)
+# stdout: 해당 project 의 phase 값 (yaml `phase:` 라인). 없거나 읽기 실패면 빈 문자열.
+read_project_phase() {
+  local proj_prefix="$1"
+  local state_file="$PROJECT_DIR/${proj_prefix}.agent-state.yml"
+  [[ ! -f "$state_file" ]] && return 0
+  # 단순 awk — yq/python 의존성 없이 phase 라인 1 개만 추출.
+  # 주석·들여쓰기·따옴표 허용. 첫 매칭만 사용.
+  awk '
+    /^[[:space:]]*phase[[:space:]]*:/ {
+      sub(/^[[:space:]]*phase[[:space:]]*:[[:space:]]*/, "")
+      sub(/[[:space:]]*#.*$/, "")
+      sub(/[[:space:]]+$/, "")
+      gsub(/^["\x27]|["\x27]$/, "")
+      print
+      exit
+    }
+  ' "$state_file" 2>/dev/null
+}
 
 # 인자: $1 = 경로 (절대/상대), $2 = 도구명
 # 반환: 0 = 통과, 2 = 차단
@@ -78,10 +105,10 @@ EOF
   fi
 
   # workspace/issues/{이슈명} 자기 자신 또는 하위 검사
-  # projects 기본 규칙과 동일: 신규 통과, 기존 파일·폴더 Write/destructive 차단.
-  # Edit 분기 코드는 불필요 — 이 훅은 Write·Bash 만 처리하므로 Edit 통과는 구조적 보장.
-  # (백업·focus 예외는 위 공통 예외가 이미 처리.)
+  # projects 기본 규칙과 동일: Edit·신규 통과, 기존 파일·폴더 Write/destructive 차단.
+  # (백업·focus 예외는 위 공통 예외가 이미 처리. qa/·features/ 규칙은 projects 전용.)
   if [[ "$rel_path" =~ ^(workspace/issues/[^/]+)(/|$) ]]; then
+    [[ "$tool" == "Edit" ]] && return 0
     local abs_issue
     if [[ "$file_path" = /* ]]; then abs_issue="$file_path"; else abs_issue="$PROJECT_DIR/$rel_path"; fi
     [[ ! -e "$abs_issue" ]] && return 0
@@ -96,7 +123,62 @@ EOF
   fi
 
   # workspace/projects/*/ 하위 + 프로젝트 폴더 자체(trailing slash 없는 rm -rf 등) 검사
-  [[ ! "$rel_path" =~ ^workspace/projects/[^/]+(/|$) ]] && return 0
+  [[ ! "$rel_path" =~ ^(workspace/projects/[^/]+)(/|$) ]] && return 0
+  local proj_prefix="${BASH_REMATCH[1]}/"
+  local sub_path="${rel_path#$proj_prefix}"
+  # 프로젝트 폴더 자체 (trailing slash 유무 불문) → sub_path 빈 값으로 정규화
+  if [[ "$rel_path" == "${BASH_REMATCH[1]}" || "$rel_path" == "${BASH_REMATCH[1]}/" ]]; then
+    sub_path=""
+  fi
+
+  # qa/ 폴더는 명시 허용 (phase 와 무관하게 항상 쓰기 가능 — 향후 실수 방지).
+  [[ "$sub_path" == qa/* ]] && return 0
+
+  # ── phase=qa features/ Write·Edit 차단 ────────────────────────────────────
+  # features/**/*.md 는 QA phase 동안 회귀영향 차단을 위해 읽기 전용.
+  # 신규 생성·기존 수정·중첩 폴더 모두 차단 (Edit 도 예외 아님).
+  # fail-closed: phase 값 비정상·state 읽기 불가 시에도 차단 —
+  # 오타(qaa 등)가 == "qa" 불일치로 조용히 통과하면 qa 게이트가 풀린다.
+  if [[ "$sub_path" == features/*.md ]]; then
+    local state_file="$PROJECT_DIR/${proj_prefix}.agent-state.yml"
+    if [[ -f "$state_file" && ! -r "$state_file" ]]; then
+      cat >&2 <<EOF
+❌ [PROTECTED] $tool 차단: $rel_path
+   .agent-state.yml 읽기 불가 — phase 판정 불가로 features/ 쓰기를 차단합니다 (fail-closed).
+   파일 권한을 확인하세요: ${proj_prefix}.agent-state.yml
+   우회: PILOT_PROTECT_BYPASS=1 환경변수와 함께 재실행
+EOF
+      return 2
+    fi
+    local phase
+    phase=$(read_project_phase "$proj_prefix")
+    if [[ "$phase" == "qa" ]]; then
+      # project 이름 추출 (안내 메시지용)
+      local project_name
+      project_name=$(echo "$proj_prefix" | awk -F/ '{print $3}')
+      cat >&2 <<EOF
+❌ [PROTECTED] $tool 차단: $rel_path
+   features/**/*.md (features/ 트리) 는 phase=qa 동안 읽기 전용입니다 (회귀영향 차단).
+   수정이 필요하면:
+     /pilot:project ${project_name} --qa off  (development 복귀)
+   우회: PILOT_PROTECT_BYPASS=1 환경변수와 함께 재실행
+EOF
+      return 2
+    elif [[ -n "$phase" && "$phase" != "development" ]]; then
+      cat >&2 <<EOF
+❌ [PROTECTED] $tool 차단: $rel_path
+   .agent-state.yml 의 phase='$phase' 가 유효하지 않습니다 (허용: development, qa).
+   판정 불가 시 features/ 쓰기를 차단합니다 (fail-closed).
+   phase 행을 수정하거나 'python3 \${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace --fix' 로 재생성하세요.
+   우회: PILOT_PROTECT_BYPASS=1 환경변수와 함께 재실행
+EOF
+      return 2
+    fi
+    # phase == development 또는 부재 → 기존 규칙으로 fall-through
+  fi
+
+  # Edit 도구는 기본 splice 안전 — phase=qa features/ 외엔 통과.
+  [[ "$tool" == "Edit" ]] && return 0
 
   # 절대 경로 정규화
   local abs_path
@@ -124,6 +206,14 @@ if [[ "$TOOL" == "Write" ]]; then
   FILE_PATH=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('file_path',''))" 2>/dev/null || echo "")
   [[ -z "$FILE_PATH" ]] && exit 0
   check_path "$FILE_PATH" "Write" || exit $?
+  exit 0
+fi
+
+# Edit 도구 — 기본 통과 (splice 안전). phase=qa features/ 잠금만 check_path 가 차단.
+if [[ "$TOOL" == "Edit" ]]; then
+  FILE_PATH=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('file_path',''))" 2>/dev/null || echo "")
+  [[ -z "$FILE_PATH" ]] && exit 0
+  check_path "$FILE_PATH" "Edit" || exit $?
   exit 0
 fi
 

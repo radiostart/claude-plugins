@@ -15,8 +15,8 @@ from pathlib import Path
 # 상수
 # ---------------------------------------------------------------------------
 
-SCHEMA_VERSION = "v1.2"
-SUPPORTED_SCHEMAS = ["v1", "v1.1", "v1.2"]
+SCHEMA_VERSION = "v1.3"
+SUPPORTED_SCHEMAS = ["v1", "v1.1", "v1.2", "v1.3"]
 PLUGIN_ROOT_ENV = "CLAUDE_PLUGIN_ROOT"
 
 # ANSI color codes

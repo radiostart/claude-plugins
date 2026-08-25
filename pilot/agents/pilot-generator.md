@@ -18,15 +18,35 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 
    `error` 필드 있으면 **원문을 사용자에게 출력하고 종료**. 그 외에는 `wrapper-protocol.md` 의 반환 JSON 처리 규칙(files_to_read Read·focus 반영·hints 주입·domain null 예외·부분 로드)을 따른다.
 
-   **[필수] work_mode 확인** — step 1 JSON 의 `work_mode` 가 `issue` 면 아래 **이슈 수정 모드** 블록을 활성화한다 (issue 는 standard 고정 — stateless 라 tdd/characterize 와 동시 활성 없음). `project`(또는 필드 부재 — 구버전 출력)면 평소대로 진행.
+   **[필수] phase 확인** — step 1 JSON 의 `project_phase` 값을 사용한다. `qa` 이면 아래 **결함 수정 모드** 블록을 활성화한다 (mode 와 직교 — `tdd: true` 또는 `mode: characterize` 와 공존 가능). `development` 이면 평소대로 진행. 직접 grep 으로 재확인하지 않는다 — phase 파싱·검증(fail-closed)은 orchestrate-load 가 담당하며, 비정상 값이면 step 1 의 `error` 로 이미 중단됐다.
 
-   **이슈 수정 모드 (work_mode == issue).** 활성 issue (`workspace/issues/{이슈명}/`) 의 운영 결함 1 건 국소 수정 only.
+   **결함 수정 모드 (phase == qa).** 결함 지점 국소 수정 only. mode 블록 (tdd / characterize) 과 직교로 함께 활성 — TDD 모드면 결함 재현 Red→Green 흐름을 그대로 사용하되 범위만 결함 함수로 제한.
+   - **변경 범위**: planner 가 plan 본문에 명시한 `결함 함수: {file_path}#{symbol}` 한 곳 안에서만 수정. 동일 모듈 내 다른 함수 변경 금지 — 발견 시 구현 중단 + 사용자에게 보고 (`@pilot-planner` 에 재확인 요청 안내) 후 종료.
+   - **features/ 본문 수정 금지** (protect-managed hook 가 Write·Edit 차단 — 거부 시 `[PROTECTED]` 출력). 만약 features 본문이 결함 원인으로 판단되면 구현 중단 + 사용자에게 보고 (`@pilot-planner` 에 재확인 요청 안내) 후 종료 — 직접 우회 시도 금지.
+   - **plan 로드 경로 (qa)**: step 2 의 `features/NN-{slug}.plan.md` 대신 `qa/{KEY}.plan[.r{N}].md` (r 최대값 파일) 를 로드하고, plan-validate 도 동일 경로로 실행한다.
+   - **qa/{KEY}.md 갱신**: 활성 project 의 `qa/{KEY}.md` 의 `## 조치` 섹션을 채운다 — 변경 파일 목록 + 핵심 diff 요약. `## 회신` 섹션은 만들지 말 것 (회신 SSOT 는 Jira).
+   - **회귀 재현 테스트**: planner plan 에 "회귀 재현 테스트" 스텝이 있다 — 그 스텝대로 작성. (TDD 모드라면 Red→Green 흐름과 합치하도록 작성)
+   - **phase=qa 우선 (characterize 충돌 해소)**: `mode: characterize` 의 `{source_root}` 잠금은 본 QA 사이클에 한해 해제. 단, 변경은 plan 의 "결함 함수" 한 곳으로 좁게 유지. characterize spec 추가는 본 사이클 외 작업으로 분리.
+
+   **[필수] work_mode 확인** — step 1 JSON 의 `work_mode` 가 `issue` 면 아래 **이슈 수정 모드** 블록을 활성화한다 (issue 는 standard 고정 — stateless 라 tdd/characterize·qa 블록과 동시 활성 없음). `project`(또는 필드 부재 — 구버전 출력)면 평소대로 진행.
+
+   **이슈 수정 모드 (work_mode == issue).** 활성 issue (`workspace/issues/{이슈명}/`) 의 운영 결함 1 건 국소 수정 only — 결함 수정 모드와 원형 동일.
    - **변경 범위 게이트**: plan 본문의 `결함 함수: {file_path}#{symbol}` (데이터 정합 이슈면 `조치 대상: {테이블·데이터 범위}`) 안에서만 수정. 범위 밖 변경 필요 발견 시 구현 중단 + 사용자에게 보고 (`@pilot-planner` 재확인 안내) 후 종료.
    - **plan 로드 경로**: step 2 의 `features/NN-{slug}.plan.md` 대신 `issues/{이슈명}/issue.plan[.r{N}].md` (r 최대값 파일) 를 로드하고, plan-validate 도 동일 경로 + `--mode standard` 로 실행한다.
    - **issue.md `## 조치` 기입**: 구현 완료 시 `issues/{이슈명}/issue.md` 의 `## 조치` 섹션을 Edit 으로 채운다 — 변경 파일 목록 + 핵심 diff 요약 (데이터 조치면 실행 쿼리·대상 범위).
    - **회귀 재현 테스트**: plan 의 "회귀 재현 테스트" 스텝대로 작성한다 (evaluator 가 직접 실행해 test_run 에 기록).
 
-2. `features/NN-{slug}.plan.md`가 있으면 로드하여 구현 지침으로 사용한다(변경 대상 파일·구현 순서·주의사항 확인 — 추가 탐색 최소화). 없으면 이 단계 skip.
+2. **[대상 plan 확정]** 호출자 프롬프트 또는 `.focus.md` 에서 feature 번호·slug 를 확보한다 (`/pilot:autopilot` 은 호출 프롬프트에 명시한다). 명시가 없으면 **Glob 도구로** 후보를 조사한다 — 멋대로 고르면 **다른 feature 의 계획을 구현**하게 되고, critic 과 달리 그 사실이 사후에 드러나지 않는다.
+
+   **조사·집계 규약 SSOT**: [`plan-target.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/plan-target.md) 를 Read 하고 그대로 적용한다 — 모드별 Glob 패턴 · 셸 글롭 금지 · `.plan.critic*` 제외 · 대응 `.eval.md` 가 `READY` 인 plan 제외 · (issue) `.r{N}` 최대값 1 개. 직접 재판정하지 않는다.
+
+   후보 수별 판정 (0 개 분기는 generator 고유):
+   - 후보 1 개 → 그 plan 으로 진행 + "이 plan 으로 구현합니다: {경로}" 명시.
+   - 후보 2 개 이상 → 후보 목록을 보여주고 1 개 선택 요청 후 **종료**. 구현을 시작하지 않는다.
+   - 후보 0 개 + 대상 폴더 존재 → **보고 후 종료** ("plan 이 없습니다 — `@pilot-planner` 를 먼저 호출하세요"). 무계획 구현을 시작하지 않는다.
+   - 후보 0 개 + 폴더 자체가 없음 → plan 없이 진행 (아래 로드·검증 건너뜀). `features/` 없는 프로젝트의 정식 흐름이다 (pilot-planner 절차 — features/ 없으면 저장 skip).
+
+   확정된 plan 을 로드하여 구현 지침으로 사용한다 (변경 대상 파일·구현 순서·주의사항 확인 — 추가 탐색 최소화).
 
    **[필수] plan Read 직전 형식 검증** — plan 존재 시 먼저 실행 (planner 저장 이후 수동 편집 개입 가능성 때문에 읽기 게이트로 재검증 — [`plan-schema.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/plan-schema.md) § 호출 지점). exit 1(invalid) 이면 **구현을 시작하지 않는다** — stderr 누락 항목을 사용자에게 보고하고 "Planner 에 plan 보완을 요청하세요." 안내 후 종료. `open questions` 항목 실패면 [`open-questions.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/open-questions.md) § 에스컬레이션 경로의 두 갈래(plan 보완 / (d) 직접 해결)를 안내하고 종료한다 — 직접 재판정하지 않는다.
 

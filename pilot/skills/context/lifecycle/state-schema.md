@@ -9,16 +9,20 @@
 - 프로젝트 루트에 숨김 파일
 - `example/` 폴더에는 존재하지 않음 (스캐폴딩 대상 아님)
 
-## 스키마 v1.2
+## 스키마 v1.3
 
 ```yaml
-schema: v1.2
+schema: v1.3
 analyzed: false                      # /pilot:analyze 실행되어 prompts/*.md 가 분석본으로 채워졌는지
 tdd: false                           # TDD 모드 활성 여부 (Red-Green-Refactor 흐름 강제)
 domain: null                         # 도메인명 (자유 문자열, 사용자 정의) — null 이면 analyze 전 질의 필요
+phase: development                   # development | qa, default development — 작업 단계 (v1.3 신규)
 
 # Optional — /pilot:characterize 가 설정:
 mode: null                           # null | characterize — characterize 는 레거시 현재 동작 포착 모드 ({source_root} 잠금, 테스트만 추가)
+
+# Optional — /pilot:qa · /pilot:project --qa 가 기록:
+qa_started_at: "2026-08-25T00:00:00Z"  # phase 가 qa 로 전환된 시점 (ISO 8601 UTC)
 
 # Optional — /pilot:analyze 가 기록:
 analyzed_at: "2026-04-18T10:30:00Z"  # 마지막 analyze ISO 8601 UTC timestamp
@@ -34,14 +38,14 @@ plugin_version: "0.1.75"             # .agent-state.yml 을 마지막으로 쓴 
 pr_base_branch: "release/4.5"        # PR 생성 시 자동 타겟. 부재 시 context/config.md 의 pr_default_base 사용
 ```
 
-필수 4 개 (`schema`·`analyzed`·`tdd`·`domain`) + optional 6 개. optional 필드는 drift 감지 (`/pilot:pilot-doctor`) · 모드 분기 (`mode`) · 플러그인 업그레이드 감지 (`plugin_version`) · PR 자동 타겟 (`pr_base_branch`) 에 사용. 부재 시 해당 체크·분기만 skip.
+필수 5 개 (`schema`·`analyzed`·`tdd`·`domain`·`phase`) + optional 7 개. optional 필드는 drift 감지 (`/pilot:pilot-doctor`) · 모드 분기 (`mode`) · 플러그인 업그레이드 감지 (`plugin_version`) · PR 자동 타겟 (`pr_base_branch`) · QA phase 진입 시점 추적 (`qa_started_at`) 에 사용. 부재 시 해당 체크·분기만 skip.
 
 ## 필드 의미
 
 ### `schema`
 
-- 값: `v1.2` (현재). 필수 필드.
-- `v1` · `v1.1` 로 기록된 파일도 **읽을 수는 있음** (하위호환). 신규 optional 필드 (`pr_base_branch`) 는 부재로 처리.
+- 값: `v1.3` (현재). 필수 필드.
+- `v1` · `v1.1` · `v1.2` 로 기록된 파일도 **읽을 수는 있음** (하위호환). 신규 필수 필드 (`phase`) 는 부재 시 `development` 로 간주.
 - Wrapper/skill 로드 시 schema 값이 미지이면 **즉시 에러 + 마이그레이션 안내 후 종료**.
 - 버전 정책:
   - 필드 **추가** = minor bump (`v1.1` → `v1.2`, 리더 하위호환 유지)
@@ -52,10 +56,11 @@ pr_base_branch: "release/4.5"        # PR 생성 시 자동 타겟. 부재 시 c
 - `true`: `/pilot:analyze` 가 실행되어 `prompts/planner.md` · `prompts/generator.md` · `prompts/evaluator.md` 에 도메인 압축본이 주입된 상태.
 - `false`: pre-analyze 상태. 프로젝트 agent 파일은 example 템플릿 원본 (`{플레이스홀더}`) 에 가까움.
 
-Wrapper 동작 차이:
+**Wrapper 로드 동작에는 차이가 없다.** MANIFEST 의 도메인 진입 파일·`boundaries/*.md` 는 domain 이 결정돼 있으면 `analyzed` 와 무관하게 항상 로드된다 (fallback 이 아니라 primary 참조 — `build_load_plan` 시그니처에 `analyzed` 파라미터가 없다).
 
-- `analyzed: true` → context/ 도메인 파일 재로드 생략 (prompts/*.md 에 압축 기입돼 있다고 신뢰)
-- `analyzed: false` → MANIFEST 의 도메인 진입 파일을 fallback 로드
+실소비처:
+
+- `/pilot:pilot-doctor` — 정합성·drift 검사 3종의 판정·게이팅 필드: `features/` 개수 대조 · context/docs mtime drift 검사 게이팅 (`analyzed_at` 과 함께) · `last_analyzed_features` 원장 검사 게이팅
 
 ### `tdd`
 
@@ -68,6 +73,18 @@ Wrapper 동작 차이:
 - `characterize`: 레거시 코드의 현재 동작 포착 모드. `{source_root}` 수정 금지, 테스트 (`{test_path_convention}`) 만 추가. 상세: [`characterize.md`](../modes/characterize.md).
 - `tdd: true` 와 `mode: characterize` 동시 설정 시 우선순위는 [`characterize.md`](../modes/characterize.md):10 이 정본 (characterize 우선 — Red 계약 대신 Characterization Contract 사용).
 - 전환 명령: `/pilot:characterize` (`on` / `off`).
+
+### `phase` (v1.3 신규, 필수)
+
+- 값: `development` (기본) 또는 `qa`. 부재는 `development` 로 간주 (v1.2 이하 하위호환).
+- **작업 단계** 를 표현. mode (`tdd` · `mode`) 와 직교 — QA phase 안에서도 TDD 모드가 가능.
+- `qa`: QA 결함 처리 단계 — features/ 는 읽기 전용 (`protect-managed` 훅이 Write·Edit 차단), 사이클 산출물은 `qa/` 폴더에 저장, wrapper 는 결함 수정 모드 (최소 변경·회귀영향 후보 필수) 로 동작.
+- 전환: `/pilot:project {PROJECT} --qa on` (qa 진입) / `--qa off` (development 복귀). `/pilot:qa {KEY}` 를 development phase 에서 호출하면 qa 로 자동 전환되고, `/pilot:qa off` 로 development 복귀한다 (절차 SSOT: [phase-transition.md](phase-transition.md)).
+- `orchestrate-load.py` 가 fail-closed 로 검증 — 유효하지 않은 값이면 에러 중단 (오타가 development 로 조용히 폴백되면 qa 게이트가 풀린다).
+
+### `qa_started_at` (v1.3 신규, optional)
+
+ISO 8601 UTC timestamp. phase 가 `qa` 로 전환될 때 기록 (재진입 시 갱신 — 마지막 진입 시점). development 복귀 시에도 **삭제하지 않고 보존** (감사 이력).
 
 ### `domain` (v1.1 신규, 필수)
 
@@ -124,31 +141,36 @@ ISO 8601 UTC timestamp. `/pilot:analyze` 가 완료될 때 기록.
 
 | 시점 | 설정 |
 |---|---|
-| `/pilot:project NAME` | 신규 파일 생성: `{schema: v1.2, analyzed: false, tdd: false, domain: null, plugin_version: <현재>}` |
+| `/pilot:project NAME` | 신규 파일 생성: `{schema: v1.3, analyzed: false, tdd: false, domain: null, phase: development, plugin_version: <현재>}` |
 | `/pilot:project NAME --tdd` | 위 + `tdd: true` |
+| `/pilot:project NAME --qa on` | `phase: qa` 로 전환, `qa_started_at` 에 현재 UTC 기록 |
+| `/pilot:project NAME --qa off` | `phase: development` 로 복귀 (`qa_started_at` 은 보존) |
+| `/pilot:qa {KEY}` | development phase 에서 호출 시 to-qa 자동 전환 (`phase: qa`·`qa_started_at` — STATE.md 는 불변, [phase-transition.md](phase-transition.md) § to-qa). 이미 qa 면 state write 없이 읽기만 (phase 확인 + qa/{KEY}.md 생성) |
+| `/pilot:qa off` | to-development 복귀 (`phase: development` — STATE.md 는 불변, `qa_started_at` 보존) |
 | `/pilot:analyze` 진입 | `domain` 이 null 이면 사용자 질의 후 기록 |
 | `/pilot:analyze` 완료 후 | `analyzed: true`, `analyzed_at`, `last_analyzed_features`, `plugin_version` 갱신 |
 | `/pilot:analyze --regen-agents` | `analyzed_at`, `last_analyzed_features`, `plugin_version` 갱신 |
 | `/pilot:tdd` | `tdd: true` 갱신 |
 | `/pilot:confl fetch` 성공 | `docs_last_fetched_at` 갱신 |
 | `/pilot:pr` 사용자 명시 입력 | `pr_base_branch` 기록 (Enter=default 시 미기록) |
-| `doctor --fix` (schema 업그레이드) | v1 / v1.1 → v1.2 in-place 업그레이드 시 `plugin_version` 기록 |
+| `doctor --fix` (schema 업그레이드) | v1 / v1.1 / v1.2 → v1.3 in-place 업그레이드 (`phase: development` 주입) |
 
 ## Readers
 
 Wrapper agents (`planner.md`·`generator.md`·`evaluator.md`) 가 컨텍스트 로드 단계에서 Read.
 
 - 파일 부재 또는 `schema` 미지 → 에러 종료 + 안내
-- `analyzed` 값으로 scope 재로드 분기
-- `tdd` 값으로 rgr.md 로드 분기
+- `tdd` 값으로 rgr.md 로드 분기 · `mode` 값으로 characterize.md 로드 분기
+- `phase` 값으로 wrapper 결함 수정 모드 분기 (orchestrate-load 가 `project_phase` 로 전달 — fail-closed 검증)
+- `domain` 값으로 MANIFEST 진입 파일·boundaries 로드 (`analyzed` 는 로드 분기에 쓰이지 않는다 — 위 § `analyzed`)
 
 ## Schema 업그레이드 (in-place)
 
 `.agent-state.yml` 이 이미 존재하고 schema 가 구버전이면 `doctor --fix` 가 in-place 업그레이드 한다:
 
-- schema 가 `v1` 이면 기존 필드 보존 + `domain: null` 추가 + `schema` 를 `v1.2` 로 변경.
-- schema 가 `v1.1` 이면 schema 문자열만 `v1.2` 로 갱신 (신규 필드는 모두 optional 이라 본문 변경 없음).
-- schema 가 `v1.2` 이면 skip.
+- schema 가 `v1` 이면 기존 필드 보존 + `domain: null`·`phase: development` 추가 + `schema` 를 `v1.3` 으로 변경.
+- schema 가 `v1.1` / `v1.2` 이면 기존 필드 보존 + `phase: development` 주입 (없을 때만) + `schema` 를 `v1.3` 으로 변경.
+- schema 가 `v1.3` 이면 skip. 멱등 — 재실행 시 변화 없음.
 
 ## 금지 사항
 

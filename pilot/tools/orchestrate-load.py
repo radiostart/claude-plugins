@@ -16,8 +16,9 @@ workspace 를 조사해서 어떤 파일을 Read 해야 하는지 결정하는 �
       "phase": "planner",
       "project": "MyProject",              # issue 모드에서는 이슈명
       "work_mode": "project" | "issue",    # STATE.md mode 열 (issue 외 → project 폴백)
+      "project_phase": "development" | "qa",  # issue 모드는 "development" 고정
       "domain": "<domain-name>" | null,
-      "analyzed": bool,
+      "analyzed": bool,                    # 보고용 — 로드 분기에 쓰이지 않는다
       "tdd": bool,
       "mode": string | null,
       "focus": string | null,
@@ -68,7 +69,29 @@ from doctor._common import (  # noqa: E402
 )
 
 SCHEMA_VERSION = "v1.2"
-SUPPORTED_SCHEMAS = ["v1.1", "v1.2"]  # v1.1 도 읽기 허용 (하위호환). v1 은 doctor --fix 로 강제 업그레이드
+SUPPORTED_SCHEMAS = ["v1.1", "v1.2", "v1.3"]  # v1.1/v1.2 도 읽기 허용 (하위호환). v1 은 doctor --fix 로 강제 업그레이드
+
+VALID_PROJECT_PHASES = ("development", "qa")
+
+
+def resolve_project_phase(state: dict) -> "tuple[str | None, str | None]":
+    """state 의 phase 필드를 검증·정규화. (phase, error) 반환.
+
+    부재·null → ("development", None) — v1.2 이하 호환 기본값.
+    유효 값 → (값, None). 그 외 → (None, 에러) — fail-closed:
+    오타·corrupt 를 development 로 조용히 폴백하면 qa 게이트
+    (최소 변경·회귀영향) 가 풀린다.
+    """
+    raw = state.get("phase")
+    if raw is None:
+        return "development", None
+    if raw in VALID_PROJECT_PHASES:
+        return raw, None
+    return None, (
+        f".agent-state.yml 의 phase={raw!r} 가 유효하지 않음 "
+        f"(허용: {', '.join(VALID_PROJECT_PHASES)}). "
+        "phase 행을 수정하거나 `doctor --fix` 로 재생성 필요."
+    )
 PLUGIN_ROOT_ENV = "CLAUDE_PLUGIN_ROOT"
 
 
@@ -623,7 +646,7 @@ def build_instructions(phase: str) -> list[str]:
         "files_to_read 를 순서대로 Read 한다 (존재 확인된 파일들)",
         PHASE_FOCUS_DIRECTIVE[phase],
         "hints 내용을 본 세션 컨텍스트로 주입",
-        "analyzed / tdd / mode / domain / work_mode 값을 이후 분기에 사용",
+        "tdd / mode / domain / project_phase / work_mode 값을 이후 분기에 사용 (analyzed 는 보고용 — 로드 분기에 쓰이지 않는다)",
     ]
 
 
@@ -649,6 +672,7 @@ def main() -> int:
         "phase": args.phase,
         "project": None,
         "work_mode": "project",
+        "project_phase": None,
         "domain": None,
         "analyzed": None,
         "tdd": None,
@@ -724,8 +748,11 @@ def main() -> int:
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 1
         # stateless 고정 — `.agent-state.yml` 안 읽음 (mode 는 초기값 None 유지).
+        # project_phase 는 development 고정 (wrapper 의 qa 블록 비활성 보장) —
+        # issue 는 phase 개념 밖의 단발 작업이다.
         result["analyzed"] = False
         result["tdd"] = False
+        result["project_phase"] = "development"
         result["hints"].append(
             "[work_mode] issue — 이슈 수정 모드: 최소 변경·롤백 가능. "
             "issue.md 가 단건 명세 (planner=원인, generator=조치 기입)"
@@ -782,6 +809,18 @@ def main() -> int:
                     f"[WARN] state.mode={state_mode!r} 는 인식되지 않는 모드 — "
                     "표준 모드로 처리됨. 유효 값: 'characterize' 또는 미설정."
                 )
+
+        # project phase (v1.3+, 부재=development) — fail-closed: 비정상 값이면 에러 중단
+        project_phase, phase_err = resolve_project_phase(state)
+        if phase_err:
+            result["error"] = phase_err
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 1
+        result["project_phase"] = project_phase
+        if project_phase == "qa":
+            result["hints"].append(
+                "[phase] qa — 결함 수정 모드: 최소 변경·회귀영향 후보 필수·features/ 읽기 전용"
+            )
 
         # Domain — state 의 domain 필드 우선, null 이면 project.md 에서 추출
         project_md = workspace / "projects" / project / "project.md"

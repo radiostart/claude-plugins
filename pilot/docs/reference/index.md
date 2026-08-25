@@ -16,13 +16,13 @@
 
     ---
 
-    `/pilot:*` 슬래시 커맨드 — `pilot-init`, `project`, `analyze`, `create-feature`, `focus`, `tdd`, `characterize`, `pilot-doctor`, `confl`, `slack`, `commit`, `pr`, `pilot-review`, `learn`, `issue`, `code-review-init`, `autopilot`.
+    `/pilot:*` 슬래시 커맨드 — `pilot-init`, `project`, `analyze`, `create-feature`, `focus`, `tdd`, `characterize`, `pilot-doctor`, `confl`, `slack`, `commit`, `pr`, `pilot-review`, `learn`, `issue`, `qa`, `switch`, `ask`, `code-review-init`, `autopilot`.
 
 -   :material-console:{ .lg .middle } __[Tools](tools/index.md)__
 
     ---
 
-    `pilot/tools/*.py` 의 보조 CLI · 모듈 — `auto_pilot`, `confluence`, `docs_build`, `doctor`, `orchestrate-load`, `plan-validate`, `regen-verify`, `slack-notify`.
+    `pilot/tools/*.py` 의 보조 CLI · 모듈 — `auto_pilot`, `confluence`, `docs_build`, `doctor`, `jira`, `orchestrate-load`, `plan-validate`, `regen-verify`, `slack-notify`, `switch-scan`.
 
 -   :material-fingerprint:{ .lg .middle } __[Identity SSOT](identity.md)__
 

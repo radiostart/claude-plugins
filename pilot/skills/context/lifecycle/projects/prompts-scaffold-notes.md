@@ -35,7 +35,7 @@
 
 ## wrapper 분기 판정
 
-래퍼 (`@pilot-planner`·`@pilot-generator`·`@pilot-evaluator`) 의 pre/post-analyze 분기는 `.agent-state.yml` 의 `analyzed` 필드로 판정.
+이 파일들이 analyze 압축본으로 채워졌는지 여부는 `.agent-state.yml` 의 `analyzed` 필드가 나타낸다 (래퍼의 도메인 지식 로드 분기 필드는 아니다 — [GUIDE.md](GUIDE.md) § pre / post-analyze 게이트).
 
 - 스키마 상세: [state-schema.md](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/state-schema.md)
 

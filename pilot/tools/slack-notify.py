@@ -97,6 +97,16 @@ def parse_slack_env(path: Path) -> dict[str, str] | None:
 
 
 def _active_project_name(state_md: Path) -> str | None:
+    """STATE.md 의 활성 행이 project 일 때만 이름 반환 (mode 인식).
+
+    mode 가 `issue` 면 None 을 돌려 전송을 no-op 으로 끝낸다. 이슈 slug 는
+    `projects/` 이름과의 충돌을 검사하지 않으므로, mode 를 안 보면 이슈명과
+    동명인 **무관한 프로젝트의 `.slack.env` 로 해석**돼 그 채널에 메시지가
+    나간다 — 외부 전송은 되돌릴 수 없다.
+
+    doctor 의 `determine_active_project` 와 동일 규칙. legacy 표는 첫 칸이
+    `issue` 가 아니므로 자연히 project 로 폴백된다 — 하위호환 유지.
+    """
     if not state_md.is_file():
         return None
     try:
@@ -104,6 +114,8 @@ def _active_project_name(state_md: Path) -> str | None:
             if line.strip().startswith("|") and "진행중" in line:
                 cells = [c.strip() for c in line.strip().strip("|").split("|")]
                 if len(cells) >= 3 and cells[2] == "진행중":
+                    if cells[0] == "issue":
+                        return None
                     return cells[1]
     except Exception:
         return None

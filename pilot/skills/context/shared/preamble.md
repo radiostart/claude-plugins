@@ -53,7 +53,7 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 
 **갱신 전 사용자 확인:**
 
-기존 행이 삭제되는 경우 (다른 이름으로 교체될 때), 작업 내용이 여전히 유효하면 해당 프로젝트 폴더는 그대로 남으므로 나중에 `/pilot:project {이전이름}` 로 재활성화 가능. STATE.md 행 제거 = 폴더 삭제가 아님을 사용자가 오해할 수 있으면 한 줄 안내.
+기존 행이 삭제되는 경우 (다른 이름으로 교체될 때), 작업 내용이 여전히 유효하면 해당 폴더는 그대로 남으므로 나중에 기존 행의 mode 에 맞는 스킬 (`/pilot:project {이전이름}` · `/pilot:issue {이전이슈명}`) 로 재활성화 가능. STATE.md 행 제거 = 폴더 삭제가 아님을 사용자가 오해할 수 있으면 한 줄 안내 — 제거되는 행이 `issue` 면 재진입 명령도 issue 로 안내한다 (목록 확인은 `/pilot:switch`).
 
 ---
 
@@ -88,6 +88,9 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 | `slack`          |     |    | ✅ |    |    |
 | `code-review-init` |   |    |    |    |    |
 | `pilot-review`   |     |    |    |    |    |
+| `switch`         |     |    |    |    |    |
+| `ask`            |     |    |    |    |    |
+| `qa`             | ✅  | ✅ |    |    |    |
 
 > `pilot-init` 은 workspace 가 없는 상태에서 실행되므로 P1 을 수행하지 않는다 (workspace/STATE.md 를 처음 생성하는 스킬).
 >
@@ -98,6 +101,12 @@ STATE.md 는 **"지금 활성" 1행만** 유지하는 현재 상태 파일이다
 > `code-review-init` 은 활성 프로젝트가 아니라 `workspace/context/` 존재 여부만 확인한다 (`messages.md` 의 `workspace_missing` 참조) — P1 미적용.
 >
 > `pilot-review` 는 사전 확인 없이 target 을 결정해 `@pilot-code-review` 에 위임한다 (그 에이전트가 self-contained).
+>
+> `switch` 는 조회·위임 스킬 — P-1 비적용: 위임 전 실단계가 2회 (스캐너 Bash 1회·조건부 질의 1회) 뿐이고, 위임된 project/issue 가 자기 P-1 보드를 세운다 (이중 보드 방지). P1 비적용 — 활성 프로젝트 부재·STATE corrupt 가 주 사용처라 fail-fast 하지 않는다 (workspace 존재 확인은 스캐너가 자체 수행). P2/P3 는 위임 대상 스킬이 수행. 읽기 전용 (STATE.md 미수정).
+>
+> `ask` 는 조회·응답 스킬 — P-1 비적용: 질의 1건 처리로 중간 상태를 추적할 대상이 없다 (code-review-init 예외와 동렬). P1 은 **soft-read** 변형: 활성 부재·issue 모드·corrupt 모두 종료 사유가 아니다 (활성 부재가 주 사용처의 하나 — ask/SKILL.md § 사전 확인). P2/P3 비적용 — 읽기 전용 (STATE.md 미수정), 도메인 컨텍스트 로드는 절차가 조건부·best-effort 로 자체 수행 (MANIFEST 부재 시 [INDEX.md](../INDEX.md) § Fallback 규칙의 ask 예외).
+>
+> `qa` 는 P1 비적용 — `mode=project` 행에만 진입 가능하므로 STATE.md 표를 직접 검사한다 (issue 모드와 직교 — qa/SKILL.md § 사전 확인의 fail-fast 순서: 게이트 통과 후에만 P-1·P0 수행). P2 비적용 — STATE.md 미수정 (phase 는 `.agent-state.yml` 단독 SSOT — phase-transition.md). P3 비적용 — `qa` 는 project 진입 후 호출되므로 도메인 컨텍스트는 wrapper 사이클의 orchestrate-load 가 로드한다.
 
 ---
 
@@ -109,4 +118,4 @@ ToolSearch 선로딩이 필요한 주요 도구:
 | ---- | ---- | ----------- |
 | `TodoWrite` / `TaskCreate`·`TaskUpdate` | 다단계 스킬 진행 보드 (하니스 세대별 택일 — 겸용 select) | P-1 자동 수행 |
 | `WebFetch` | 외부 기획서·문서 fetch (confl 외 케이스) | URL 감지 시 |
-| `AskUserQuestion` | 선택지 있는 질의 (현재 pilot 는 자유 질의 위주로 미사용) | 선택지 고정 질의가 필요한 스킬에서 옵션 |
+| `AskUserQuestion` | 선택지 있는 질의 (`switch` 의 목록 선택 등 — 그 외 스킬은 자유 질의 위주) | 선택지 고정 질의가 필요한 스킬에서 옵션 |

@@ -25,6 +25,7 @@ workspace/ 가 없습니다. 먼저 `/pilot:pilot-init` 으로 초기화하세�
 
 ```
 진행중인 프로젝트가 없습니다. `/pilot:project {프로젝트명}` 으로 먼저 활성화하세요.
+진행하던 작업 이름이 기억나지 않으면 `/pilot:switch` 로 목록을 확인하세요.
 ```
 
 ### `state_corrupt`
@@ -32,6 +33,7 @@ workspace/ 가 없습니다. 먼저 `/pilot:pilot-init` 으로 초기화하세�
 ```
 STATE.md 의 `진행중` 행이 2개 이상이거나 형식이 깨졌습니다.
 `/pilot:project {프로젝트명}` 또는 `/pilot:issue` 로 다시 활성화하세요.
+진행하던 작업 이름이 기억나지 않으면 `/pilot:switch` 로 목록을 확인하세요.
 ```
 
 ### `issue_active_not_project`

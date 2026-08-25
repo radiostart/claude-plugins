@@ -24,7 +24,7 @@ description: >-
 
 ### 전략 A — 사전 작성된 예시 복사
 
-`${CLAUDE_PLUGIN_ROOT}/examples/code-review/{lang}.md` 존재 시만 제시(부재 시 비활성, B/C 만). 헤더 안내 블록 제거 후 사용 프레임워크 확인(ruby→Rails·php→Laravel/Symfony·kotlin→Android/서버사이드·java→Spring·js/ts→React 등) → 미사용 프레임워크 섹션 제거 → Write.
+`${CLAUDE_PLUGIN_ROOT}/examples/code-review/{lang}.md` 존재 시만 제시(부재 시 비활성, B/C 만). 헤더 안내 블록(H1 바로 아래 `>` 연속 라인 전부) 제거 후 사용 프레임워크 확인(ruby→Rails·php→Laravel/Symfony·kotlin→Android/서버사이드·java→Spring·js/ts→React 등) → 미사용 프레임워크 내용 제거 — 예시 파일마다 형태가 다르므로 **섹션과 인라인 룰 양쪽**을 본다: 전용 섹션(`## Rails 특화 룰`·`## Spring 특화` 등)이 있으면 섹션째, 없으면 다른 룰 사이에 섞인 해당 프레임워크 항목 줄만 걷어낸다 (js/ts 의 React 룰이 이 형태) → Write.
 
 ### 전략 B — 빈 형식 템플릿 복사
 

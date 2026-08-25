@@ -34,6 +34,11 @@ from doctor._common import (
 )
 
 
+# context/ 스캔 공통 — 도메인 지식이 아닌 메타 파일.
+# check_project 의 mtime drift 검사와 check_context_citations_stale 이 공유.
+CONTEXT_META_FILES = {"MANIFEST.md", "config.md", "pr.md", "coding.md"}
+
+
 # ---------------------------------------------------------------------------
 # Credential drift (.env vs env)
 # ---------------------------------------------------------------------------
@@ -227,11 +232,11 @@ def _fix_state_md_prune_history(state_md: Path):
 
 
 def _fix_migrate_state_to_current(state_yml: Path):
-    """schema v1 / v1.1 → 현재 버전(v1.2) 업그레이드 (in-place).
+    """schema v1 / v1.1 / v1.2 → 현재 버전(v1.3) 업그레이드 (in-place).
 
     외부 프로세스 호출 대신 inline 수행 (간단 + 오류 진단 쉬움).
-    - v1   → v1.2 : `domain: null` 주입 (없을 때만) + 스키마 라벨 bump
-    - v1.1 → v1.2 : 스키마 라벨만 bump (domain 은 이미 존재)
+    - v1   → v1.3 : `domain: null`·`phase: development` 주입 (없을 때만) + 스키마 라벨 bump
+    - v1.1 / v1.2 → v1.3 : `phase: development` 주입 (없을 때만) + 스키마 라벨 bump
     """
     def fixer():
         try:
@@ -239,16 +244,18 @@ def _fix_migrate_state_to_current(state_yml: Path):
         except Exception as e:
             return False, f"read 실패: {e}"
 
-        # 사전 스캔: 기존 schema 와 domain 필드 존재 여부 파악 (line-level 주입 시 중복 방지)
+        # 사전 스캔: 기존 schema 와 domain·phase 필드 존재 여부 파악 (line-level 주입 시 중복 방지)
         data = parse_state_yml(state_yml) or {}
         old_schema = data.get("schema") or "미지"
         has_domain_field = "domain" in data
         needs_domain_injection = old_schema == "v1" and not has_domain_field
+        needs_phase_injection = "phase" not in data
 
         lines = text.splitlines()
         out: list[str] = []
         schema_replaced = False
         domain_injected = False
+        phase_injected = False
         for line in lines:
             stripped = line.strip()
             if stripped.startswith("schema:"):
@@ -259,10 +266,16 @@ def _fix_migrate_state_to_current(state_yml: Path):
             if needs_domain_injection and not domain_injected and stripped.startswith("tdd:"):
                 out.append("domain: null")
                 domain_injected = True
+            if needs_phase_injection and not phase_injected and stripped.startswith("domain:"):
+                out.append("phase: development")
+                phase_injected = True
 
         # tdd 라인이 없는 v1 파일 (드문 케이스) — 끝에 domain 추가
         if needs_domain_injection and not domain_injected:
             out.append("domain: null")
+        # domain 라인이 없어 phase 를 주입하지 못한 경우 — 끝에 추가
+        if needs_phase_injection and not phase_injected:
+            out.append("phase: development")
         if not schema_replaced:
             out.insert(0, f"schema: {SCHEMA_VERSION}")
         content = "\n".join(out)
@@ -420,6 +433,8 @@ def check_workspace(workspace: Path) -> list[Result]:
     results.extend(check_credential_drift(workspace / ".env"))
     # Slack webhook secret 보호 — .gitignore 에 .slack.env 패턴 강제 주입
     results.extend(check_gitignore_required_patterns(workspace))
+    # context 인용 drift — learn 산출물의 인용 소스가 문서보다 최신이면 stale 가능성
+    results.extend(check_context_citations_stale(workspace))
     # Auto-memory 존재 안내 (플러그인은 Read 만 — 경고 아닌 INFO 수준 PASS 로 표시)
     results.extend(check_auto_memory_presence())
     return results
@@ -496,13 +511,13 @@ def check_project(workspace: Path, project: str) -> list[Result]:
         )
         return results
 
-    # schema v1 / v1.1 이면 v1.2 로 업그레이드 권장 (auto-fixable)
-    if schema in ("v1", "v1.1"):
+    # schema v1 / v1.1 / v1.2 이면 v1.3 으로 업그레이드 권장 (auto-fixable)
+    if schema in ("v1", "v1.1", "v1.2"):
         results.append(
             Result(
                 Result.WARN,
                 f"{project}/.agent-state.yml schema",
-                f"schema {schema} (최신 v1.2 으로 업그레이드 가능)",
+                f"schema {schema} (최신 v1.3 으로 업그레이드 가능)",
                 "`doctor --fix` 로 자동 업그레이드",
                 fix=_fix_migrate_state_to_current(state_yml),
             )
@@ -729,7 +744,7 @@ def check_project(workspace: Path, project: str) -> list[Result]:
             # MANIFEST.md, config.md 같은 메타 파일은 제외 (도메인 지식 아님).
             # 워크스페이스 폴더 구조는 자유라 .md 파일 전체를 재귀 스캔.
             context_dir = workspace / "context"
-            META_FILES = {"MANIFEST.md", "config.md", "pr.md", "coding.md"}
+            META_FILES = CONTEXT_META_FILES
             newest_mtime = 0.0
             newest_path = None
             if context_dir.is_dir():
@@ -810,6 +825,116 @@ def check_project(workspace: Path, project: str) -> list[Result]:
             except Exception:
                 pass
 
+    # QA phase — 산출물 명명 규약·phase 부수 자원 정합성
+    results.extend(check_qa_artifact_naming(proj_dir / "qa", project))
+    results.extend(check_qa_phase_state(state_data, proj_dir, project))
+
+    return results
+
+
+# ---------------------------------------------------------------------------
+# QA phase 검사
+# ---------------------------------------------------------------------------
+
+_QA_TICKET_RE = re.compile(r"^([A-Z][A-Z0-9]*-\d+)\.md$")
+_QA_ARTIFACT_RE = re.compile(
+    r"^([A-Z][A-Z0-9]*-\d+)\.(plan|plan\.critic|eval)(\.r\d+)?\.md$"
+)
+# rN 이 잘못된 위치에 끼어든 변형 감지용 (예: plan.r1.critic.md)
+_QA_MISPLACED_RN_RE = re.compile(
+    r"^([A-Z][A-Z0-9]*-\d+)\.(plan)(\.r(\d+))\.(critic)\.md$"
+)
+
+
+def check_qa_phase_state(
+    state_data: dict, proj_dir: Path, project: str
+) -> list[Result]:
+    """`.agent-state.yml` phase=qa 인 프로젝트의 부수 자원 정합성.
+
+    rules:
+      - ERROR : phase=qa AND features/*.md (`.plan.md` 제외) 가 비어있음
+      - INFO  : phase=qa AND `qa/` 폴더 자체가 부재 (첫 `/pilot:qa` 호출 전)
+
+    phase 가 `qa` 가 아닐 때는 아무것도 보고하지 않는다. INFO 룰은 `qa/` 폴더
+    자체가 없을 때만 발동 — 폴더는 있고 내부가 비었을 때는 정상 (결함 0 건 상태).
+    """
+    results: list[Result] = []
+    if state_data.get("phase") != "qa":
+        return results
+
+    features_dir = proj_dir / "features"
+    if count_real_features(features_dir) == 0:
+        results.append(
+            Result(
+                Result.ERROR,
+                f"{project} phase=qa",
+                "QA phase 인데 features 가 비어있음. project 가 아직 development 중일 가능성.",
+                f"`/pilot:project {project} --qa off` 로 development 복귀 권장",
+            )
+        )
+
+    qa_dir = proj_dir / "qa"
+    if not qa_dir.is_dir():
+        results.append(
+            Result(
+                Result.INFO,
+                f"{project} phase=qa",
+                f"QA phase 진입 후 첫 `/pilot:qa {{KEY}}` 호출 전 상태 (qa/ 폴더 부재 — 정상)",
+            )
+        )
+
+    return results
+
+
+def check_qa_artifact_naming(qa_dir: Path, project: str) -> list[Result]:
+    """qa/ 산출물 명명 규약 검사.
+
+    규약: {KEY}.md / {KEY}.(plan|plan.critic|eval)(.r{N})?.md — `.r{N}` 은
+    항상 마지막 `.md` 직전. 규약 위반·고아 산출물(티켓 본문 없는 파생물)을
+    WARN 으로 보고한다. 자동 rename 은 하지 않는다 (수동 안내만).
+    """
+    if not qa_dir.is_dir():
+        return []
+
+    results: list[Result] = []
+    ticket_keys: set[str] = set()
+    artifacts: list[tuple[str, str]] = []  # (filename, key)
+
+    for p in sorted(qa_dir.glob("*.md")):
+        m = _QA_TICKET_RE.match(p.name)
+        if m:
+            ticket_keys.add(m.group(1))
+            continue
+        m = _QA_ARTIFACT_RE.match(p.name)
+        if m:
+            artifacts.append((p.name, m.group(1)))
+            continue
+        # 규약 위반 — rN 위치 변형이면 기대 이름을 hint 로 제시
+        mis = _QA_MISPLACED_RN_RE.match(p.name)
+        hint = (
+            f"기대 이름: {mis.group(1)}.plan.critic.r{mis.group(4)}.md"
+            if mis
+            else "규약: {KEY}.(plan|plan.critic|eval)(.r{N})?.md — rN 은 마지막 .md 직전"
+        )
+        results.append(
+            Result(
+                Result.WARN,
+                f"{project} qa/{p.name}",
+                "산출물 명명 규약 위반",
+                hint,
+            )
+        )
+
+    for name, key in artifacts:
+        if key not in ticket_keys:
+            results.append(
+                Result(
+                    Result.WARN,
+                    f"{project} qa/{name}",
+                    f"고아 산출물 — 티켓 본문 qa/{key}.md 없음",
+                    "`/pilot:qa {KEY}` 재진입으로 본문 생성 또는 파일 정리",
+                )
+            )
     return results
 
 
@@ -976,6 +1101,182 @@ def check_conventions_paths(workspace: Path, project: str | None) -> list[Result
                     f"workspace/{rel_norm} 생성 또는 config.md 선언 제거",
                 )
             )
+    return results
+
+
+# ---------------------------------------------------------------------------
+# context 인용 drift 검사
+# ---------------------------------------------------------------------------
+
+# 인용 경로 — 슬래시 필수 (basename 만으로는 해석할 수 없다).
+_CITE_PATH = r"([a-zA-Z0-9][a-zA-Z0-9_.\-]*/[a-zA-Z0-9_./\-]+\.[a-zA-Z]{1,6})"
+# 앵커는 **선택**이다. 검사 본문은 경로만 stat 하고 라인 번호를 쓰지 않으므로
+# 앵커를 필수로 요구하면 형식만 다른 실사용 인용 (심볼 앵커·백틱 표기) 을
+# 통째로 놓쳐 검사가 조용히 0 건이 된다.
+_CITE_ANCHOR = r"(?:[:#][^)`\s]*)?"
+# 지원 형식: (app/s.rb:42) · `app/o.rb#cancel!` · `app/o.rb` ·
+#            `tools/doctor.py:43-60` · `tools/plan-validate.py:34·461-466`
+_CITE_RE = re.compile(
+    rf"\({_CITE_PATH}{_CITE_ANCHOR}\)"
+    rf"|`{_CITE_PATH}{_CITE_ANCHOR}`"
+)
+
+
+def _read_source_root(workspace: Path) -> str | None:
+    """`context/config.md` 의 `## 언어·도구 기본값` 표에서 source_root 선언값.
+
+    인용 경로 해석의 보조 루트 — 하위 루트 기준으로 인용하는 워크스페이스
+    (예: 프런트엔드가 `services/foo.ts` 로 인용) 를 지원한다.
+    `_extract_declared_path` 를 거쳐 스켈레톤 예시 셀(`` `app/` · `src/main/` 등 ``)
+    은 미선언으로 취급한다. 파싱 실패·부재는 조용히 None — 호출부는 repo 루트
+    해석만 쓴다.
+    """
+    config_md = workspace / "context" / "config.md"
+    if not config_md.is_file():
+        return None
+    try:
+        text = config_md.read_text(encoding="utf-8")
+    except Exception:
+        return None
+    for table in _parse_md_tables_in_section(text, "## 언어·도구 기본값"):
+        for row in table:
+            if len(row) < 2:
+                continue
+            key = row[0].strip().strip("`").strip()
+            if key != "source_root":
+                continue
+            value, _ambiguous = _extract_declared_path(row[1])
+            return value
+    return None
+
+
+def _iter_cited_paths(text: str) -> list[str]:
+    """본문에서 인용 경로를 등장 순·중복 제거로 뽑는다."""
+    seen: dict[str, None] = {}
+    for m in _CITE_RE.finditer(text):
+        seen.setdefault(m.group(1) or m.group(2))
+    return list(seen)
+
+
+def _resolve_cited(
+    service_repo: Path, source_root: str | None, cited: str
+) -> Path | None:
+    """인용 경로를 실파일로 해석 — repo 루트 우선, 실패 시 source_root 접두어."""
+    direct = service_repo / cited
+    if direct.is_file():
+        return direct
+    if source_root:
+        alt = service_repo / source_root.strip("/") / cited
+        if alt.is_file():
+            return alt
+    return None
+
+
+def _is_workspace_internal(path: Path, workspace: Path) -> bool:
+    try:
+        return path.resolve().is_relative_to(workspace.resolve())
+    except Exception:
+        return False
+
+
+def check_context_citations_stale(workspace: Path) -> list[Result]:
+    """context/ 인용이 가리키는 소스 파일의 mtime drift 검사.
+
+    `/pilot:learn` 이 추출 항목에 `file:line`·`file#symbol` 인용을 남기면
+    (learn SKILL § 추출 항목 — "pilot-doctor 의 mtime drift 감지 입력"),
+    이후 해당 소스가 수정됐을 때 산출물이 stale 됐을 가능성을 감지한다.
+
+    pilot 의 context 구조는 자유 형식이라 `context/**/*.md` 전체를 본다
+    (메타 파일 제외 — check_project 의 mtime drift 검사와 동일 정책).
+    `.md` 인용도 소스 인용이다 (플러그인·문서 리포가 학습 대상인 경우) —
+    단, workspace 내부로 해석되는 인용은 context 상호 링크이므로 세지 않는다.
+
+    서비스 레포 루트 = workspace.parent. 자동 수정 없음.
+    """
+    context_dir = workspace / "context"
+    if not context_dir.is_dir():
+        return []
+
+    service_repo = workspace.parent
+    source_root = _read_source_root(workspace)
+
+    # (workspace-상대 경로, stale WARN | None, 인용 수, 해석 수)
+    rows: list[tuple[Path, Result | None, int, int]] = []
+    for doc in sorted(context_dir.rglob("*.md")):
+        rel = doc.relative_to(workspace)
+        if doc.name in CONTEXT_META_FILES:
+            continue
+        if any(part.startswith((".", "_")) for part in rel.parts):
+            continue
+        try:
+            content = doc.read_text(encoding="utf-8")
+        except Exception:
+            continue
+
+        doc_mtime = doc.stat().st_mtime
+        stale: list[str] = []
+        n_cited = 0
+        n_resolved = 0
+        for cited in _iter_cited_paths(content):
+            src = _resolve_cited(service_repo, source_root, cited)
+            if src is not None and _is_workspace_internal(src, workspace):
+                # workspace 내부 = context 문서끼리의 상호 링크 — 소스 인용 아님
+                continue
+            n_cited += 1
+            if src is None:
+                continue
+            n_resolved += 1
+            if src.stat().st_mtime > doc_mtime:
+                stale.append(cited)
+
+        warn: Result | None = None
+        if stale:
+            sample = ", ".join(stale[:3])
+            more = f" 외 {len(stale) - 3}건" if len(stale) > 3 else ""
+            warn = Result(
+                Result.WARN,
+                str(rel),
+                f"인용 소스 {len(stale)}개 변경 감지 (stale 가능성): {sample}{more}",
+                f"`/pilot:learn {stale[0]}` 재실행으로 갱신",
+            )
+        rows.append((rel, warn, n_cited, n_resolved))
+
+    if not rows:
+        return []
+
+    stale_warns = [w for _, w, _, _ in rows if w is not None]
+    results: list[Result] = list(stale_warns)
+
+    # 인용 0 건 = 이 파일은 drift 검사에서 사실상 제외된다. 조용히 빠지면
+    # 검사가 꺼진 사실조차 리포트에 안 남는다.
+    for rel, _, n_cited, n_resolved in rows:
+        if n_resolved:
+            continue
+        detail = (
+            f"해석 가능한 인용 0건 (인용 표기 {n_cited}건은 실파일 미해석)"
+            if n_cited else "인용 0건"
+        )
+        results.append(Result(
+            Result.WARN,
+            f"{rel} 인용 부재",
+            f"{detail} — 이 파일은 인용 drift 검사 대상에서 제외된다",
+            "`/pilot:learn {진입점}` 재실행 시 `file:line` 인용을 남긴다 "
+            "(learn SKILL § 추출 항목 — 추측 금지). 자동 수정 없음",
+        ))
+
+    # PASS 는 stale 유무만 본다 — 인용 부재 WARN 과는 축이 다르다. 둘을 묶으면
+    # "인용 있는 파일들은 최신" 이라는 정보가 인용 없는 파일 때문에 사라진다.
+    checked = [row for row in rows if row[3]]
+    if checked and not stale_warns:
+        total_cited = sum(nc for _, _, nc, _ in checked)
+        total_resolved = sum(nr for _, _, _, nr in checked)
+        unresolved = total_cited - total_resolved
+        tail = f" (미해석 {unresolved}건)" if unresolved else ""
+        results.append(Result(
+            Result.PASS,
+            "context 인용 drift",
+            f"{len(checked)}개 파일 · 인용 {total_resolved}건{tail} — stale 없음",
+        ))
     return results
 
 
