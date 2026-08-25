@@ -26,11 +26,11 @@ pytest pilot/tests/ -q
 
 ## 현재 상태
 
-**v0.16.0** (tag `pilot-v0.16.0`) — 스킬 20 · 에이전트 5 · 훅 6 · 도구 13 · 테스트 441.
+**v0.16.0** (태그 미발행 — main 에만 반영) — 스킬 20 · 에이전트 5 · 훅 6 · 도구 13 · 테스트 481.
 
 사내 원본 플러그인에서 파생된 범용판이며, **범용화 리팩터는 완료**됐다 (사내 식별자 sweep 0건). 현재는 원본의 미포팅 기능을 선별 흡수하며 자체 dogfooding(`workspace/projects/build-plugin/`)으로 개발한다 — 미완 항목은 `#22 context 드리프트 재학습`.
 
-릴리스 이력은 [GitHub Releases](https://github.com/radiostart/claude-plugins/releases)가 SSOT.
+버전별 요약은 매뉴얼의 [릴리스 노트](https://radiostart.github.io/claude-plugins/release-notes/)(소스: `pilot/docs/release-notes.md`), 커밋 단위 원본은 [GitHub Releases](https://github.com/radiostart/claude-plugins/releases)가 SSOT.
 
 - **v0.16.0** — 스킬 3종 신설 (`qa` Jira 결함 처리 phase · `switch` 작업 전환 · `ask` 구현 질의) · learn 기재 규격 (`extraction.md` — 층위 L1/L2/L3·Routes 선별 기재·인용 규격) · doctor 인용 drift 검사 · scope-guard 경로 판정·gitignore 규약 · `plan-target.md` SSOT · state schema **v1.3** (`phase`·`qa_started_at`).
 - **v0.15.0** — evaluator REPORT 영속화 (`features/NN-*.eval.md`) · critic·autopilot·focus 훅 양립 개정 · description 감량.
@@ -67,12 +67,12 @@ claude-plugins/                  ← 마켓플레이스 root (= 이 레포)
     ├── .claude-plugin/          ← plugin.json · PLUGIN_SCHEMA_NOTES.md
     ├── README.md
     ├── agents/                  ← wrapper 5종 (planner · planner-critic · generator · evaluator · code-review)
-    ├── skills/                  ← 스킬 17종 + context/ (공유 계약·라이프사이클 문서)
+    ├── skills/                  ← 스킬 20종 + context/ (공유 계약·라이프사이클 문서)
     ├── hooks/                   ← commit-format · scope-guard · protect-managed · coding-rules · slack-notify · session-context
     ├── tools/                   ← orchestrate-load · doctor · plan-validate · auto_pilot · docs_build · confluence · slack-notify · regen-verify · release.sh
     ├── docs/                    ← 매뉴얼 소스 (mkdocs). reference/ 하위 생성물은 gitignored
     ├── examples/                ← 언어별 코드리뷰 룰 예시
-    └── tests/tools/             ← 단위 테스트 15 파일
+    └── tests/tools/             ← 단위 테스트 21 파일
 ```
 
 ## 자주 쓰는 커맨드
@@ -94,7 +94,7 @@ python3 pilot/tools/doctor.py workspace
 grep -rn 'dp-skills\|deali\|workspace/{TEAM}\|ag-planner' pilot/ \
   --include="*.md" --include="*.py" --include="*.sh" | grep -v 'docs/reference/'
 
-# 릴리스 (main clean + 버전 표기 4곳 동기 후 — README § 릴리스 및 업데이트)
+# 릴리스 (main clean + 버전 표기 5곳 동기 후 — README § 릴리스 및 업데이트)
 pilot/tools/release.sh
 ```
 
