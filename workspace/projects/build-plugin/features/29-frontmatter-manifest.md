@@ -8,10 +8,10 @@
 
 ## 요구사항
 
-- **조건**: #27 (context-search) 머지 — description 가중치 4점이 이 feature 로 자동 활성된다. #28 (freshness) 는 `learned_at` 을 기준 시각 1순위로 소비.
+- **조건**: #27 (context-search) 머지 — description 가중치 4점이 이 feature 로 자동 활성된다. #28 (freshness) 와는 독립이다 — 신선도 기준 시각은 mtime 단일이라 frontmatter 를 쓰지 않는다 (2026-09-04 정정).
 - **트리거**: (1) `/pilot:learn` 이 본문·진입 파일을 생성·재생성할 때 frontmatter 자동 기입 (2) 래퍼 진입 시 `orchestrate-load.py` 가 활성 도메인 본문의 매니페스트 생성 (3) `/pilot:doctor` 가 캡 검증, `--fix` 가 기존 파일 마이그레이션 **제안**.
 - **기대결과**:
-  - `/pilot:learn` 산출 본문 파일마다 frontmatter:
+  - `/pilot:learn` 산출 본문 파일마다 frontmatter 4 키 (`learned_at` 은 2026-09-04 사용자 승인으로 삭제 — knowledge-sync 가 learn 외 writer 라 값이 갱신되지 않고, #28 이 mtime 단일 기준으로 바뀌어 소비처도 없다):
 
     ```yaml
     ---
@@ -20,11 +20,10 @@
     type: services            # index | routes | models | services | rules | enums | boundary | free
     sources:                  # 이 문서가 다루는 소스 범위 (glob 허용) — #30 의 paths 로 재사용
       - app/services/wms/**
-    learned_at: 2026-09-04T03:12:00Z
     ---
     ```
 
-  - orchestrate-load 반환 JSON 에 `context_manifest` 키 신설: 활성 도메인 폴더(+ `boundaries/{domain}--*`) 의 `*.md` 를 **앞 30줄만** 읽어 `- [type] path (age): description` 1줄씩. 최대 200개(초과 시 최신순 절단 + 표기). frontmatter 없는 파일은 `(description 없음 — 첫 H1: …)`.
+  - orchestrate-load 반환 JSON 에 `context_manifest` 키 신설: 활성 도메인 폴더(+ `boundaries/{domain}--*`) 의 `*.md` 를 **앞 30줄만** 읽어 `- [type] path (age): description` 1줄씩 (`age` 는 파일 mtime 기준 — #28 과 동일). 최대 200개(초과 시 최신순 절단 + 표기). frontmatter 없는 파일은 `(description 없음 — 첫 H1: …)`.
   - 진입 파일(`index.md`) 은 기존대로 `files_to_read` 에 유지 — 본문은 매니페스트로 대체 **안 함**, 추가만 (soft). 에이전트는 매니페스트를 보고 필요한 본문만 Read 하거나 #27 로 섹션 조회.
   - doctor: description 부재 WARN · 150자 초과 WARN · 색인 파일(MANIFEST·진입 index) 200줄 또는 25KB 초과 WARN · `sources` 경로 미존재 INFO.
 
@@ -62,6 +61,7 @@ _(없음)_
 
 ### (d) 비즈니스 결정 영역
 - [x] 기존 본문 파일의 description 마이그레이션 — 제안 후 승인 기입 vs 자동 기입 vs learn 재실행만 → 제안 후 승인 기입. `doctor --fix` 는 후보만 제시 (2026-09-04 사용자 확정)
+- [x] `learned_at` 키 포함 여부 → **제외, 스키마 4 키** (2026-09-04 사용자 승인). 사유: knowledge-sync (v0.14.0, `skills/context/lifecycle/knowledge-sync.md`) 가 사이클 종료마다 승인 하에 context 문서를 갱신하므로 learn 이 유일 writer 가 아니다. learn 외 writer 가 갱신하면 값이 그대로 남아 실제보다 오래된 시각이 되고 과잉 경고를 낸다. 소비처였던 #28 도 mtime 단일 기준으로 정정됐다
 
 ## 검증 기준
 

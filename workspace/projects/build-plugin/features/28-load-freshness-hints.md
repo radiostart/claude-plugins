@@ -8,12 +8,12 @@
 
 ## 요구사항
 
-- **조건**: 로드 대상 도메인 지식 파일이 `` `path/file.ext:12` `` 또는 `:12-34` 형식의 file:line 인용을 포함한다 (없으면 나이만 표기). #29 의 `learned_at` frontmatter 는 **선택** — 없어도 동작.
-- **트리거**: (1) `orchestrate-load.py` 가 도메인 진입 파일·경계 문서를 `files_to_read` 에 넣을 때마다 (2) `/pilot:doctor` 실행 시 같은 로직으로 지식 파일 단위 검사.
+- **조건**: 원격 v0.16.0 이 이미 `check_context_citations_stale` (`pilot/tools/doctor/integrity.py:1182`) 로 인용 stale 검사를 수행한다. 본 feature 의 범위는 **그 판정을 로드 시점에 노출**하는 것이다 — 새 판정 로직·새 기준 시각을 만들지 않는다 (2026-09-04 범위 축소, Open Q (d) 참조).
+- **트리거**: `orchestrate-load.py` 가 도메인 진입 파일·경계 문서를 `files_to_read` 에 넣을 때마다. (`/pilot:doctor` 쪽은 이미 같은 검사를 수행하므로 신규 트리거가 아니다.)
 - **기대결과**:
-  - 로드되는 지식 파일마다 힌트 1줄: `[신선도] {file}: 학습 {age}일 전 · 인용 {changed}/{total} 파일이 이후 변경 · 미존재 {missing} — 인용 전 현재 코드 확인`. 나이 1일 이하이고 변경 0·미존재 0 이면 생략 (노이즈 억제).
-  - doctor 가 지식 파일 단위로 `changed/total ≥ 30%` 또는 `missing ≥ 1` → WARN "재학습 권장: `/pilot:learn {진입점}`", 그 외 INFO.
-  - 실사례 검증: `features/22-context-drift-relearn.md` 의 삭제 스크립트 3종(`memory-hint.py`·`init_detect.py`·`diagnose.py`) 서술이 `workspace/context/pilot/index.md`·`lifecycle.md` 로드 시 `미존재 ≥ 1` 로 즉시 노출된다.
+  - 로드되는 지식 파일마다 힌트 1줄: `[신선도] {file}: 갱신 {age}일 전 · 인용 {stale}/{resolved} 변경 · 미해석 {unresolved} — 인용 전 현재 코드 확인`. 갱신 1일 이하이고 stale 0 이면 생략 (노이즈 억제).
+  - **doctor 는 기존 검사를 그대로 유지한다** — WARN 문구·임계·출력 불변. 두 소비처가 **같은 판정 함수 1벌**을 호출해 결과가 갈리지 않게 한다 (중복 WARN 방지).
+  - 실사례 검증: 2026-09-04 시점 `workspace/context/pilot/index.md`·`spec.md` 가 `orchestrate-load.py` 변경으로 stale 판정된다 (doctor WARN 2건 실측). 같은 판정이 래퍼 진입 시 힌트로도 보여야 한다 — 지금은 사용자가 doctor 를 따로 돌려야만 안다.
   - **(F-E) 문서 정합**: `GUIDE.md:51-58` 와 `state-schema.md` `analyzed` 절의 "analyzed: true 면 MANIFEST 진입 파일 재로드 생략" 서술을 코드 실제 거동("진입 파일은 항상 로드, analyze 는 prompts/ 압축본 신뢰 여부만") 으로 정정. **구현 변경 없음** — 코드가 옳다 (색인·진입은 항상 로드 = 계획서 §2 P1 정합).
 
 ## 상태 전환
@@ -22,21 +22,20 @@ _(없음)_
 
 ## 비즈니스 규칙
 
-- **기준 시각 우선순위** (Open Q (d) 확정): frontmatter `learned_at` > 파일의 최근 git 커밋 시각(`git log -1 --format=%cI -- {file}`) > mtime. git 우선 이유 — clone·checkout 이 mtime 을 흔든다. git 부재 환경은 mtime 만 사용 + 힌트에 `(mtime 기준)` 표기.
-- **인용 파싱**: `` `?([A-Za-z0-9_./-]+\.[A-Za-z0-9]+):(\d+)(?:-(\d+))?`? `` — 경로·시작·끝 라인. 코드블록 안 인용도 포함. 같은 경로는 1회로 합친다.
-- **경로 해석**: 저장소 루트 기준 → 실패 시 `config.md` `source_root` 기준 → 실패 시 지식 파일 디렉토리 기준. 셋 다 실패면 `missing`.
-- **변경 판정**: 인용 파일의 기준 시각(git 커밋 시각 > mtime) 이 지식 파일 기준 시각보다 뒤면 `changed`. `line_end ≤ 파일 줄 수` 검사로 `line_out_of_range` 별도 카운트.
-- **신호만 낸다** — 자동 수정·자동 재학습 트리거 금지 (drift-protocol 승인 원칙 유지). 기존 doctor 의 "context mtime > analyzed_at" 검사(파생물 재생성 축) 와 **별개 축**(지식 자체의 부패) 으로 공존.
-- **상한·성능**: 파일당 인용 500개 초과 시 앞 500개만 + `(표본 500/{n})` 표기. stat 실패는 skip(카운트 제외). orchestrate-load 지연 상한 200ms — 초과 시 나이만 표기하고 "인용 검사는 `/pilot:doctor` 로" 힌트.
-- **공용 모듈**: `pilot/tools/freshness.py` 를 orchestrate-load 와 doctor 가 함께 import (라이브러리 + CLI). 표준 라이브러리 + `git` subprocess 만.
+- **기준 시각 = 파일 mtime 단일** (2026-09-04 정정, Open Q (d)). 지식 파일 mtime 과 인용 소스 mtime 을 비교하며, 이는 기존 `check_context_citations_stale` 과 **동일 기준**이다. 당초 확정했던 `learned_at` > git 커밋 시각 > mtime 3단 우선순위는 폐기한다.
+- **인용 파싱·해석은 기존 구현을 재사용한다. 새 정규식 작성 금지** — `_CITE_RE` (`integrity.py:1117`, 슬래시 필수·앵커 선택) · `_iter_cited_paths` (`:1154`) · `_resolve_cited` (`:1164`, repo 루트 → `source_root` 접두) · `_is_workspace_internal` (`:1176`) · `_read_source_root` (`:1125`). 두 벌이 되면 같은 파일에 대해 doctor 와 로더의 판정이 갈린다.
+- **집계 축은 기존 검사와 같다**: `resolved` (실파일로 해석된 인용) · `stale` (인용 소스 mtime > 문서 mtime) · `unresolved` (`n_cited - n_resolved`). workspace 내부로 해석되는 인용은 context 상호 링크라 세지 않으며, `CONTEXT_META_FILES` (MANIFEST·config 등) 는 대상에서 제외한다.
+- **신호만 낸다** — 자동 수정·자동 재학습 트리거 금지 (drift-protocol 승인 원칙 유지). doctor 의 "context mtime > analyzed_at" 검사(파생물 재생성 축) 와는 여전히 별개 축이다.
+- **상한·성능**: 파일당 인용 500개 초과 시 앞 500개만 + `(표본 500/{n})` 표기. stat 실패는 skip(카운트 제외). orchestrate-load 지연 상한 200ms — 초과 시 갱신 나이만 표기하고 "인용 검사는 `/pilot:doctor` 로" 힌트.
+- **공용 모듈 추출**: 위 헬퍼와 파일 단위 집계를 `doctor` 패키지 안의 공용 모듈로 옮기고 `check_context_citations_stale` 과 orchestrate-load 가 함께 import 한다. `orchestrate-load.py` 는 이미 `doctor._common` 을 import 하므로 새 최상위 모듈(`freshness.py`)은 만들지 않는다. 배치(`_common.py` 확장 vs `citations.py` 신설)는 planner 결정. 표준 라이브러리만.
 
 ## 예외 케이스
 
-- 인용 경로가 디렉토리/glob (`app/services/wms/`) → 디렉토리 최신 변경 시각으로 판정.
-- 심볼릭 링크 → 대상 기준.
-- 인용이 라인 번호 없이 경로만 → 존재 여부만 검사 (변경 판정은 수행).
-- 지식 파일 자체가 git 미추적(새 파일) → git 시각 없음 → mtime fallback.
-- `git` 호출 실패(비 git 디렉토리·타임아웃 1s) → mtime fallback + 표기, abort 안 함 (A2).
+- 해석된 인용 0건 → 힌트 생략 (doctor 는 기존대로 INFO 유지).
+- 미해석 인용 (실파일 없음) → `unresolved` 카운트만. `stale` 로 세지 않는다 (기존 검사 거동).
+- 인용이 라인 번호 없이 경로만 → 기존 정규식이 앵커를 선택으로 두므로 그대로 집계된다.
+- **clone 직후 전 파일 mtime 이 같아 stale 0 이 되는 것은 기존 검사의 알려진 한계다.** 본 feature 는 이를 바꾸지 않는다 — 기준을 바꾸면 doctor 와 로더가 갈린다.
+- 200ms 초과 → 갱신 나이만 표기하고 "인용 검사는 `/pilot:doctor` 로" 힌트 (A2).
 
 ## Open Questions
 
@@ -50,21 +49,23 @@ _(없음)_
 - (없음)
 
 ### (d) 비즈니스 결정 영역
-- [x] 신선도 기준 시각 — git 커밋 시각 우선 vs mtime 만 vs learned_at 필수 → git 커밋 시각 우선 (`learned_at` > `git log -1` > mtime) (2026-09-04 사용자 확정)
+- [x] 신선도 기준 시각 → **mtime 단일** (2026-09-04 사용자 승인, 당초 `learned_at` > git > mtime 3단 확정을 정정). 정정 사유 2가지: (1) knowledge-sync (v0.14.0, `skills/context/lifecycle/knowledge-sync.md`) 가 사이클 종료마다 승인 하에 context 문서를 갱신하므로 지식 문서는 learn 단독 산출물이 아니다. learn 이 아닌 writer 가 갱신하면 `learned_at` 은 그대로 남아 실제보다 오래된 값이 되고 과잉 경고를 낸다 (2) 원격 v0.16.0 의 `check_context_citations_stale` 이 이미 mtime 기준으로 동작하며 실측 WARN 을 낸다 (2026-09-04 doctor 실행: `context/pilot/index.md`·`spec.md` 2건). 두 검사가 다른 기준을 쓰면 같은 파일에 대해 결과가 어긋난다
+- [x] `learned_at` frontmatter 필요 여부 → **불필요, #29 스키마에서 삭제** (위와 같은 사유. 2026-09-04 사용자 승인)
 
 ## 검증 기준
 
-- 픽스처: 지식 파일 1 + 인용 소스 3 (변경 1 · 미변경 1 · 삭제 1) → 힌트 문구·카운트 정확성. mtime 조작은 `os.utime`, git 경로는 임시 저장소.
-- doctor 출력 스냅샷 (WARN/INFO 임계 경계: 30% 정확히·missing 1).
-- 실사례: 현재 `workspace/context/pilot/` 로 orchestrate-load 실행 시 `미존재 ≥ 1` 힌트 발화 (#22 미해소 상태 기준).
+- **기존 doctor 검사 회귀 0** — 헬퍼 추출 후 `check_context_citations_stale` 의 출력이 추출 전과 동일 (기존 doctor 테스트 무손 + 같은 워크스페이스 실행 결과 diff 0).
+- 픽스처: 지식 파일 1 + 인용 소스 3 (변경 1 · 미변경 1 · 미해석 1) → 힌트 문구·카운트 정확성. mtime 조작은 `os.utime`.
+- 실사례: 현재 `workspace/context/pilot/` 로 orchestrate-load 실행 시 `index.md`·`spec.md` 에 stale ≥ 1 힌트 발화 (doctor 가 같은 2건을 WARN 으로 내는 것과 일치).
 - F-E: `GUIDE.md`·`state-schema.md` 정정 후 `orchestrate-load.py build_load_plan` 코드 변경 0 (`git diff --stat pilot/tools/` 에 미포함).
 - 전체 unittest 통과 + doctor 클린 + orchestrate-load 지연 측정 200ms 이내.
 
 ## 관련 파일 범위
 
-- **신규**: `pilot/tools/freshness.py` · `pilot/tests/tools/test_freshness.py`
-- **변경**: `pilot/tools/orchestrate-load.py` — 4) 진입 파일(`:467`)·5) 경계 문서(`:487`) 로드 직후 `[신선도]` 힌트
-- **변경**: `pilot/tools/doctor/integrity.py` `check_project` (`:456`; 기존 context mtime drift `:718-770` 옆) — 인용 검사 WARN/INFO
+- **변경**: `pilot/tools/doctor/integrity.py` — 인용 헬퍼 5종과 파일 단위 집계를 공용 모듈로 추출, `check_context_citations_stale` (`:1182`) 은 그것을 import (거동 불변)
+- **신규 (배치는 planner 결정)**: `doctor/citations.py` 신설 또는 `doctor/_common.py` 확장 · 대응 테스트
+- **변경**: `pilot/tools/orchestrate-load.py` — 4) 진입 파일·5) 경계 문서 로드 직후 `[신선도]` 힌트
+- **불변**: `pilot/tools/freshness.py` 는 **만들지 않는다** (당초 계획 폐기 — 판정 로직 1벌 원칙)
 - **변경**: `pilot/skills/context/lifecycle/drift-protocol.md` — "자동 신호" 절 추가 (신호 → 사용자 판단 → 승인 하 재학습 경로)
 - **변경 (F-E)**: `pilot/skills/context/lifecycle/projects/GUIDE.md:51-58` · `pilot/skills/context/lifecycle/state-schema.md` `analyzed` 절 — 코드 거동으로 정정
 - **불변**: `orchestrate-load.py build_load_plan` 의 로드 정책 코드 (F-E 는 문서만)

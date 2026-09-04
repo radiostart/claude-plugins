@@ -184,9 +184,9 @@
 
 ### #28 로드 시 신선도 힌트 + 로드 정책 문서 정합 (features/28-load-freshness-hints.md)
 
-- 조건: 지식 파일에 file:line 인용 존재 (없으면 나이만). `learned_at`(#29) 은 선택.
+- 조건: 원격 v0.16.0 의 `check_context_citations_stale`(`integrity.py:1182`) 가 이미 mtime 기준 인용 stale 검사를 수행한다. 본 feature 범위 = **그 판정을 로드 시점에 노출** (새 판정·새 기준 시각 금지).
 - 트리거: orchestrate-load 가 진입 파일·경계 문서를 `files_to_read` 에 넣을 때 + doctor 실행 시.
-- 기대결과: `[신선도] {file}: 학습 N일 전 · 인용 k/n 변경 · 미존재 m` 힌트 (≤1일·변경 0 이면 생략) + doctor WARN (≥30% 또는 missing ≥1). 기준 시각 = `learned_at` > git 커밋 시각 > mtime (확정). 신호만 — 자동 수정 0. 실사례: #22 의 삭제 스크립트 3종이 `미존재` 로 노출. F-E: `GUIDE.md:51-58`·`state-schema.md` 의 "analyzed 면 진입 파일 재로드 생략" 서술을 코드 거동(항상 로드) 으로 정정 — 코드 변경 0.
+- 기대결과: `[신선도] {file}: 학습 N일 전 · 인용 k/n 변경 · 미존재 m` 힌트 (≤1일·변경 0 이면 생략) + doctor WARN (≥30% 또는 missing ≥1). 기준 시각 = **mtime 단일** (2026-09-04 정정 — knowledge-sync 가 learn 외 writer 라 생성 시각 필드는 갱신되지 않고, 기존 검사와 기준이 갈리면 결과가 어긋난다). 인용 정규식·해석 헬퍼는 `integrity.py` 것을 재사용하고 `freshness.py` 는 만들지 않는다. 신호만 — 자동 수정 0. 실사례: #22 의 삭제 스크립트 3종이 `미존재` 로 노출. F-E: `GUIDE.md:51-58`·`state-schema.md` 의 "analyzed 면 진입 파일 재로드 생략" 서술을 코드 거동(항상 로드) 으로 정정 — 코드 변경 0.
 
 **관련 파일 범위**:
 - 신규: `pilot/tools/freshness.py` (orchestrate-load·doctor 공용) · `pilot/tests/tools/test_freshness.py`
@@ -195,9 +195,9 @@
 
 ### #29 본문 frontmatter 매니페스트 (features/29-frontmatter-manifest.md)
 
-- 조건: #27 머지 (description 가중치 자동 활성). #28 는 `learned_at` 을 1순위 소비.
+- 조건: #27 머지 (description 가중치 자동 활성). #28 과는 독립 (기준 시각이 mtime 단일이라 frontmatter 소비 없음).
 - 트리거: `/pilot:learn` 생성·재생성 시 frontmatter 기입 · orchestrate-load 진입 시 `context_manifest` 생성 · doctor 캡 검증 + `--fix` 마이그레이션 **제안**.
-- 기대결과: 본문 frontmatter 5 키 (`description` ≤150자·`domain`·`type`·`sources`·`learned_at`) · `context_manifest` = 활성 도메인 본문 앞 30줄 스캔 `- [type] path (age): description` (200 캡, 진입 파일은 `files_to_read` 유지 — 추가만, soft) · doctor WARN 3종 (부재·150자 초과·색인 200줄/25KB) + INFO 2종. 마이그레이션 = 제안 후 승인 기입 (확정). MANIFEST.md 는 frontmatter 없음.
+- 기대결과: 본문 frontmatter **4 키** (`description` ≤150자·`domain`·`type`·`sources` — `learned_at` 은 2026-09-04 삭제) · `context_manifest` = 활성 도메인 본문 앞 30줄 스캔 `- [type] path (age): description` (200 캡, 진입 파일은 `files_to_read` 유지 — 추가만, soft) · doctor WARN 3종 (부재·150자 초과·색인 200줄/25KB) + INFO 2종. 마이그레이션 = 제안 후 승인 기입 (확정). MANIFEST.md 는 frontmatter 없음.
 
 **관련 파일 범위**:
 - 변경: `pilot/skills/learn/SKILL.md` Phase 4 · `references/heuristics.md` (description 규칙) · `pilot/tools/orchestrate-load.py` (`context_manifest` + instructions 1줄) · `wrapper-protocol.md` §4 · `pilot/tools/doctor/integrity.py` `check_workspace`
