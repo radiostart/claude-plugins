@@ -1,9 +1,9 @@
 ---
 name: slack
 description: >-
-  현재 진행중인 프로젝트의 Slack 알림을 설정·테스트·확인·해제할 때 사용한다.
-  활성화 시 작업 완료·사용자 승인 이벤트가 해당 프로젝트 채널로 전송된다.
-  설정은 `workspace/projects/{PROJECT}/.slack.env` 를 SSOT 로 관리한다.
+  현재 진행중인 프로젝트의 Slack 알림을 설정·테스트·확인·해제할 때
+  사용한다. 활성화 시 완료·승인·PR 이벤트를 프로젝트 채널로 전송한다.
+  설정 SSOT (`.slack.env`)·이벤트 상세는 본문.
 ---
 
 현재 진행중인 프로젝트에 Slack 알림을 설정한다. `.slack.env` 가 SSOT (퍼미션 `0600`).
@@ -33,7 +33,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace 2>&1 | grep -E "\.gitign
 
 ### (없음) — 활성화
 
-`.slack.env` 이미 존재하면 [messages.md](../context/shared/messages.md) 의 `slack.already_active` 출력 후 종료 (파일 편집·`status`·`disable` 안내). 없으면 채널명(필수)·이벤트(기본 `complete,approval`, 쉼표 구분) 대화식 입력 후 아래 env 필드로 `{PROJECT_DIR}/.slack.env` Write + `chmod 600`:
+`.slack.env` 이미 존재하면 [messages.md](../context/shared/messages.md) 의 `slack.already_active` 출력 후 종료 (파일 편집·`status`·`disable` 안내). 없으면 채널명(필수)·이벤트(기본 `complete,approval,pr`, 쉼표 구분) 대화식 입력 후 아래 env 필드로 `{PROJECT_DIR}/.slack.env` Write + `chmod 600`. **지원·기본 목록 SSOT 는 `tools/slack-notify.py` 의 `SUPPORTED_EVENTS`/`DEFAULT_EVENTS` 상수다** — 이벤트 추가 시 상수를 먼저 고치고 본 문서를 맞춘다:
 
 ```env
 SLACK_WEBHOOK_URL=
@@ -41,7 +41,7 @@ SLACK_CHANNEL={채널명}
 SLACK_EVENTS={이벤트목록}
 ```
 
-`git check-ignore {PROJECT_DIR}/.slack.env` exit code ≠ 0 이면 `.gitignore` 미보호 — **파일을 즉시 삭제**하고 `slack.tracked_critical` 경고 출력 후 종료. 정상이면 `slack.activated` 출력({채널명}·{이벤트목록}·{파일경로} 치환) + "webhook 을 붙여넣었다면 `/pilot:slack test` 실행" 안내.
+`git check-ignore {PROJECT_DIR}/.slack.env` exit code ≠ 0 이면 `.gitignore` 미보호 — **파일을 즉시 삭제**하고 `slack.tracked_critical` 경고 출력 후 종료 (중앙 관리 등으로 리포 `.gitignore` 를 편집할 수 없으면 체크아웃 로컬 `.git/info/exclude` 에 `.slack.env` 를 추가해도 된다 — 커밋 불필요·본인 체크아웃 한정). 정상이면 `slack.activated` 출력({채널명}·{이벤트목록}·{프로젝트경로} 치환) + "webhook 을 붙여넣었다면 `/pilot:slack test` 실행" 안내.
 
 ### `test`
 

@@ -129,10 +129,68 @@ class NoopCases(unittest.TestCase):
             self.assertEqual(rc, 0)
             m_post.assert_not_called()
 
+    def test_issue_mode_does_not_post_to_same_named_project(self):
+        """활성 행이 issue 면 동명 프로젝트의 .slack.env 로 새지 않는다.
+
+        이슈 slug 는 projects/ 이름 충돌을 검사하지 않으므로, mode 를 무시하면
+        무관한 프로젝트 채널로 외부 전송이 나간다 (되돌릴 수 없음).
+        """
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            make_workspace(
+                root, "overdue-orders",
+                slack_env_content=(
+                    "SLACK_WEBHOOK_URL=https://hooks.slack.test/abc\n"
+                    "SLACK_CHANNEL=#proj-overdue\n"
+                ),
+            )
+            (root / "workspace" / "STATE.md").write_text(
+                "| mode | name | status |\n"
+                "| --- | --- | --- |\n"
+                "| issue | overdue-orders | 진행중 |\n",
+                encoding="utf-8",
+            )
+            with mock.patch.object(slack_notify, "post_to_slack") as m_post:
+                rc = slack_notify.main([
+                    "--event", "complete",
+                    "--workspace", str(root / "workspace"),
+                ])
+            self.assertEqual(rc, 0)
+            m_post.assert_not_called()
+
+    def test_legacy_state_row_still_resolves(self):
+        """첫 칸이 mode 가 아닌 legacy 표는 project 로 폴백 (하위호환)."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            make_workspace(
+                root, "X",
+                slack_env_content=(
+                    "SLACK_WEBHOOK_URL=https://hooks.slack.test/abc\n"
+                    "SLACK_CHANNEL=#x\n"
+                ),
+            )
+            (root / "workspace" / "STATE.md").write_text(
+                "| # | name | status |\n"
+                "| --- | --- | --- |\n"
+                "| 1 | X | 진행중 |\n",
+                encoding="utf-8",
+            )
+            with mock.patch.object(slack_notify, "post_to_slack",
+                                   return_value=(True, "ok")) as m_post, \
+                    mock.patch.object(slack_notify, "is_tracked_by_git",
+                                      return_value=False):
+                rc = slack_notify.main([
+                    "--event", "complete",
+                    "--workspace", str(root / "workspace"),
+                ])
+            self.assertEqual(rc, 0)
+            m_post.assert_called_once()
+
 
 class PostCases(unittest.TestCase):
     """정상 POST 및 네트워크 실패 경로."""
 
+    # 제품 기본값(complete,approval,pr)이 아니라 명시 필터링 검증용 고정값.
     def _env_content(self, events: str = "complete,approval") -> str:
         return (
             "SLACK_WEBHOOK_URL=https://hooks.slack.test/abc\n"

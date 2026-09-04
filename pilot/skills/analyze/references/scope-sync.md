@@ -41,7 +41,7 @@
 - H2 헤더 = `config.md` 의 `scope 헤더` 컬럼 값 그대로 (예: `## Routes`·`## Models`·`## Services`).
 - 표 헤더 = `config.md` 의 `표 헤더` 컬럼 값 (예: `엔드포인트, Method, 목적`).
 - 표 본문 행 추출 우선순위:
-  1. `workspace/context/{domain}/index.md` 본문의 매칭 표 (사용자 수동 정의 가능성).
+  1. `workspace/context/{domain}/index.md` 본문의 매칭 표 (사용자 수동 정의 가능성). 복사 시 표 위 **고지 3 줄** ([learn extraction](../../learn/references/extraction.md) § Routes 표 고지 의무) 도 함께 복사한다 — 고지가 떨어지면 선별 표가 전수 목록으로 읽힌다.
   2. 본문 추출 실패 → 표 헤더만 있는 빈 표 + `[INFO] scope/{domain}.md 표 본문 추출 실패 — 사용자 수동 채움 권장` 1 줄.
 
 **idempotency:**
@@ -83,13 +83,18 @@
    - scope/{domain}.md 에서 `scope 헤더` 일치 H2 섹션을 찾는다.
    - 섹션 없으면 해당 표만 skip + `[INFO] MANIFEST 진입 파일에 {scope 헤더} 없음 — 5-2 에서 해당 표 skip` 1 줄. `analyzed: true` 게이트는 정상 켬.
    - 섹션 있으면 `project.md 대상 H3` 의 이름으로 H3 표를 `표 헤더` 형식에 맞춰 기입.
-3. **Endpoints 표**: features/ 요구사항과 관련된 route 우선 선별 (경로·목적 키워드 매칭). 매칭이 불명확하면 도메인 전체 Routes 포함 (best-effort).
+3. **Endpoints 표**:
+   - **전제**: 도메인 문서의 `## Routes` 는 전수 목록이 아니라 **선별 기재**다 ([learn extraction](../../learn/references/extraction.md) § Routes 표) — 5-1.5 가 그 표를 복사해 만든 `scope/{domain}.md` 도 같다. 표의 행 수는 도메인의 라우트 수가 아니고, 표에 없는 route 가 없는 route 라는 근거도 아니다.
+   - features/ 요구사항과 관련된 route 를 우선 선별한다. 매칭은 **경로·핸들러명**을 1 순위로 본다 — 목적 칸에는 재진술 금지 규율상 "경로만 봐선 모를 것" 만 적혀 있어 feature 문구와 키워드가 겹치지 않을 수 있다 (Models·Services 표는 목적 칸이 아예 빈칸일 수 있다 — extraction § 목적 컬럼).
+   - 매칭이 불명확해도 **표의 나머지 행을 통째로 옮기지 않는다** — 선별 표를 복제해봐야 "도메인 전체" 가 되지 않으면서 project.md 만 전수 목록처럼 읽힌다. 실재 확인이 필요하면 표 위 고지 3 줄의 **전수 조회 수단**을 쓰고, 확인 못 한 route 는 기입하지 않는다 (추측 금지).
 4. **Models 표**·**Services 표**: scope 의 해당 섹션에서 추출.
 
 **갱신 규칙:**
 
 - features/ 에 명시적으로 언급된 모델·서비스·라우트는 빠뜨리지 않고 포함 (누락 시 planner 가 영향 범위를 잘못 잡음).
-- scope 에 없지만 features/ 에 등장한 신규 대상은 추가하되 `목적` 열 끝에 `(from features/NN-{slug})` 주석.
+- scope 에 없지만 features/ 에 등장한 대상은 추가하되 `목적` 열 끝에 `(from features/NN-{slug})` 주석을 붙인다. 이 주석은 **출처 표기**다 — "scope 에 없음" 이지 "아직 구현되지 않음" 이 아니다.
+  - **라우트는 특히 그렇다** — Routes 표는 선별 기재라 실재하는 라우트도 표에 없다. "scope 에 없음" 을 "신규" 로 옮겨 적으면 planner 가 **기존 엔드포인트를 신규 구현 대상으로 잡는다**.
+  - 실재를 확인했으면 (고지 3 줄의 전수 조회 수단, 또는 라우트 정의 파일) 주석 없이 기입한다. 확인하지 못했으면 주석 뒤에 `— 실재 미확인` 을 덧붙여 판정을 planner 의 영향 범위 탐색으로 넘긴다 (추측 금지).
 - 기존 사용자 수동 기입 행은 보존하되 중복만 제거.
 - 빈 행(`|  |  |  |`) 은 모두 삭제.
 - config 빈 표 (헤더만 있고 행 없음): default 사용.

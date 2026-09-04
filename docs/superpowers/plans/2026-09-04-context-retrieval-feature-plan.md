@@ -445,13 +445,13 @@
 | `{{HOOK_MECHANISM}}` | `pilot/hooks/hooks.json` — `PreToolUse Edit|Write`(scope-guard) 존재. C2 는 `PostToolUse Edit|Write|Read` 매처 추가. stdin 파싱 예: `hooks/scope-guard.sh:10` |
 | `{{LEGACY_SEARCH}}` | `pilot/tools/confluence.py` `cmd_search`(`:767`) — 무순위 substring, 섹션당 2000자 덤프 → A 랭커 import |
 | `{{TOOLS_DIR}}` · `{{TEST_DIR}}` · `{{TEST_STYLE}}` | `pilot/tools/` · `pilot/tests/tools/` · unittest + `importlib` 로 하이픈 파일 로드(`test_orchestrate_load.py` 참조). `pilot/tools/docs_build.py` 가 `tools/*.py` 모듈 docstring 을 `docs/reference/tools/` 로 자동 추출 — 새 도구는 docstring 필수 |
-| `{{FEATURE_FORMAT}}` | `workspace/projects/build-plugin/features/NN-{slug}.md` — `> source:` 메타 + 요구사항(조건·트리거·기대결과)·상태 전환·비즈니스 규칙·예외 케이스·Open Questions (a)(b)(c)(d) + 관련 파일 범위. 다음 번호 **#24** |
+| `{{FEATURE_FORMAT}}` | `workspace/projects/build-plugin/features/NN-{slug}.md` — `> source:` 메타 + 요구사항(조건·트리거·기대결과)·상태 전환·비즈니스 규칙·예외 케이스·Open Questions (a)(b)(c)(d) + 관련 파일 범위. 다음 번호 **#27** (원격 main 이 #24~#26 을 선점해 2026-09-04 재번호) |
 | `{{CITATION_STYLE}}` · `{{SOURCE_ROOT}}` | `` `pilot/skills/confl/SKILL.md:9` `` · `:18-21` 형식(`workspace/context/pilot/spec.md` 실측). 기준은 저장소 루트, 보조로 `config.md` `source_root` |
 | 버전 | `pilot/.claude-plugin/plugin.json` `0.10.0` → `0.11.0` (minor). `mkdocs.yml extra.version` · `docs/index.md` highlights 동기화 |
 | F-E 앵커 | `pilot/skills/context/lifecycle/projects/GUIDE.md:51-58` · `pilot/skills/context/lifecycle/state-schema.md` `analyzed` 절 → "진입 파일은 항상 로드, analyze 는 prompts/ 압축본 신뢰 여부만" 으로 정정 |
 | 실사례 | `features/22-context-drift-relearn.md` — 삭제된 스크립트 3종을 현행으로 서술한 stale 문서. D 가 있었다면 로드 시 `미존재 3` 으로 즉시 노출 |
 
-**feature 번호 제안**: #24 F-A · #25 F-D(+F-E) · #26 F-B · #27 F-C. 등록은 `/pilot:create-feature` 로 수동, 이후 `@pilot-planner → critic → generator → evaluator`.
+**feature 번호 제안**: #27 F-A · #28 F-D(+F-E) · #29 F-B · #30 F-C. 등록은 `/pilot:create-feature` 로 수동, 이후 `@pilot-planner → critic → generator → evaluator`. (등록 완료 2026-09-04 — 원격 #24~#26 선점으로 재번호)
 
 **pilot 고유 제약**: `workspace/context/` 산출물 직접 Edit 금지(drift-protocol §A) — B 마이그레이션·C 규칙 생성은 `/pilot:learn`·`/pilot:doctor --fix` 경로로만. `scope/{domain}.md`·`rules/{domain}.md` 는 사용자 커스텀 layer — 생성기가 만들지 않으며 frontmatter 도 강제하지 않는다.
 

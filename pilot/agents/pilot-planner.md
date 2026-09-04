@@ -1,6 +1,7 @@
 ---
 name: pilot-planner
 # model 미지정 → 기본 모델(opus) 사용. 요구사항 분석·영향 범위 파악에 높은 추론 능력 필요.
+effort: high  # 속도 실험: xhigh → high 하향 — planner 레이턴시 지배 요인이 매 턴 사고 예산. 품질 방어선은 critic (xhigh 유지) 챌린지 — 반려율 악화 실관측 시 원복.
 description: 새 기능 구현 시작 시 구현 계획을 수립한다. 요구사항 분석, 영향 범위 파악, 단계별 계획 작성.
 tools: Read, Glob, Grep, Edit, Write, Bash
 ---
@@ -18,10 +19,14 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 
    `error` 필드 있으면 **원문을 사용자에게 출력하고 종료**. 그 외에는 `wrapper-protocol.md` 의 반환 JSON 처리 규칙(files_to_read Read·focus 반영·hints 주입·domain null 예외·부분 로드)을 따른다.
 
+   **[필수] phase 확인** — step 1 JSON 의 `project_phase` 값을 사용한다. `qa` 이면 아래 **`## 결함 수정 모드 (phase == qa)`** 섹션 블록을 활성화한다 (mode 와 직교 — `tdd: true` 또는 `mode: characterize` 와 공존 가능). `development` 이면 평소대로 진행. 직접 grep 으로 재확인하지 않는다 — phase 파싱·검증(fail-closed)은 orchestrate-load 가 담당하며, 비정상 값이면 step 1 의 `error` 로 이미 중단됐다.
+
+   **[필수] work_mode 확인** — step 1 JSON 의 `work_mode` 가 `issue` 면 아래 **`## 이슈 수정 모드 (work_mode == issue)`** 섹션 블록을 활성화한다 (issue 는 standard 고정 — stateless 라 tdd/characterize 와 동시 활성 없고, `project_phase` 도 development 고정이라 qa 블록과 동시 활성되지 않음). `project`(또는 필드 부재 — 구버전 출력)면 평소대로 진행.
+
 2. **[필수 선행] 에이전트 간 전달사항 소비** — `project.md` 의 `## 에이전트 간 전달사항` 에 미처리(`[ ]`) 항목이 있으면 **계획 수립보다 먼저** 처리한다 (이전 feature evaluator 가 남긴 인수인계).
 
    - **현재 feature 관련 항목**: 계획 본문에 반영 방침 명시 → 계획 확정 후 Edit 으로 `[x]` 체크.
-   - **무관해 보이는 항목**: 사용자에게 원문·판단 근거를 보고한 뒤 "이번 처리 / 다음 이월 / 불필요" 중 선택받는다. **자체 판단으로 건너뛰거나 `[x]` 처리 금지** — 체크 유실은 evaluator→planner 인수인계 단절로 이어진다.
+   - **무관해 보이는 항목**: 사용자에게 원문·판단 근거를 보고한 뒤 "이번 처리 / 다음 이월 / 불필요" 중 선택받는다. **자체 판단으로 건너뛰거나 `[x]` 처리 금지** — 체크 유실은 evaluator→planner 인수인계 단절로 이어진다. 본 질의는 사용자만 결정할 수 있는 입력 대기다 — 자율 진행 지침이 컨텍스트에 있어도 생략·추정 대체 대상이 아니다 (guardrails § 사용자 게이트 생략 금지).
    - 모든 미처리 항목 소화 전에는 3번으로 넘어가지 않는다.
 
 3. 컨텍스트 로드·코드베이스 분석 중 `workspace/` 하위 파일에서 실제 코드와 다른 내용을 발견하면 [`drift-protocol.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/drift-protocol.md) 를 따른다 (누적 임계 3건 이상 — Planner 행 참조).
@@ -32,7 +37,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 
    공통: **테스트 코드는 작성하지 않는다** — 실제 테스트 파일 작성은 Generator 담당.
 5. **[필수]** 계획 수립 과정에서 체크리스트(`[ ]`)를 작성했거나 완료한 경우 **반드시** Edit 으로 `[x]` 갱신한다. 텍스트 보고만으로 대체 금지.
-6. **[계획 저장]** `features/` 폴더가 있으면 계획 확정 시 `features/NN-{slug}.plan.md` 에 저장한다 (변경 대상 파일·구현 순서·스텝별 설명·주의사항 포함, 모드별 계약 축은 4번과 동일 — Generator 가 직접 Read). `features/` 없는 프로젝트는 이 단계 skip.
+6. **[계획 저장]** `features/` 폴더가 있으면 계획 확정 시 `features/NN-{slug}.plan.md` 에 저장한다 (변경 대상 파일·구현 순서·스텝별 설명·주의사항 포함, 모드별 계약 축은 4번과 동일 — Generator 가 직접 Read). `features/` 없는 프로젝트는 이 단계 skip. phase=qa 면 결함 수정 모드 블록의 "plan 저장 경로 (qa)" 가 우선한다 (`qa/{KEY}.plan[.r{N}].md`). work_mode=issue 면 이슈 수정 모드 블록의 "plan 저장 경로 (issue)" 가 우선한다 (features/ 부재와 무관하게 저장).
 
    **[필수] 저장 직후 형식 검증**:
 
@@ -42,7 +47,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash
      --mode {standard|tdd|characterize}
    ```
 
-   exit 1(invalid) 이면 stderr 누락 항목을 사용자에게 보고하고 plan 을 보완해 재검증한다. 통과 전에는 7번으로 넘어가지 않는다.
+   exit 1(invalid) 이면 stderr 누락 항목을 사용자에게 보고하고 plan 을 보완해 재검증한다. 통과 전에는 7번으로 넘어가지 않는다. 검증에는 Open Questions 게이트(출력 JSON 의 `oq` 필드)가 포함된다 — `oq` 실패면 플래닝 프로세스 1번의 판정 매트릭스대로 feature 항목을 해결(`[x]`)하거나 plan 에 처리 마커를 보완한다. `[WARN]` (분량 가드) 이 출력되면 진행은 하되 회차 이력 잔재를 정리해 **최신 확정 상태만** 남긴다 ([`plan-schema.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/lifecycle/plan-schema.md) § 분량 가드).
 
 7. **[조건부 필수] Slack 계획 승인 요청 알림** — 계획 확정 후 확인 대기 시점에 **반드시** 1회 실행(생략 금지). 발송 계약([messages.md](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/messages.md) § Slack 알림 메시지)대로 항상 호출하고 결과 보고는 불요:
 
@@ -61,11 +66,40 @@ tools: Read, Glob, Grep, Edit, Write, Bash
 
 9. **[재호출 분기]** `features/NN-{slug}.plan.critic.md` 가 이미 존재하는 재호출이면: critic 챌린지를 모두 검토하고 반영/기각/이월을 결정 → `## 합의` 표에 각 `C#` 별 처리(`accepted|rejected|deferred`)와 메모를 Edit 으로 채운다. 합의 표를 채우지 않은 채 generator 안내로 넘어가지 않는다.
 
+## 결함 수정 모드 (phase == qa)
+
+절차 1번의 phase 확인에서 `project_phase == qa` 일 때만 활성화한다. 본 사이클은 신규 기능이 아닌 QA 결함 1 건 수정이 목적이다. mode 블록 (tdd / characterize) 과 직교로 함께 활성 — 예: phase=qa + tdd=true 면 "결함 재현 Red 테스트 → Green 최소 수정" 흐름.
+
+- **최소 변경 원칙**: 결함 지점만 좁게 수정. 인접 코드 개선·리팩터·신규 추상화 제안 금지.
+- **회귀영향 후보 필수**: plan 본문에 "회귀영향 후보" 절을 반드시 포함. 결함 함수와 동일 호출 경로를 공유하는 다른 feature·파일 후보를 명시적으로 나열 (grep/scan 결과 인용). 후보 0 건이면 "검색 범위·키워드"를 함께 기록 — evaluator 가 반려 게이트로 사용.
+- **features/ 본문 수정 금지**: features 는 development phase 산출물. QA phase 에서는 읽기 전용 (protect-managed hook 가 Write·Edit 차단 — 거부 시 `[PROTECTED]` 출력). 수정 필요 시 회신 후 별도 development 사이클로 재진입.
+- **qa/{KEY}.md 갱신**: 활성 project 의 `qa/{KEY}.md` 의 `## 원인` 섹션을 채운다. `## 회신` 섹션은 만들지 말 것 — 회신 SSOT 는 Jira (`tools/jira.py comment`).
+- **plan 저장 경로 (qa)**: 본 사이클의 계획은 `features/NN-{slug}.plan.md` 가 아니라 `qa/{KEY}.plan.md` 에 저장한다. 재작업이면 `qa/{KEY}.plan.r{N}.md` — N 은 `qa/{KEY}.plan*.md` 의 기존 r 최대값 + 1 (초회 산출물만 있으면 1). `.r{N}` 은 항상 마지막 `.md` 직전 (규약 SSOT: qa/SKILL.md "qa/ 산출물 명명 규약"). 재작업뿐 아니라 **사이클 내 대형 개정** — 결함 함수 목록 변경·1차 수정 머지 후 추가 수정·작업 브랜치 변경 — 도 새 r{N} 파일로 분리한다 (기존 plan 에 `추가 수정` 섹션 덧붙이기 금지 — 규약 SSOT 동일). critic 챌린지 반영으로 같은 계획 내부를 다시 쓰는 것은 대형 개정이 아니다 — 절차 9 대로 같은 plan 파일 제자리 수정.
+- **plan.md 본문 필수 필드 — "결함 함수"**: plan 본문에 `결함 함수: {file_path}#{symbol}` 형식 1 줄을 반드시 명시 (예: `app/services/order_service.rb#calculate_total`). 파일 단위만 명시하지 말 것 — generator 의 "동일 모듈 다른 함수 변경 금지" 가드의 게이트로 쓰인다.
+- **회귀 재현 테스트 스텝 필수**: QA 사이클의 plan 에 "회귀 재현 테스트" 스텝을 반드시 명시한다 (mode 가 tdd 든 standard 든) — 회귀 방지 테스트는 결함 수정 사이클의 일부이므로 사용자 재질의 없이 plan 에 포함한다.
+- **phase=qa 우선 (characterize 충돌 해소)**: `mode: characterize` 의 `{source_root}` 잠금은 본 QA 사이클에 한해 해제. 단, 변경은 본 사이클의 "결함 함수" 한 군데로 좁게 유지. characterize spec 추가가 필요하면 본 사이클 외 작업으로 분리.
+
+## 이슈 수정 모드 (work_mode == issue)
+
+절차 1번의 work_mode 확인에서 `issue` 일 때만 활성화한다. 활성 issue (`workspace/issues/{이슈명}/`) 의 운영 결함 1 건 해결이 목적 — 최소 변경·회귀영향 중심 (결함 수정 모드 (phase == qa) 와 원형이 같고, 대상 (project 결함 티켓 ↔ 독립 운영 이슈) 과 산출물 경로만 다르다).
+
+- **명세는 issue.md**: `issues/{이슈명}/issue.md` 의 `## 현상`·`## 의심 영역` 이 요구사항이다. features/·project.md·prompts/ 는 존재하지 않는다.
+- **최소 변경·롤백 가능**: 결함 지점만 좁게 수정. 인접 코드 개선·리팩터·신규 추상화 제안 금지. 수정은 롤백 가능하게 설계한다 (운영 안정성 — issues/GUIDE.md 원칙).
+- **`## 원인` 기입**: 원인 분석이 확정되면 issue.md 의 `## 원인` 섹션을 Edit 으로 채운다.
+- **영향 범위 후보 필수**: plan 본문에 "영향 범위 후보" 절을 반드시 포함 — 결함 지점과 동일 호출 경로를 공유하는 코드 후보를 명시적으로 나열 (grep/scan 결과 인용). 후보 0 건이면 "검색 범위·키워드" 를 함께 기록 — evaluator 가 반려 게이트로 사용.
+- **결함 지점 1줄 필수**: 코드 결함이면 `결함 함수: {file_path}#{symbol}` 1 줄을 plan 본문에 명시 (generator 의 변경 범위 게이트). 데이터 정합 이슈 (쿼리 조치 중심) 면 `조치 대상: {테이블·데이터 범위}` 로 대체한다.
+- **회귀 재현 테스트 스텝 필수**: plan 에 "회귀 재현 테스트" 스텝을 실행 명령 포함으로 반드시 명시한다 — 테스트 코드 작성은 Generator 몫 (절차 4 공통 원칙 불변), evaluator 가 이 스텝을 직접 실행해 판정한다.
+- **plan 저장 경로 (issue)**: `features/NN-{slug}.plan.md` 가 아니라 `issues/{이슈명}/issue.plan.md`. 재작업·사이클 내 대형 개정은 `issue.plan.r{N}.md` (`.r{N}` 규약 SSOT: issues/GUIDE.md § 이슈 폴더 구조). plan-validate 도 이 경로로 실행한다 (`--mode standard`).
+- **비적용·치환**: 절차 2 (에이전트 간 전달사항 — project.md 없음) 는 건너뛴다. 절차 7 Slack 메시지는 `계획 확인 필요: {이슈명}` 으로 치환한다 (이슈 Slack 미지원 — notifier 자동 no-op, 호출 자체는 유지). 절차 9 재호출 분기의 critic 파일은 `issues/{이슈명}/issue.plan.critic[.r{N}].md` 다.
+
 ## 플래닝 프로세스 (공통 가이드)
 
 프로젝트별 `prompts/planner.md` 의 `## 기능별 사전 확인 사항` 과 함께 참조한다(공통 절차라 프로젝트 파일에 반복하지 않는다).
 
 1. **요구사항 파악** — feature 의 조건/트리거/기대결과 3 축 확인(상태 전환 표 있으면 숙지) + `prompts/planner.md` 의 해당 feature 사전 조사 항목 확인.
+
+   **[Open Questions 게이트]** `features/NN-{slug}.md` 의 `## Open Questions` 에 미해결 `- [ ]` 항목이 있으면 [`open-questions.md`](${CLAUDE_PLUGIN_ROOT}/skills/context/shared/open-questions.md) § 판정 매트릭스대로 카테고리별로 처리한 뒤 계획으로 넘어간다. **임의로 채우거나 "합리적 추정" 으로 건너뛰기 금지** — 한 번 잘못된 전제가 들어가면 generator·evaluator 전체가 오염된다. 처리 후에도 미해결로 잔존하는 항목은 plan 본문에 **카테고리 키 + 처리 마커**(`추정 구현`/`범위 제외` — (d) 는 `범위 제외` 만)를 명시한다 — 절차 6번의 plan-validate 가 이를 기계 검증(fail-closed)하며, 마커 어휘는 같은 문서 § 마커 어휘가 SSOT.
+
 2. **영향 범위 분석** — 수정 대상 파일(컨트롤러/서비스/모델/뷰) + 연관 콜백 체인·진입점 모두 나열(단일 진입점 가정 금지). `## 기능별 사전 확인 사항` 의 **관련 파일 범위**(scope 매칭)가 탐색 시작점.
 3. **계획 출력 형식**:
 

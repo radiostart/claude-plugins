@@ -11,10 +11,10 @@
 ## 1. workspace 초기화
 
 ```bash
-/pilot:init
+/pilot:pilot-init
 ```
 
-대화형 wizard가 실행되어 `workspace/` 디렉터리를 생성합니다.
+`workspace/` 디렉터리가 생성되고, 이어서 wizard가 별도 질의 없이 자동으로 실행됩니다.
 
 ```
 workspace/
@@ -24,7 +24,7 @@ workspace/
     └── config.md                  # 언어 및 도구 기본 설정
 ```
 
-wizard가 사용 언어(Ruby, Python, TypeScript 등)를 자동 감지하여 그 결과를 `config.md`에 기록합니다. 최초 한 번만 실행하면 됩니다.
+wizard는 사용 언어(Ruby, Python, TypeScript 등)를 자동 감지하여 그 결과를 `config.md`에 기록한 뒤 감지 결과만 보고합니다 — 도중에 묻지 않으므로, 결과가 정확하지 않으면 `config.md`를 직접 수정하면 됩니다. 최초 한 번만 실행하면 됩니다.
 
 ---
 
@@ -90,4 +90,4 @@ features/01-user-profile-email-field.plan.md
     - [스킬 (`/pilot:*`)](../reference/index.md)
 
 !!! tip "문제 해결"
-    진행 과정 중 오류가 발생하거나 막히는 경우, `/pilot:doctor` 명령어를 실행하십시오. workspace의 무결성과 schema 버전을 확인하여 문제 진단 및 마이그레이션 안내를 제공합니다.
+    진행 과정 중 오류가 발생하거나 막히는 경우, `/pilot:pilot-doctor` 명령어를 실행하십시오. workspace의 무결성과 schema 버전을 확인하여 문제 진단 및 마이그레이션 안내를 제공합니다.

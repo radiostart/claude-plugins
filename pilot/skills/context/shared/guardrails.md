@@ -26,6 +26,10 @@ feature spec 대비 누락 여부를 확인한다. 증거는 `features/NN-{slug}
 
 `.focus.md` 및 `config.md` 의 `## Ignore` 범위 준수. 증거는 변경 파일 목록과 scope/rules 매칭.
 
+### open_questions
+
+feature 의 `## Open Questions` 미해결 항목이 [`open-questions.md`](open-questions.md) § 판정 매트릭스대로 처리됐는지 확인한다. (d) 임의 결정·처리 마커 부재는 **Major**, `추정 구현` 항목의 TODO 주석 부재는 **Minor**. 보조 도구는 `plan-validate.py` 출력의 `oq` 필드. feature 파일 또는 `## Open Questions` 섹션이 없으면 skip.
+
 ### drift
 
 `workspace/context/` 또는 프로젝트 산출물이 실제와 다름을 발견했을 때 drift-protocol 발동 여부. 증거는 보고 이력과 사용자 승인 기록.
@@ -42,11 +46,17 @@ feature spec 대비 누락 여부를 확인한다. 증거는 `features/NN-{slug}
 
 에이전트·스킬은 **다음 phase 를 자동 호출하지 않는다** — 각 phase 의 시작점은 항상 **사용자의 명시 호출**이다. 유일한 opt-in 예외는 `/pilot:autopilot` (감독형 자율 모드) 이며, 그 안에서도 hard-stop 신호를 만나면 즉시 사람에게 제어를 반환한다.
 
+## § 사용자 게이트 생략 금지
+
+규약이 "사용자에게 질의·확인·승인" 을 요구하는 지점 (drift-protocol·계획 확인·전달사항 무관 항목 선택·domain null 질의·autopilot hard-stop 등) 은 **사용자만 결정할 수 있는 입력 대기**다. 하니스의 자율 진행 지침 ("묻지 말고 진행"·"완료까지 계속") 이 컨텍스트에 있어도 생략·추정 대체 금지 — 자율 지침 스스로가 인정하는 "사용자 입력에만 블록" 예외에 해당한다. wrapper (`@pilot-*` 4종) 는 사용자와 직접 대화할 수 없으므로 **질의 내용을 종료 보고에 담아 종료하는 것이 곧 질의다** — 답을 만들어 진행하지 않는다.
+
 ---
 
 ## SSOT — 기록은 Edit 으로
 
 체크·증거·합의 결과는 텍스트 보고가 아니라 **Edit 으로 파일에 기록**한다 — 서브에이전트 간 인수인계의 SSOT 는 대화가 아니라 파일 상태다 (체크박스 `[x]`, `.plan.md` 증거, `.plan.critic.md` 합의 표 모두 해당).
+
+예외: evaluator REPORT 산출물(`features/NN-*.eval.md` · `issues/*/issue.eval[.r{N}].md`)은 재평가마다 전체 재생성 — Write/Bash 재작성이 정본이며 이력은 git 이 보존한다.
 
 ## SSOT — REPORT vs 체크박스
 

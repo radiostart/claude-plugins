@@ -1,13 +1,14 @@
-# #27 경로 트리거 — 소스 파일을 건드리는 순간 도메인 포인터 로드
+# #30 경로 트리거 — 소스 파일을 건드리는 순간 도메인 포인터 로드
 
 > source: prompt
 > created: 2026-09-04T02:50:24Z
 > user_prompt: "feature 생성해줘 — docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md §4 F-C 등록"
+> renumbered: 2026-09-04 — 원격 main 의 #24~#26 선점(pilot-update·schema-validate·issue-cycle)으로 #24~#27 → #27~#30 재번호
 > plan: `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` § F-C (설계 상세·근거 SSOT. §2 P3 패턴, 부록 B 하네스 근거)
 
 ## 요구사항
 
-- **조건**: #26 머지 — 도메인별 `sources` frontmatter 가 있다. 없으면 지식 파일 인용 경로의 공통 디렉토리 접두로 glob 을 추정(INFO 표기). **선행 검증(실측) 완료 후 C1/C2 확정** — 실측 전에는 구현을 시작하지 않는다.
+- **조건**: #29 머지 — 도메인별 `sources` frontmatter 가 있다. 없으면 지식 파일 인용 경로의 공통 디렉토리 접두로 glob 을 추정(INFO 표기). **선행 검증(실측) 완료 후 C1/C2 확정** — 실측 전에는 구현을 시작하지 않는다.
 - **트리거**: 에이전트(주로 `@pilot-generator`) 가 `sources` glob 에 매칭되는 소스 파일을 Read/Edit/Write 한다.
 - **기대결과**:
   - 해당 도메인의 **포인터 3~8줄**(진입 index 1 · `type` 이 rules·services·enums 인 본문 최대 3 · 경계 문서 최대 2 · `context-search` 사용 1줄) 이 컨텍스트에 나타난다. 본문 복사는 없다. SSOT 는 `workspace/context/` 에 그대로.

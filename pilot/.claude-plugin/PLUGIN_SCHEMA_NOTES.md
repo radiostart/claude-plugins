@@ -1,4 +1,4 @@
-<!-- schema-version: 2026.Q2 -->
+<!-- schema-version: 2026.Q3 -->
 
 # pilot Plugin Schema Notes
 
@@ -20,7 +20,7 @@
 - 이벤트 허용값: `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Stop`, `SubagentStop`, `PreCompact`, `SessionStart`, `SessionEnd`, `Notification`, `PermissionRequest`
 - matcher (툴 이름 정규식, `|` 구분) 는 이벤트와 별개 개념 — `PreToolUse`/`PostToolUse` 에서 사용
 - 각 훅 `timeout` 권장 (기본 5)
-- 현재 실제 사용 중: `PreToolUse`(`Bash`, `Edit|Write`), `PostToolUse`(`Edit|Write`), `PermissionRequest`, `Notification`
+- 현재 실제 사용 중: `SessionStart` · `PreToolUse`(`Bash`, `Edit|Write`) · `PostToolUse`(`Edit|Write`) · `PermissionRequest` · `Notification` 5개 이벤트
 
 ## skills/ 하위 비스킬 디렉터리 관행
 
@@ -41,7 +41,8 @@
 
 - 필수: `name`, `description`, `tools`
 - 선택: `model` (미지정 시 기본)
+- 선택: `effort` (low/medium/high/xhigh/max — 미지정 시 세션 상속. 플러그인 에이전트 반영은 CLI 2.1.78+)
 
 ## schema 버전 태그
 
-이 문서는 상단 `<!-- schema-version: 2026.Q2 -->` 주석으로 버전 명시. SDK 변경 시 갱신.
+이 문서는 상단 `<!-- schema-version: 2026.Q3 -->` 주석으로 버전 명시. SDK 변경 시 갱신.

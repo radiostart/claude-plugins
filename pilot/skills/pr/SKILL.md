@@ -1,10 +1,9 @@
 ---
 name: pr
 description: >-
-  사용자가 "PR 올려줘", "풀 리퀘스트 생성" 등 현재 브랜치를 GitHub Pull
-  Request 로 올리길 요청할 때 사용한다. base branch 는 state·config·
-  공통 config 순으로 자동 결정하며 사용자 명시 입력 시 state 에 저장한다.
-  제목·본문 컨벤션은 `skills/context/shared/pr.md` 를 따른다.
+  사용자가 "PR 올려줘" 등 현재 브랜치의 GitHub Pull Request 생성을 요청할
+  때 사용한다. base branch 는 자동 결정 (사용자 명시가 우선), 제목·본문
+  컨벤션은 본문 규약을 따른다.
 ---
 
 # /pilot:pr
@@ -32,7 +31,7 @@ base 결정 후 **PR 생성 전 필수**: `git ls-remote --exit-code origin <bas
 3. **광역 회귀 (soft gate)** — `config.md` 의 `regression_command` 설정 시 1회 실행. 통과 → 진행 / 실패 → 결과 요약 후 진행 여부 확인(자동 차단 안 함) / 미설정 → skip + INFO 권장.
 4. **upstream push** — 브랜치가 origin 에 없거나 ahead 면 `git push -u origin <branch>`.
 5. **PR 본문 초안** — pr.md(팀/플러그인) 구조 따라 작성. `git log <base>..HEAD` 커밋 메시지가 1차 재료. `project.md`(목표·체크리스트)→Summary, `features/*.md`→Notes, docs/ Confluence URL→Why. 팀 pr.md 에 Q1~Q6 형식 있으면 그 형식 사용.
-6. **사용자 확인** — 제목·본문·base·head 를 보여주고 승인 받음 (수정 요청 1 라운드 반영).
+6. **사용자 확인** — 제목·본문·base·head 를 보여주고 승인 받음 (수정 요청 1 라운드 반영). 이 게이트에 예외는 없다 — PR 은 외부 노출 경계라 `/pilot:autopilot` 사이클 진행 중에도 사후화하지 않는다.
 7. **PR 생성** — `gh pr create --base <base> --head <branch> --title <title> --body <body>` (HEREDOC 사용).
 8. **state 갱신** — base 가 명시 입력이면 `pr_base_branch` 기록 (Enter=default 면 미저장).
 9. **Slack 알림** — `.slack.env` 활성 + `SLACK_EVENTS` 에 `pr` 포함(default 포함) 시:

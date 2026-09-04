@@ -23,10 +23,10 @@ cd /tmp/pilot-tutorial
 
 ---
 
-## Step 1: 워크스페이스 초기화 (`/pilot:init`)
+## Step 1: 워크스페이스 초기화 (`/pilot:pilot-init`)
 
 ```
-/pilot:init
+/pilot:pilot-init
 ```
 
 **기대 출력:**
@@ -274,20 +274,22 @@ Step 5와 달리, Planner는 자유로운 형식의 Plan 대신 **Characterizati
 cat workspace/context/config.md   # 설정 파일 내용 확인
 ```
 
-config 표가 비어 있는 경우 `/pilot:init` 명령어를 다시 실행합니다. (이미 `exists` 상태인 `config.md` 파일이 존재하면 wizard가 실행되지 않고 skip될 수 있으므로, 기존 파일을 삭제한 뒤 재시행해야 합니다.)
+config 표가 비어 있는 경우 `/pilot:pilot-init` 명령어를 다시 실행합니다. (이미 `exists` 상태인 `config.md` 파일이 존재하면 wizard가 실행되지 않고 skip될 수 있으므로, 기존 파일을 삭제한 뒤 재시행해야 합니다.)
 
 ---
 
 ### 2. wizard 잘못 매핑 정정 경로 { #2-wizard-잘못-매핑-정정-경로 }
 
-**증상:** wizard 실행 결과 "scope 후보: M개 매핑 ({폴더목록})" 항목에 `controllers/`와 같이 도메인 분류와 무관한 폴더가 포함되는 현상. 이는 wizard가 파일 빈도가 1 이상인 폴더를 자동으로 매핑하는 탐색 규칙을 가지고 있기 때문입니다. (샘플 저장소에서는 발생하지 않으나, 실제 서비스 저장소에서 나타날 수 있습니다.)
+**증상:** wizard 실행 결과 "scope 후보: M개 매핑 ({폴더목록})" 항목에 `spec/models/`처럼 도메인 분류와 무관한 폴더가 포함되거나, 반대로 실제 도메인 폴더가 목록에서 빠지는 현상.
+
+wizard는 저장소 루트 직속(depth 1)과 그 하위(depth 2) 폴더 중 **고정 폴더명과 일치하는 것만** 매핑합니다 — `controllers`·`routes` → Endpoints, `models`·`entities` → Models, `services`·`workers`·`jobs` → Services. 따라서 `spec/models/`·`test/services/`처럼 이름만 겹치는 비도메인 폴더가 잡히거나, `handlers/`·`usecases/`처럼 목록에 없는 이름이 누락될 수 있습니다. 후보가 0건이면 default 3행(Routes/Models/Services)이 대신 주입됩니다. (샘플 저장소에서는 발생하지 않으나, 실제 서비스 저장소에서 나타날 수 있습니다.)
 
 **해결 방법:**
 
 `workspace/context/config.md` 파일을 수동으로 편집합니다.
 
-1. `## scope 카테고리` 표에서 오인식된 행 (예: `| ## Controllers | ... |`)을 제거합니다.
-2. `## Ignore` 표에 제외할 경로 패턴(예: `controllers/`)을 추가합니다.
+1. `## scope 카테고리` 표에서 불필요한 행 (예: `| ## Models | Models | Class, DB, 목적 |`)을 제거하거나, 누락된 카테고리를 3컬럼 형식(`scope 헤더` / `project.md 대상 H3` / `표 헤더`)에 맞춰 직접 추가합니다.
+2. 해당 경로를 이후 탐색·분석 대상에서도 빼려면 `## Ignore` 표에 패턴(예: `spec/**`)을 추가합니다. 이 표는 `hooks/scope-guard.sh` 가 파싱해 수정 차단에도 사용합니다.
 
 ---
 
@@ -331,11 +333,11 @@ ls workspace/projects/python-sample-demo/.agent-state.yml
 
 **해결 방법:**
 
-generator wrapper의 첫 번째 단계(step 1)에서 `orchestrate-load.py`가 선행 실행되어야 합니다.
+generator wrapper의 첫 번째 단계(step 1)에서 `orchestrate-load.py`가 선행 실행되어야 합니다. 구버전 wrapper 에는 이 단계가 없으므로 플러그인을 최신 버전으로 업데이트합니다.
 
-```bash
-# 플러그인을 최신 버전으로 업데이트한 후 세션을 재시작합니다.
-pilot-update    # 또는: /plugin update pilot@claude-plugins
+```
+/plugin marketplace update radiostart-plugins
+/plugin update pilot@radiostart-plugins
 ```
 
-동시에 `workspace/projects/{PROJECT}/project.md` 파일의 `## 에이전트 간 전달사항` 섹션에 orchestrate-load 설정이 누락되지 않았는지 함께 확인합니다.
+업데이트 후 **세션을 재시작**합니다. 열려있는 세션은 시작 시점에 로드한 경로가 고정이라 재시작 전에는 구버전 wrapper 가 계속 쓰입니다.

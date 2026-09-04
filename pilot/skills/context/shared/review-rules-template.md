@@ -5,6 +5,7 @@
 
 - 이 파일이 있는 언어 → 아래 규칙 + plugin baseline(`review-principles.md`) 적용.
 - 없는 언어 → baseline 만 적용.
+- `config.md` 의 `conventions_doc` 가 이미 다루는 조항(명명·관용구·금지 패턴)은 여기 중복 기재하지 말고 해당 문서를 참조로 링크한다 — 층위 정의: `coding.md` § 검증.
 
 복사 후 아래 `---` 밑 내용만 `{lang}.md` 에 남기고 채운다.
 

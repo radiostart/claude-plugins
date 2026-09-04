@@ -11,7 +11,8 @@
 #   - `gh auth status` 통과
 #   - plugin.json 의 version 이 릴리스하려는 값과 일치 (커밋 완료 상태)
 #   - pilot/mkdocs.yml 의 extra.version 이 같은 버전으로 갱신·커밋됨
-#   - (권장) pilot/docs/index.md 의 highlights 블록을 새 버전으로 갱신
+#   - (권장) pilot/docs/release-notes.md 에 새 버전 섹션 추가
+#   - (권장) pilot/docs/index.md 의 highlights 블록을 새 버전으로 갱신 (최신 1 개만 유지)
 
 set -euo pipefail
 
@@ -72,6 +73,19 @@ fi
 if ! grep -q "v${PLUGIN_VERSION} highlights" pilot/docs/index.md; then
   echo "::warning:: pilot/docs/index.md 에 'v${PLUGIN_VERSION} highlights' 블록이 없습니다." >&2
   echo "            새 기능이 있으면 랜딩 페이지의 highlights 를 새 버전으로 갱신하세요 (patch 릴리스면 무시 가능)." >&2
+fi
+
+# 랜딩은 최신 1 개만 — 지난 버전 블록은 release-notes.md 로 옮긴다.
+# grep -c 는 0 건일 때 exit 1 이므로 `|| true` 로 set -e 를 피한다.
+HIGHLIGHT_BLOCKS="$(grep -c 'highlights"' pilot/docs/index.md || true)"
+if [[ "$HIGHLIGHT_BLOCKS" -gt 1 ]]; then
+  echo "::warning:: pilot/docs/index.md 에 highlights 블록이 ${HIGHLIGHT_BLOCKS} 개 있습니다." >&2
+  echo "            최신 1 개만 남기고 나머지는 pilot/docs/release-notes.md 로 옮기세요." >&2
+fi
+
+if ! grep -q "^## v${PLUGIN_VERSION}\$" pilot/docs/release-notes.md; then
+  echo "::warning:: pilot/docs/release-notes.md 에 '## v${PLUGIN_VERSION}' 섹션이 없습니다." >&2
+  echo "            버전 이력 페이지에 이번 릴리스 섹션과 「버전 목록」 표 행을 추가하세요." >&2
 fi
 
 if ! command -v gh >/dev/null 2>&1; then

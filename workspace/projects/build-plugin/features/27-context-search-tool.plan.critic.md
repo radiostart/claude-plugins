@@ -1,7 +1,7 @@
-# Plan Critic — #24 context-search — 섹션 단위 결정적 검색 도구
+# Plan Critic — #27 context-search — 섹션 단위 결정적 검색 도구
 
-> 입력 plan: `features/24-context-search-tool.plan.md` (검토 시각 2026-09-04T03:39:19Z)
-> 입력 feature: `features/24-context-search-tool.md`
+> 입력 plan: `features/27-context-search-tool.plan.md` (검토 시각 2026-09-04T03:39:19Z)
+> 입력 feature: `features/27-context-search-tool.md`
 > 페르소나: `personas.planner-critic` (red-team)
 > focus 반영: 없음 (`.focus.md` 부재 · orchestrate-load `focus: null`)
 > 검증 방법: plan 스텝 1 의 규칙(토큰화·D1 경계·D6·D7·점수표·정렬 키)을 그대로 옮긴 프로토타입으로 라이브 코퍼스 `--scope pilot` 실측 + 1,000섹션 합성 코퍼스 cProfile. 프로토타입은 scratch 전용(산출물 아님).
@@ -11,7 +11,7 @@
 ### C1 — `--scope`·`--project` 인자에 traversal 검증이 없다
 - **severity**: blocking
 - **category**: edge-case
-- **plan 인용**: 스텝 1 「코퍼스」 `--scope d` 항 (`features/24-context-search-tool.plan.md:120-122`) · 스텝 2 "include: `..`·절대경로 → 2" / "select: traversal → 2" (`:151-152`) · G5 (`:220`)
+- **plan 인용**: 스텝 1 「코퍼스」 `--scope d` 항 (`features/27-context-search-tool.plan.md:120-122`) · 스텝 2 "include: `..`·절대경로 → 2" / "select: traversal → 2" (`:151-152`) · G5 (`:220`)
 - **챌린지**: spec 비즈니스 규칙 "코퍼스 밖 traversal(`..`·절대경로 인자) 거부" 가 plan 에서는 `--include` 와 `select:` 에만 적용된다. `--scope d` 는 `{root}/d/**/*.md`·`{root}/d.md` 로 그대로 보간되는데 pathlib 는 절대경로를 결합하면 좌측을 버린다 — 실측 `Path("workspace/context") / "/etc"` → `/etc` (`.exists()` True), `--scope ../projects` → `workspace/context/../projects` (`.exists()` True). 즉 `--scope /etc` 는 코퍼스 루트를 통째로 바꿔치기하고 `--scope ../projects` 는 Open Q (d)-1 "지식 루트만" 기본 범위를 무력화한다. `--project ../../x` 도 `{workspace}/projects/{project}/X` 보간에 검증 없이 들어간다. G5 의 세 케이스(`select:../x`·`--include /etc`·`--include ../../x`) 를 모두 통과하면서 규칙을 위반하는 구현이 가능하다.
 - **제안**: `--scope`·`--project` 를 orchestrate-load 의 `has_path_traversal()` (`pilot/tools/orchestrate-load.py:365`, `/`·`\`·`..` 거부 — orchestrate-load 자신도 `:662`·`:729` 에서 project·domain 에 같은 검사를 한다) 로 검증해 stderr + exit 2. D8 모듈 로드 실패 폴백 경로에서도 같은 판정이 필요하므로 동등한 1줄 로컬 판정 허용. 스텝 2 테스트 목록과 G5 에 `--scope ../projects`·`--scope /etc`·`--project ../x` 3건 추가.
 

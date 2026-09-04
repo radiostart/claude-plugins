@@ -1,13 +1,14 @@
-# #26 본문 frontmatter 매니페스트 — 열기 전에 아는 한 줄
+# #29 본문 frontmatter 매니페스트 — 열기 전에 아는 한 줄
 
 > source: prompt
 > created: 2026-09-04T02:50:24Z
 > user_prompt: "feature 생성해줘 — docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md §4 F-B 등록"
+> renumbered: 2026-09-04 — 원격 main 의 #24~#26 선점(pilot-update·schema-validate·issue-cycle)으로 #24~#27 → #27~#30 재번호
 > plan: `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` § F-B (설계 상세·근거 SSOT. §2 P1·P7 패턴)
 
 ## 요구사항
 
-- **조건**: #24 (context-search) 머지 — description 가중치 4점이 이 feature 로 자동 활성된다. #25 (freshness) 는 `learned_at` 을 기준 시각 1순위로 소비.
+- **조건**: #27 (context-search) 머지 — description 가중치 4점이 이 feature 로 자동 활성된다. #28 (freshness) 는 `learned_at` 을 기준 시각 1순위로 소비.
 - **트리거**: (1) `/pilot:learn` 이 본문·진입 파일을 생성·재생성할 때 frontmatter 자동 기입 (2) 래퍼 진입 시 `orchestrate-load.py` 가 활성 도메인 본문의 매니페스트 생성 (3) `/pilot:doctor` 가 캡 검증, `--fix` 가 기존 파일 마이그레이션 **제안**.
 - **기대결과**:
   - `/pilot:learn` 산출 본문 파일마다 frontmatter:
@@ -17,14 +18,14 @@
     description: 배송 취소 서비스 3종의 호출 순서와 상태 전환 규칙   # ≤150자 1줄, "무엇을 알 수 있나"
     domain: wms
     type: services            # index | routes | models | services | rules | enums | boundary | free
-    sources:                  # 이 문서가 다루는 소스 범위 (glob 허용) — #27 의 paths 로 재사용
+    sources:                  # 이 문서가 다루는 소스 범위 (glob 허용) — #30 의 paths 로 재사용
       - app/services/wms/**
     learned_at: 2026-09-04T03:12:00Z
     ---
     ```
 
   - orchestrate-load 반환 JSON 에 `context_manifest` 키 신설: 활성 도메인 폴더(+ `boundaries/{domain}--*`) 의 `*.md` 를 **앞 30줄만** 읽어 `- [type] path (age): description` 1줄씩. 최대 200개(초과 시 최신순 절단 + 표기). frontmatter 없는 파일은 `(description 없음 — 첫 H1: …)`.
-  - 진입 파일(`index.md`) 은 기존대로 `files_to_read` 에 유지 — 본문은 매니페스트로 대체 **안 함**, 추가만 (soft). 에이전트는 매니페스트를 보고 필요한 본문만 Read 하거나 #24 로 섹션 조회.
+  - 진입 파일(`index.md`) 은 기존대로 `files_to_read` 에 유지 — 본문은 매니페스트로 대체 **안 함**, 추가만 (soft). 에이전트는 매니페스트를 보고 필요한 본문만 Read 하거나 #27 로 섹션 조회.
   - doctor: description 부재 WARN · 150자 초과 WARN · 색인 파일(MANIFEST·진입 index) 200줄 또는 25KB 초과 WARN · `sources` 경로 미존재 INFO.
 
 ## 상태 전환
@@ -67,7 +68,7 @@ _(없음)_
 - `/pilot:learn` 골든 출력(회귀 픽스처) 에 frontmatter 5 키 포함 확인.
 - doctor 테스트: WARN 3종(부재·150자 초과·색인 캡) + INFO 2종 + 파싱 실패 케이스.
 - orchestrate-load 테스트: `context_manifest` 30줄 스캔이 본문을 읽지 않음(대용량 파일 픽스처 시간 측정) · 200개 절단 · frontmatter 부재 표기.
-- #24 골든 질의 `hit@3` 가 description 가중치 활성 후 저하 없음.
+- #27 골든 질의 `hit@3` 가 description 가중치 활성 후 저하 없음.
 - 전체 unittest 통과 + doctor 클린.
 
 ## 관련 파일 범위

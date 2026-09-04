@@ -50,7 +50,7 @@
 일괄 정리 명령은 다음 중 하나:
 
 - `/pilot:analyze --regen-agents` — 프로젝트 산출물(`project.md`, `prompts/*.md`) 재생성
-- `/pilot:doctor --fix` — 워크스페이스 스키마·구조 자동 수정
+- `/pilot:pilot-doctor --fix` — 워크스페이스 스키마·구조 자동 수정
 
 에이전트별 개입 시점은 다르다 — 사이클 흐름을 끊지 않기 위함:
 

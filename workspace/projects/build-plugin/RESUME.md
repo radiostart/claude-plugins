@@ -1,4 +1,4 @@
-# RESUME — pilot 정비 프로젝트 (2026-07-25 갱신)
+# RESUME — pilot 정비 프로젝트 (2026-07-26 갱신)
 
 컨텍스트 한계로 세션을 새로 시작할 때 이 문서만 읽으면 이어받을 수 있다.
 
@@ -13,17 +13,18 @@
 | #19 rewrite | ✅ READY | 스킬 17개 ≤100줄 (learn 109) · 불변 조건 195항 전수 보존 · 지시 문서 4,808 → 3,635줄 |
 | #20 slim | ✅ **READY (2026-07-26 게이트 마감)** | Python 7,138 → 4,997 (절감 2,141줄, 30.1%) · 이관 3종 삭제 · MANIFEST 파서 실버그 수정 · validate.yml CI. **7기준 전건 통과** — 마지막 dogfooding 게이트는 #23 사이클이 실경로 0.10.0 에서 완주하며 충족 |
 | #21 docs-sync | ✅ READY | reference/index.md · doctor-migration.md · getting-started.md 정합. 정정 대장 15행을 소스로 재검증 |
-| #22 relearn | 📋 등록만 됨 | `/pilot:learn` 재실행으로 context 드리프트 **4건** 해소 (2026-09-04 #24 planner 보고 `lifecycle.md:79` 1건 편입) |
-| #23 파서 오탐 | ✅ **READY (미커밋)** | 오탐 2건 소멸 — doctor `10 PASS · 1 WARN · 0 ERROR` · `features=24` 복구. `_common.py:is_feature_spec_file` (파생 판정 SSOT) + `integrity.py:_extract_declared_path` (구조 기반 4단 판정) 신설. 테스트 292건 OK (신규 8) |
-| (구 #24) pilot-update 도구 | ⏸ **보류 · 번호 회수 (2026-09-04)** | main 의 #24 는 아래 context-search 다. 재개 시 브랜치 산출물을 **새 번호로 재등록**. 이하 원문 — planner 완주 · 결정 D1 = **폐기**. 실작업이 파일 1개 삭제 + 문서 3곳 문구 수정뿐이라 우선순위 낮다고 사용자 판단 (2026-07-26). 산출물은 브랜치 `skills/24-pilot-update-tool` 에 커밋됨 (`8d3a868`) |
-| (구 #25) 스키마 중복 | 📋 미등록 · 번호 회수 (2026-09-04) | main 에 spec 파일 없음. `doctor --schema` ↔ `claude plugin validate` 중복 건은 재개 시 새 번호로 등록. main 의 #25 는 아래 freshness 다 |
-| #24 context-search | 📋 **계획 확정 (2026-09-04)** | 섹션 단위 결정적 검색 도구. `features/24-context-search-tool.plan.md` validate 통과 · D1~D8 사용자 승인 · critic 진행. 설계 SSOT `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` § F-A |
-| #25 freshness | 📋 등록 (2026-09-04) | 로드 시 신선도 힌트(file:line 인용 vs git/mtime) + GUIDE·state-schema analyzed 서술 정정(F-E). #24 다음 |
-| #26 frontmatter manifest | 📋 등록 (2026-09-04) | learn 산출 frontmatter 5키 + orchestrate-load `context_manifest`. #24 머지 후 |
-| #27 path trigger | 📋 등록 (2026-09-04) | `.claude/rules` paths(C1) 또는 PostToolUse 훅(C2). **서브에이전트 발화 실측 선행** 후 확정 |
+| #22 relearn | 📋 등록만 됨 | `/pilot:learn` 재실행으로 context 드리프트 3건 해소 |
+| #23 파서 오탐 | ✅ **READY · PR #11 머지 완료** | 오탐 2건 소멸 — doctor `10 PASS · 1 WARN · 0 ERROR` · `features=24` 복구. `_common.py:is_feature_spec_file` (파생 판정 SSOT) + `integrity.py:_extract_declared_path` (구조 기반 4단 판정) 신설. 테스트 292건 OK (신규 8) |
+| #24 update 도구 | ✅ **READY** | D1 = **(iii) 폐기** 이행 — `pilot-update.sh` 삭제 + README·getting-started·release-and-upgrade 안내 정정. `README.md:35` 설치 명령 id 오류(**신규 설치가 그대로 실패**하던 실사용자 버그)도 해소. v0.10.0 릴리스 노트 `## 업그레이드` 블록도 사용자 승인 후 정정 (백업→교체→diff 검증 이행) |
+| #25 스키마 중복 | ✅ **READY (코드 변경 0)** | 결론 **(ii) 현행 유지**. `--strict` 로 명세의 유지 근거 하나는 죽었으나 **어느 쪽도 상위 집합이 아님** — CLI 미탐 2종(SKILL description 바이트 상한·version↔git tag)이 `schema.py` 존치 근거. CLI 는 릴리스 전 로컬 보조 검사로 `README.md` 에 문서화. 대조표 = `features/25-*.md` § 재실측 |
+| #27 context-search | ✅ **READY (2026-09-04, PR #29)** | 섹션 단위 결정적 검색 도구. `features/27-context-search-tool.plan.md` validate 통과 · D1~D8 사용자 승인 · critic 진행. 설계 SSOT `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` § F-A |
+| #28 freshness | 📋 등록 (2026-09-04) | 로드 시 신선도 힌트(file:line 인용 vs git/mtime) + GUIDE·state-schema analyzed 서술 정정(F-E). #27 다음 |
+| #29 frontmatter manifest | 📋 등록 (2026-09-04) | learn 산출 frontmatter 5키 + orchestrate-load `context_manifest`. #27 머지 후 |
+| #30 path trigger | 📋 등록 (2026-09-04) | `.claude/rules` paths(C1) 또는 PostToolUse 훅(C2). **서브에이전트 발화 실측 선행** 후 확정 |
 
-**릴리스 상태**: `main` = `677fe7c` (PR #9 머지). 태그 `pilot-v0.10.0`. 릴리스 노트 게시됨.
-문서 사이트 배포 완료 (`Deployed 677fe7c`).
+**릴리스 상태 (2026-07-26)**: `main` = `f73cc1c` (PR #11 머지 — #23 + #20 게이트 마감).
+**v0.10.1 릴리스 진행 중** — 브랜치 `chore/release-v0.10.1` 에서 버전 표기 3곳(`plugin.json`·`mkdocs.yml`·`docs/index.md`) 동기화.
+이전 릴리스: 태그 `pilot-v0.10.0` (PR #9 · `677fe7c`), 문서 사이트 배포 완료.
 
 근거 문서 (모두 커밋됨):
 - 설계: `docs/superpowers/specs/2026-07-24-pilot-skill-consolidation-design.md`
@@ -66,11 +67,12 @@
    - **Phase 2 확인 게이트는 이미 통과했다** — 새 세션에서 같은 통계가 나오면 그대로 진행하면 된다.
    - **검증** — 재학습 후 `grep -rn "memory-hint\|init_detect\|diagnose\.py" workspace/context/pilot/` 이 0 건이어야 한다 (명세가 라인 번호 아닌 **문자열 기준** 검증을 요구).
    - **미해소 Open Question (d)** — 재학습이 3 건을 전부 덮지 못하면 drift-protocol § B(승인 하 직접 정정)로 전환할지, learn 스킬 커버리지 결함으로 별도 처리할지 아직 결정 안 됨.
-6. ~~**(구 #24) pilot-update 사이클**~~ — **보류** (2026-07-26 사용자 판단). **번호 회수 (2026-09-04)**: main 의 #24 는 context-search. 재개 시 브랜치 산출물(`features/24-pilot-update-tool.*`) 을 새 번호로 재등록한 뒤 `@pilot-generator` 부터 시작한다.
-   - 결정: D1 = **폐기** (`pilot/tools/pilot-update.sh` 삭제) · D2 = 릴리스 노트 정정 · D3 = stale 경로 전파처 일괄 정정 · D4 = `getting-started.md` 허구 서술 삭제.
-   - 실제로 필요한 부분은 **`pilot/README.md:35` 의 `/plugin install pilot@claude-plugins`** — 마켓플레이스 id 가 `radiostart-plugins` 라 **신규 설치 안내가 그대로 실패**한다. 재개 전이라도 이 한 줄은 별도로 고칠 가치가 있다.
-   - D2 (게시된 GitHub Release 본문 수정) 는 저장소 밖 상태 변경이라 재개 시 범위에서 빼는 것을 검토할 것.
-   - 산출물 `features/24-pilot-update-tool.plan.md`·`.plan.critic.md` 는 브랜치 `skills/24-pilot-update-tool` 의 커밋 `8d3a868` 에 보존돼 있다 (2026-07-26). 재개 시 그 브랜치로 이동하면 된다.
+6. ~~**#24 사이클**~~ — **완료 (2026-07-26)**. 브랜치 `skills/24-pilot-update-tool`. D1~D4 전건 이행.
+   - **`pilot/tools/pilot-update.sh` 는 삭제됐다 — 되살리지 말 것.** 지원 업그레이드 경로는 `/plugin marketplace update radiostart-plugins` → `/plugin update pilot@radiostart-plugins` → **세션 재시작** 하나뿐이고, `/plugin` 자체가 없는 환경은 **미지원**으로 문서에 명시했다.
+   - D2 (게시된 v0.10.0 Release 본문) 도 사용자 명시 승인 후 정정 완료 — 백업 → `## 업그레이드` 블록만 교체 → `gh release edit --notes-file` → `--json body` 재취득 diff 로 해당 블록 외 불변 확인.
+   - evaluator 는 최초에 D2 범위 분리를 **기각**했다 (plan D2 = "정정한다" 가 기록된 사용자 결정인데 유예를 뒷받침할 기록이 없었음). 구현 주체가 자기 커밋에서 요구사항을 완화하면 순환 논증이 된다는 지적 — 후속 사이클도 같은 기준으로 판정된다.
+7. ~~**#25 사이클**~~ — **완료 (2026-07-26, 코드 변경 0)**. 결론 (ii) 현행 유지 — `schema.py`(410줄)·`validate.yml` 무변경. 재개 불필요.
+   - code-review 가 blocking 1건을 잡았다: README 릴리스 절차에 "manifest JSON 문법 파손은 CLI 만 잡는다" 를 실측인 것처럼 적었으나 **양쪽 다 잡는다**. 2026-07-25 구표의 "(문법 파손은 미검증)" 을 "미탐" 으로 오독한 결과 — **미검증을 실측으로 승격시키지 말 것**. 정정 완료.
 
 ## 이어받을 때 주의
 

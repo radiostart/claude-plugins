@@ -23,7 +23,8 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {phase} --worksp
 ```
 
 - `error` 필드가 있으면 **원문을 사용자에게 출력하고 종료**한다.
-- 없으면 반환 JSON 을 처리한다: `files_to_read` 순서대로 Read · `focus` 반영 결과를 간단 보고 · `hints` 를 세션 컨텍스트로 주입 · `analyzed`/`tdd`/`domain` 값을 이후 분기에 사용. 상세 계약: [state-schema.md](../lifecycle/state-schema.md).
+- 없으면 반환 JSON 을 처리한다: `files_to_read` 순서대로 Read · `focus` 반영 결과를 간단 보고 · `hints` 를 세션 컨텍스트로 주입 · `tdd`/`mode`/`domain`/`project_phase`/`work_mode` 값을 이후 분기에 사용 (`analyzed` 는 분기 필드가 아니라 보고용 — 실소비처는 doctor·switch 조회뿐이며, 도메인 지식 로드는 `domain` 유무로만 갈린다). 상세 계약: [state-schema.md](../lifecycle/state-schema.md).
+- `work_mode` 필드 (`project`|`issue`, 부재 시 project): `issue` 면 각 wrapper 본문의 "이슈 수정 모드" 블록·경로 분기를 활성화한다.
 
 ## 5. domain null 예외
 

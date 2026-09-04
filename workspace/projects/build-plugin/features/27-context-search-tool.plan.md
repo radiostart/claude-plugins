@@ -1,9 +1,9 @@
-# 구현 계획: #24 context-search — 섹션 단위 결정적 검색 도구
+# 구현 계획: #27 context-search — 섹션 단위 결정적 검색 도구
 
 > mode: standard (tdd=false · mode=null) · 작성: 2026-09-04 planner · focus: 없음 (`.focus.md` 부재)
-> 대상 spec: [24-context-search-tool.md](24-context-search-tool.md) · 설계 SSOT: `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` § F-A · §2 P2/P4 · 부록 A
-> 브랜치 권고: `skills/24-context-search` — `skills/24-pilot-update-tool` 은 폐기된 구 #24 (번호 회수, slug 상이) 라 혼용 금지
-> critic 반영: 2026-09-04 재호출 — C1~C8 전건 accepted (합의 표: [24-context-search-tool.plan.critic.md](24-context-search-tool.plan.critic.md)). 사용자 결정: C1 필수 반영 · C2~C8 planner 위임
+> 대상 spec: [27-context-search-tool.md](27-context-search-tool.md) · 설계 SSOT: `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` § F-A · §2 P2/P4 · 부록 A
+> 브랜치 권고: `skills/24-context-search` — `skills/24-pilot-update-tool` 은 폐기된 구 #27 (번호 회수, slug 상이) 라 혼용 금지
+> critic 반영: 2026-09-04 재호출 — C1~C8 전건 accepted (합의 표: [27-context-search-tool.plan.critic.md](27-context-search-tool.plan.critic.md)). 사용자 결정: C1 필수 반영 · C2~C8 planner 위임
 
 ## 실측 baseline (2026-09-04)
 
@@ -45,7 +45,7 @@
 
 - `pilot/agents/*.md` — 필수 step 추가 0 (G4). "부분 로드" 라는 절 이름은 유지되므로 wrapper 상단 인용문도 그대로 유효.
 - `pilot/mkdocs.yml` — `Tools: reference/tools/` 는 literate-nav 자동 색인.
-- `pilot/.claude-plugin/plugin.json`·`mkdocs.yml extra.version`·`docs/index.md` — minor bump(0.10.0 → 0.11.0) 는 #24~#27 마일스톤 마감 PR 1회.
+- `pilot/.claude-plugin/plugin.json`·`mkdocs.yml extra.version`·`docs/index.md` — minor bump(0.10.0 → 0.11.0) 는 #27~#30 마일스톤 마감 PR 1회.
 - `workspace/context/**` — 읽기 전용 (drift-protocol § A). 골든 fixture 는 복사본.
 - `orchestrate-load.py` `build_instructions` — instructions 무변경 (soft: hints 만).
 
@@ -79,7 +79,7 @@
 
 **섹션 분할** `split_sections(text, rel_path) -> list[Section]` (`Section` dataclass: file, heading, level, line_start, line_end, body_lines, description)
 
-- frontmatter: 1행이 `---` 이고 닫는 `---` 가 있으면 그 범위 색인 제외, `^description:\s*(.+)$` **첫 줄만** 보관(양끝 따옴표 제거). 없어도 정상 (#26 이전 코퍼스).
+- frontmatter: 1행이 `---` 이고 닫는 `---` 가 있으면 그 범위 색인 제외, `^description:\s*(.+)$` **첫 줄만** 보관(양끝 따옴표 제거). 없어도 정상 (#29 이전 코퍼스).
 - 펜스 추적: `^\s*(```|~~~)` 로 열고 **같은 문자**로 닫는다(info string 무시). 펜스 안 `#` 라인은 헤딩이 아니다.
 - 헤딩: `^ {0,3}(#{1,6})\s+(.+?)\s*#*\s*$`. 색인 레벨 = 2·3. 섹션 범위 = 헤딩 라인 ~ **레벨 숫자가 같거나 작은** 다음 헤딩 직전 (H2 본문은 하위 H3 포함). `line_start`/`line_end` 1-based inclusive, 끝의 빈 줄 포함(Read 편의 우선).
 - D7: 첫 H2/H3 이전 구간 → `level 1` 섹션(heading = H1 텍스트, H1 없으면 `(서문)`), H1 제외 본문이 비어 있으면 생략. H2/H3 이 하나도 없으면 파일 전체 1 섹션(heading = H1 텍스트 또는 `(파일 전체)`, level 1). **level 1 섹션은 heading 신호 미적용** (C2 — 「점수」 참조).
@@ -88,7 +88,7 @@
 
 - `heading_tokens = set(tokenize(heading))`
 - `path_tokens_set = set(path_tokens(rel_path))` — 코퍼스 루트 기준 상대경로 세그먼트 전체 (`pilot/index.md` → `pilot`,`index`)
-- **공개 함수** `extract_citations(body, memo=None) -> (citation_tokens: set[str], citation_paths: list[str])` (C4-3 — 스텝 4 의 confluence 가 이 이름으로 호출): 본문에서 `re.findall(r"[A-Za-z0-9_.\-]*(?:/[A-Za-z0-9_.\-]+)+\.[A-Za-z0-9]{1,5}(?::\d+(?:-\d+)?)?", body)` — `/` 를 1개 이상 포함하고 확장자를 가진 경로(선택적 `:N[-M]`). `${CLAUDE_PLUGIN_ROOT}/tools/doctor.py` 처럼 앞에 비허용 문자가 있으면 `/tools/doctor.py` 부분만 잡힌다 — 세그먼트 토큰 목적이라 충분. 존재 검증 없음(#25 의 일). `citation_tokens = ∪ path_tokens(p)` · `citation_paths = [p without :line]`. `memo` 는 `search()` 1회 안에서 만들어 넘기는 dict — 같은 인용 문자열의 `path_tokens` 재계산을 막는 **실행 내 memo** (C5: 1,000섹션·인용 30/섹션 고밀도에서 `path_tokens` 31k회 = 총 0.83s 의 52% 가 이 경로. "캐시 없음" 은 실행 간 영속 캐시 금지를 뜻한다 — 주의사항 참조).
+- **공개 함수** `extract_citations(body, memo=None) -> (citation_tokens: set[str], citation_paths: list[str])` (C4-3 — 스텝 4 의 confluence 가 이 이름으로 호출): 본문에서 `re.findall(r"[A-Za-z0-9_.\-]*(?:/[A-Za-z0-9_.\-]+)+\.[A-Za-z0-9]{1,5}(?::\d+(?:-\d+)?)?", body)` — `/` 를 1개 이상 포함하고 확장자를 가진 경로(선택적 `:N[-M]`). `${CLAUDE_PLUGIN_ROOT}/tools/doctor.py` 처럼 앞에 비허용 문자가 있으면 `/tools/doctor.py` 부분만 잡힌다 — 세그먼트 토큰 목적이라 충분. 존재 검증 없음(#28 의 일). `citation_tokens = ∪ path_tokens(p)` · `citation_paths = [p without :line]`. `memo` 는 `search()` 1회 안에서 만들어 넘기는 dict — 같은 인용 문자열의 `path_tokens` 재계산을 막는 **실행 내 memo** (C5: 1,000섹션·인용 30/섹션 고밀도에서 `path_tokens` 31k회 = 총 0.83s 의 52% 가 이 경로. "캐시 없음" 은 실행 간 영속 캐시 금지를 뜻한다 — 주의사항 참조).
 - `body_lc` = 헤딩 라인 제외 본문 소문자 · `description_lc`.
 
 **점수** `score_text(query, *, heading, body, path_tokens=(), citation_tokens=(), citation_paths=(), description=None) -> (score, matched)` — 문자열 기반 진입점(스텝 4 의 confluence 재사용용). `score_section(section, query)` 는 이를 호출. 토큰 t 마다, 신호별 최대 1회:
@@ -183,7 +183,7 @@ fixture 생성: `mkdir -p pilot/tests/fixtures/context-search/workspace/context/
 
 - `plugin_root()` 사용 → `files_to_read` 와 같은 `${CLAUDE_PLUGIN_ROOT}` 리터럴/해석값 규칙.
 - 진입 파일 0건(미등록) 이면 힌트 없음 — 기존 부트스트랩 안내가 우선.
-- 4) 주석 블록에 1줄: `#    진입 파일 로드 직후 context-search 권장 힌트 1줄 (#24, soft — instructions 불변)`.
+- 4) 주석 블록에 1줄: `#    진입 파일 로드 직후 context-search 권장 힌트 1줄 (#27, soft — instructions 불변)`.
 - 테스트(`test_orchestrate_load.py`, 기존 `ManifestDomainFiles`/`BuildLoadPlan` 류 픽스처 재사용): `test_domain_entry_adds_context_search_hint` (힌트에 `context-search.py` 와 `--scope orders` 포함, 정확히 1줄) · `test_no_domain_no_context_search_hint` (`domain=None` → 부재) · 기존 `build_instructions` 테스트 무손.
 
 **체크포인트 G1·G2** — 여기서 `python3 -m unittest discover -s pilot/tests/tools` 전체 통과 확인 후 구간 B 진입.
@@ -241,7 +241,7 @@ fixture 생성: `mkdir -p pilot/tests/fixtures/context-search/workspace/context/
 - `--include` 는 `nargs="+"` — 질의를 첫 인자로 두는 관례를 docstring·§6 문구에 명시.
 - 삭제된 스크립트(`diagnose.py`·`memory-hint.py`·`init_detect.py`·`verify-report-lint.py`) 호출 금지.
 - 계획 확정 후 generator/critic 자동 호출 금지 (guardrails § A16). Generator 는 `project.md` `## 목표` 체크박스를 건드리지 않는다(evaluator 단독 권한).
-- 버전 bump 없음 — #27 마감 PR 에서 1회. 커밋 분리: 코드(`pilot/`) 와 workspace 산출물 별도 커밋, `main` 직접 커밋 금지.
+- 버전 bump 없음 — #30 마감 PR 에서 1회. 커밋 분리: 코드(`pilot/`) 와 workspace 산출물 별도 커밋, `main` 직접 커밋 금지.
 
 ## 에이전트 간 전달사항 소비 (2026-09-04)
 
@@ -258,19 +258,19 @@ fixture 생성: `mkdir -p pilot/tests/fixtures/context-search/workspace/context/
 ## 드리프트 보고 (drift-protocol § A/B — 직접 Edit 안 함 · 2건 < 임계 3 → 개별 보고)
 
 1. `workspace/context/pilot/lifecycle.md:79` — `--fix` 를 "v0.1.0→v0.2.0 마이그레이션 질의 (상세: `references/migration.md`)" 로 서술. 실제 `pilot/skills/doctor/SKILL.md:34` 는 "`.gitignore` secret 패턴 주입·STATE.md 이력 정리·schema 업그레이드" 이고 `pilot/skills/doctor/references/` 폴더 자체가 없다(#20 마이그레이션 삭제). #22 재학습 대상 **4번째 항목**으로 편입 — **완료** (2026-09-04 사용자 결정, `features/22-context-drift-relearn.md` 표 4행). 기존 3건(memory-hint·init_detect·diagnose.py)은 이미 등록, 재보고 아님.
-2. `workspace/projects/build-plugin/RESUME.md:18·65-69` — "#24 update 도구 보류 / #25 스키마 중복" 행이 현행 features(#24 context-search·#25 freshness) 와 번호 충돌. 사람용 인수인계 노트라 자동 소비 대상은 아니지만 재개 시 혼동 유발 — **정정 완료** (2026-09-04 번호 회수: RESUME.md 행을 `(구 #24)`·`(구 #25)` 로 표기, 구 산출물은 브랜치 `skills/24-pilot-update-tool` 커밋 `8d3a868` 에 보존).
+2. `workspace/projects/build-plugin/RESUME.md:18·65-69` — "#27 update 도구 보류 / #28 스키마 중복" 행이 현행 features(#27 context-search·#28 freshness) 와 번호 충돌. 사람용 인수인계 노트라 자동 소비 대상은 아니지만 재개 시 혼동 유발 — **정정 완료** (2026-09-04 번호 회수: RESUME.md 행을 `(구 #27)`·`(구 #28)` 로 표기, 구 산출물은 브랜치 `skills/24-pilot-update-tool` 커밋 `8d3a868` 에 보존).
 
 ## 교차 의존
 
-- **#25 freshness** — 같은 `build_load_plan` 4)·5) 직후에 힌트 추가 예정. 본 힌트는 4) `if entries:` 블록 끝이라 #25 가 그 뒤에 이어 붙이면 된다. 본 도구의 `citations` 정규식(`/` 필수·라인 선택)은 #25 의 인용 파서(F-D: `` `?(path):(\d+)(?:-(\d+))?`? ``, 라인 필수) 와 목적이 달라 **공유하지 않는다**. dogfooding 기록(검증 기준 3항 "후속 feature 1건에서 planner 가 도구 1회 이상 사용") 은 **#25 planner** 가 남긴다.
-- **#26 frontmatter** — description 4점은 이미 배선(frontmatter 있으면 자동, 플래그 없음 — Open Q (d)-3). #26 은 `learn` 이 frontmatter 를 쓰면 끝. "`hit@3` 저하 없음" 게이트는 #26 이 fixture 로 재측정.
-- **#27 경로 트리거** — 규칙 포인터의 "상세 조회" 1줄이 본 CLI 를 인용 → 인자 이름(`--scope`) 변경 금지.
+- **#28 freshness** — 같은 `build_load_plan` 4)·5) 직후에 힌트 추가 예정. 본 힌트는 4) `if entries:` 블록 끝이라 #28 가 그 뒤에 이어 붙이면 된다. 본 도구의 `citations` 정규식(`/` 필수·라인 선택)은 #28 의 인용 파서(F-D: `` `?(path):(\d+)(?:-(\d+))?`? ``, 라인 필수) 와 목적이 달라 **공유하지 않는다**. dogfooding 기록(검증 기준 3항 "후속 feature 1건에서 planner 가 도구 1회 이상 사용") 은 **#28 planner** 가 남긴다.
+- **#29 frontmatter** — description 4점은 이미 배선(frontmatter 있으면 자동, 플래그 없음 — Open Q (d)-3). #29 은 `learn` 이 frontmatter 를 쓰면 끝. "`hit@3` 저하 없음" 게이트는 #29 이 fixture 로 재측정.
+- **#30 경로 트리거** — 규칙 포인터의 "상세 조회" 1줄이 본 CLI 를 인용 → 인자 이름(`--scope`) 변경 금지.
 - **#22 relearn** — 라이브 코퍼스가 바뀌어도 fixture 골든은 불변. 재학습 후 라이브 4질의 1회 재실행·기록 권고.
-- **v0.11.0 마일스톤** — bump 는 #27 마감 PR.
+- **v0.11.0 마일스톤** — bump 는 #30 마감 PR.
 
 ## critic 합의 반영 (2026-09-04 재호출)
 
-`@pilot-planner-critic` 실행 완료 — C1~C8 전건 **accepted** (합의 표: `24-context-search-tool.plan.critic.md` § 합의). 반영 위치:
+`@pilot-planner-critic` 실행 완료 — C1~C8 전건 **accepted** (합의 표: `27-context-search-tool.plan.critic.md` § 합의). 반영 위치:
 
 | C# | 반영 절 |
 | --- | --- |

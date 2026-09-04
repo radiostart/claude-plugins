@@ -86,15 +86,21 @@ nav:
           - Critic 활용: how-to/critic-review.md
           - 코드 리뷰 (PR 전): how-to/code-review.md
           - Focus 로 방향 조정: how-to/focus-direction.md
+          - Open Questions 게이트: how-to/open-questions-gate.md
+          - 구현 질의: how-to/ask-code.md
       - 컨텍스트 관리:
           - 기획서로 features 일괄 생성: how-to/analyze-docs.md
           - 프롬프트로 feature 단건 추가: how-to/create-feature.md
           - 외부 도메인 연동: how-to/cross-domain-learn.md
+          - 도메인 지식 환류: how-to/knowledge-sync.md
           - 도메인 암묵지 기록: how-to/tacit-domain-knowledge.md
           - 도메인 규칙 작성: how-to/authoring-domain-rules.md
           - 워크스페이스 설정: how-to/workspace-config.md
           - 언어 컨벤션 공급: how-to/language-conventions.md
       - 운영:
+          - 운영 이슈 단건 처리: how-to/issue-cycle.md
+          - QA 결함 처리: how-to/qa-cycle.md
+          - 작업 전환·재발견: how-to/switch-work.md
           - Doctor 진단·마이그레이션: how-to/doctor-migration.md
           - Confluence 동기화: how-to/confluence-sync.md
           - Slack 알림 설정: how-to/slack-notify.md
@@ -117,6 +123,7 @@ nav:
       - SSOT·릴리스:
           - SSOT 와 derived: explanation/ssot-and-derivation.md
           - 릴리스·업그레이드: explanation/release-and-upgrade.md
+  - Releases: release-notes.md
 
 extra:
-  version: "0.10.0"  # 릴리스마다 .claude-plugin/plugin.json 의 version 과 맞춘다
+  version: "0.17.0"  # 릴리스마다 .claude-plugin/plugin.json 의 version 과 맞춘다

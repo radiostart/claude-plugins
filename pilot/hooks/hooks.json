@@ -1,6 +1,17 @@
 {
-  "description": "코드 품질 훅 — 커밋 메시지 검증 + 파일 수정 범위 제한 + 코딩 규칙 리마인드 + managed 파일 보호 + Slack 승인 알림",
+  "description": "코드 품질 훅 — 세션 도메인 컨텍스트 포인터 + 커밋 메시지 검증 + 파일 수정 범위 제한 + 코딩 규칙 리마인드 + managed 파일 보호 + Slack 승인 알림",
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/session-context.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",

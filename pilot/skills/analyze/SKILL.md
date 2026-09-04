@@ -1,11 +1,9 @@
 ---
 name: analyze
 description: >-
-  이미 저장된 docs/ 기획서를 features/ 기능 명세로 분할·구조화할 때 사용한다.
-  PM 작성 표 중심 기획서를 기능 단위 문서로 변환하고 project.md 의 목표 섹션
-  과 prompts/ 파일(planner·generator·evaluator)을 자동 갱신한다. 기획서 fetch 는
-  `/pilot:confl`, 프롬프트 기반 단일 기능 추가는 `/pilot:create-feature`
-  를 사용한다.
+  저장된 docs/ 기획서를 features/ 기능 명세로 분할·구조화하고 project.md
+  목표·prompts/*(planner·generator·evaluator)를 자동 갱신한다. 기획서 fetch 는
+  `/pilot:confl`, 프롬프트 기반 단일 기능 추가는 `/pilot:create-feature`.
 ---
 
 # /pilot:analyze
@@ -70,7 +68,7 @@ scope 부재 + MANIFEST 진입파일에 매칭 H2 존재 시 자동 생성. 상�
 
 ### 6. prompts/ 자동 갱신
 
-`prompts/{planner,generator,evaluator}.md` 갱신 + `.agent-state.yml.analyzed: true` 게이트. 상세(6-1~6-5): [`references/prompts-update.md`](references/prompts-update.md).
+`prompts/{planner,generator,evaluator}.md` 갱신 + `.agent-state.yml` 의 `analyzed` 를 `true` 로 전환 (doctor 정합성·drift 검사의 판정 필드 — 래퍼 로드 분기는 아니다). 상세(6-1~6-5): [`references/prompts-update.md`](references/prompts-update.md).
 
 ### 7. 분석 품질 자가 검증
 
@@ -83,6 +81,8 @@ scope 부재 + MANIFEST 진입파일에 매칭 H2 존재 시 자동 생성. 상�
 ### 8. 결과 출력
 
 `분석 완료: {원본 파일명}` + 생성된 features 목록 + `총 N개` + 갱신 파일(project.md/prompts/*.md/.agent-state.yml) + 검증 한 줄 + (7.5 발동 시) `인터뷰: 해소 N건 / 이월 M건` 줄. 해소 ≥1건이면 `[INFO] 인터뷰 답변이 spec 에 반영됨 — /pilot:analyze --regen-agents 권장` 추가.
+
+**다음 단계 1줄** — `/pilot:autopilot {NN}` (feature 1건 자동 진행) 또는 `@pilot-planner` (수동 시작) 병기.
 
 ## 참고
 

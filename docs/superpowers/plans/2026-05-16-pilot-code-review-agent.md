@@ -1,5 +1,7 @@
 # pilot code-review 에이전트 Implementation Plan
 
+> ⚠️ **완료된 plan — 실행 금지, 이력 보존용.** 이 문서의 작업은 이미 반영됐고(`pilot/agents/pilot-code-review.md`), 본문에 남은 단계별 지시·git 명령은 당시 기록이다. 경로도 현행 저장소와 다르다. 아래 "For agentic workers" 지시를 따르지 말 것.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** pilot 플러그인에 PR 이전 사이클 내부 코드 리뷰를 담당하는 독립 에이전트 `pilot-code-review` 와 `/pilot:review` 스킬을 추가한다.

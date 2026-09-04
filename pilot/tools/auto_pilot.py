@@ -7,14 +7,18 @@ pilot auto_pilot — 감독형 자율 오케스트레이터의 전이 결정 로
 결정한다. 이 모듈은 *판단하지 않는다* — 신호의 enum 값만 보고 전이한다.
 
 신호 출처:
-  - planner   : plan-validate.py exit code → plan_valid (bool)
+  - planner   : plan-validate.py 를 본 도구가 직접 실행 (--plan-file + --state-file,
+                mode 는 .agent-state.yml 에서 직접 도출) → plan_valid (True|False|None)
   - critic    : .plan.critic.md 의 챌린지 severity 목록 → severities (list|None)
   - evaluator : VERIFICATION REPORT 의 status → status ("READY"|"NOT_READY"|None)
+
+신호 운반을 모델에 맡기지 않는다 — planner 판정에서 모델이 옮기는 것은 파일
+경로뿐이고, exit code 해석과 mode 도출은 본 도구가 수행한다.
 
 액션 종류:
   proceed | reflect | retry | done | stop
 
-스펙: docs/superpowers/specs/2026-05-29-pilot-auto-design.md
+스펙: repo 루트 docs/superpowers/specs/2026-05-29-pilot-auto-design.md
 """
 
 from __future__ import annotations
@@ -22,6 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -33,15 +38,21 @@ MAX_RETRIES = 1  # NOT_READY 시 generator 재진입 횟수 상한
 class Action:
     kind: str            # proceed | reflect | retry | done | stop
     reason: str = ""     # stop 일 때 사유 (plan-validate | critic-blocking | retry-exhausted | signal-parse | agent-error)
+                         # agent-error 는 planner 단계에서 검증 자체가 실행 불능일 때도 나온다
+                         # (경로 부재·mode 도출 실패·plan-validate 크래시 — invalid plan 과 구분해 처방 오도 방지)
 
 
 _SEVERITY_LINE_RE = re.compile(
-    r"^\s*[-*]?\s*\*{0,2}severity\*{0,2}\s*:\s*([a-zA-Z_]+)", re.MULTILINE
+    r"^\s*[-*]?\s*\*{0,2}severity\*{0,2}\s*:\s*([a-zA-Z_]+)", re.MULTILINE | re.IGNORECASE
 )
 _CHALLENGE_HEADER_RE = re.compile(r"^###\s+C\d+", re.MULTILINE)
 # critic 의 명시적 "결함 없음" 통과 문구 (agents/pilot-planner-critic.md step 5).
 # 0건일 때 critic 은 `## 챌린지` 아래에 이 문구 한 줄만 남긴다.
-_PASS_MARKER_RE = re.compile(r"검출된 결함 없음|plan 통과")
+# 전체-행 정확 매치 — 접두·서브스트링 매치는 "검출된 결함 없음이라고 단정하기
+# 어렵다" 같은 부정문·자유서술을 통과 신호로 오독한다 (fail-open).
+_PASS_MARKER_RE = re.compile(
+    r"^\s*검출된 결함 없음\.?\s*(?:plan 통과\.?)?\s*$", re.MULTILINE
+)
 
 VALID_SEVERITIES = {"blocking", "suggestion", "nit"}
 
@@ -68,9 +79,14 @@ def parse_critic_severities(text: str):
 
     severities = [s.lower() for s in sev_matches if s.lower() in VALID_SEVERITIES]
 
-    # 챌린지 헤더가 있는데 유효 severity 를 하나도 못 읽었으면 형식 깨짐 → None
-    if headers and not severities:
-        return None
+    # 파싱 완전성 불변식 (단일 축 파손 검출) — 일부 챌린지의 severity 만 못 읽고
+    # 나머지로 판정하면 탈락분이 blocking 일 때 무음 통과가 된다 (fail-open).
+    # 한계: 같은 챌린지에서 헤더·severity 가 함께 깨지거나 (h4 오기 + 볼드 값)
+    # decoy 라벨이 수를 재균형하면 통과한다 — 파서로 자유형 일탈 전부는 못 잡는다.
+    if len(severities) != len(sev_matches):
+        return None  # 비표준 severity 값 존재 = 형식 깨짐
+    if len(headers) > len(severities):
+        return None  # severity 를 잃은 챌린지 존재
 
     return severities
 
@@ -84,11 +100,14 @@ _THIS_DIR = Path(__file__).resolve().parent
 # 원본은 REQUIRED_TOP_KEYS 스키마 검증(validate)·렌더링·CLI 를 갖춘 독립
 # lint 도구였으나 런타임 소비자가 auto_pilot(본 파서 2함수)뿐이라 스키마
 # 검증 로직은 삭제하고 파서만 원문 이식했다 (근거:
-# docs/audits/2026-07-24-audit-4-python.md § C-5). evaluator REPORT 형식
+# repo 루트 docs/audits/2026-07-24-audit-4-python.md § C-5). evaluator REPORT 형식
 # 자기 점검은 agents/pilot-evaluator.md 의 출력 직전 self-check 로 대체.
 # ---------------------------------------------------------------------------
 
 REPORT_HEADER_RE = re.compile(r"^##\s+VERIFICATION REPORT\s*$", re.M)
+# 유일성 판정용 접두 매치 — `## VERIFICATION REPORT — 재평가 (2차)` 같은 장식
+# 헤더가 정확-매치 카운트를 피해 stale 블록만 남기는 우회를 차단한다.
+REPORT_HEADER_ANY_RE = re.compile(r"^##\s+VERIFICATION REPORT", re.M)
 NEXT_H2_RE = re.compile(r"^## ", re.M)
 
 _TOP_KEY_RE = re.compile(r"^- ([a-z_]+):\s*(.*)$")
@@ -102,7 +121,13 @@ REQUIRED_TOP_KEYS = ["status", "feature", "mode", "gates", "metrics", "issues_to
 
 
 def extract_report_block(text: str) -> str | None:
-    """`## VERIFICATION REPORT` 블록 추출. 없으면 None."""
+    """`## VERIFICATION REPORT` 블록 추출. 부재·복수 시 None.
+
+    복수 블록은 evaluator 계약(step 7 — 재평가 시 전체 재생성, 최신 상태만
+    유지) 위반이다. 어느 블록이 최신인지 추정하지 않고 멈춘다 (모듈 원칙).
+    """
+    if len(REPORT_HEADER_ANY_RE.findall(text)) != 1:
+        return None
     m = REPORT_HEADER_RE.search(text)
     if not m:
         return None
@@ -162,9 +187,14 @@ def parse_report(block: str) -> dict:
                 else:
                     continue
             out["_raw_top_keys"].append(key)
-            if key in ("status", "mode"):
-                # value 의 첫 토큰만 (예: "READY", "tdd | NOT_READY" 같은 enum 표기 제외)
+            if key == "mode":
+                # value 의 첫 토큰만 (예: "tdd | NOT_READY" 같은 enum 표기 제외)
                 out[key] = rest.split()[0] if rest else None
+            elif key == "status":
+                # 절삭 없이 원문 보존 — 첫-토큰 절삭은 템플릿 에코
+                # `READY | NOT_READY` 를 READY 로 오독한다 (fail-open).
+                # 정확-매치 판정은 parse_evaluator_status 가 수행.
+                out[key] = rest if rest else None
             elif key in ("feature", "next"):
                 out[key] = rest if rest else None
             elif key == "gates":
@@ -222,6 +252,10 @@ def parse_evaluator_status(text: str):
     if block is None:
         return None
     parsed = parse_report(block)
+    # status 키는 정확히 1회 — 중복 시 라인 루프의 "마지막 값 승" 규칙이
+    # NOT_READY 블록 끝의 status 재기입을 READY 로 뒤집는다 (fail-open).
+    if parsed["_raw_top_keys"].count("status") != 1:
+        return None
     status = parsed.get("status")
     if status not in ("READY", "NOT_READY"):
         return None
@@ -231,9 +265,14 @@ def parse_evaluator_status(text: str):
 def decide_next(phase: str, signal: dict) -> Action:
     """phase 의 산출 신호를 받아 다음 액션을 결정한다 (순수 함수)."""
     if phase == "planner":
-        if signal.get("plan_valid") is True:
+        plan_valid = signal.get("plan_valid")
+        if plan_valid is True:
             return Action("proceed")
-        return Action("stop", "plan-validate")
+        if plan_valid is False:
+            return Action("stop", "plan-validate")
+        # None = 검증 자체가 실행 불능 (파일 부재·mode 도출 실패·크래시).
+        # plan-validate 사유로 접으면 처방표가 "plan 보완" 을 오도한다.
+        return Action("stop", "agent-error")
 
     if phase == "critic":
         severities = signal.get("severities")
@@ -271,10 +310,85 @@ def _read_file_or_none(path_str):
         return None
 
 
+# .agent-state.yml 의 top-level `tdd:`·`mode:` 행. 값의 인라인 주석은 제거한다.
+# doctor/_common.parse_state_yml 과 규칙 동일 — 본 모듈은 단독 로드되는
+# 스크립트라 doctor 패키지에 의존하지 않고 필요한 2키만 자체 추출한다.
+_STATE_KEY_RE = re.compile(r"^(tdd|mode)\s*:\s*(.*)$")
+
+
+def _mode_from_state(state_file):
+    """`.agent-state.yml` 에서 plan-validate 용 mode 를 도출한다.
+
+    분기 규칙은 orchestrate-load 와 동일: mode:characterize 우선 → tdd:true →
+    standard. 필수 필드 tdd 를 못 읽으면 None — standard 로 폴백하면
+    REQUIRED_SECTIONS["standard"] 가 빈 목록이라 검증 공집합 우회가 된다.
+
+    Returns:
+        "characterize" | "tdd" | "standard"  — 정상 도출
+        None                                 — 파일 부재·형식 불신 (상위에서 agent-error)
+    """
+    text = _read_file_or_none(state_file)
+    if text is None:
+        return None
+    vals = {}
+    for line in text.splitlines():
+        m = _STATE_KEY_RE.match(line)
+        if not m:
+            continue
+        value = m.group(2).split("#", 1)[0].strip().strip("'\"").lower()
+        vals[m.group(1)] = value
+    if vals.get("mode") == "characterize":
+        return "characterize"
+    tdd = vals.get("tdd")
+    if tdd == "true":
+        return "tdd"
+    if tdd == "false":
+        return "standard"
+    return None
+
+
+def _run_plan_validate(plan_file, state_file):
+    """plan-validate.py 를 직접 실행해 판정한다.
+
+    Returns:
+        True   — valid (exit 0)
+        False  — invalid plan (exit 1 + 구조화 JSON)
+        None   — 검증 실행 불능 (경로 부재·mode 도출 실패·크래시·usage 오류)
+    """
+    if not plan_file or not Path(plan_file).is_file():
+        return None  # 잘못된 경로는 invalid plan 이 아니라 배선 오류
+    mode = _mode_from_state(state_file)
+    if mode is None:
+        return None
+    proc = subprocess.run(
+        [sys.executable, str(_THIS_DIR / "plan-validate.py"), plan_file, "--mode", mode],
+        capture_output=True,
+        text=True,
+    )
+    # stderr(누락 항목 요약·WARN)는 통과 — STOP 보고의 근거가 된다.
+    # stdout(JSON)은 폐기 — 흘리면 본 도구의 결정 JSON 과 섞여
+    # 소비자가 어느 문서를 읽을지 미정의가 된다.
+    if proc.stderr:
+        sys.stderr.write(proc.stderr)
+    if proc.returncode == 0:
+        return True
+    if proc.returncode == 1:
+        # plan-validate 의 크래시도 exit 1 (uncaught exception) — invalid 판정은
+        # 구조화 JSON 이 실제로 나왔을 때만 인정해 처방표 오도를 막는다.
+        try:
+            parsed = json.loads(proc.stdout)
+        except (json.JSONDecodeError, ValueError):
+            return None
+        if isinstance(parsed, dict) and parsed.get("valid") is False:
+            return False
+        return None
+    return None  # exit 2 (usage) 등
+
+
 def _build_signal(args) -> dict:
     """CLI 인자 → decide_next 가 받는 signal dict."""
     if args.phase == "planner":
-        return {"plan_valid": args.plan_valid == "true"}
+        return {"plan_valid": _run_plan_validate(args.plan_file, args.state_file)}
 
     if args.phase == "critic":
         text = _read_file_or_none(args.critic_file)
@@ -295,7 +409,10 @@ def main() -> int:
     ap.add_argument(
         "--phase", required=True, choices=["planner", "critic", "evaluator"]
     )
-    ap.add_argument("--plan-valid", choices=["true", "false"], dest="plan_valid")
+    ap.add_argument("--plan-file", dest="plan_file",
+                    help="planner: 검증할 .plan.md 경로 (plan-validate 를 직접 실행)")
+    ap.add_argument("--state-file", dest="state_file",
+                    help="planner: .agent-state.yml 경로 (mode 를 직접 도출)")
     ap.add_argument("--critic-file", dest="critic_file")
     ap.add_argument("--report-file", dest="report_file")
     ap.add_argument("--retries-used", type=int, default=0, dest="retries_used")

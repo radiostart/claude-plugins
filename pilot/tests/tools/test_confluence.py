@@ -8,7 +8,7 @@ tools/confluence.py 의 HTML → Markdown 변환 로직 단위 테스트.
     - split_sections (빈 H1 그룹 헤딩 보존)
     - extract_page_id (URL 파싱)
     - html_to_md 통합
-    - search_docs (context-search 랭커 공유 · substring 폴백 · match_pos, #24)
+    - search_docs (context-search 랭커 공유 · substring 폴백 · match_pos, #27)
 
 실행:
     python3 tests/tools/test_confluence.py
@@ -201,7 +201,7 @@ class HtmlToMdIntegration(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# search_docs — context-search 랭커 공유 (D4/C4, #24)
+# search_docs — context-search 랭커 공유 (D4/C4, #27)
 # ---------------------------------------------------------------------------
 def _write_md(tmp_dir: str, name: str, text: str) -> None:
     (Path(tmp_dir) / name).write_text(text, encoding="utf-8")

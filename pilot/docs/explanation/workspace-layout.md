@@ -4,47 +4,38 @@ pilot의 *User-Facing 메타 구조*입니다. `workspace/` 디렉토리는 하�
 
 ## 전체 구조
 
-```mermaid
-graph TD
-    WS[workspace/]
-    STATE["STATE.md<br/>(활성 프로젝트 표 — 진행중 1 개만)"]
-    CTX[context/]
-    PROJS[projects/]
-
-    WS --> STATE
-    WS --> CTX
-    WS --> PROJS
-
-    CTX_MANIFEST["MANIFEST.md<br/>(도메인 색인)"]
-    CTX_CONFIG["config.md<br/>(언어·도구 기본값)"]
-    CTX_DOMAINS["{domain}.md 또는 {domain}/<br/>(/pilot:learn 결과)"]
-    CTX_BOUNDARIES["boundaries/{A}--{B}.md<br/>(/pilot:learn --boundary 경계 계약)"]
-    CTX --> CTX_MANIFEST
-    CTX --> CTX_CONFIG
-    CTX --> CTX_DOMAINS
-    CTX --> CTX_BOUNDARIES
-
-    P1["{ActiveProject}/"]
-    P2["{ArchivedProject}/"]
-    PROJS --> P1
-    PROJS --> P2
-
-    P1_STATE[".agent-state.yml<br/>(schema·tdd·mode·domain·plugin_version)"]
-    P1_PROJECT["project.md<br/>(목표·제한사항·[analyze-managed])"]
-    P1_PROMPTS["prompts/<br/>(planner.md·generator.md·evaluator.md)"]
-    P1_FEATURES["features/<br/>(NN-*.md · NN-*.plan.md · NN-*.plan.critic.md)"]
-    P1_DOCS["docs/<br/>(Confluence fetch 또는 사용자 작성 원본)"]
-    P1_FOCUS[".focus.md<br/>(사용자 최근 지시)"]
-
-    P1 --> P1_STATE
-    P1 --> P1_PROJECT
-    P1 --> P1_PROMPTS
-    P1 --> P1_FEATURES
-    P1 --> P1_DOCS
-    P1 --> P1_FOCUS
+```text
+workspace/
+├── STATE.md                       # 활성 작업 표 — 진행중 1 행만
+├── context/                       # 도메인 지식 — 워크스페이스 공유
+│   ├── MANIFEST.md                # 도메인 색인 (진입 파일 표)
+│   ├── config.md                  # 언어·도구 기본값
+│   ├── {domain}.md 또는 {domain}/ # /pilot:learn 결과
+│   └── boundaries/
+│       └── {A}--{B}.md            # /pilot:learn --boundary 경계 계약
+├── projects/                      # 프로젝트별 산출물 — 격리
+│   ├── {ActiveProject}/
+│   │   ├── .agent-state.yml       # schema·tdd·mode·domain·plugin_version
+│   │   ├── project.md             # 목표 · 제한사항 · [analyze-managed]
+│   │   ├── .focus.md              # 사용자 최근 지시
+│   │   ├── prompts/               # planner.md · generator.md · evaluator.md
+│   │   ├── features/              # feature 명세와 파생 산출물
+│   │   └── docs/                  # Confluence fetch · 사용자 작성 원본
+│   └── {ArchivedProject}/         # 종료된 프로젝트 — 구조 동일
+└── issues/                        # 운영 이슈 산출물 — 격리
+    └── {slug}/                    # 영문 kebab slug — 40 자 이내
+        ├── issue.md               # 명세이자 기록 — 현상·원인·조치
+        ├── issue.plan.md          # 사이클을 쓸 때만 생성
+        ├── issue.plan.critic.md
+        ├── issue.eval.md
+        └── .focus.md              # 사용자 최근 지시
 ```
 
-## 두 영역의 책임
+활성 작업은 `STATE.md` 의 진행중 1 행이 가리키는 `projects/{P}/` **또는** `issues/{slug}/` 한 곳입니다. `context/` 는 그 선택과 무관하게 항상 공유됩니다.
+
+사이클 산출물의 파일명 규약 — 프로젝트는 명세 `features/NN-{slug}.md` 옆에 `NN-{slug}.plan.md`·`NN-{slug}.plan.critic.md`·`NN-{slug}.eval.md` 가 붙고, 이슈는 `issue.md` 옆에 같은 접미가 붙습니다. 재작업본에는 `.r{N}` 을 덧붙입니다 (`NN-{slug}.plan.r2.md`).
+
+## 영역별 책임
 
 ### `context/` — 도메인 지식 (워크스페이스 공유)
 
@@ -63,15 +54,22 @@ graph TD
 
 여러 작업을 완전히 병렬로 진행하려면 [git worktree](https://git-scm.com/docs/git-worktree) 기능을 활용하여 분리해야 합니다 (각 worktree는 독립된 `workspace/STATE.md`를 가지게 됩니다).
 
+### `issues/{slug}/` — 운영 이슈 산출물 (격리)
+
+`issue`는 project와 동등한 1급 work_mode입니다. feature N건 대신 문제 1건을 다루므로 `issue.md` 1개가 명세이자 기록이며, 코드 수정이 필요하면 project와 동일한 planner→critic→generator→evaluator 사이클을 이슈 단위로 사용합니다. `STATE.md`의 진행중 1행이 `| issue | {slug} |`일 때 활성화되므로, project와 issue가 동시에 활성화될 수는 없습니다.
+
 ## 영구 파일 vs 일시 파일
 
 | 파일 | 분류 | git tracked 여부 |
 |---|---|---|
-| `STATE.md` | 영구 파일 (세션 로컬 활성 프로젝트 표) | 추적 여부는 사용자 정책 (`.agent-state.yml` 과 동일 — state-schema.md 참조). 로컬 전용 운영 권장 |
+| `STATE.md` | 영구 파일 (세션 로컬 활성 작업 표 — 진행중 1행만, 이력 누적 없음) | 추적 여부는 사용자 정책 (`.agent-state.yml` 과 동일 — state-schema.md 참조). 로컬 전용 운영 권장 |
 | `MANIFEST.md` · `config.md` | 영구 파일 | tracked |
 | `projects/{P}/project.md` · `prompts/*.md` · `features/NN-*.md` | 영구 파일 | tracked |
 | `.agent-state.yml` | 영구 파일 (machine-readable 상태) | 추적 여부는 사용자 정책 (state-schema.md — 공유가 필요하면 commit, 개인 전용이면 ignore) |
 | `features/NN-*.plan.md` · `.plan.critic.md` | 영구 파일 (작업 이력 기록) | tracked |
+| `features/NN-*.eval.md` | 영구 파일 (evaluator 최종 REPORT — 재평가 시 최신으로 교체) | tracked |
+| `issues/{slug}/issue.md` | 영구 파일 (이슈 단건 명세이자 기록) | tracked |
+| `issues/{slug}/issue.plan[.r{N}].md` · `issue.plan.critic[.r{N}].md` · `issue.eval[.r{N}].md` | 영구 파일 (이슈 사이클 산출물) | tracked |
 | `.focus.md` | 일시 파일 (새로운 focus로 덮어쓰기 가능) | 프로젝트 정책에 따라 tracked 혹은 gitignored 설정 |
 | `.focus.history/` | 일시 파일 (자동 백업 아카이브) | 보통 gitignored 처리 |
 | `.prompts.bak/` | 일시 파일 (`/pilot:analyze --regen-agents` 실행 시 자동 백업) | gitignored 처리 |
@@ -81,8 +79,9 @@ graph TD
 활성 project를 1개로 제한하므로, 다른 project로 전환하기 위해서는 다음 단계를 따릅니다:
 
 1. 현재 project의 evaluator가 `status: READY` 상태인지 확인합니다. 아직 완료되지 않았다면 다른 작업으로 전환하기 전 진행 상태를 점검하라는 신호입니다.
-2. `STATE.md` 파일 내에서 현재 project의 상태를 진행중에서 '완료' 또는 '보류'로 상태를 갱신합니다.
-3. `/pilot:project {다른_프로젝트_이름}` 명령을 실행하여 새 project를 활성화합니다.
+2. `/pilot:project {다른_프로젝트_이름}` 명령을 실행하여 새 project를 활성화합니다. `STATE.md`는 **"지금 활성" 1행만** 유지하는 현재 상태 파일(헤더 + 최대 1 데이터 행)이므로, 기존 행을 '완료'·'보류'로 바꿔 남기는 것이 아니라 **테이블 본문을 통째로 삭제한 뒤 진행중 1행으로 교체**합니다. `/pilot:issue {이슈명}`으로 이슈 모드에 진입할 때도 동일합니다.
+
+**이력은 `STATE.md`에 쌓지 않습니다.** `보류`·`완료` 행을 누적하지 않으며, 과거 작업 이력의 SSOT는 `workspace/projects/*/`·`issues/*/` **로컬 폴더** 자체입니다. `/pilot:pilot-doctor` 역시 진행중이 아닌 행을 WARN으로 보고하고 `--fix` 시 제거합니다. 행이 지워져도 폴더는 남아 있으므로 `/pilot:project {이전_프로젝트_이름}`으로 언제든 재활성화할 수 있습니다.
 
 ## 다음 단계
 

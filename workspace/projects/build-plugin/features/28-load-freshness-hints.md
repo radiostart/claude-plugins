@@ -1,13 +1,14 @@
-# #25 로드 시 신선도 힌트 — 인용 기반 변경 감지 (+ 로드 정책 문서 정합)
+# #28 로드 시 신선도 힌트 — 인용 기반 변경 감지 (+ 로드 정책 문서 정합)
 
 > source: prompt
 > created: 2026-09-04T02:50:24Z
 > user_prompt: "feature 생성해줘 — docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md §4 F-D + F-E 등록"
+> renumbered: 2026-09-04 — 원격 main 의 #24~#26 선점(pilot-update·schema-validate·issue-cycle)으로 #24~#27 → #27~#30 재번호
 > plan: `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` § F-D · § F-E (설계 상세·근거 SSOT. §2 P5 패턴)
 
 ## 요구사항
 
-- **조건**: 로드 대상 도메인 지식 파일이 `` `path/file.ext:12` `` 또는 `:12-34` 형식의 file:line 인용을 포함한다 (없으면 나이만 표기). #26 의 `learned_at` frontmatter 는 **선택** — 없어도 동작.
+- **조건**: 로드 대상 도메인 지식 파일이 `` `path/file.ext:12` `` 또는 `:12-34` 형식의 file:line 인용을 포함한다 (없으면 나이만 표기). #29 의 `learned_at` frontmatter 는 **선택** — 없어도 동작.
 - **트리거**: (1) `orchestrate-load.py` 가 도메인 진입 파일·경계 문서를 `files_to_read` 에 넣을 때마다 (2) `/pilot:doctor` 실행 시 같은 로직으로 지식 파일 단위 검사.
 - **기대결과**:
   - 로드되는 지식 파일마다 힌트 1줄: `[신선도] {file}: 학습 {age}일 전 · 인용 {changed}/{total} 파일이 이후 변경 · 미존재 {missing} — 인용 전 현재 코드 확인`. 나이 1일 이하이고 변경 0·미존재 0 이면 생략 (노이즈 억제).

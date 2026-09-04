@@ -18,12 +18,13 @@ description: >-
 1. `$ARGUMENTS` 첫 토큰을 `{lang}` 슬러그로 사용 (`python`/`typescript`/`ruby`/`java`/`go` 등). 비어있으면 `git ls-files | awk -F. '{print $NF}' | sort | uniq -c | sort -rn | head -5` 로 dominant 확장자를 감지해 슬러그 추론(`.py→python`·`.ts/.tsx→typescript`·`.rb→ruby` 등, 매칭 없으면 사용자 질의) 후 "**{추정 lang} 로 진행할까요?**" 확인.
 2. `workspace/context/` 없으면 [`messages.md`](../context/shared/messages.md) 의 `workspace_missing` 안내 후 종료.
 3. 대상 경로 `workspace/context/review/{lang}.md` (폴더 없으면 생성). **이미 존재하면 사용자 확인 없이 덮어쓰지 않는다** — "덮어쓰기 / 백업 후 새로 생성(`{경로}.bak.{timestamp}`) / 취소" 질의.
+4. `workspace/context/config.md` 의 `conventions_doc` 선언 여부를 확인한다 — 선언되어 있으면 그 문서가 이미 다루는 조항(명명·관용구·금지 패턴)은 룰 파일에 중복 기재하지 말고 참조로 대체하도록 안내한다 (층위 정의: [`coding.md`](../context/shared/coding.md) § 검증).
 
 ## 동작 — 시작 전략 3 종 (택 1 질의)
 
 ### 전략 A — 사전 작성된 예시 복사
 
-`${CLAUDE_PLUGIN_ROOT}/examples/code-review/{lang}.md` 존재 시만 제시(부재 시 비활성, B/C 만). 헤더 안내 블록 제거 후 사용 프레임워크 확인(ruby→Rails·php→Laravel/Symfony·kotlin→Android/서버사이드·java→Spring·js/ts→React 등) → 미사용 프레임워크 섹션 제거 → Write.
+`${CLAUDE_PLUGIN_ROOT}/examples/code-review/{lang}.md` 존재 시만 제시(부재 시 비활성, B/C 만). 헤더 안내 블록(H1 바로 아래 `>` 연속 라인 전부) 제거 후 사용 프레임워크 확인(ruby→Rails·php→Laravel/Symfony·kotlin→Android/서버사이드·java→Spring·js/ts→React 등) → 미사용 프레임워크 내용 제거 — 예시 파일마다 형태가 다르므로 **섹션과 인라인 룰 양쪽**을 본다: 전용 섹션(`## Rails 특화 룰`·`## Spring 특화` 등)이 있으면 섹션째, 없으면 다른 룰 사이에 섞인 해당 프레임워크 항목 줄만 걷어낸다 (js/ts 의 React 룰이 이 형태) → Write.
 
 ### 전략 B — 빈 형식 템플릿 복사
 
@@ -35,7 +36,7 @@ description: >-
 
 ## 결과 출력
 
-생성 경로·전략·룰 섹션 수·유지된 프레임워크 섹션 + 다음 단계(본문 검토·편집 → `/pilot:review` 실행 시 자동 로드) 안내.
+생성 경로·전략·룰 섹션 수·유지된 프레임워크 섹션 + 다음 단계(본문 검토·편집 → `/pilot:pilot-review` 실행 시 자동 로드) 안내.
 
 ## Do-NOT
 
@@ -46,5 +47,5 @@ description: >-
 
 ## 호출 시점
 
-- `/pilot:review` 결과에서 `{lang}.md` 부재로 baseline 만 적용됐음을 인지 → 사용자가 명시 호출
-- 새 언어 도입 시 선제적 호출 · `/pilot:init` 후 주력 언어 셋업
+- `/pilot:pilot-review` 결과에서 `{lang}.md` 부재로 baseline 만 적용됐음을 인지 → 사용자가 명시 호출
+- 새 언어 도입 시 선제적 호출 · `/pilot:pilot-init` 후 주력 언어 셋업

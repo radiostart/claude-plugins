@@ -137,21 +137,54 @@
 - 게이트: doctor WARN 4 → 1 · 기존 doctor 테스트 무손 · (B) 회귀 테스트 신규
 - 주의: `count_real_features` 는 `integrity.py:517` (analyzed 정합성) 에서도 쓰인다 — 그쪽 판정 불변 확인. 기존 `last_analyzed_features` 값은 spec 기준 기록이라 파서도 spec 기준이어야 정합
 
-### #24 context-search 섹션 단위 결정적 검색 도구 (features/24-context-search-tool.md)
+### #24 pilot-update.sh 고장 (features/24-pilot-update-tool.md)
 
-- 조건: `workspace/context/` 지식 파일 존재. frontmatter 없이 독립 동작 (#26 선행 불필요). 설계 SSOT = `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` § F-A.
+- 조건: v0.10.0 릴리스 직후. 2026-07-25 실제 업그레이드 시도 중 발견.
+- 트리거: (A) `pilot-update.sh:17` 의 `CACHE_DIR` 이 개명 전 `claude-plugins` 를 가리켜 **즉시 실패** (커밋 `19a7ff9` 개명 누락) (B) 고쳐도 `marketplaces/` 클론만 갱신하고 실제 로드 경로인 `cache/{mp}/pilot/{version}/` 은 못 건드림 — 캐시 생성은 `/plugin` 몫임이 실측 확인됨 (C) README·getting-started·릴리스 노트가 이 도구를 업그레이드 수단으로 안내 중.
+- **확정 결과 — 폐기.** 존치 3안 중 (iii) 채택: (i) 경로만 고쳐 목적 축소는 `/plugin marketplace update` 와 중복이면서 나머지 절반을 못 해 목적 미달, (ii) `cache/` + 레지스트리 확장은 전역 설치본 불가침 규칙에 저촉. `pilot/tools/pilot-update.sh` 는 **삭제됐다 (79줄)**.
+
+**관련 파일 범위**:
+- **이 feature 는 완료됐다 — `pilot/tools/pilot-update.sh` 는 더 이상 존재하지 않는다.** 후속 작업에서 이 경로를 변경 대상으로 잡지 말 것.
+- 지원 업그레이드 경로는 하나뿐: `/plugin marketplace update radiostart-plugins` → `/plugin update pilot@radiostart-plugins` → **세션 재시작** (세션 중 플러그인 리로드 불가). `/plugin` 이 없는 환경은 미지원으로 명시한다.
+- 주의: 사용자 전역 설치본·`installed_plugins.json` 은 어떤 스크립트도 직접 조작하지 않는다 (전역 설치본 불가침).
+
+### #25 doctor --schema ↔ claude plugin validate 중복 (features/25-schema-vs-claude-validate.md)
+
+- 조건: #20 완료 (`schema.py` 410줄 유지 + `validate.yml` CI 신설).
+- 트리거: Claude Code CLI 의 `claude plugin validate <path>` 와 검사 범위가 겹친다. 정비 목적이 자체 구현 축소였으므로 유지 근거 재확인 필요.
+- 실측 대조: **완전 포함 관계가 아니다.** CLI 만 잡는 것 = `plugin.json` 미지 키. 우리만 잡는 것 = SKILL `description` 바이트 상한 · version↔git tag 정합. **JSON 문법 파손은 양쪽 다 잡는다** (초기 서술이 이를 "CLI 만" 으로 적었던 것은 구표의 "미검증" 을 "미탐" 으로 오독한 결과 — 미검증을 실측으로 단정하지 말 것). 심각도 정책도 다르다 — frontmatter 부재를 CLI 는 WARNING(통과), 우리는 ERROR(CI 차단).
+- **확정 결과 — (ii) 현행 유지.** CI(`validate.yml`)는 러너에 CLI 설치·인증이 필요 없는 `doctor --schema` 단독으로 유지하고, CLI 는 릴리스 전 로컬 보조 수단으로 `pilot/README.md` 에 문서화했다.
+
+**관련 파일 범위**:
+- **이 feature 는 결론이 "현행 유지" 라 코드 변경이 없다.** `schema.py` 를 CLI 로 대체하자는 제안이 다시 올라오면 위 실측 대조를 먼저 확인할 것.
+- 게이트(유지 확인): CI 가 현재 막는 결함을 계속 막는지 (frontmatter 부재 = 차단 유지) · 자체 유지분마다 "CLI 가 못 하는 것" 근거 명시
+
+### #26 issue 단건 사이클 + slug 자동 명명 (features/26-issue-cycle-slug.md)
+
+- 조건: pilot v0.11.0 (`bac0375` — dp-skills 0.30.2 하니스 정합 기포팅 상태).
+- 트리거: `/pilot:issue` 가 경량 모드 — 사이클이 STATE 의 issue 행을 인식하지 못해 이슈명을 프로젝트로 오인 (오도성 `.agent-state.yml` 처방·doctor 오진), 폴더명 규약 부재로 유사 이슈 검색 무력화.
+- 기대결과: 8개 영역 — orchestrate-load work_mode 계약 · wrapper 4종 이슈 블록 (자기완결 인라인) · preamble P1 판정 · protect-managed issues/ 보호 · focus 분기 · issue SKILL+GUIDE 재정의+slug · doctor 오진 제거 · 테스트/문서/버전 bump (spec 은 0.13.0, 병렬 병합분 정합으로 최종 릴리스는 **v0.14.0**).
+- **포팅 원본**: `/Users/jay-p/Projects/deali-skills-plugin` HEAD (`7dc24fb` 0.30.2). 범위 특정: `git show cf54939 --stat` (0.25.0) · `git show c1febc6 --stat` (0.30.0). HEAD 파일 상태 기준 + spec 의 "이식 제외" 7항 적용.
+
+**관련 파일 범위**:
+- 변경: `pilot/tools/orchestrate-load.py` · `pilot/agents/pilot-{planner,planner-critic,generator,evaluator}.md` · `pilot/skills/context/shared/{preamble,messages,wrapper-protocol}.md` · `pilot/hooks/protect-managed.sh` · `pilot/skills/focus/SKILL.md` · `pilot/skills/issue/SKILL.md` · `pilot/skills/context/lifecycle/issues/GUIDE.md` · `pilot/tools/doctor/integrity.py` · 테스트 3종 · `pilot/docs/how-to/issue-cycle.md` (신설) · `mkdocs.yml` · `plugin.json`
+- 게이트: unittest 전체 통과 · issue smoke 4 phase · doctor 오진 0 · 사내 식별자 sweep 0건 · docs_build --check exit 0 · 분량 규율 (SKILL ≤100줄)
+- 주의: qa/verify-report-lint/인터뷰 5-bis/oq-gate/supplementary/단일 도메인 자동 채택 은 **이식 제외** (spec § 비즈니스 규칙). dp 이슈 블록의 "qa 원형 참조" 는 전문 인라인. `parse_lang_tools` 불변 (전달사항 :173 placeholder leak 은 별건). commit 은 issue 모드 예외 (계속 동작).
+### #27 context-search 섹션 단위 결정적 검색 도구 (features/27-context-search-tool.md)
+
+- 조건: `workspace/context/` 지식 파일 존재. frontmatter 없이 독립 동작 (#29 선행 불필요). 설계 SSOT = `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` § F-A.
 - 트리거: 래퍼가 진입 파일 로드 후 상세가 필요할 때 — orchestrate-load 힌트가 **권장** (soft, 필수 step 아님).
 - 기대결과: `tools/context-search.py "<질의>" [--scope] [--include] [--limit] [--format]` → 상위 N 섹션 (file·heading·line 범위·score·snippet·read_hint). 질의 3형식 (`select:`·키워드·`+필수어`), 점수표 (헤딩 10·경로 8·인용 6·헤딩 부분 5·description 4·본문 2), 결정적·읽기 전용·표준 라이브러리. wrapper-protocol §6 권장 문구 교체 + confluence.py `cmd_search` 랭커 공유.
-- 확정 결정 (2026-09-04): 코퍼스 기본 = 지식 루트만 · 한글 토큰화 = 공백·구두점 분리만 · description 가중치 = #26 머지 후 자동.
+- 확정 결정 (2026-09-04): 코퍼스 기본 = 지식 루트만 · 한글 토큰화 = 공백·구두점 분리만 · description 가중치 = #29 머지 후 자동.
 
 **관련 파일 범위**:
 - 신규: `pilot/tools/context-search.py` · `pilot/tests/tools/test_context_search.py`
 - 변경: `pilot/tools/orchestrate-load.py` (4) 직후 힌트 1줄) · `pilot/skills/context/shared/wrapper-protocol.md` §6 · `pilot/skills/context/domain/scope-exploration.md` · `pilot/tools/confluence.py` `cmd_search`
 - 게이트: 골든 질의 3개 `hit@3` · 지시 문서 순증 ≤30줄 · 래퍼 필수 step 추가 0
 
-### #25 로드 시 신선도 힌트 + 로드 정책 문서 정합 (features/25-load-freshness-hints.md)
+### #28 로드 시 신선도 힌트 + 로드 정책 문서 정합 (features/28-load-freshness-hints.md)
 
-- 조건: 지식 파일에 file:line 인용 존재 (없으면 나이만). `learned_at`(#26) 은 선택.
+- 조건: 지식 파일에 file:line 인용 존재 (없으면 나이만). `learned_at`(#29) 은 선택.
 - 트리거: orchestrate-load 가 진입 파일·경계 문서를 `files_to_read` 에 넣을 때 + doctor 실행 시.
 - 기대결과: `[신선도] {file}: 학습 N일 전 · 인용 k/n 변경 · 미존재 m` 힌트 (≤1일·변경 0 이면 생략) + doctor WARN (≥30% 또는 missing ≥1). 기준 시각 = `learned_at` > git 커밋 시각 > mtime (확정). 신호만 — 자동 수정 0. 실사례: #22 의 삭제 스크립트 3종이 `미존재` 로 노출. F-E: `GUIDE.md:51-58`·`state-schema.md` 의 "analyzed 면 진입 파일 재로드 생략" 서술을 코드 거동(항상 로드) 으로 정정 — 코드 변경 0.
 
@@ -160,20 +193,20 @@
 - 변경: `pilot/tools/orchestrate-load.py` (4)·5) 직후) · `pilot/tools/doctor/integrity.py` `check_project` (기존 mtime drift `:718-770` 옆, 별개 축) · `drift-protocol.md` 자동 신호 절 · `GUIDE.md`·`state-schema.md` (F-E)
 - 게이트: 픽스처 (변경 1·미변경 1·삭제 1) 카운트 정확 · 지연 ≤200ms · `build_load_plan` diff 0
 
-### #26 본문 frontmatter 매니페스트 (features/26-frontmatter-manifest.md)
+### #29 본문 frontmatter 매니페스트 (features/29-frontmatter-manifest.md)
 
-- 조건: #24 머지 (description 가중치 자동 활성). #25 는 `learned_at` 을 1순위 소비.
+- 조건: #27 머지 (description 가중치 자동 활성). #28 는 `learned_at` 을 1순위 소비.
 - 트리거: `/pilot:learn` 생성·재생성 시 frontmatter 기입 · orchestrate-load 진입 시 `context_manifest` 생성 · doctor 캡 검증 + `--fix` 마이그레이션 **제안**.
 - 기대결과: 본문 frontmatter 5 키 (`description` ≤150자·`domain`·`type`·`sources`·`learned_at`) · `context_manifest` = 활성 도메인 본문 앞 30줄 스캔 `- [type] path (age): description` (200 캡, 진입 파일은 `files_to_read` 유지 — 추가만, soft) · doctor WARN 3종 (부재·150자 초과·색인 200줄/25KB) + INFO 2종. 마이그레이션 = 제안 후 승인 기입 (확정). MANIFEST.md 는 frontmatter 없음.
 
 **관련 파일 범위**:
 - 변경: `pilot/skills/learn/SKILL.md` Phase 4 · `references/heuristics.md` (description 규칙) · `pilot/tools/orchestrate-load.py` (`context_manifest` + instructions 1줄) · `wrapper-protocol.md` §4 · `pilot/tools/doctor/integrity.py` `check_workspace`
 - 테스트: `test_orchestrate_load.py` 확장 · doctor 테스트 · 회귀 픽스처 `learn/expected/` 재캡처
-- 게이트: 매니페스트가 본문을 읽지 않음 (대용량 픽스처 시간) · #24 `hit@3` 저하 없음
+- 게이트: 매니페스트가 본문을 읽지 않음 (대용량 픽스처 시간) · #27 `hit@3` 저하 없음
 
-### #27 경로 트리거 — 도메인 포인터 자동 로드 (features/27-path-triggered-context.md)
+### #30 경로 트리거 — 도메인 포인터 자동 로드 (features/30-path-triggered-context.md)
 
-- 조건: #26 머지 (`sources`). **선행 실측 완료 전 구현 착수 금지** — 조건부 규칙이 래퍼 서브에이전트에서 발화하는지 (c) 실측 → 결과를 feature § 실측 기록 에 기입 → C1/C2 확정 (확정 결정: 실측 후 결정).
+- 조건: #29 머지 (`sources`). **선행 실측 완료 전 구현 착수 금지** — 조건부 규칙이 래퍼 서브에이전트에서 발화하는지 (c) 실측 → 결과를 feature § 실측 기록 에 기입 → C1/C2 확정 (확정 결정: 실측 후 결정).
 - 트리거: 에이전트가 `sources` glob 매칭 소스 파일을 Read/Edit/Write.
 - 기대결과: 포인터 3~8줄 (진입 index 1 · rules/services/enums 본문 ≤3 · 경계 ≤2 · context-search 1줄) 이 컨텍스트에 등장. C1 = `/pilot:learn` Phase 5 가 `.claude/rules/pilot-{domain}.md` (paths=sources·관리 마커·포인터) 생성 / C2 = PostToolUse 훅 `additionalContext` (턴·도메인 1회·500자·100ms). 본문 복사 0. doctor stale·경로 부재·paths↔sources 검증.
 
