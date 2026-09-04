@@ -22,9 +22,9 @@
 | #29 frontmatter manifest | 📋 등록 (2026-09-04) | learn 산출 frontmatter 5키 + orchestrate-load `context_manifest`. #27 머지 후 |
 | #30 path trigger | 📋 등록 (2026-09-04) | `.claude/rules` paths(C1) 또는 PostToolUse 훅(C2). **서브에이전트 발화 실측 선행** 후 확정 |
 
-**릴리스 상태 (2026-07-26)**: `main` = `f73cc1c` (PR #11 머지 — #23 + #20 게이트 마감).
+**릴리스 상태 (2026-09-04)**: `main` = `20c6187` (PR #29 머지 — #27 context-search + origin v0.17.0 병합 + #27~#30 재번호). v0.18.0 문서·버전 갱신 PR 진행 중, 태그 `pilot-v0.18.0` 은 `release.sh` 미실행.
 **v0.10.1 릴리스 진행 중** — 브랜치 `chore/release-v0.10.1` 에서 버전 표기 3곳(`plugin.json`·`mkdocs.yml`·`docs/index.md`) 동기화.
-이전 릴리스: 태그 `pilot-v0.10.0` (PR #9 · `677fe7c`), 문서 사이트 배포 완료.
+이전 릴리스: 태그 `pilot-v0.17.0` (PR #28 · `6104c99`), 문서 사이트 배포 완료.
 
 근거 문서 (모두 커밋됨):
 - 설계: `docs/superpowers/specs/2026-07-24-pilot-skill-consolidation-design.md`

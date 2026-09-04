@@ -17,7 +17,8 @@ pilot 의 버전별 변경 이력입니다. 버전 SSOT 는 `pilot/.claude-plugi
 
 | 버전 | 날짜 | 요약 |
 |---|---|---|
-| [**v0.17.0**](#v0170) | 2026-08-25 | autopilot 신호 파서 fail-open 봉쇄 · plan 판정 기계 소유 · reflect 재검증 |
+| [**v0.18.0**](#v0180) | 2026-09-04 | context-search 섹션 단위 결정적 검색 도구 · soft 배선 · confluence 검색 랭커 공유 |
+| [v0.17.0](#v0170) | 2026-08-25 | autopilot 신호 파서 fail-open 봉쇄 · plan 판정 기계 소유 · reflect 재검증 |
 | [v0.16.0](#v0160) | 2026-08-25 | 스킬 3종 신설 (qa · switch · ask) · learn 기재 규격 · scope-guard 경로 판정 |
 | [v0.15.0](#v0150) | 2026-08-03 | evaluator REPORT 영속화 · 훅 양립 갱신 절차 · 스킬 description 감량 |
 | [v0.14.0](#v0140) | 2026-08-01 | issue 단건 사이클 · Open Questions 게이트 · knowledge-sync · 스킬 리네임 |
@@ -33,9 +34,24 @@ pilot 의 버전별 변경 이력입니다. 버전 SSOT 는 `pilot/.claude-plugi
 
 ---
 
+## v0.18.0
+
+*2026-09-04 · **현재 버전** · [릴리스](https://github.com/radiostart/claude-plugins/releases/tag/pilot-v0.18.0)*
+
+도메인 지식을 "통째로 읽는" 대신 "필요한 섹션만 찾아 읽게" 하는 첫 단계입니다. Claude Code 소스(memdir 2단 색인 · ToolSearch 결정적 랭커 · conditional rules · Explore 계약)에서 검증된 패턴을 pilot 의 `workspace/context` 계층에 적용했습니다. 설계·근거는 계획서 `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` 가 SSOT 입니다.
+
+- **`tools/context-search.py` 신설** — 지식 파일을 H2/H3 섹션 단위로 색인하고 결정적 점수로 순위를 매기는 검색 CLI. 질의 3형식 `select:{path}[#헤딩]` · 키워드 · `+필수어`; 점수표 헤딩 정확 10 · 경로 세그먼트 8 · 인용 경로 6 · 헤딩 부분 5 · description 4 · 본문 2 (토큰당 신호별 1회, 빈도 미반영); 동점은 H2 → H3 → 서문 → 진입 파일 → 경로순. 기본 5건 · 최대 20건, `--format json|md`, 라인 범위 `read_hint`. 코퍼스 기본은 `workspace/context` (부속 문서는 `--include`), `--scope {domain}` 으로 도메인 폴더·진입 파일·경계 문서로 축소. traversal 인자 거부 + 심볼릭 링크 탈출 봉쇄, 표준 라이브러리만, 읽기 전용·결정적
+- **soft 배선** — `orchestrate-load` 가 도메인 진입 파일 로드 직후 `[검색] …` 힌트 1줄을 내고, `wrapper-protocol.md` §6 의 수동 2단계 부분 로드가 도구 호출 권장 문구로, `scope-exploration.md` 에 Explore 서브에이전트 계약(scope 경로 · thoroughness · 결론만)이 명시됩니다. 래퍼 필수 step 추가 0 · 지시 문서 순증 2줄
+- **confluence 로컬 검색 공유** — `confluence.py search` 가 같은 랭커를 지연 import 해 점수순 · 상한 5건 · 첫 일치 주변 2,000자 창을 제공하고, 랭커 로드 실패 시 기존 substring 거동으로 폴백 (출력 골격 불변)
+- **한글 토큰** — 공백·구두점 분리만, 본문 매칭은 좌측 경계만 검사해 조사를 허용 (`섹션을` ↔ `섹션`). frontmatter `description` 가중치는 #29 머지 후 자동 활성
+- 테스트 508 → 603 (context-search 87 · confluence 6 · orchestrate-load 2) · 골든 4질의 `hit@3` fixture 4/4
+
+!!! note "후속 로드맵"
+    #28 로드 시 신선도 힌트(file:line 인용 vs git/mtime) · #29 본문 frontmatter 매니페스트 · #30 경로 트리거(`.claude/rules` paths 또는 PostToolUse 훅 — 서브에이전트 발화 실측 선행). 원격에 이미 있는 doctor 인용 drift 검사(v0.16.0)와의 통합은 #28 착수 시 결정합니다.
+
 ## v0.17.0
 
-*2026-08-25 · **현재 버전** · [릴리스](https://github.com/radiostart/claude-plugins/releases/tag/pilot-v0.17.0)*
+*2026-08-25 · [릴리스](https://github.com/radiostart/claude-plugins/releases/tag/pilot-v0.17.0)*
 
 `/pilot:autopilot` 의 전이 결정기(`tools/auto_pilot.py`)에 대한 HOTL 결함 수리 릴리스입니다. 파서에 실입력을 넣은 1차 검토와 독립 에이전트의 적대적(red-team) 검토로 확인된 fail-open 경로를 전부 정지(fail-closed)로 전환했습니다.
 
