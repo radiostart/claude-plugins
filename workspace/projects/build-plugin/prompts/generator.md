@@ -47,6 +47,10 @@
 | 문서 정합 | `pilot/docs/reference/index.md` · `pilot/docs/how-to/doctor-migration.md` · `pilot/docs/tutorial/getting-started.md` | #20 삭제·이관 반영 — 도구 목록 정정·how-to 현행화·Troubleshooting 무효 항목 삭제, md 만 수정, 파일명 보존 (#21) |
 | context 재학습 | `workspace/context/pilot/index.md` · `lifecycle.md` | 삭제 스크립트 3건 서술 해소 — **직접 Edit 금지**, `/pilot:learn` 재실행 경로 (#22) |
 | doctor 파서 오탐 | `pilot/tools/doctor/integrity.py` (`check_conventions_paths`) · `pilot/tools/doctor/_common.py` (`count_real_features`) | (A) config 표 플레이스홀더를 실선언으로 오탐 (B) `.plan.critic.md` 를 feature 로 계수 — 둘 다 파서 수정 (#23) |
+| context-search 도구 | `pilot/tools/context-search.py` (신규) · `pilot/tools/orchestrate-load.py` (힌트 1줄) · `pilot/skills/context/shared/wrapper-protocol.md` §6 · `pilot/skills/context/domain/scope-exploration.md` · `pilot/tools/confluence.py` `cmd_search` | 섹션 단위 결정적 랭커 — 질의 3형식·점수표·read_hint. 표준 라이브러리만, 읽기 전용, soft 배선 (#24) |
+| 신선도 힌트 | `pilot/tools/freshness.py` (신규) · `pilot/tools/orchestrate-load.py` (4)·5) 직후) · `pilot/tools/doctor/integrity.py` `check_project` · `drift-protocol.md` · `GUIDE.md`·`state-schema.md` (F-E 문서 정정) | file:line 인용 파싱 → `learned_at`>git>mtime 비교 → `[신선도]` 힌트·doctor WARN. 신호만, 자동 수정 금지 (#25) |
+| frontmatter 매니페스트 | `pilot/skills/learn/SKILL.md` Phase 4 · `references/heuristics.md` · `pilot/tools/orchestrate-load.py` (`context_manifest`) · `wrapper-protocol.md` §4 · `pilot/tools/doctor/integrity.py` `check_workspace` | 본문 frontmatter 5 키 + 30줄 스캔 매니페스트(200 캡) + 캡 WARN 3종. 마이그레이션은 `--fix` 제안 후 승인 (#26) |
+| 경로 트리거 | `pilot/skills/learn/SKILL.md` Phase 5 · `pilot/tools/doctor/integrity.py` · (C2 시) `pilot/hooks/context-pointer.sh` + `hooks.json` PostToolUse | `.claude/rules/pilot-{domain}.md` 포인터 파일(C1) 또는 훅 additionalContext(C2). **실측 후 C1/C2 확정 전 구현 금지** (#27) |
 
 ---
 
