@@ -1,0 +1,35 @@
+/* ===========================================================================
+   pilot 매뉴얼 — 커스텀 스타일
+   =========================================================================== */
+
+/* ── 좌측 내비게이션: 섹션 그룹 제목 vs 페이지 링크 구분 ──────────────────────
+   Material 은 그룹 제목(How-to 의 '개발 워크플로우' 등)을 <label>, 실제 페이지
+   링크를 <a> 로 렌더하지만 기본 스타일이 거의 같아 클릭 가능 여부·계층이
+   모호하다. 그룹 제목을 작은 대문자형 헤더로, 페이지 링크는 들여써 구분한다. */
+
+/* 그룹 제목 — 클릭 가능한 링크가 아니라 '분류 헤더' 임을 시각화 */
+.md-nav__item--section > label.md-nav__link {
+  margin: 1rem 0 0.15rem;
+  padding-top: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--md-default-fg-color--light);
+  cursor: default;
+}
+
+/* 그룹 제목은 hover 해도 링크처럼 강조되지 않는다 */
+.md-nav__item--section > label.md-nav__link:hover {
+  color: var(--md-default-fg-color--light);
+}
+
+/* 그룹 제목의 펼침/접힘 아이콘 숨김 (그룹은 항상 펼쳐진 상태) */
+.md-nav__item--section > label.md-nav__link > .md-nav__icon {
+  display: none;
+}
+
+/* 그룹에 속한 페이지 링크 — 한 단계 들여써 계층을 표현 */
+.md-nav .md-nav[data-md-level="2"] > .md-nav__list > .md-nav__item > .md-nav__link {
+  padding-left: 0.75rem;
+}
