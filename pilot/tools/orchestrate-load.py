@@ -468,6 +468,7 @@ def build_load_plan(
     #    MANIFEST 의 `## 도메인 분류` 표에서 해당 domain 의 entry 파일 경로 추출.
     #    플러그인은 MANIFEST 만 알면 된다 — workspace/context/ 하위의 폴더 구조·
     #    파일명 컨벤션은 워크스페이스가 자유롭게 결정한다 (플러그인은 강제하지 않음).
+    #    진입 파일 로드 직후 context-search 권장 힌트 1줄 (#24, soft — instructions 불변).
     if domain:
         entries = parse_manifest_domain_files(manifest_abs, domain)
         if entries:
@@ -475,6 +476,10 @@ def build_load_plan(
                 entry_abs = workspace / "context" / rel
                 if add_if_exists(entry_abs, f"workspace/context/{rel}"):
                     hints.append(f"MANIFEST 도메인 진입 파일 로드: context/{rel}")
+            hints.append(
+                f"[검색] 본문 상세는 python3 {plugin_root()}/tools/context-search.py "
+                f'"<키워드>" --scope {domain} 로 섹션 조회 후 라인 범위 Read'
+            )
         else:
             hints.append(
                 f"도메인 '{domain}' 의 진입 파일이 MANIFEST 에 등록되지 않음 — "

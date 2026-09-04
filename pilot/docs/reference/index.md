@@ -22,7 +22,7 @@
 
     ---
 
-    `pilot/tools/*.py` 의 보조 CLI · 모듈 — `auto_pilot`, `confluence`, `docs_build`, `doctor`, `orchestrate-load`, `plan-validate`, `regen-verify`, `slack-notify`.
+    `pilot/tools/*.py` 의 보조 CLI · 모듈 — `auto_pilot`, `confluence`, `context-search`, `docs_build`, `doctor`, `orchestrate-load`, `plan-validate`, `regen-verify`, `slack-notify`.
 
 -   :material-fingerprint:{ .lg .middle } __[Identity SSOT](identity.md)__
 

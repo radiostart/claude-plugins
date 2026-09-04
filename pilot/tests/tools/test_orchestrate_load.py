@@ -573,6 +573,40 @@ class BuildLoadPlanIntegration(unittest.TestCase):
             # tdd=true 였지만 mode 가 우선이므로 경고 힌트 포함
             self.assertTrue(any("characterize" in h for h in hints))
 
+    def test_domain_entry_adds_context_search_hint(self):
+        """MANIFEST 도메인 진입 파일 로드 직후 context-search 권장 힌트 1줄 (#24)."""
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            (ws / "context").mkdir(parents=True)
+            (ws / "context" / "MANIFEST.md").write_text(
+                "## 도메인 분류\n\n"
+                "| 도메인 | 진입 파일 | 설명 |\n"
+                "| --- | --- | --- |\n"
+                "| orders | `orders.md` | 주문 |\n",
+                encoding="utf-8",
+            )
+            (ws / "context" / "orders.md").write_text("# orders\n", encoding="utf-8")
+            (ws / "projects" / "P").mkdir(parents=True)
+
+            _, hints, _ = m.build_load_plan(
+                workspace=ws, project="P",
+                domain="orders", tdd=False, phase="planner",
+            )
+            search_hints = [h for h in hints if "context-search.py" in h]
+            self.assertEqual(len(search_hints), 1)
+            self.assertIn("--scope orders", search_hints[0])
+
+    def test_no_domain_no_context_search_hint(self):
+        """domain=None (도메인 판정 실패) 이면 진입 파일 로드 자체가 없으므로 힌트도 없다."""
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            (ws / "projects" / "P").mkdir(parents=True)
+            _, hints, _ = m.build_load_plan(
+                workspace=ws, project="P",
+                domain=None, tdd=False, phase="planner",
+            )
+            self.assertFalse(any("context-search.py" in h for h in hints))
+
 
 class HasPathTraversal(unittest.TestCase):
     def test_plain_identifier_is_safe(self):

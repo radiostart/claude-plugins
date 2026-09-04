@@ -29,14 +29,14 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {phase} --worksp
 
 `domain: null` 이면 사용자에게 도메인을 질의하고 확정한 뒤, 해당 `scope/{domain}.md`·`rules/{domain}.md` 를 수동 Read 한다.
 
-## 6. 상태·유형 카테고리 부분 로드
+## 6. 본문 부분 로드 (권장 — 필수 step 아님)
 
-상태값 변경이 예상될 때만 (전체 로드 금지, 2 단계):
+진입 파일 로드 후 특정 주제(feature 키워드·클래스명·소스 경로)의 상세가 필요하면 본문 파일 전체 Read·무차별 Grep 대신 섹션을 좁힌다:
 
-1. 팀 MANIFEST 가 선언한 상태 카테고리(예: `enums`)의 목차/인덱스 파일 상단만 Read.
-2. 목차에서 관련 섹션의 라인 범위를 확인한 뒤 그 섹션만 부분 Read.
+1. `python3 ${CLAUDE_PLUGIN_ROOT}/tools/context-search.py "<키워드>" --scope {domain}` → 상위 섹션의 `file · heading · 라인 범위 · read_hint` (`select:{path}#{헤딩}` 직접 지정 · `+필수어` 사전필터 · `--include features/ docs/` 부속 문서).
+2. 그중 1~2개를 `read_hint` 대로 `Read offset/limit` 부분 Read. 상태값(`enums` 등) 확인도 같은 절차.
 
-팀이 목차 파일을 운영하지 않으면 이 단계를 생략한다.
+0건이면 도구가 `--scope`·`+필수어` 제거 등 상태 안내를 낸다 — 실패가 아니다. 도구 부재 시 진입 파일 목차 → 라인 범위 수동 2단계로 대체.
 
 ## 7. 공통 참조
 

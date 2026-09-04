@@ -7,8 +7,10 @@ planner / generator / evaluator 래퍼가 코드베이스를 탐색할 때 따�
 ## 공통 원칙
 
 1. 파일 탐색·참조는 **1단계에서 로드한 scope 내용** (각 에이전트의 `prompts/*.md` 선별본 또는 scope 원본 fallback) 의 **경로 범위 내에서만** 수행한다 (Read / Grep / Glob).
-2. 내장 `Explore` 서브에이전트를 호출할 때는 **반드시** prompt 에 scope 파일의 대상 경로 목록을 명시한다. scope 없이 전체 codebase 스캔 금지.
+2. 내장 `Explore` 서브에이전트를 호출할 때는 prompt 에 **(a) scope 경로 목록 (b) thoroughness `quick` / `medium` / `very thorough` (c) "결론만 반환 — 파일 덤프 금지"** 를 명시한다. scope 없이 전체 codebase 스캔 금지.
+2-bis. Explore 를 쓰지 않는 경우 — 경로를 알면 Read · 클래스/정의 1개는 Grep/Glob · 2~3 파일이면 직접 Read.
 3. 범위 밖 무차별 탐색은 이유를 불문하고 금지.
+4. `workspace/context/` 지식 파일 본문은 Grep 대신 `context-search.py` (wrapper-protocol §6) 로 섹션을 좁힌 뒤 라인 범위 Read.
 
 ---
 
