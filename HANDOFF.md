@@ -26,12 +26,13 @@ pytest pilot/tests/ -q
 
 ## 현재 상태
 
-**v0.17.0** (tag `pilot-v0.17.0` — v0.16.0 은 태그 없이 본 릴리스에 롤업) — 스킬 20 · 에이전트 5 · 훅 6 · 도구 13 · 테스트 508.
+**v0.18.0** (tag `pilot-v0.18.0` 은 `release.sh` 로 생성 예정 — 이전 태그 `pilot-v0.17.0`) — 스킬 20 · 에이전트 5 · 훅 6 · 도구 14 · 테스트 603.
 
-사내 원본 플러그인에서 파생된 범용판이며, **범용화 리팩터는 완료**됐다 (사내 식별자 sweep 0건). 현재는 원본의 미포팅 기능을 선별 흡수하며 자체 dogfooding(`workspace/projects/build-plugin/`)으로 개발한다 — 미완 항목은 `#22 context 드리프트 재학습`.
+사내 원본 플러그인에서 파생된 범용판이며, **범용화 리팩터는 완료**됐다 (사내 식별자 sweep 0건). 현재는 원본의 미포팅 기능을 선별 흡수하며 자체 dogfooding(`workspace/projects/build-plugin/`)으로 개발한다 — 미완 항목은 `#22 context 드리프트 재학습` 과 도메인 지식 검색·계층 탐색 로드맵 `#28 신선도 힌트 · #29 frontmatter 매니페스트 · #30 경로 트리거` (계획서 `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md`).
 
 버전별 요약은 매뉴얼의 [릴리스 노트](https://radiostart.github.io/claude-plugins/release-notes/)(소스: `pilot/docs/release-notes.md`), 커밋 단위 원본은 [GitHub Releases](https://github.com/radiostart/claude-plugins/releases)가 SSOT.
 
+- **v0.18.0** — `tools/context-search.py` 신설 (H2/H3 섹션 단위 결정적 랭커 · 질의 3형식 · 라인 범위 read_hint) · soft 배선 (orchestrate-load 힌트 1줄 · wrapper-protocol §6 · Explore 계약) · confluence 로컬 검색 랭커 공유 · features #27~#30 등록 (원격 #24~#26 선점으로 재번호).
 - **v0.17.0** — autopilot 신호 파서 fail-open 9경로 봉쇄 (적대적 검토 기반) · plan 판정 기계 소유 (`--plan-file`·`--state-file`, `--plan-valid` 폐지) · reflect 후 plan 재검증 · 정지 사유 `agent-error` 정밀화.
 - **v0.16.0** — 스킬 3종 신설 (`qa` Jira 결함 처리 phase · `switch` 작업 전환 · `ask` 구현 질의) · learn 기재 규격 (`extraction.md` — 층위 L1/L2/L3·Routes 선별 기재·인용 규격) · doctor 인용 drift 검사 · scope-guard 경로 판정·gitignore 규약 · `plan-target.md` SSOT · state schema **v1.3** (`phase`·`qa_started_at`).
 - **v0.15.0** — evaluator REPORT 영속화 (`features/NN-*.eval.md`) · critic·autopilot·focus 훅 양립 개정 · description 감량.

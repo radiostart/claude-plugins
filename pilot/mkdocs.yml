@@ -126,4 +126,4 @@ nav:
   - Releases: release-notes.md
 
 extra:
-  version: "0.17.0"  # 릴리스마다 .claude-plugin/plugin.json 의 version 과 맞춘다
+  version: "0.18.0"  # 릴리스마다 .claude-plugin/plugin.json 의 version 과 맞춘다

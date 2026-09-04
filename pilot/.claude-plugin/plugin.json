@@ -1,6 +1,6 @@
 {
   "name": "pilot",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "Domain-knowledge-driven agent workflow plugin for complex projects (pilot-planner → [pilot-planner-critic] → pilot-generator → pilot-evaluator) + pilot-code-review for pre-PR code review. /pilot:autopilot provides opt-in supervised autonomy for a single feature.",
   "author": {
     "name": "Jay-P",
