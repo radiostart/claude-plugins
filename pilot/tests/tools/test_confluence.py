@@ -8,12 +8,16 @@ tools/confluence.py 의 HTML → Markdown 변환 로직 단위 테스트.
     - split_sections (빈 H1 그룹 헤딩 보존)
     - extract_page_id (URL 파싱)
     - html_to_md 통합
+    - search_docs (context-search 랭커 공유 · substring 폴백 · match_pos, #27)
 
 실행:
     python3 tests/tools/test_confluence.py
 """
 
+import contextlib
 import importlib.util
+import io
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -194,6 +198,89 @@ class HtmlToMdIntegration(unittest.TestCase):
         out = c.html_to_md(soup)
         self.assertNotIn(".x{}", out)
         self.assertIn("text", out)
+
+
+# ---------------------------------------------------------------------------
+# search_docs — context-search 랭커 공유 (D4/C4, #27)
+# ---------------------------------------------------------------------------
+def _write_md(tmp_dir: str, name: str, text: str) -> None:
+    (Path(tmp_dir) / name).write_text(text, encoding="utf-8")
+
+
+class SearchDocsRanked(unittest.TestCase):
+    """랭커 로드 성공 경로 — 점수순 정렬·상한·match_pos."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.ranker = c._load_context_search()
+        assert cls.ranker is not None, "context-search.py 랭커 로드 실패 — 테스트 전제 조건"
+
+    def test_heading_match_ranks_before_body_only_match(self):
+        tmp = tempfile.mkdtemp()
+        _write_md(
+            tmp, "a.md",
+            "# A\n\n"
+            "## Heading keyword\n\nbody without the term.\n\n"
+            "## Other section\n\nbody mentions keyword only here.\n",
+        )
+        md_files = sorted(Path(tmp).glob("*.md"))
+        results, total = c.search_docs(md_files, "keyword", limit=5, ranker=self.ranker)
+        self.assertEqual(total, 2)
+        self.assertEqual(results[0]["heading"], "## Heading keyword")
+
+    def test_limit_caps_results_but_total_reflects_all_matches(self):
+        tmp = tempfile.mkdtemp()
+        body = "\n".join(f"## Section {i} keyword\n\nbody keyword text {i}.\n" for i in range(7))
+        _write_md(tmp, "many.md", body)
+        md_files = sorted(Path(tmp).glob("*.md"))
+        results, total = c.search_docs(md_files, "keyword", limit=5, ranker=self.ranker)
+        self.assertEqual(total, 7)
+        self.assertEqual(len(results), 5)
+
+    def test_match_pos_zero_when_signal_is_not_literal_text(self):
+        # 점수는 파일명(path_tokens="doctor")에서만 나오고 헤딩·본문 텍스트에는
+        # "doctor" 가 literal 하게 없음 — match_pos 는 0 으로 폴백(C4-2).
+        tmp = tempfile.mkdtemp()
+        _write_md(tmp, "doctor.md", "## Other Title\n\nno mention of that word here either.\n")
+        md_files = sorted(Path(tmp).glob("*.md"))
+        results, total = c.search_docs(md_files, "doctor", limit=5, ranker=self.ranker)
+        self.assertEqual(total, 1)
+        self.assertEqual(results[0]["match_pos"], 0)
+
+    def test_match_pos_finds_first_boundary_match_in_body(self):
+        tmp = tempfile.mkdtemp()
+        _write_md(tmp, "h.md", "## Something\n\nintro noise keyword appears here in body.\n")
+        md_files = sorted(Path(tmp).glob("*.md"))
+        results, total = c.search_docs(md_files, "keyword", limit=5, ranker=self.ranker)
+        self.assertEqual(total, 1)
+        pos = results[0]["match_pos"]
+        self.assertTrue(results[0]["content"].lower()[pos:].startswith("keyword"))
+
+
+class SearchDocsFallback(unittest.TestCase):
+    """substring 폴백 경로 (C4-1) — 로드 실패는 WARN 1줄, 토큰 0개는 무음."""
+
+    def test_ranker_none_falls_back_to_substring_with_warn(self):
+        tmp = tempfile.mkdtemp()
+        _write_md(tmp, "a.md", "## Heading\n\nbody keyword text.\n")
+        md_files = sorted(Path(tmp).glob("*.md"))
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            results, total = c.search_docs(md_files, "keyword", limit=5, ranker=None)
+        self.assertEqual(total, 1)
+        self.assertIn("[WARN]", err.getvalue())
+        self.assertIn("context-search", err.getvalue())
+
+    def test_single_char_query_falls_back_silently(self):
+        tmp = tempfile.mkdtemp()
+        _write_md(tmp, "a.md", "## Heading\n\nbody keyword text.\n")
+        md_files = sorted(Path(tmp).glob("*.md"))
+        ranker = c._load_context_search()
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            results, total = c.search_docs(md_files, "k", limit=5, ranker=ranker)
+        self.assertEqual(err.getvalue(), "")  # 로드는 성공했으므로 WARN 없음
+        self.assertEqual(total, 1)  # "k" 는 "keyword" 의 substring
 
 
 if __name__ == "__main__":

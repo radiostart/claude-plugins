@@ -26,6 +26,7 @@ import os
 import re
 import json
 import base64
+import importlib.util
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -764,9 +765,113 @@ def cmd_fetch(arg: str, force: bool = False):
 # Search mode
 # ---------------------------------------------------------------------------
 
+def _load_context_search():
+    """tools/context-search.py 를 importlib 로 지연 로드(D4) — `fetch`/`all` 경로는
+    이 함수를 아예 안 타므로 무영향. 실패 시 None(호출부가 substring 폴백, C4-1)."""
+    try:
+        path = Path(__file__).resolve().parent / "context-search.py"
+        spec = importlib.util.spec_from_file_location("_confluence_context_search", path)
+        if spec is None or spec.loader is None:
+            return None
+        module = importlib.util.module_from_spec(spec)
+        # Python 3.13: exec 전에 sys.modules 등록 — context-search.py 의 @dataclass
+        # (Query/Section) 가 __module__ 을 해석하지 못해 깨지는 문제 방지.
+        sys.modules["_confluence_context_search"] = module
+        spec.loader.exec_module(module)
+        return module
+    except (OSError, ImportError, AttributeError):
+        return None
+
+
+def search_docs(
+    md_files: list, keyword: str, limit: int = 5, ranker=None
+) -> "tuple[list[dict], int]":
+    """섹션 단위 검색 순수 함수(D4). 분할 규칙은 docs/ 기존 규약(H1/H2, `(서문)`)
+    그대로 — 랭커는 채점만 공유한다.
+
+    `ranker` 가 있고 질의가 `select:` 가 아니며 토큰이 1개 이상이면 랭커 채점
+    (점수순 정렬). 그 외(로드 실패 · select: · 토큰 0개)에는 기존 substring
+    검색으로 조용히 폴백한다(C4-1) — 단 `ranker is None` 인 경우에만 stderr
+    `[WARN]` 을 낸다.
+
+    반환: (상위 `limit` 개 결과, 총 후보 수). 결과 dict = {"file", "heading",
+    "content", "match_pos"}. `match_pos` 는 스니펫 창의 시작 기준점(C4-2).
+    """
+    use_ranker = ranker is not None
+    query = None
+    if use_ranker:
+        query = ranker.parse_query(keyword)
+        if query.kind == "select" or (not query.required and not query.optional):
+            use_ranker = False  # C4-1 ② — 무음 폴백(1글자·불용어만 등)
+    else:
+        print(
+            "[WARN] context-search 랭커 로드 실패 — 무순위 substring 검색으로 대체",
+            file=sys.stderr,
+        )
+
+    kw_lower = keyword.lower()
+    candidates: list[dict] = []
+    order = 0
+
+    for md_file in md_files:
+        text = md_file.read_text(encoding="utf-8")
+        raw_sections = re.split(r"\n(?=#{1,2} )", text)
+        for section in raw_sections:
+            heading_match = re.match(r"(#{1,3} .+)", section)
+            heading = heading_match.group(1).strip() if heading_match else "(서문)"
+            body = section[heading_match.end():].strip() if heading_match else section.strip()
+
+            if use_ranker:
+                citation_tokens, citation_paths = ranker.extract_citations(body)
+                score, matched = ranker.score_text(
+                    query,
+                    heading=heading,
+                    body=body,
+                    path_tokens=ranker.path_tokens(md_file.name),
+                    citation_tokens=citation_tokens,
+                    citation_paths=citation_paths,
+                )
+                if score <= 0:
+                    continue
+                section_lc = section.lower()
+                pos = None
+                for t in matched:
+                    if not t:
+                        continue
+                    mo = ranker.boundary_search(t, section_lc)
+                    if mo is not None and (pos is None or mo.start() < pos):
+                        pos = mo.start()
+                match_pos = pos if pos is not None else 0
+            else:
+                if kw_lower not in section.lower():
+                    continue
+                score = None
+                match_pos = section.lower().find(kw_lower)
+
+            candidates.append({
+                "file": md_file.name,
+                "heading": heading,
+                "content": section.strip(),
+                "match_pos": match_pos,
+                "_score": score if score is not None else 0,
+                "_order": order,
+            })
+            order += 1
+
+    if use_ranker:
+        candidates.sort(key=lambda c: (-c["_score"], c["file"], c["_order"]))
+
+    total = len(candidates)
+    top = candidates[:limit]
+    for c in top:
+        c.pop("_score", None)
+        c.pop("_order", None)
+    return top, total
+
+
 def cmd_search(keyword: str):
     project = get_active_project()
-    
+
     s_dir = docs_dir(project)
 
     if not s_dir.exists():
@@ -778,34 +883,26 @@ def cmd_search(keyword: str):
         print("저장된 docs 파일이 없습니다.")
         return
 
-    kw_lower = keyword.lower()
-    results = []
-
-    for md_file in md_files:
-        text = md_file.read_text(encoding="utf-8")
-        # H2 기준 섹션 분할
-        raw_sections = re.split(r"\n(?=#{1,2} )", text)
-        for section in raw_sections:
-            if kw_lower in section.lower():
-                heading_match = re.match(r"(#{1,3} .+)", section)
-                heading = heading_match.group(1) if heading_match else "(서문)"
-                results.append({
-                    "file": md_file.name,
-                    "heading": heading.strip(),
-                    "content": section.strip(),
-                })
+    ranker = _load_context_search()
+    results, total = search_docs(md_files, keyword, limit=5, ranker=ranker)
 
     if not results:
         print(f"'{keyword}' 검색 결과 없음")
         return
 
-    print(f"'{keyword}' 검색 결과: {len(results)}개 섹션\n")
+    print(f"'{keyword}' 검색 결과: {total}개 섹션\n")
     for r in results:
         print(f"### [{r['file']}] {r['heading']}")
-        print(r["content"][:2000])
-        if len(r["content"]) > 2000:
+        content = r["content"]
+        start = max(0, r["match_pos"] - 200)
+        window = content[start : start + 2000]
+        print(window)
+        if start + len(window) < len(content):
             print("... (이하 생략)")
         print()
+
+    if total > len(results):
+        print(f"… 외 {total - len(results)}건 — 검색어를 좁히거나 +필수어 를 쓰세요")
 
 
 # ---------------------------------------------------------------------------

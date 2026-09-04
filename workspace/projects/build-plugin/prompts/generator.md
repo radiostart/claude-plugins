@@ -50,6 +50,10 @@
 | 업그레이드 도구 | ~~`pilot/tools/pilot-update.sh`~~ (삭제 완료) · `pilot/README.md` · `pilot/docs/tutorial/getting-started.md` | 폐기 확정 — 스크립트 삭제 + 안내를 `/plugin` 2단계 + 세션 재시작으로 일원화. **변경 대상으로 잡지 말 것** (#24) |
 | 스키마 검사 중복 | (코드 변경 없음) | 결론 **현행 유지** — `schema.py` 와 CLI 는 서로 대체하지 않는다. CI 는 `doctor --schema` 단독 유지 (#25) |
 | issue 사이클 + slug | `pilot/tools/orchestrate-load.py` · `pilot/agents/pilot-*.md` 4종 · `preamble.md`·`messages.md`·`wrapper-protocol.md` · `pilot/hooks/protect-managed.sh` · `pilot/skills/{focus,issue}/SKILL.md` · `issues/GUIDE.md` · `pilot/tools/doctor/integrity.py` · 테스트 3종 · `docs/how-to/issue-cycle.md` | dp-skills 0.25.0/0.30.0 포팅 — work_mode 계약·이슈 블록 자기완결 인라인·slug 규약. qa/lint/인터뷰/oq-gate 이식 제외, 사내 식별자 0건 (#26) |
+| context-search 도구 | `pilot/tools/context-search.py` (신규) · `pilot/tools/orchestrate-load.py` (힌트 1줄) · `pilot/skills/context/shared/wrapper-protocol.md` §6 · `pilot/skills/context/domain/scope-exploration.md` · `pilot/tools/confluence.py` `cmd_search` | 섹션 단위 결정적 랭커 — 질의 3형식·점수표·read_hint. 표준 라이브러리만, 읽기 전용, soft 배선 (#27) |
+| 신선도 힌트 | `pilot/tools/freshness.py` (신규) · `pilot/tools/orchestrate-load.py` (4)·5) 직후) · `pilot/tools/doctor/integrity.py` `check_project` · `drift-protocol.md` · `GUIDE.md`·`state-schema.md` (F-E 문서 정정) | file:line 인용 파싱 → `learned_at`>git>mtime 비교 → `[신선도]` 힌트·doctor WARN. 신호만, 자동 수정 금지 (#28) |
+| frontmatter 매니페스트 | `pilot/skills/learn/SKILL.md` Phase 4 · `references/heuristics.md` · `pilot/tools/orchestrate-load.py` (`context_manifest`) · `wrapper-protocol.md` §4 · `pilot/tools/doctor/integrity.py` `check_workspace` | 본문 frontmatter 5 키 + 30줄 스캔 매니페스트(200 캡) + 캡 WARN 3종. 마이그레이션은 `--fix` 제안 후 승인 (#29) |
+| 경로 트리거 | `pilot/skills/learn/SKILL.md` Phase 5 · `pilot/tools/doctor/integrity.py` · (C2 시) `pilot/hooks/context-pointer.sh` + `hooks.json` PostToolUse | `.claude/rules/pilot-{domain}.md` 포인터 파일(C1) 또는 훅 additionalContext(C2). **실측 후 C1/C2 확정 전 구현 금지** (#30) |
 
 ---
 

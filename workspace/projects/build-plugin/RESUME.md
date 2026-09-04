@@ -17,6 +17,10 @@
 | #23 파서 오탐 | ✅ **READY · PR #11 머지 완료** | 오탐 2건 소멸 — doctor `10 PASS · 1 WARN · 0 ERROR` · `features=24` 복구. `_common.py:is_feature_spec_file` (파생 판정 SSOT) + `integrity.py:_extract_declared_path` (구조 기반 4단 판정) 신설. 테스트 292건 OK (신규 8) |
 | #24 update 도구 | ✅ **READY** | D1 = **(iii) 폐기** 이행 — `pilot-update.sh` 삭제 + README·getting-started·release-and-upgrade 안내 정정. `README.md:35` 설치 명령 id 오류(**신규 설치가 그대로 실패**하던 실사용자 버그)도 해소. v0.10.0 릴리스 노트 `## 업그레이드` 블록도 사용자 승인 후 정정 (백업→교체→diff 검증 이행) |
 | #25 스키마 중복 | ✅ **READY (코드 변경 0)** | 결론 **(ii) 현행 유지**. `--strict` 로 명세의 유지 근거 하나는 죽었으나 **어느 쪽도 상위 집합이 아님** — CLI 미탐 2종(SKILL description 바이트 상한·version↔git tag)이 `schema.py` 존치 근거. CLI 는 릴리스 전 로컬 보조 검사로 `README.md` 에 문서화. 대조표 = `features/25-*.md` § 재실측 |
+| #27 context-search | ✅ **READY (2026-09-04, PR #29)** | 섹션 단위 결정적 검색 도구. `features/27-context-search-tool.plan.md` validate 통과 · D1~D8 사용자 승인 · critic 진행. 설계 SSOT `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` § F-A |
+| #28 freshness | 📋 등록 (2026-09-04) | 로드 시 신선도 힌트(file:line 인용 vs git/mtime) + GUIDE·state-schema analyzed 서술 정정(F-E). #27 다음 |
+| #29 frontmatter manifest | 📋 등록 (2026-09-04) | learn 산출 frontmatter 5키 + orchestrate-load `context_manifest`. #27 머지 후 |
+| #30 path trigger | 📋 등록 (2026-09-04) | `.claude/rules` paths(C1) 또는 PostToolUse 훅(C2). **서브에이전트 발화 실측 선행** 후 확정 |
 
 **릴리스 상태 (2026-07-26)**: `main` = `f73cc1c` (PR #11 머지 — #23 + #20 게이트 마감).
 **v0.10.1 릴리스 진행 중** — 브랜치 `chore/release-v0.10.1` 에서 버전 표기 3곳(`plugin.json`·`mkdocs.yml`·`docs/index.md`) 동기화.
