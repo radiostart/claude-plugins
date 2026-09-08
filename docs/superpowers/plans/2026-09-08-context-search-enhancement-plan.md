@@ -5,7 +5,7 @@
 - 대상: `pilot/tools/context-search.py`. 지시서의 `dp-skills` 경로, 함수명 `parse_frontmatter_description`·`_word_boundary_hit`, 문서 `docs/reference/tools/context-search.md` 는 이 저장소에 없다. 실제 이름은 `split_sections` 안의 `_DESCRIPTION_RE`, `boundary_search` 이고 reference 문서는 `docs_build.py` 가 모듈 docstring 에서 생성하는 gitignore 대상이다. 동일 엔진으로 가정하고 pilot 경로 기준으로 쓴다.
 - 기준선: `python3 -m unittest pilot/tests/tools/test_context_search.py` 87/87 · `discover -s pilot/tests/tools` 603/603 · Python 3.11 (CI 3.12)
 - 설계 SSOT: `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` · features #27~#30 · `27-context-search-tool.plan.md` D1~D8 · critic C1~C8
-- 상태: **검토 완료 · 적용 전 (사용자 확인 대기)**
+- 상태: **적용 완료** (2026-09-08 — 사용자 결정 E1~E11 전부 승인 · pilot 우선 검증) → § 4 적용 기록
 
 ## 0. 한 줄 결론
 
@@ -239,3 +239,39 @@
 4. E2 결합어 가중치 2 (지시서 3).
 5. Phase 4 의 `/pilot:ask` 포함 여부와 release-notes 버전.
 6. dp-skills 가 실제 대상이면 경로 치환만으로 같은 플랜을 적용할지, 이 저장소 pilot 에 먼저 적용해 검증할지.
+
+## 4. 적용 기록 (2026-09-08)
+
+브랜치 `claude/dp-skills-context-search-enhance-qp02xo`, Phase 별 커밋 4건. 코드 변경은 `pilot/tools/context-search.py` 한 파일에 집중되고 `confluence.py` 는 `score_text` 시그니처 호환으로 무변경.
+
+| 커밋 | Phase | 내용 |
+|---|---|---|
+| `770cc3e` | 1 | `select:` 다중 대상 · `--inject`/`--max-bytes` · `--format manifest` (테스트 +25) |
+| `7aaff08` | 2 | 한글 결합어 양방향 E2~E5 · 골든 Q5·Q6 (+22) |
+| `b2dfe7b` | 3 | frontmatter 파서 E6 · `sources` glob 보너스 E7 (+15) |
+| `cf5f8b8` | 4 | wrapper-protocol §6 · `/pilot:ask` · orchestrate-load 힌트 · docstring · release-notes · select 경로 정규화 (+1) |
+
+### 게이트 실측
+
+| G | 결과 |
+|---|---|
+| G1 | `python3 -m unittest discover -s pilot/tests/tools` 603 → 666 통과. context-search 87 → 150 (+63) |
+| G2 | 골든 hit@3 6/6. Q1~Q4 md/json 이 Phase 0 스냅샷과 바이트 동일. Q5 `도메인 진입파일 자동 로드`: 도입 전 정답 top-3 이탈(`진입파일` 히트 0, 1위 `lifecycle.md /pilot:project` 6점) → 도입 후 `index.md ## Cluster 진입` 1위 7점. Q6 `doctor 정합성검사`: 1위 유지, 18 → 20점 |
+| G3 | 라이브 코퍼스 같은 질의 2회 `--format json` diff 0. 1,000섹션 성능 테스트 < 1s 통과 |
+| G4 | 신규 플래그 미사용 시 fixture 6질의 · 라이브 3질의(`select:` 포함) md/json 바이트 동일 |
+| G5 | `docs_build.py --check` 통과 (reference 40 파일 재생성, gitignore 대상). doctor 4 PASS · 3 WARN · 1 ERROR — ERROR `STATE.md 없음` 은 변경 전 커밋(`37ab524`) 에서도 동일(워크스페이스 로컬 파일 부재, 본 변경과 무관). WARN 3건은 인용 stale 신호: 이번에 고친 `wrapper-protocol.md`·`orchestrate-load.py` 를 `context/pilot/{index,review,spec}.md` 가 인용 — drift-protocol §A 에 따라 지식 파일을 직접 수정하지 않았다(`/pilot:learn` 재실행은 사용자 승인 사항) |
+| G6 | 미실측 — 후속 feature 사이클에서 래퍼가 manifest → select --inject 흐름을 쓴 기록과 턴 수를 남긴다 |
+
+### 결정 사항 보정 (구현 중 확정한 세부)
+
+- **E4 세부**: 헤딩 역방향은 "글자 사이 공백 허용 대조" 에 더해 **헤딩의 한글 토큰이 질의 토큰에 포함**될 때도 부분 일치(5)로 친다. Q5 의 정답 헤딩 `Cluster 진입` 은 `진입파일` 과 공백 대조로는 맞지 않아 이 규칙이 없으면 본문 2점뿐이라 top-3 밖(경쟁 6점). 3자 이하·ASCII 토큰은 제외.
+- **E8 보강**: `select:` 대상이 md·manifest 표시 경로(CWD 기준)여도 root 표시 접두를 떼어 코퍼스 루트 기준으로 정규화 — 에이전트가 manifest 줄의 경로를 그대로 붙여 넣을 수 있어야 3단계 흐름이 실제로 돈다. traversal 판정은 접두를 뗀 뒤 수행.
+- **E9 세부**: 포함 관계 dedupe 는 **앞선** 결과의 주입 범위가 뒤 섹션 전체를 덮을 때만 적용(부모가 400줄 캡·예산으로 잘려 자식 범위에 못 미치면 자식은 그대로 주입). 주입 텍스트는 H2/H3 헤딩 라인을 복원해 앞에 붙이고, level 1 은 H1 텍스트가 있을 때만 `# {H1}`.
+- **E10 세부**: `[type]` 태그는 score 뒤, age 는 `{n}d` (stat 실패 시 `?d`). 0건·INFO 렌더는 md 와 공유.
+
+### 남은 일 (사용자 결정)
+
+1. 릴리스 시 `plugin.json` 버전 확정 → release-notes 미배포 절을 버전 절로 전환하고 버전 목록 표에 행 추가.
+2. `context/pilot/{index,review,spec}.md` 인용 stale WARN — `/pilot:learn` 재실행 여부.
+3. G6 dogfooding 실측 (래퍼 1건).
+4. dp-skills 이식: 경로 치환(`pilot/` → `dp-skills/`) 외 차이 없어야 하나, 지시서의 함수명(`parse_frontmatter_description`·`_word_boundary_hit`)이 그쪽 코드에 실재하면 이 저장소와 분기된 것이므로 diff 확인 후 이식.
