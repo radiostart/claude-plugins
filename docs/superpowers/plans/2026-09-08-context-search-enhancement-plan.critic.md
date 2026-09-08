@@ -96,14 +96,14 @@
 
 | C# | 처리 | 메모 |
 |----|------|------|
-| C1 | | |
+| C1 | accepted | 프로토콜 3곳(wrapper-protocol §6·ask 절차 2·orchestrate-load 힌트) 작은따옴표 + "헤딩은 manifest 의 백틱 제거본 일부" · 도구: `_heading_key` 로 백틱·`*`·`_` 무시 대조, `#` 뒤 빈 헤딩은 파일 전체 + INFO(쉘 인용 확인), manifest 헤딩 표시에서 백틱 제거 · 테스트 3건 |
 | C2 | | |
 | C3 | | |
-| C4 | | |
+| C4 | accepted | `_normalize_select_path` 가 루트 기준·접두·CWD 표시 경로·`../projects/…` 후보를 색인 파일 집합과 대조해 해석, 봉쇄 기준을 collect_files 와 같은 "workspace 안" 으로 변경(`../x` 허용, `../../x` 거부) · 라이브 include 파일 왕복 실측 1건 · 테스트 1건 + 기존 traversal 테스트 2건 기준 조정 |
 | C5 | | |
 | C6 | | |
 | C7 | | |
-| C8 | | |
+| C8 | accepted | 예산을 md/manifest 렌더 총량 근사로 — 예비 600B + 결과별(표/manifest 줄 큰 쪽 + 래퍼·잘림·생략 줄) 오버헤드를 먼저 뗀다. 헤딩 줄만 들어가는 섹션은 생략. json 은 CLI 가 예산 65% 축소 + INFO. 스왑 임계 실측 28,000B 인라인·31,200B 스왑 → 상한 24,000 유지. 실측: 상한에서 md 19.9K·manifest 22.6K·json 21.5K (전: 29.8K/32.5K/39.6K) · 테스트 2건 조정 + 1건 |
 | C9 | | |
 | C10 | | |
 | C11 | | |

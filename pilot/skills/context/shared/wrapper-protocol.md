@@ -39,7 +39,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {phase} --worksp
    - `[rules]`·`[boundary]` 후보는 필수어가 맞으면 버리지 않는다 (규칙 누락 → 평가 단계 반려).
    - 관련 후보가 0 이면 질의를 넓혀(동의어·영문명·`+필수어` 제거) 1회 재검색, 그래도 0 이면 진입 파일 목차로 회귀.
    - 고른 섹션과 사유를 1줄 보고한다 (dogfooding 측정 근거).
-3. **주입** — `python3 ${CLAUDE_PLUGIN_ROOT}/tools/context-search.py "select:{file}#{heading},{file}#{heading}" --inject` 1회로 본문을 받는다 (`file` 은 manifest 에 표시된 경로 그대로. `<context-snippet file heading lines>` 블록, 총 12,000B·섹션당 400줄 상한). 잘린 섹션은 블록 뒤 `[잘림 — 나머지: Read …]` 힌트로 이어 읽는다. 상태값(`enums` 등) 확인도 같은 절차.
+3. **주입** — `python3 ${CLAUDE_PLUGIN_ROOT}/tools/context-search.py 'select:{file}#{heading},{file}#{heading}' --inject` 1회로 본문을 받는다. 인자는 **작은따옴표**로 감싼다 — 큰따옴표 안의 백틱·`$` 는 쉘이 치환해 헤딩이 비고 파일 전체가 주입된다(도구가 INFO 로 알리지만 그 전에 막는다). `file` 은 manifest 에 표시된 경로 그대로(`--include` 부속 문서 포함), `heading` 은 manifest 줄의 헤딩(백틱 제거본) 일부 — 부분 문자열 매칭. `<context-snippet file heading lines>` 블록, 렌더 총량 12,000B·섹션당 400줄 상한. 잘린 섹션은 블록 뒤 `[잘림 — 나머지: Read …]` 힌트로 이어 읽는다. 상태값(`enums` 등) 확인도 같은 절차.
 
 0건이면 도구가 `--scope`·`+필수어` 제거 등 상태 안내를 낸다 — 실패가 아니다. 도구 부재 시 진입 파일 목차 → 라인 범위 수동 2단계로 대체.
 

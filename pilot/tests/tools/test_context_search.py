@@ -615,7 +615,8 @@ class SearchTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             ws = self._corpus(td)
             with self.assertRaises(m.SearchError):
-                m.search(workspace=ws, project=None, scope=None, includes=None, query_raw="select:../x", limit=5)
+                # workspace 밖으로 나가는 대상만 거부 — `../x` 는 workspace/x 라 include 후보와 같은 층위 (C4)
+                m.search(workspace=ws, project=None, scope=None, includes=None, query_raw="select:../../x", limit=5)
 
     def test_determinism_same_directory_reversed_creation_order(self):
         import shutil
@@ -783,7 +784,46 @@ class SelectMultiTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             ws = self._corpus(td)
             with self.assertRaises(m.SearchError):
-                self._search(ws, "select:a.md,../x")
+                self._search(ws, "select:a.md,../../x")
+
+    def test_select_include_candidate_roundtrip(self):
+        # C4 — --include 후보는 루트 기준으로 `../projects/...` 라 표시 경로·루트 기준 표기 양쪽으로 도달해야 한다.
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            (ws / "projects" / "P" / "features").mkdir(parents=True)
+            feat = ws / "projects" / "P" / "features" / "01-x.md"
+            feat.write_text("## Feat\nfeature body\n", encoding="utf-8")
+            kw = dict(workspace=ws, project="P", scope=None, includes=["features"], limit=5)
+            shown = m._display_path(feat)
+            r1 = m.search(query_raw=f"select:{shown}#Feat", **kw)
+            self.assertEqual(r1["returned"], 1)
+            self.assertEqual(r1["results"][0]["heading"], "Feat")
+            r2 = m.search(query_raw="select:../projects/P/features/01-x.md", **kw)
+            self.assertEqual(r2["returned"], 1)
+            with self.assertRaises(m.SearchError):
+                m.search(query_raw="select:../../etc/x.md", **kw)
+
+    def test_select_empty_heading_after_hash_gives_info(self):
+        # C1 — 쉘이 백틱을 치환해 `select:a.md#` 로 들어오면 파일 전체를 돌려주되 무음이 아니어야 한다.
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:a.md#")
+            self.assertEqual(r["returned"], 1)
+            self.assertTrue(any("헤딩이 비어" in i and "작은따옴표" in i for i in r["info"]), r["info"])
+            self.assertFalse(any("헤딩이 비어" in i for i in self._search(ws, "select:a.md")["info"]))
+
+    def test_select_heading_match_ignores_backticks_and_emphasis(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            (ws / "context").mkdir(parents=True)
+            (ws / "context" / "l.md").write_text(
+                "## `/pilot:doctor`\nx\n## **Bold** _plan_\ny\n", encoding="utf-8"
+            )
+            for q in ("select:l.md#/pilot:doctor", "select:l.md#pilot:doctor", "select:l.md#`/pilot:doctor`"):
+                r = self._search(ws, q)
+                self.assertEqual([x["heading"] for x in r["results"]], ["`/pilot:doctor`"], q)
+            r = self._search(ws, "select:l.md#bold plan")
+            self.assertEqual(r["returned"], 1)
 
     def test_select_accepts_displayed_cwd_relative_path(self):
         # manifest/md 가 표시하는 CWD 기준 경로를 그대로 붙여 넣어도 코퍼스 루트 기준으로 정규화된다.
@@ -835,22 +875,38 @@ class InjectTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             body = "\n".join("x" * 20 for _ in range(50))
             ws = self._ws(td, {"a.md": "## Alpha\n" + body + "\n"})
-            r = self._search(ws, "select:a.md", inject=True, max_bytes=100)
+            r = self._search(ws, "select:a.md", inject=True, max_bytes=1200)
             res = r["results"][0]
             self.assertTrue(res["truncated"])
-            self.assertLessEqual(len(res["text"].encode("utf-8")) + 1, 100)
+            self.assertLessEqual(len(m.render_md(r).encode("utf-8")), 1200)  # C8 — 렌더 총량이 상한 안
             self.assertTrue(res["inject_rest"].startswith("Read "))
             self.assertIn("offset=", res["inject_rest"])
             self.assertIn("[잘림 — 나머지: Read ", m.render_md(r))
 
     def test_budget_exhausted_skips_later_sections_with_info(self):
         with tempfile.TemporaryDirectory() as td:
-            ws = self._ws(td, {"a.md": "## Alpha\n" + "a" * 60 + "\n## Beta\n" + "b" * 60 + "\n"})
-            r = self._search(ws, "select:a.md", inject=True, max_bytes=75)
+            # 결과별 렌더 오버헤드(표/manifest 줄·래퍼·잘림/생략 줄)와 예비 600B 를 뗀 뒤 본문에 쓴다 —
+            # 4,000B 면 오버헤드 ≈1,500B, 본문 예산 ≈2,500B: Alpha(1,500B) 는 들어가고 Beta 는 못 들어간다.
+            ws = self._ws(td, {"a.md": "## Alpha\n" + "a" * 1500 + "\n## Beta\n" + "b" * 1500 + "\n"})
+            r = self._search(ws, "select:a.md", inject=True, max_bytes=4000)
             self.assertNotEqual(r["results"][0]["text"], "")
             self.assertIn("inject_skip", r["results"][1])
             self.assertTrue(any("예산" in i for i in r["info"]), r["info"])
             self.assertIn("[2] ", m.render_md(r))
+            self.assertLessEqual(len(m.render_md(r).encode("utf-8")), 4000)
+
+    def test_rendered_md_and_manifest_within_max_bytes(self):
+        # C8 — 상한은 본문 합이 아니라 md/manifest 렌더 총량(헤더·후보 줄·래퍼 포함)을 묶는다.
+        with tempfile.TemporaryDirectory() as td:
+            body = "\n".join("keyword 본문 line" for _ in range(60))  # 섹션당 ≈1.3KB, 여러 줄이라 부분 주입 가능
+            files = {f"f{i}.md": f"## Keyword {i}\n" + body + "\n" for i in range(8)}
+            ws = self._ws(td, files)
+            r = m.search(workspace=ws, project=None, scope=None, includes=None, query_raw="keyword", limit=8,
+                         inject=True, max_bytes=8000)
+            self.assertLessEqual(len(m.render_md(r).encode("utf-8")), 8000)
+            self.assertLessEqual(len(m.render_manifest(r, now=0).encode("utf-8")), 8000)
+            self.assertTrue(any(x["text"] for x in r["results"]))
+            self.assertTrue(any(x.get("inject_skip") for x in r["results"]))
 
     def test_section_capped_at_400_lines(self):
         with tempfile.TemporaryDirectory() as td:
@@ -973,6 +1029,13 @@ class ManifestTest(unittest.TestCase):
             out = m.render_manifest(self._search(ws, "totallyabsent"))
             self.assertIn("0건", out)
             self.assertIn("토큰별 일치 섹션 수: totallyabsent=0", out)
+
+    def test_manifest_heading_without_backticks(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## `/pilot:doctor` keyword\nbody\n"})
+            out = m.render_manifest(self._search(ws, "keyword"))
+            self.assertIn(" :: /pilot:doctor keyword | ", out)
+            self.assertNotIn("`", out.splitlines()[2].split(" | ")[1])
 
     def test_manifest_with_inject_appends_blocks(self):
         with tempfile.TemporaryDirectory() as td:

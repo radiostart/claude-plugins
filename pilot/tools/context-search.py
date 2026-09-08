@@ -19,7 +19,11 @@ Usage:
     select:{path}[#{헤딩 일부}][,{path}[#{헤딩 일부}]...]
                                   경로(및 헤딩 일부)를 직접 지정 — 점수 없이 반환. 쉼표로
                                   여러 대상. 경로는 코퍼스 루트 기준이며 md·manifest 에 표시된
-                                  경로(CWD 기준)를 그대로 붙여 넣어도 된다.
+                                  경로(CWD 기준)를 그대로 붙여 넣어도 된다 — `--include` 부속
+                                  문서도 표시 경로나 `../projects/…` 로 지정 가능(봉쇄: workspace
+                                  안). 헤딩은 백틱·`*`·`_` 를 무시한 부분 문자열 대조. 쉘에서는
+                                  인자를 작은따옴표로 감싼다(백틱·`$` 치환 방지) — `#` 뒤가
+                                  비어 오면 파일 전체 + INFO.
     키워드 나열                    공백으로 구분된 선택 토큰 (OR 성격)
     +필수어 선택어                 `+` 접두 토큰은 사전필터 겸 채점 대상(D6)
 
@@ -57,14 +61,17 @@ Usage:
     --format manifest: 후보당 1줄 `[#n] score [type] | file :: heading | L{s}-{e} | {age}d |
         matched: a,b | snippet≤80` — 2차 선별 입력. age 는 파일 mtime 표기 전용(점수·정렬 불변).
     --inject: 결과 순서대로 본문을 싣는다 — md/manifest 는 `<context-snippet file heading lines>`
-        블록, json 은 `text`. 총 `--max-bytes`(기본 12,000 · 상한 24,000) · 섹션당 400줄,
-        잘리면 `[잘림 — 나머지: Read …]`, 앞선 결과가 완전히 덮는 하위 섹션은 중복 주입 생략.
-        키워드 질의 + --inject 는 --limit 미지정 시 3.
+        블록, json 은 `text`. `--max-bytes`(기본 12,000 · 상한 24,000) 는 md/manifest **렌더
+        총량 근사**(헤더·후보 줄·래퍼 포함 — Bash 도구 출력 스왑 임계 ≈30,000B 실측 아래) ·
+        섹션당 400줄, 잘리면 `[잘림 — 나머지: Read …]`, 앞선 결과가 완전히 덮는 하위 섹션은
+        중복 주입 생략. json 은 이스케이프·snippet 중복으로 ≈1.5× 크므로 CLI 가 json + --inject
+        의 예산을 65% 로 축소하고 INFO 로 알린다(상한 근처에선 md/manifest 권장). 헤딩 줄만
+        들어갈 예산이면 그 섹션은 생략(`inject_skip`). 키워드 질의 + --inject 는 --limit 미지정 시 3.
 
 Exit:
     0 — 성공 (0건 포함 — 실패가 아니라 상태 안내)
-    2 — 빈 질의·토큰 전멸 / scope·project·include·select traversal / --limit < 1 /
-        --max-bytes < 1 / --format 오류 / 코퍼스 루트 부재
+    2 — 빈 질의·토큰 전멸 / scope·project·include traversal / select 대상이 workspace 밖 /
+        --limit < 1 / --max-bytes < 1 / --format 오류 / 코퍼스 루트 부재
 
 제약:
     - 지식 파일은 읽기 전용 — 어떤 경로도 workspace/context/ 를 쓰지 않는다.
@@ -96,8 +103,12 @@ MAX_LIMIT = 20
 SNIPPET_CHARS = 240
 LARGE_SECTION_LINES = 400
 INJECT_DEFAULT_LIMIT = 3  # 키워드 질의 + --inject 에서 --limit 미지정 시 (E9)
-INJECT_MAX_BYTES_DEFAULT = 12_000
-INJECT_MAX_BYTES_CAP = 24_000  # Bash 도구 출력이 파일로 스왑되는 크기 아래로 고정 (E9)
+INJECT_MAX_BYTES_DEFAULT = 12_000  # md/manifest 렌더 총량 근사 기준 (C8)
+# Bash 도구 출력 스왑 임계 실측(2026-09-08, Claude Code 원격 세션): 28,000B 인라인 · 31,200B 파일 스왑.
+# 24,000 은 INFO·[잘림] 줄 여유를 둔 렌더 총량 상한 — json 은 이스케이프·snippet 중복으로 1.3~1.7× 크다.
+INJECT_MAX_BYTES_CAP = 24_000
+RENDER_RESERVE_BYTES = 600  # 헤더·INFO 줄 여유 (C8)
+JSON_INJECT_BUDGET_FACTOR = 0.65  # json 렌더는 이스케이프·snippet 중복으로 md 의 ≈1.5× — CLI 가 예산을 축소 (C8)
 MANIFEST_SNIPPET_CHARS = 80
 
 SCORE = {
@@ -199,11 +210,15 @@ def parse_query(raw: str) -> Query:
             part = part.strip()
             if not part:
                 continue
+            heading: str | None
             if "#" in part:
                 path_part, heading_part = part.split("#", 1)
+                # "" = '#' 뒤가 빈 경우 — 쉘이 백틱·$ 를 치환해 헤딩을 지운 사고의 흔적(C1).
+                # 헤딩 생략과 구분해 _select_result 가 INFO 를 낸다.
+                heading = heading_part.strip()
             else:
-                path_part, heading_part = part, ""
-            targets.append((path_part.strip(), heading_part.strip() or None))
+                path_part, heading = part, None
+            targets.append((path_part.strip(), heading))
         if not targets:
             targets = [("", None)]
         return Query(
@@ -212,7 +227,7 @@ def parse_query(raw: str) -> Query:
             required=[],
             raw_paths=[],
             select_path=targets[0][0],
-            select_heading=targets[0][1],
+            select_heading=targets[0][1] or None,
             select_targets=targets,
         )
 
@@ -1026,7 +1041,8 @@ def search(
 
     if query.kind == "select":
         return _select_result(
-            query, sections, root, scope, includes, info, inject=inject, max_bytes=max_bytes
+            query, sections, root, scope, includes, info,
+            inject=inject, max_bytes=max_bytes, workspace=workspace,
         )
 
     memo: dict[str, list[str]] = {}
@@ -1085,18 +1101,43 @@ def _result_entry(sec: Section, root: Path, score: int | None, matched: list[str
     return entry
 
 
-def _normalize_select_path(raw: str, root: Path) -> str:
-    """select: 대상을 코퍼스 루트 기준 상대경로로 정규화 — md·manifest 에 표시된 경로(CWD
-    기준)를 그대로 붙여 넣어도 되게 root 표시 접두·`workspace/context/`·`context/` 를 뗀다.
-    traversal 판정은 접두를 뗀 뒤에 한다(접두 밖으로 나가는 `..` 는 그대로 거부)."""
-    select_path = raw.strip().replace("\\", "/")
+def _heading_key(text: str) -> str:
+    """select 헤딩 대조 키 — 백틱·강조 마커를 벗기고 소문자화(C1). 코퍼스 헤딩 다수가
+    `` `/pilot:x` `` 꼴이라 에이전트가 백틱을 뺀 안쪽 텍스트만 넘겨도 맞아야 한다."""
+    return text.replace("`", "").replace("*", "").replace("_", "").strip().lower()
+
+
+def _normalize_select_path(
+    raw: str, root: Path, workspace: Path, known_files: "set[str]"
+) -> str:
+    """select: 대상을 코퍼스 루트 기준 상대경로로 정규화(E8·C4). 받아들이는 형태:
+    루트 기준(`pilot/index.md`) · `workspace/context/…`·`context/…` 접두 · md/manifest 표시
+    경로(CWD 기준 — 코퍼스 파일과 `--include` 부속 문서 모두) · include 후보의 루트 기준
+    표기(`../projects/…`). 후보 해석 중 실제 색인된 파일(`known_files`)과 맞는 첫 것을 쓴다.
+    봉쇄: 결과가 workspace 안이어야 한다 — collect_files 와 같은 기준(`..` 자체는 include
+    후보 때문에 허용, workspace 밖으로 나가면 거부)."""
+    raw_path = raw.strip().replace("\\", "/")
+    if raw_path.startswith("/"):
+        raise SearchError(f"select: 대상에 절대경로 사용 불가: {raw}", 2)
+    candidates: list[str] = [raw_path]
     root_display = _display_path(root).replace("\\", "/").rstrip("/")
     for prefix in (root_display + "/", "workspace/context/", "context/"):
-        if prefix != "/" and select_path.startswith(prefix):
-            select_path = select_path[len(prefix) :]
-            break
-    if select_path.startswith("/") or ".." in Path(select_path).parts:
-        raise SearchError(f"select: 대상에 절대경로·'..' 사용 불가: {raw}", 2)
+        if prefix != "/" and raw_path.startswith(prefix):
+            candidates.append(raw_path[len(prefix) :])
+    try:
+        # CWD 기준 표시 경로 → 루트 기준 (`workspace/projects/P/x.md` → `../projects/P/x.md`)
+        candidates.append(Path(os.path.relpath(raw_path, start=str(root))).as_posix())
+    except ValueError:
+        pass
+    select_path = next((c for c in candidates if c in known_files), None)
+    if select_path is None:
+        select_path = candidates[1] if len(candidates) > 2 else raw_path  # 접두를 뗀 형태로 후보 제안
+    try:
+        inside = _is_within((root / select_path).resolve(), workspace.resolve())
+    except OSError:
+        inside = False
+    if not inside:
+        raise SearchError(f"select: 대상이 workspace 밖입니다 (절대경로·'..' 탈출 불가): {raw}", 2)
     return select_path
 
 
@@ -1104,11 +1145,17 @@ def _select_result(
     query: Query, sections: list[Section], root: Path,
     scope: str | None, includes: "list[str] | None", info: list[str],
     inject: bool = False, max_bytes: int = INJECT_MAX_BYTES_DEFAULT,
+    workspace: Path | None = None,
 ) -> dict:
     """`select:` 결과. 대상이 여러 개(E8)면 대상 순서대로 이어 붙이고 같은 섹션은 1회만.
     일부 대상만 없으면 결과는 내고 INFO 로 알린다. 전부 없으면 zero_hit — 단일 대상의
-    기존 형태(파일 부재 `suggestions` / 헤딩 부재 `guidance`)를 그대로 유지한다."""
+    기존 형태(파일 부재 `suggestions` / 헤딩 부재 `guidance`)를 그대로 유지한다.
+    헤딩 대조는 `_heading_key`(백틱·강조 무시) 부분 문자열. `#` 뒤가 빈 대상은 파일 전체를
+    돌려주되 INFO 로 쉘 인용 사고 가능성을 알린다(C1 — 무음 전체 주입 차단)."""
     targets = query.select_targets or [(query.select_path or "", query.select_heading)]
+    if workspace is None:
+        workspace = root.parent
+    known_files = {s.file for s in sections}
     all_files: list[str] | None = None
 
     results: list[dict] = []
@@ -1120,13 +1167,19 @@ def _select_result(
     select_info: list[str] = []
 
     for raw_path, heading in targets:
-        select_path = _normalize_select_path(raw_path, root)
+        select_path = _normalize_select_path(raw_path, root, workspace, known_files)
         display_parts.append(select_path + (f"#{heading}" if heading else ""))
+        heading_key = _heading_key(heading) if heading else ""
+        if heading is not None and not heading_key:
+            select_info.append(
+                f"select 대상 '{select_path}': '#' 뒤 헤딩이 비어 파일 전체를 반환 — "
+                "쉘 인용 확인 (백틱·$ 이 든 헤딩은 작은따옴표로 감싼다)"
+            )
         matches = [s for s in sections if s.file == select_path]
         if matches:
             found = False
             for sec in matches:
-                if heading and heading.lower() not in sec.heading.lower():
+                if heading_key and heading_key not in _heading_key(sec.heading):
                     continue
                 found = True
                 key = (sec.file, sec.line_start)
@@ -1196,16 +1249,45 @@ def _section_text(section: Section) -> list[str]:
     return head + list(section.body_lines)
 
 
+def _render_overhead(r: dict, index: int) -> int:
+    """결과 1건이 본문 없이도 md/manifest 출력에 차지하는 바이트 근사(C8) — 표 행과 manifest
+    줄 중 큰 쪽 + `<context-snippet>` 래퍼 2줄. 예산은 이 값을 먼저 뗀 뒤 본문에 쓴다."""
+    matched = ",".join(r["matched"])
+    row = (
+        f"| {index} | {r['file']} | {r['heading']} | {r['line_start']}-{r['line_end']} | "
+        f"{r['score']} | {matched} |"
+    )
+    manifest = (
+        f"[#{index}] {r['score']} [boundary] | {r['file']} :: {r['heading']} | "
+        f"L{r['line_start']}-{r['line_end']} | 999d | matched: {matched} | "
+        f"{r['snippet'][:MANIFEST_SNIPPET_CHARS]}…"
+    )
+    wrapper = (
+        f'<context-snippet file="{r["file"]}" heading="{r["heading"]}" '
+        f'lines="{r["line_start"]}-{r["line_end"]}"></context-snippet>'
+        f"[잘림 — 나머지: Read {r['file']} offset={r['line_end']}0 limit={r['line_end']}0]"
+    )
+    skip_line = f"[{index}] {r['file']} :: {r['heading']} — 바이트 예산 소진 — read_hint 로 Read ({r['read_hint']})"
+    return (
+        max(len(row.encode("utf-8")), len(manifest.encode("utf-8")))
+        + max(len(wrapper.encode("utf-8")), len(skip_line.encode("utf-8")))
+        + 4
+    )
+
+
 def _apply_inject(results: list[dict], secs: list[Section], max_bytes: int) -> list[str]:
     """결과 순서대로 본문을 `text` 에 싣는다(E9). 규칙:
-    - 총 바이트 예산 `max_bytes` (개행 포함 UTF-8), 섹션당 최대 LARGE_SECTION_LINES 줄.
-    - 잘리면 `truncated: true` + `inject_rest` (나머지 라인 범위 Read 힌트).
+    - `max_bytes` 는 **md/manifest 렌더 총량 근사**(C8): 헤더·INFO 여유(RENDER_RESERVE_BYTES)와
+      결과별 표/manifest 줄·래퍼(`_render_overhead`)를 먼저 뗀 나머지를 본문(개행 포함 UTF-8)에
+      쓴다. json 은 이스케이프·snippet 중복으로 이보다 크다.
+    - 섹션당 최대 LARGE_SECTION_LINES 줄. 잘리면 `truncated: true` + `inject_rest`.
     - 같은 파일에서 **앞선** 결과의 주입 범위가 이 섹션 전체를 덮으면(H2 본문은 하위 H3
       본문을 포함한다) 중복 주입을 생략하고 `inject_skip` 에 사유를 둔다.
     - 예산이 남지 않아 한 줄도 못 실으면 `inject_skip` — read_hint 로 Read.
     반환: INFO 줄 목록."""
     info: list[str] = []
-    budget = max_bytes
+    overhead = RENDER_RESERVE_BYTES + sum(_render_overhead(r, i) for i, r in enumerate(results, 1))
+    budget = max_bytes - overhead
     covered: list[tuple[str, int, int]] = []  # (file, line_start, 주입된 마지막 파일 라인)
     skipped_budget = 0
     for r, sec in zip(results, secs):
@@ -1232,7 +1314,8 @@ def _apply_inject(results: list[dict], secs: list[Section], max_bytes: int) -> l
                 break
             kept.append(ln)
             used += nbytes
-        if not kept:
+        if not kept or (len(kept) == 1 and total > 1 and sec.level in (2, 3)):
+            # 예산이 없거나 헤딩 줄 하나만 들어가는 경우 — 헤딩만 주입하는 것은 정보가 없다(C8)
             r["inject_skip"] = "바이트 예산 소진 — read_hint 로 Read"
             skipped_budget += 1
             continue
@@ -1248,7 +1331,8 @@ def _apply_inject(results: list[dict], secs: list[Section], max_bytes: int) -> l
         covered.append((sec.file, sec.line_start, last_line if r["truncated"] else sec.line_end))
     if skipped_budget:
         info.append(
-            f"--inject 바이트 예산({max_bytes}B) 소진 — {skipped_budget}개 섹션 본문 생략, read_hint 로 Read"
+            f"--inject 예산({max_bytes}B, 렌더 총량 기준) 소진 — {skipped_budget}개 섹션 본문 생략, "
+            "read_hint 로 Read"
         )
     return info
 
@@ -1357,8 +1441,9 @@ def render_manifest(result: dict, now: float | None = None) -> str:
         snip = r["snippet"]
         if len(snip) > MANIFEST_SNIPPET_CHARS:
             snip = snip[:MANIFEST_SNIPPET_CHARS] + "…"
+        heading_display = r["heading"].replace("`", "")  # C1 — select 에 그대로 붙여 넣기 안전
         lines.append(
-            f"[#{i}] {score}{tag} | {r['file']} :: {r['heading']} | "
+            f"[#{i}] {score}{tag} | {r['file']} :: {heading_display} | "
             f"L{r['line_start']}-{r['line_end']} | {age_s} | matched: {matched} | {snip}"
         )
     if result["results"]:
@@ -1415,6 +1500,10 @@ def main(argv: "list[str] | None" = None) -> int:
     limit = args.limit
     if limit is None:
         limit = INJECT_DEFAULT_LIMIT if args.inject else DEFAULT_LIMIT
+    max_bytes = args.max_bytes
+    json_scaled = args.inject and args.format == "json" and max_bytes >= 1
+    if json_scaled:
+        max_bytes = max(1, int(min(max_bytes, INJECT_MAX_BYTES_CAP) * JSON_INJECT_BUDGET_FACTOR))
     try:
         result = search(
             workspace=Path(args.workspace),
@@ -1424,13 +1513,17 @@ def main(argv: "list[str] | None" = None) -> int:
             query_raw=args.query,
             limit=limit,
             inject=args.inject,
-            max_bytes=args.max_bytes,
+            max_bytes=max_bytes,
         )
     except SearchError as exc:
         print(exc.message, file=sys.stderr)
         if exc.show_usage:
             parser.print_usage(sys.stderr)
         return exc.exit_code
+    if json_scaled:
+        result["info"].append(
+            f"--format json + --inject: 예산을 {max_bytes}B 로 축소 (json 렌더는 md 의 ≈1.5× — 상한 근처에선 md/manifest 권장)"
+        )
 
     if args.format == "json":
         print(json.dumps(result, ensure_ascii=False, indent=2))
