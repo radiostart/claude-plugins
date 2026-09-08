@@ -785,6 +785,17 @@ class SelectMultiTest(unittest.TestCase):
             with self.assertRaises(m.SearchError):
                 self._search(ws, "select:a.md,../x")
 
+    def test_select_accepts_displayed_cwd_relative_path(self):
+        # manifest/md 가 표시하는 CWD 기준 경로를 그대로 붙여 넣어도 코퍼스 루트 기준으로 정규화된다.
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            shown = m._display_path(ws / "context" / "a.md")
+            r = self._search(ws, f"select:{shown}#Alpha")
+            self.assertEqual(r["returned"], 1)
+            self.assertEqual(r["query"], "select:a.md#Alpha")
+            with self.assertRaises(m.SearchError):
+                self._search(ws, f"select:{m._display_path(ws / 'context')}/../../etc/x.md")
+
 
 # ---------------------------------------------------------------------------
 # --inject (E9)

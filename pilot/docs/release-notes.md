@@ -34,6 +34,21 @@ pilot 의 버전별 변경 이력입니다. 버전 SSOT 는 `pilot/.claude-plugi
 
 ---
 
+## 미배포 — context-search 고도화
+
+*브랜치 `claude/dp-skills-context-search-enhance-qp02xo` · 버전 미확정 (릴리스 시 `plugin.json` 과 위 버전 목록 표에 반영)*
+
+적대적 검토·적용 플랜과 실측 기록: `docs/superpowers/plans/2026-09-08-context-search-enhancement-plan.md`.
+
+- **탐색 → 선별 → 주입 3단계** — `wrapper-protocol.md` §6 이 `--format manifest --limit 8` 탐색, 에이전트의 1~3개 선별(`[rules]`·`[boundary]` 는 필수어가 맞으면 유지, 0건이면 1회 확장 재검색 후 진입 파일 회귀), `select:… --inject` 1회 주입으로 바뀝니다. `/pilot:ask` 절차 2 도 같은 흐름, orchestrate-load 힌트 문구 갱신
+- **`select:` 다중 대상** — `select:a.md#h1,b.md#h2`. md·manifest 에 표시된 경로(CWD 기준)를 그대로 붙여 넣어도 됩니다
+- **`--inject` · `--max-bytes`** — 선정 섹션 본문을 `<context-snippet file heading lines>` 블록(json 은 `text`)으로 함께 출력. 총 12,000B(상한 24,000B)·섹션당 400줄, 잘리면 나머지 Read 힌트, 앞선 결과가 덮는 하위 섹션은 중복 주입 생략. 키워드 질의 + `--inject` 는 `--limit` 기본 3
+- **`--format manifest`** — 후보당 1줄 `[#n] score [type] | file :: heading | Lx-y | Nd | matched | snippet≤80`. age 는 mtime 표기 전용이며 점수·정렬에는 쓰지 않습니다
+- **한글 복합어 양방향** — `선발송 접수` ↔ `선발송접수`, `진입파일` ↔ `진입 파일` 을 본문·description·헤딩에서 대조. 같은 토큰·같은 신호는 한 번만 가산해 붙여 쓴 본문과 띄어 쓴 본문의 점수가 같습니다. 골든 질의 4 → 6 (붙여 쓴 질의 `도메인 진입파일 자동 로드` 가 top-3 이탈 → 1위)
+- **frontmatter** — `description`·`domain`·`type`·`sources` 파싱(트레일링 ` #` 주석·블록/인라인 리스트·접힘 스칼라). `type`·`domain` 은 결과 필드(`[type]` 태그)로만, `sources` glob 은 소스 경로 질의의 파일 보너스(6)로만 씁니다. #29 머지 전에는 코퍼스에 frontmatter 가 없어 출력 불변
+- **채택하지 않은 것** — mtime 신선도 점수(결정성 위반·clone 직후 전 파일 동일), `type`/`sources` 세그먼트 점수(path·citation 과 중복, 파일 단위 누적으로 섹션 랭킹 역전), 키워드 상위 N 자동 주입(에이전트 선별 단계 소실). 근거는 플랜 문서 §2
+- 기존 플래그만 쓰면 md/json 출력 바이트 동일 (골든 6질의·라이브 3질의 대조) · `score_text` 시그니처 호환으로 confluence 검색 무변경
+
 ## v0.18.0
 
 *2026-09-04 · **현재 버전** · [릴리스](https://github.com/radiostart/claude-plugins/releases/tag/pilot-v0.18.0)*

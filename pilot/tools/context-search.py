@@ -4,22 +4,27 @@ pilot context-search — 섹션 단위 결정적 검색 도구.
 
 workspace/context/ 마크다운 지식 파일을 H2·H3 섹션 단위로 색인하고, 질의 토큰과
 헤딩·경로·인용·description·본문 신호를 채점해 순위가 매겨진 섹션 목록을 반환한다.
-에이전트가 본문 파일 전체 Read·무차별 Grep 대신 사용하는 부분 로드 진입점.
+에이전트가 본문 파일 전체 Read·무차별 Grep 대신 사용하는 부분 로드 진입점 — 권장 흐름은
+탐색(`--format manifest`) → 에이전트 선별 → 주입(`select:… --inject`) 3단계 (wrapper-protocol §6).
 
 Usage:
     python3 pilot/tools/context-search.py "<질의>" [--workspace PATH] [--project NAME]
-        [--scope DOMAIN] [--include PATH ...] [--limit N] [--format md|json]
+        [--scope DOMAIN] [--include PATH ...] [--limit N] [--format md|json|manifest]
+        [--inject] [--max-bytes N]
 
     질의는 반드시 첫 위치 인자로 지정한다 — `--include` 는 nargs="+" 라 뒤에 두면
     질의 문자열을 흡수해버린다.
 
 질의 3형식:
-    select:{path}[#{헤딩 일부}]   경로(및 헤딩 일부)를 직접 지정 — 점수 없이 반환
+    select:{path}[#{헤딩 일부}][,{path}[#{헤딩 일부}]...]
+                                  경로(및 헤딩 일부)를 직접 지정 — 점수 없이 반환. 쉼표로
+                                  여러 대상. 경로는 코퍼스 루트 기준이며 md·manifest 에 표시된
+                                  경로(CWD 기준)를 그대로 붙여 넣어도 된다.
     키워드 나열                    공백으로 구분된 선택 토큰 (OR 성격)
     +필수어 선택어                 `+` 접두 토큰은 사전필터 겸 채점 대상(D6)
 
-    토큰이 경로처럼 보이면(`/` 포함 + 확장자) 인용 경로 일치를 자동 가중한다 —
-    "이 소스 파일을 다루는 지식 섹션" 을 찾는 역방향 질의.
+    토큰이 경로처럼 보이면(`/` 포함 + 확장자) 인용 경로 일치와 frontmatter `sources` glob
+    일치를 자동 가중한다 — "이 소스 파일을 다루는 지식 섹션" 을 찾는 역방향 질의.
 
 점수표 (토큰마다 신호별 최대 1회 합산 — 빈도는 반영하지 않는다):
     헤딩 토큰 정확 일치              10
@@ -28,6 +33,14 @@ Usage:
     헤딩 토큰 부분 일치               5
     frontmatter description 일치     4
     본문 단어경계 일치                2
+    경로형 질의 ↔ 인용 경로 suffix    6 (질의 경로마다 1회)
+    경로형 질의 ↔ sources glob        6 (질의 경로마다 1회)
+
+    한글 복합어: 질의의 인접 한글 단어쌍(`선발송 접수`)이 본문·description 에 붙어 있으면
+    (`선발송접수`) 구성 토큰이 body/description 신호를 받고, 4자 이상 한글 질의 토큰
+    (`진입파일`)은 띄어 쓴 텍스트(`진입 파일`)와도 대조된다(헤딩은 부분 일치 5). 같은
+    토큰·같은 신호는 한 번만 — 붙여 쓴 본문과 띄어 쓴 본문의 점수가 같다.
+    frontmatter `type`·`domain` 은 점수에 쓰지 않고 출력 필드로만 노출한다.
 
     level 1 섹션(서문·H1-only·헤딩 없는 파일)은 헤딩 신호(10/5)를 받지 않는다 —
     경로·인용·description·본문 신호만 채점된다.
@@ -35,21 +48,30 @@ Usage:
 출력 스키마 (--format json):
     {"query", "root", "scope", "include": [...], "candidates": N, "returned": k,
      "results": [{"file", "heading", "level", "line_start", "line_end", "score",
-                  "matched", "snippet", "read_hint"}],
+                  "matched", "snippet", "read_hint",
+                  "type"?, "domain"?,                                  # frontmatter 값이 있을 때만
+                  "text"?, "truncated"?, "inject_rest"?, "inject_skip"?}],  # --inject 시
      "info": [...], "zero_hit": {...} | null}
 
     --format md (기본): 1줄 헤더 + 결과 표 + 섹션별 snippet/read_hint + INFO·0건 안내.
+    --format manifest: 후보당 1줄 `[#n] score [type] | file :: heading | L{s}-{e} | {age}d |
+        matched: a,b | snippet≤80` — 2차 선별 입력. age 는 파일 mtime 표기 전용(점수·정렬 불변).
+    --inject: 결과 순서대로 본문을 싣는다 — md/manifest 는 `<context-snippet file heading lines>`
+        블록, json 은 `text`. 총 `--max-bytes`(기본 12,000 · 상한 24,000) · 섹션당 400줄,
+        잘리면 `[잘림 — 나머지: Read …]`, 앞선 결과가 완전히 덮는 하위 섹션은 중복 주입 생략.
+        키워드 질의 + --inject 는 --limit 미지정 시 3.
 
 Exit:
     0 — 성공 (0건 포함 — 실패가 아니라 상태 안내)
     2 — 빈 질의·토큰 전멸 / scope·project·include·select traversal / --limit < 1 /
-        --format 오류 / 코퍼스 루트 부재
+        --max-bytes < 1 / --format 오류 / 코퍼스 루트 부재
 
 제약:
     - 지식 파일은 읽기 전용 — 어떤 경로도 workspace/context/ 를 쓰지 않는다.
     - 같은 코퍼스·질의 → 같은 출력·순서 (결정적 — set 순회 결과를 출력에 노출하지 않는다).
-    - 표준 라이브러리만: re · pathlib · json · argparse · os · sys · dataclasses ·
-      importlib.util (형제 모듈 지연 로드).
+      manifest 의 age 표기만 예외(파일 mtime·실행 시각을 표시하는 정보이지 순위 근거가 아니다).
+    - 표준 라이브러리만: re · pathlib · json · argparse · os · sys · time · html · fnmatch ·
+      dataclasses · importlib.util (형제 모듈 지연 로드).
     - 캐시 없음 = 실행 간 영속 캐시 없음(파일·mtime 키 캐시 금지). 실행 1회 안에서만
       쓰는 memo(예: 인용 경로 토큰화 결과)는 허용한다.
 """
@@ -1063,12 +1085,16 @@ def _result_entry(sec: Section, root: Path, score: int | None, matched: list[str
     return entry
 
 
-def _normalize_select_path(raw: str) -> str:
-    select_path = raw.strip()
-    if select_path.startswith("workspace/context/"):
-        select_path = select_path[len("workspace/context/") :]
-    elif select_path.startswith("context/"):
-        select_path = select_path[len("context/") :]
+def _normalize_select_path(raw: str, root: Path) -> str:
+    """select: 대상을 코퍼스 루트 기준 상대경로로 정규화 — md·manifest 에 표시된 경로(CWD
+    기준)를 그대로 붙여 넣어도 되게 root 표시 접두·`workspace/context/`·`context/` 를 뗀다.
+    traversal 판정은 접두를 뗀 뒤에 한다(접두 밖으로 나가는 `..` 는 그대로 거부)."""
+    select_path = raw.strip().replace("\\", "/")
+    root_display = _display_path(root).replace("\\", "/").rstrip("/")
+    for prefix in (root_display + "/", "workspace/context/", "context/"):
+        if prefix != "/" and select_path.startswith(prefix):
+            select_path = select_path[len(prefix) :]
+            break
     if select_path.startswith("/") or ".." in Path(select_path).parts:
         raise SearchError(f"select: 대상에 절대경로·'..' 사용 불가: {raw}", 2)
     return select_path
@@ -1094,7 +1120,7 @@ def _select_result(
     select_info: list[str] = []
 
     for raw_path, heading in targets:
-        select_path = _normalize_select_path(raw_path)
+        select_path = _normalize_select_path(raw_path, root)
         display_parts.append(select_path + (f"#{heading}" if heading else ""))
         matches = [s for s in sections if s.file == select_path]
         if matches:
