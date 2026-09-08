@@ -1104,6 +1104,26 @@ class ManifestTest(unittest.TestCase):
             self.assertIn(" :: /pilot:doctor keyword | ", out)
             self.assertNotIn("`", out.splitlines()[2].split(" | ")[1])
 
+    def test_manifest_infers_boundary_rules_tag_from_path(self):
+        # C2 — frontmatter 가 없어도 boundaries/·rules/ 경로면 추정 태그, frontmatter type 이 있으면 그것이 우선
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            for rel, text in {
+                "boundaries/a--b.md": "## Keyword edge\nbody\n",
+                "rules/a.md": "---\ntype: rules\n---\n## Keyword rule\nbody\n",
+                "a/index.md": "## Keyword plain\nbody\n",
+            }.items():
+                p = ws / "context" / rel
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(text, encoding="utf-8")
+            r = self._search(ws, "keyword")
+            out = m.render_manifest(r)
+            self.assertIn(" [boundary?] | ", out)
+            self.assertIn(" [rules] | ", out)
+            self.assertNotIn("[rules?]", out)
+            plain = next(x for x in r["results"] if x["heading"] == "Keyword plain")
+            self.assertNotIn("type", plain)
+
     def test_manifest_with_inject_appends_blocks(self):
         with tempfile.TemporaryDirectory() as td:
             ws = self._ws(td, {"a.md": "## Alpha\nbody\n"})
@@ -1407,6 +1427,29 @@ class GoldenHitAtThree(unittest.TestCase):
         self.assertTrue(
             any("lifecycle.md" in f and "doctor" in h for f, h in top3), top3
         )
+
+
+@unittest.skipUnless(FIXTURE_ROOT.is_dir(), "context-search 골든 fixture 없음")
+class GoldenSnapshotTest(unittest.TestCase):
+    """C9 — hit@3 포함 여부만 보던 골든에 점수·순서·matched·라인 범위 동등성을 더한다.
+    기대값은 `fixtures/context-search/golden-expected.json` (경로는 CWD 의존이라 파일명만)."""
+
+    def test_top5_matches_committed_expectation(self):
+        expected = json.loads(
+            (FIXTURE_ROOT.parent / "golden-expected.json").read_text(encoding="utf-8")
+        )
+        for entry in expected["queries"]:
+            result = m.search(
+                workspace=FIXTURE_ROOT, project=None, scope=expected["scope"], includes=None,
+                query_raw=entry["query"], limit=expected["limit"],
+            )
+            got = [
+                {"file": Path(r["file"]).name, "heading": r["heading"], "score": r["score"],
+                 "matched": r["matched"], "line_start": r["line_start"], "line_end": r["line_end"]}
+                for r in result["results"]
+            ]
+            self.assertEqual(result["candidates"], entry["candidates"], entry["query"])
+            self.assertEqual(got, entry["top5"], entry["query"])
 
 
 if __name__ == "__main__":

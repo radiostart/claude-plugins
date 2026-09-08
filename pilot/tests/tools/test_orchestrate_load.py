@@ -639,6 +639,9 @@ class BuildLoadPlanIntegration(unittest.TestCase):
             search_hints = [h for h in hints if "context-search.py" in h]
             self.assertEqual(len(search_hints), 1)
             self.assertIn("--scope orders", search_hints[0])
+            # 3단계 프로토콜 문구 (wrapper-protocol §6, critic C9) — manifest 탐색 · 작은따옴표 select 주입 리터럴
+            self.assertIn("--format manifest --limit 8", search_hints[0])
+            self.assertIn("'select:{file}#{heading}'", search_hints[0])
 
     def test_no_domain_no_context_search_hint(self):
         """domain=None (도메인 판정 실패) 이면 진입 파일 로드 자체가 없으므로 힌트도 없다."""

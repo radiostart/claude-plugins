@@ -25,6 +25,7 @@ hermetic 하게 유지된다(D2).
 1. 위 생성 명령을 그대로 재실행해 스냅샷을 덮어쓴다.
 2. `python3 pilot/tools/context-search.py "<질의>" --scope pilot --format json --workspace pilot/tests/fixtures/context-search/workspace` 로 골든 6질의(`test_context_search.py` 의 `GoldenHitAtThree` — Q5·Q6 은 붙여 쓴 한글 복합어 질의, 2026-09-08 추가) `hit@3` 를 재확인한다.
 3. 미달 시 랭커를 임의로 조정하지 않는다 — 실측 표를 해당 feature 의 plan.md 에 기록하고 보고한다.
+4. `golden-expected.json` (상위 5 의 점수·순서·matched·라인 범위, `GoldenSnapshotTest`) 은 랭커를 **의도적으로** 바꿀 때만 같은 명령의 `--format json` 출력에서 재캡처하고, 바뀐 항목과 사유를 plan.md 에 남긴다.
 
 `#22` 재학습 드리프트(예: 스크립트 삭제 서술 등)가 라이브 코퍼스에 남아 있어도
 이 fixture 의 랭킹 테스트에는 무관하다 — 섹션 구조·헤딩·경로만 랭킹에 영향을 준다.

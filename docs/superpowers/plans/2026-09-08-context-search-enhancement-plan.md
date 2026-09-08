@@ -174,7 +174,7 @@
 **Phase 3 — frontmatter (E6·E7)**
 
 12. `split_sections`: 블록 파서 확장. `Section.meta: dict`. 기존 `description` 필드·테스트 유지.
-13. `score_text(..., sources=())` kwarg 추가(기본 빈 튜플, confluence 무변경). raw_paths glob 보너스.
+13. `score_text(..., sources=())` kwarg 추가(기본 빈 튜플 — confluence 코드 무변경. 단 같은 `parse_query`·`score_text` 를 쓰므로 한글 결합·역방향 규칙은 confluence 검색 거동에도 적용된다, critic C3). raw_paths glob 보너스.
 14. 결과 JSON 에 `type`·`domain` 조건부 키. manifest `[type]`.
 15. 합성 fixture(임시 디렉토리)로 테스트 8건. 라이브 코퍼스는 frontmatter 없어 출력 불변.
 
@@ -258,7 +258,7 @@
 | G1 | `python3 -m unittest discover -s pilot/tests/tools` 603 → 666 통과. context-search 87 → 150 (+63) |
 | G2 | 골든 hit@3 6/6. Q1~Q4 md/json 이 Phase 0 스냅샷과 바이트 동일. Q5 `도메인 진입파일 자동 로드`: 도입 전 정답 top-3 이탈(`진입파일` 히트 0, 1위 `lifecycle.md /pilot:project` 6점) → 도입 후 `index.md ## Cluster 진입` 1위 7점. Q6 `doctor 정합성검사`: 1위 유지, 18 → 20점 |
 | G3 | 라이브 코퍼스 같은 질의 2회 `--format json` diff 0. 1,000섹션 성능 테스트 < 1s 통과 |
-| G4 | 신규 플래그 미사용 시 fixture 6질의 · 라이브 3질의(`select:` 포함) md/json 바이트 동일 |
+| G4 | 신규 플래그 미사용 시 md/json 바이트 동일 — 범위는 한글 결합·역방향 규칙에 해당하지 않는 질의(Q1~Q4·`select:`·라이브 3질의). Q5·Q6 와 4자+ 한글 토큰·인접 한글쌍이 있는 질의는 E2~E5 로 점수·0건 안내가 바뀐다(설계 의도, critic C3 정정) |
 | G5 | `docs_build.py --check` 통과 (reference 40 파일 재생성, gitignore 대상). doctor 4 PASS · 3 WARN · 1 ERROR — ERROR `STATE.md 없음` 은 변경 전 커밋(`37ab524`) 에서도 동일(워크스페이스 로컬 파일 부재, 본 변경과 무관). WARN 3건은 인용 stale 신호: 이번에 고친 `wrapper-protocol.md`·`orchestrate-load.py` 를 `context/pilot/{index,review,spec}.md` 가 인용 — drift-protocol §A 에 따라 지식 파일을 직접 수정하지 않았다(`/pilot:learn` 재실행은 사용자 승인 사항) |
 | G6 | 미실측 — 후속 feature 사이클에서 래퍼가 manifest → select --inject 흐름을 쓴 기록과 턴 수를 남긴다 |
 

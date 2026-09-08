@@ -1495,13 +1495,27 @@ def _age_days(path_str: str, now: float | None = None) -> int | None:
     return int(max(0.0, now - st.st_mtime) // 86400)
 
 
+def _inferred_type_tag(display_file: str) -> str | None:
+    """frontmatter `type` 이 없을 때 경로 규약으로 추정한 태그(C2) — `boundaries/` → `boundary?`,
+    `rules/` → `rules?` (물음표 = 추정). 2차 선별의 "규칙·경계 후보는 버리지 않는다" 규칙이
+    frontmatter 없는 코퍼스(#29 이전·사용자 layer)에서도 걸리게 한다. JSON `type` 에는 넣지 않는다."""
+    parts = Path(display_file).parts
+    if "boundaries" in parts:
+        return "boundary?"
+    if "rules" in parts:
+        return "rules?"
+    return None
+
+
 def render_manifest(result: dict, now: float | None = None) -> str:
     """후보당 1줄 초경량 목록(E10) — wrapper-protocol §6 2차 선별의 입력.
-    `[#n] {score} [type] | {file} :: {heading} | L{start}-{end} | {age}d | matched: a,b | {snippet≤80}`"""
+    `[#n] {score} [type] | {file} :: {heading} | L{start}-{end} | {age}d | matched: a,b | {snippet≤80}`
+    snippet 은 마지막 필드 — 표 본문의 `|` 가 섞일 수 있으므로 앞 5개 ` | ` 로만 분리한다(C12)."""
     lines: list[str] = [_render_header(result), ""]
     for i, r in enumerate(result["results"], 1):
         score = r["score"] if r["score"] is not None else "-"
-        tag = f" [{r['type']}]" if r.get("type") else ""
+        type_tag = r.get("type") or _inferred_type_tag(r["file"])
+        tag = f" [{type_tag}]" if type_tag else ""
         age = _age_days(r["file"], now)
         age_s = f"{age}d" if age is not None else "?d"
         matched = ",".join(r["matched"]) if r["matched"] else "-"
