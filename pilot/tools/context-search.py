@@ -57,6 +57,7 @@ Exit:
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import html
 import importlib.util
 import json
@@ -247,18 +248,91 @@ class Section:
     line_end: int  # 1-based inclusive
     body_lines: list[str]  # 헤딩 라인 제외 본문
     description: str | None = None
+    # frontmatter 메타 (E6) — description·domain·type·sources 중 값이 있는 키만. 점수에는
+    # sources(E7 glob 보너스)만 쓰고 type·domain 은 출력 필드로만 노출한다.
+    meta: dict = field(default_factory=dict)
 
 
 _HEADING_RE = re.compile(r"^ {0,3}(#{1,6})\s+(.+?)\s*#*\s*$")
 _FENCE_OPEN_RE = re.compile(r"^\s*(```+|~~~+)")
-_DESCRIPTION_RE = re.compile(r"^description:\s*(.+)$")
+FRONTMATTER_SCALAR_KEYS = ("description", "domain", "type")
+FRONTMATTER_LIST_KEYS = ("sources",)
+_FM_KEY_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):(?:\s+(.*))?$")
+_FM_LIST_ITEM_RE = re.compile(r"^-\s+(.*)$")
+_FM_BLOCK_INDICATORS = (">", ">-", ">+", "|", "|-", "|+")
 
 
-def _strip_description_quotes(value: str) -> str:
+def _strip_fm_value(value: str) -> str:
+    """스칼라 값 정리(E6) — 따옴표로 시작하면 짝 따옴표 안만, 아니면 ` #` 이후 주석을 떼고 trim.
+    #29 예시의 `type: services   # index | routes | …` 가 enum 8단어로 번지지 않게."""
     value = value.strip()
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
-        return value[1:-1]
-    return value
+    if value and value[0] in "\"'":
+        end = value.find(value[0], 1)
+        return value[1:end] if end != -1 else value[1:]
+    cut = re.search(r"\s#", value)
+    if cut:
+        value = value[: cut.start()]
+    return value.strip()
+
+
+def _parse_fm_list(value: str) -> list[str]:
+    v = value.strip()
+    if v.startswith("[") and v.endswith("]"):
+        return [x for x in (_strip_fm_value(p) for p in v[1:-1].split(",")) if x]
+    s = _strip_fm_value(v)
+    return [s] if s else []
+
+
+def parse_frontmatter(fm_lines: list[str]) -> dict:
+    """frontmatter(`---` 사이) 에서 description·domain·type(스칼라)·sources(리스트)를 읽는다(E6).
+    YAML 파서가 아니다 — 다루는 것: `key: value` · 트레일링 ` # 주석` · 따옴표 · 블록 리스트
+    (`- item`) · 인라인 리스트(`[a, b]`) · 접힘 스칼라(`>-` 다음 들여쓴 첫 줄만). 미지 키는
+    무시하고 값 없는 키는 결과에 없다 — frontmatter 없는 코퍼스의 출력이 바뀌지 않게."""
+    meta: dict = {}
+    current_list: str | None = None
+    pending_scalar: str | None = None
+    for raw in fm_lines:
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if pending_scalar is not None:
+            if raw[:1].isspace():
+                v = _strip_fm_value(stripped)
+                if v:
+                    meta[pending_scalar] = v
+                pending_scalar = None
+                continue
+            pending_scalar = None
+        im = _FM_LIST_ITEM_RE.match(stripped)
+        if im and current_list is not None:
+            v = _strip_fm_value(im.group(1))
+            if v:
+                meta[current_list].append(v)
+            continue
+        current_list = None
+        km = _FM_KEY_RE.match(stripped)
+        if not km:
+            continue
+        key = km.group(1).lower()
+        value = (km.group(2) or "").strip()
+        if value.startswith("#"):
+            value = ""
+        if key in FRONTMATTER_SCALAR_KEYS:
+            if value in _FM_BLOCK_INDICATORS:
+                pending_scalar = key
+                continue
+            v = _strip_fm_value(value)
+            if v:
+                meta[key] = v
+        elif key in FRONTMATTER_LIST_KEYS:
+            items = _parse_fm_list(value) if value else []
+            meta[key] = items
+            if not items:
+                current_list = key
+    for key in FRONTMATTER_LIST_KEYS:
+        if key in meta and not meta[key]:
+            del meta[key]
+    return meta
 
 
 def split_sections(text: str, rel_path: str) -> list[Section]:
@@ -269,7 +343,7 @@ def split_sections(text: str, rel_path: str) -> list[Section]:
     lines = text.splitlines()
     n = len(lines)
 
-    description: str | None = None
+    meta: dict = {}
     content_start = 0
     if lines and lines[0].strip() == "---":
         close_idx = None
@@ -278,12 +352,9 @@ def split_sections(text: str, rel_path: str) -> list[Section]:
                 close_idx = i
                 break
         if close_idx is not None:
-            for i in range(1, close_idx):
-                dm = _DESCRIPTION_RE.match(lines[i].strip())
-                if dm:
-                    description = _strip_description_quotes(dm.group(1))
-                    break
+            meta = parse_frontmatter(lines[1:close_idx])
             content_start = close_idx + 1
+    description: str | None = meta.get("description")
 
     # 펜스 추적 + 헤딩 수집 (frontmatter 밖 구간만)
     headings: list[tuple[int, int, str]] = []  # (0-based line idx, level, text)
@@ -325,7 +396,7 @@ def split_sections(text: str, rel_path: str) -> list[Section]:
             Section(
                 file=rel_path, heading=heading_text, level=1,
                 line_start=content_start + 1, line_end=n,
-                body_lines=body_lines, description=description,
+                body_lines=body_lines, description=description, meta=meta,
             )
         )
         return sections
@@ -343,7 +414,7 @@ def split_sections(text: str, rel_path: str) -> list[Section]:
                 file=rel_path,
                 heading=h1_in_preface[2] if h1_in_preface else "(서문)",
                 level=1, line_start=content_start + 1, line_end=first_idx,
-                body_lines=preface_body, description=description,
+                body_lines=preface_body, description=description, meta=meta,
             )
         )
 
@@ -357,7 +428,7 @@ def split_sections(text: str, rel_path: str) -> list[Section]:
             Section(
                 file=rel_path, heading=htext, level=level,
                 line_start=idx + 1, line_end=end_idx,
-                body_lines=lines[idx + 1 : end_idx], description=description,
+                body_lines=lines[idx + 1 : end_idx], description=description, meta=meta,
             )
         )
 
@@ -428,6 +499,19 @@ def flex_search(token: str, text_lc: str) -> "re.Match[str] | None":
     return re.search(flex_pattern(token), text_lc)
 
 
+def _source_glob_match(path: str, glob: str) -> bool:
+    """E7 — frontmatter `sources` glob 대조. fnmatch 의 `*` 는 `/` 도 삼키므로 `app/x/**` 가
+    하위 경로까지 덮는다(3.13 전용 `PurePath.full_match` 미사용). 접두 없는 glob(`wms/**`)은
+    suffix 로, 와일드카드 없는 디렉토리(`app/x` · `app/x/`)는 접두로 허용한다."""
+    g = glob.strip()
+    if not g:
+        return False
+    if fnmatch.fnmatchcase(path, g) or fnmatch.fnmatchcase(path, "*/" + g):
+        return True
+    d = g.rstrip("/")
+    return bool(d) and not any(ch in d for ch in "*?[") and path.startswith(d + "/")
+
+
 def score_text(
     query: Query,
     *,
@@ -437,6 +521,7 @@ def score_text(
     citation_tokens: "tuple[str, ...] | set[str] | list[str]" = (),
     citation_paths: "tuple[str, ...] | list[str]" = (),
     description: str | None = None,
+    sources: "tuple[str, ...] | list[str]" = (),
 ) -> tuple[int, list[str]]:
     """문자열 기반 채점 진입점 (confluence.py `search_docs` 재사용 대상, C4).
 
@@ -512,11 +597,19 @@ def score_text(
     matched_raw_paths: list[str] = []
     path_bonus = 0
     for p in query.raw_paths:
+        hit = False
         for c in citation_paths:
             if c == p or c.endswith("/" + p):
                 path_bonus += SCORE["citation"]
-                matched_raw_paths.append(p)
+                hit = True
                 break
+        # E7 — frontmatter `sources` glob 이 질의 경로를 덮으면 인용 경로와 같은 층위의 파일 보너스
+        # 1회. 세그먼트 토큰 매칭은 하지 않는다(path·citation 신호와 중복이라 파일 단위 점수만 부풀린다).
+        if any(_source_glob_match(p, g) for g in sources):
+            path_bonus += SCORE["citation"]
+            hit = True
+        if hit:
+            matched_raw_paths.append(p)
 
     matched = [t for t in all_tokens if t in token_score] + matched_raw_paths
     required_ok = all(t in token_score for t in query.required)
@@ -539,6 +632,7 @@ def score_section(
         citation_tokens=citation_tokens,
         citation_paths=citation_paths,
         description=section.description,
+        sources=section.meta.get("sources", ()),
     )
 
 
@@ -963,6 +1057,9 @@ def _result_entry(sec: Section, root: Path, score: int | None, matched: list[str
         "snippet": build_snippet(sec, matched),
         "read_hint": build_read_hint(sec, display_file),
     }
+    for key in ("type", "domain"):
+        if sec.meta.get(key):
+            entry[key] = sec.meta[key]
     return entry
 
 

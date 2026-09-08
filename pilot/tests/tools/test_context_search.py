@@ -1095,6 +1095,119 @@ class CompoundTest(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# frontmatter 파서 (E6) · sources glob 보너스 (E7)
+# ---------------------------------------------------------------------------
+class FrontmatterTest(unittest.TestCase):
+    def test_scalar_trailing_comment_stripped(self):
+        # #29 예시 그대로 — 주석의 enum 8단어가 type 값으로 번지면 모든 파일이 모든 type 에 매칭된다.
+        meta = m.parse_frontmatter(
+            ["type: services            # index | routes | models | services | rules | enums | boundary | free"]
+        )
+        self.assertEqual(meta, {"type": "services"})
+
+    def test_quoted_values_keep_hash_and_strip_quotes(self):
+        meta = m.parse_frontmatter(['description: "이슈 #12 처리 규칙"', "domain: 'wms'"])
+        self.assertEqual(meta, {"description": "이슈 #12 처리 규칙", "domain": "wms"})
+
+    def test_block_list_with_comments(self):
+        meta = m.parse_frontmatter(
+            [
+                "sources:                  # 이 문서가 다루는 소스 범위",
+                "  - app/services/wms/**",
+                "  - app/models/wms/shipment.rb  # 모델",
+                "type: rules",
+            ]
+        )
+        self.assertEqual(meta["sources"], ["app/services/wms/**", "app/models/wms/shipment.rb"])
+        self.assertEqual(meta["type"], "rules")
+
+    def test_inline_list_and_scalar_sources(self):
+        self.assertEqual(
+            m.parse_frontmatter(["sources: [app/a/**, 'app/b.rb']"])["sources"], ["app/a/**", "app/b.rb"]
+        )
+        self.assertEqual(m.parse_frontmatter(["sources: app/x/**"])["sources"], ["app/x/**"])
+
+    def test_folded_scalar_takes_first_continuation_line_only(self):
+        meta = m.parse_frontmatter(["description: >-", "  첫 줄 설명", "  둘째 줄", "domain: x"])
+        self.assertEqual(meta, {"description": "첫 줄 설명", "domain": "x"})
+
+    def test_unknown_keys_ignored_and_empty_values_absent(self):
+        self.assertEqual(m.parse_frontmatter(["name: skill", "learned_at: 2026-09-04"]), {})
+        self.assertEqual(m.parse_frontmatter(["sources:", "type:", "# 주석만"]), {})
+
+    def test_split_sections_populates_meta_and_description(self):
+        text = "---\ndescription: 설명\ndomain: wms\ntype: rules\nsources:\n  - app/x/**\n---\n## A\nbody\n"
+        secs = m.split_sections(text, "f.md")
+        self.assertEqual(secs[0].description, "설명")
+        self.assertEqual(
+            secs[0].meta, {"description": "설명", "domain": "wms", "type": "rules", "sources": ["app/x/**"]}
+        )
+
+    def test_no_frontmatter_meta_empty(self):
+        self.assertEqual(m.split_sections("## A\nbody\n", "f.md")[0].meta, {})
+
+
+class SourcesBonusTest(unittest.TestCase):
+    def _q(self):
+        return m.parse_query("app/services/wms/cancel.rb")
+
+    def test_glob_covers_raw_path_query(self):
+        score, matched = m.score_text(self._q(), heading="", body="", sources=["app/services/wms/**"])
+        self.assertEqual(score, m.SCORE["citation"])
+        self.assertEqual(matched, ["app/services/wms/cancel.rb"])
+
+    def test_nested_suffix_and_directory_forms(self):
+        for g in ("app/services/**", "wms/**", "app/services/wms", "app/services/wms/"):
+            score, _ = m.score_text(self._q(), heading="", body="", sources=[g])
+            self.assertEqual(score, m.SCORE["citation"], g)
+
+    def test_mismatch_and_empty_no_bonus(self):
+        self.assertEqual(m.score_text(self._q(), heading="", body="", sources=["app/models/**"])[0], 0)
+        self.assertEqual(m.score_text(self._q(), heading="", body="", sources=[""])[0], 0)
+
+    def test_bonus_once_per_query_path_and_stacks_with_citation(self):
+        score, matched = m.score_text(
+            self._q(), heading="", body="",
+            citation_paths=["app/services/wms/cancel.rb"],
+            sources=["app/services/wms/**", "app/services/**"],
+        )
+        self.assertEqual(score, 2 * m.SCORE["citation"])
+        self.assertEqual(matched.count("app/services/wms/cancel.rb"), 1)
+
+    def test_no_segment_token_scoring_from_sources(self):
+        # `wms` 키워드 질의는 sources 로 점수를 받지 않는다 — type·domain 도 마찬가지 (E7)
+        q = m.parse_query("wms services rules")
+        sec = m.Section(
+            file="f.md", heading="", level=2, line_start=1, line_end=1, body_lines=[],
+            description=None, meta={"type": "rules", "domain": "wms", "sources": ["app/services/wms/**"]},
+        )
+        self.assertEqual(m.score_section(sec, q)[0], 0)
+
+    def test_score_section_passes_meta_sources(self):
+        sec = m.Section(
+            file="f.md", heading="", level=2, line_start=1, line_end=1, body_lines=[],
+            description=None, meta={"sources": ["app/services/wms/**"]},
+        )
+        self.assertEqual(m.score_section(sec, self._q())[0], m.SCORE["citation"])
+
+    def test_json_type_domain_only_when_present(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            (ws / "context").mkdir()
+            (ws / "context" / "a.md").write_text(
+                "---\ntype: rules\ndomain: wms\n---\n## Keyword A\nkeyword body\n", encoding="utf-8"
+            )
+            (ws / "context" / "b.md").write_text("## Keyword B\nkeyword body\n", encoding="utf-8")
+            r = m.search(workspace=ws, project=None, scope=None, includes=None, query_raw="keyword", limit=5)
+            a, b = r["results"]
+            self.assertEqual(list(a.keys())[-3:], ["read_hint", "type", "domain"])
+            self.assertEqual((a["type"], a["domain"]), ("rules", "wms"))
+            self.assertNotIn("type", b)
+            self.assertNotIn("domain", b)
+            self.assertIn("[#1] 12 [rules] | ", m.render_manifest(r))
+
+
+# ---------------------------------------------------------------------------
 # 골든 — pilot/tests/fixtures/context-search/ 스냅샷, --scope pilot, hit@3
 # ---------------------------------------------------------------------------
 @unittest.skipUnless(FIXTURE_ROOT.is_dir(), "context-search 골든 fixture 없음")
