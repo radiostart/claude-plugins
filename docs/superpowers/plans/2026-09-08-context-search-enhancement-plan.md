@@ -5,7 +5,7 @@
 - 대상: `pilot/tools/context-search.py`. 지시서의 `dp-skills` 경로, 함수명 `parse_frontmatter_description`·`_word_boundary_hit`, 문서 `docs/reference/tools/context-search.md` 는 이 저장소에 없다. 실제 이름은 `split_sections` 안의 `_DESCRIPTION_RE`, `boundary_search` 이고 reference 문서는 `docs_build.py` 가 모듈 docstring 에서 생성하는 gitignore 대상이다. 동일 엔진으로 가정하고 pilot 경로 기준으로 쓴다.
 - 기준선: `python3 -m unittest pilot/tests/tools/test_context_search.py` 87/87 · `discover -s pilot/tests/tools` 603/603 · Python 3.11 (CI 3.12)
 - 설계 SSOT: `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` · features #27~#30 · `27-context-search-tool.plan.md` D1~D8 · critic C1~C8
-- 상태: **적용 완료** (2026-09-08 — 사용자 결정 E1~E11 전부 승인 · pilot 우선 검증) → § 4 적용 기록
+- 상태: **적용 완료 + critic 합의 반영** (2026-09-08 — 사용자 결정 E1~E11 승인 · pilot 우선 검증 · red-team 12건 처리) → § 4
 
 ## 0. 한 줄 결론
 
@@ -46,7 +46,7 @@
 
 재설계:
 
-- `type`·`domain`·`sources` 는 파싱해 **출력 필드**로 노출한다(B 의 2차 판단 입력). 점수 X.
+- `type`·`domain` 은 파싱해 **출력 필드**로 노출한다(B 의 2차 판단 입력). `sources` 는 파싱하되 E7 보너스 전용이며 JSON 에는 싣지 않는다 (critic C12-d 정정). `type`·`domain` 은 점수 X.
 - `sources` 는 glob 이다. 역방향 경로 질의(`raw_paths`)가 glob 에 `fnmatch` 되면 기존 인용 경로 suffix 보너스와 같은 층위의 파일 보너스 1회. 토큰 세그먼트 매칭 X.
 - `domain` 은 `--scope` 소속 판정에 쓰는 것이 맞는 자리다(폴더 밖 파일 편입). #29 이후 별도 결정.
 
@@ -264,10 +264,23 @@
 
 ### 결정 사항 보정 (구현 중 확정한 세부)
 
-- **E4 세부**: 헤딩 역방향은 "글자 사이 공백 허용 대조" 에 더해 **헤딩의 한글 토큰이 질의 토큰에 포함**될 때도 부분 일치(5)로 친다. Q5 의 정답 헤딩 `Cluster 진입` 은 `진입파일` 과 공백 대조로는 맞지 않아 이 규칙이 없으면 본문 2점뿐이라 top-3 밖(경쟁 6점). 3자 이하·ASCII 토큰은 제외.
+- **E4 세부**: 헤딩 역방향은 "글자 사이 공백 허용 대조" 에 더해 **헤딩의 한글 토큰이 질의 토큰에 포함**될 때도 부분 일치(5)로 친다. Q5 의 정답 헤딩 `Cluster 진입` 은 `진입파일` 과 공백 대조로는 맞지 않아 이 규칙이 없으면 본문 2점뿐이라 top-3 밖(경쟁 6점). 길이 제한은 **질의 토큰**에만(4자 이상·순수 한글) 걸리고 헤딩 토큰은 2글자부터 참여한다 — 조사가 붙은 4자+ 질의 토큰(`도메인을`)이 헤딩 `도메인 분류` 에서 부분 일치할 수 있다(본문은 여전히 조사 미흡수, 0건 안내의 "조사 제거 재질의" 유지). 헤딩 토큰 길이 제한(≥3)을 두면 Q5 정답 토큰 `진입` 이 2글자라 깨지므로 현행 유지 (critic C10). E4 의 'compact' 방식은 공백을 지우면 좌측 경계도 사라져 부적합 — 글자 사이 `\s*` 를 허용하는 flex 정규식으로 구현 (critic C6).
 - **E8 보강**: `select:` 대상이 md·manifest 표시 경로(CWD 기준)여도 root 표시 접두를 떼어 코퍼스 루트 기준으로 정규화 — 에이전트가 manifest 줄의 경로를 그대로 붙여 넣을 수 있어야 3단계 흐름이 실제로 돈다. traversal 판정은 접두를 뗀 뒤 수행.
 - **E9 세부**: 포함 관계 dedupe 는 **앞선** 결과의 주입 범위가 뒤 섹션 전체를 덮을 때만 적용(부모가 400줄 캡·예산으로 잘려 자식 범위에 못 미치면 자식은 그대로 주입). 주입 텍스트는 H2/H3 헤딩 라인을 복원해 앞에 붙이고, level 1 은 H1 텍스트가 있을 때만 `# {H1}`.
 - **E10 세부**: `[type]` 태그는 score 뒤, age 는 `{n}d` (stat 실패 시 `?d`). 0건·INFO 렌더는 md 와 공유.
+
+### critic 합의 반영 (2026-09-08)
+
+별도 에이전트의 red-team 검토(`2026-09-08-context-search-enhancement-plan.critic.md`, 챌린지 12건)를 사용자 승인 순서대로 4라운드에 반영했다. 전 라운드에서 골든 Q1~Q4·select·라이브 3질의 바이트 동일, 전체 unittest 통과.
+
+| 라운드 | 커밋 | 반영 |
+|---|---|---|
+| 1 | `8e72217` | C1 쉘 인용 안전 select(작은따옴표 프로토콜 · `_heading_key` · 빈 헤딩 INFO · manifest 백틱 제거) · C4 include 후보 select 도달(workspace 봉쇄 기준) · C8 렌더 총량 예산(스왑 임계 실측 28,000B 인라인·31,200B 스왑, 상한에서 md 19.9K·manifest 22.6K·json 21.5K) |
+| 2 | `754459a` | C5 뒤 H2 가 앞선 H3 범위를 1줄 표지로 접기 · C6 정규식 lru_cache + flex 빠른 거부(한글 joined 5토큰 314 → 274ms, 한글 성능 테스트) · C7 gitignore 의미 glob |
+| 3 | `df02ee2` | C2 경로 기반 `[rules?]`·`[boundary?]` 태그 + 규칙 문구 통일 · C3 바이트 동일·confluence 문구 정정 · C9 `golden-expected.json` + `GoldenSnapshotTest` + 힌트 assert |
+| 4 | (본 커밋) | C10 E4 문구 정정 · C11 2~3단어 연쇄 + 헤딩 정확 일치 승격 · C12 400줄 캡 off-by-one, 쉼표 헤딩·`context` 도메인 테스트, snippet 필드 주석, §2 A1 정정 · 경계 검색 리터럴 빠른 거부(한글 joined 5토큰 최종 164ms, ASCII 118ms) |
+
+구현 중 바뀐 결정: E4 의 compact 방식 → flex 정규식(C6) · E7 의 fnmatch → gitignore 의미(C7) · E9 의 예산 단위 본문 합 → 렌더 총량(C8) · E8 봉쇄 기준 루트 → workspace(C4).
 
 ### 남은 일 (사용자 결정)
 

@@ -101,10 +101,12 @@
 | C3 | accepted | G4·release-notes 를 "한글 결합·역방향 규칙에 해당하지 않는 질의(Q1~Q4·select·라이브 3질의)에 한해 바이트 동일, 4자+ 한글 토큰·인접 한글쌍 질의는 점수·순위·0건 안내가 바뀐다(설계 의도)" 로 정정. confluence 는 "코드 무변경 — 같은 랭커라 한글 규칙이 `/pilot:confl search` 에도 적용" 으로 사용자 영향 기록(§3.3 스텝 13 포함) |
 | C4 | accepted | `_normalize_select_path` 가 루트 기준·접두·CWD 표시 경로·`../projects/…` 후보를 색인 파일 집합과 대조해 해석, 봉쇄 기준을 collect_files 와 같은 "workspace 안" 으로 변경(`../x` 허용, `../../x` 거부) · 라이브 include 파일 왕복 실측 1건 · 테스트 1건 + 기존 traversal 테스트 2건 기준 조정 |
 | C5 | accepted | `_apply_inject` 가 텍스트 줄마다 파일 라인 범위를 들고, 뒤에 오는 H2 가 앞서 주입된 H3 범위를 `[L{s}-{e} 는 [#k] 에 주입됨 — 생략]` 1줄로 접는다(잘림 힌트 offset 은 파일 라인 기준 유지). 앞→뒤 생략 규칙은 그대로 · 테스트 3건(키워드 순서·select 역순·접힌 뒤 잘림) |
-| C6 | accepted | 경계·flex 정규식을 `functools.lru_cache` 로 토큰당 1회 컴파일(실행 내 memo), flex 는 첫 글자 부재 시 정규식 없이 거부. 실측(1,000섹션 한글, 전 섹션 일치 최악 케이스): joined 5토큰 314 → 274ms · joined 3토큰 238 → 213ms · ASCII 128 → 127ms. 한글 5토큰 성능 테스트 추가(상한 1.0s, spec 300ms 는 목표) · compact→flex 결정을 flex_pattern docstring 과 §4 에 기록 |
+| C6 | accepted | 경계·flex 정규식을 `functools.lru_cache` 로 토큰당 1회 컴파일(실행 내 memo), flex 는 첫 글자 부재 시 정규식 없이 거부. 실측(1,000섹션 한글, 전 섹션 일치 최악 케이스, 같은 머신 중앙값): joined 5토큰 314 → 274ms(라운드 2) → 164ms(라운드 4 에서 경계 검색에도 리터럴 `in` 빠른 거부 추가) · joined 3토큰 238 → 156ms · 띄어 쓴 5토큰 192 → 139ms · ASCII 128 → 118ms — spec 300ms 안. 한글 5토큰 성능 테스트 추가(상한 1.0s, spec 300ms 는 목표) · compact→flex 결정을 flex_pattern docstring 과 §4 에 기록 |
 | C7 | accepted | fnmatch 대신 gitignore 의미 정규식(`_glob_regex`, lru_cache): `*`·`?` 는 `/` 를 넘지 않고 `**` 만 가로지름, 슬래시 있는 패턴은 루트 앵커, 없는 패턴은 어느 깊이의 이름과도 일치, 디렉토리는 하위 전부. `wms/**` 는 이제 `app/services/wms/x.rb` 와 불일치(#30 과 동일 집합) · 테스트 hit 10·miss 6 |
 | C8 | accepted | 예산을 md/manifest 렌더 총량 근사로 — 예비 600B + 결과별(표/manifest 줄 큰 쪽 + 래퍼·잘림·생략 줄) 오버헤드를 먼저 뗀다. 헤딩 줄만 들어가는 섹션은 생략. json 은 CLI 가 예산 65% 축소 + INFO. 스왑 임계 실측 28,000B 인라인·31,200B 스왑 → 상한 24,000 유지. 실측: 상한에서 md 19.9K·manifest 22.6K·json 21.5K (전: 29.8K/32.5K/39.6K) · 테스트 2건 조정 + 1건 |
 | C9 | accepted | (1) `fixtures/context-search/golden-expected.json` 에 골든 6질의 상위 5 의 점수·순서·matched·라인 범위를 커밋하고 `GoldenSnapshotTest` 로 동등성 검증(README 갱신 규칙 4 추가) (2) `test_orchestrate_load` 힌트 테스트에 `--format manifest --limit 8`·`'select:{file}#{heading}'` 리터럴 assert (3) C1·C4·C5 시나리오는 각 라운드에서 테스트 추가 (4) G6 은 §4 남은 일에 evaluator 증거 항목으로 유지 |
-| C10 | | |
-| C11 | | |
-| C12 | | |
+| C10 | accepted | E4 세부·docstring 을 코드대로 정정 — 길이 제한은 질의 토큰만(≥4·순수 한글), 헤딩 토큰은 2글자부터 참여, 조사 붙은 4자+ 질의 토큰은 헤딩에서 부분 일치 가능(본문은 조사 미흡수, 0건 안내 유지). 헤딩 토큰 ≥3 제한은 Q5 정답 토큰 `진입` 이 2글자라 채택 안 함(사유 기록) |
+| C11 | accepted | 결합어를 인접 2~3단어 연쇄로 확장(`_adjacent_hangul_chains`), 헤딩 토큰이 연쇄와 같으면 구성 토큰 전부 정확 일치(부분 5 회수 → 10). 실측: `선발송접수상태` 본문 4 → 6(띄어 쓴 본문과 동일), `## 선발송접수 규칙` 20 → 30(띄어 쓴 헤딩과 동일) · 테스트 2건 · docstring·release-notes 문구. 연쇄 추가로 결합어 검색이 늘어 joined 5토큰이 317ms 로 되돌아갔던 것은 `boundary_search` 의 리터럴 `in` 빠른 거부로 164ms 까지 내려 해소 |
+| C12 | accepted | (a) 400줄 캡에서 복원 헤딩 줄 제외(+1, `inject_rest` offset=402 검증) (b) 쉼표 헤딩은 현행(두 번째 대상으로 해석) 문서화 테스트 — 코퍼스에 쉼표 헤딩이 생기면 `--select` 반복 플래그 전환 트리거 (c) manifest snippet 은 마지막 필드 — docstring 명시 (d) §2 A1 을 `type`·`domain` 출력·`sources` 보너스 전용으로 정정 (e) `context/` 접두 제거가 후보 중 하나가 되어 도메인명 `context` 도달 — 테스트 1건 |
+
+> 합의 기입: 2026-09-08 계획 작성 에이전트 (사용자 결정: 추천 순서 C1·C4·C8 → C5·C6·C7 → C2·C3·C9 → nit 순차 적용). 반영 커밋은 계획서 § 4 「critic 합의 반영」.

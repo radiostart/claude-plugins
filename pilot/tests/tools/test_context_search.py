@@ -828,6 +828,25 @@ class SelectMultiTest(unittest.TestCase):
             with self.assertRaises(m.SearchError):
                 m.search(query_raw="select:../../etc/x.md", **kw)
 
+    def test_select_heading_with_comma_splits_into_targets(self):
+        # C12-b — 쉼표는 대상 구분자라 헤딩 안의 쉼표는 두 번째 대상으로 읽힌다(현행 문서화). 코퍼스에
+        # 쉼표 헤딩이 생기면 `--select` 반복 플래그(E8 예비안)로 전환한다 — 이 테스트가 그 트리거.
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:a.md#Alpha, beta")
+            self.assertEqual(r["returned"], 1)
+            self.assertTrue(any("select 대상 없음: 'beta'" in i for i in r["info"]), r["info"])
+
+    def test_select_domain_named_context_reachable(self):
+        # C12-e — `context/` 접두 제거는 후보 중 하나일 뿐이라 도메인명이 `context` 여도 도달한다.
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            (ws / "context" / "context").mkdir()
+            (ws / "context" / "context" / "index.md").write_text("## Ctx\nbody\n", encoding="utf-8")
+            r = self._search(ws, "select:context/index.md")
+            self.assertEqual(r["returned"], 1)
+            self.assertEqual(r["results"][0]["heading"], "Ctx")
+
     def test_select_empty_heading_after_hash_gives_info(self):
         # C1 — 쉘이 백틱을 치환해 `select:a.md#` 로 들어오면 파일 전체를 돌려주되 무음이 아니어야 한다.
         with tempfile.TemporaryDirectory() as td:
@@ -939,8 +958,10 @@ class InjectTest(unittest.TestCase):
             ws = self._ws(td, {"a.md": "## Alpha\n" + body + "\n"})
             r = self._search(ws, "select:a.md", inject=True, max_bytes=24000)
             res = r["results"][0]
-            self.assertEqual(len(res["text"].splitlines()), m.LARGE_SECTION_LINES)
+            # C12 — 복원한 헤딩 줄은 캡 밖: 본문 400줄 + 헤딩 1줄, 나머지는 파일 라인 402 부터
+            self.assertEqual(len(res["text"].splitlines()), m.LARGE_SECTION_LINES + 1)
             self.assertTrue(res["truncated"])
+            self.assertIn("offset=402 ", res["inject_rest"])
 
     def test_child_h3_skipped_when_parent_h2_injected_first(self):
         with tempfile.TemporaryDirectory() as td:
@@ -1150,8 +1171,9 @@ class CompoundTest(unittest.TestCase):
 
     def test_compounds_from_adjacent_hangul_words_in_query_order(self):
         q = self._q("선발송 접수 상태")
-        self.assertEqual(q.compounds, [("선발송", "접수"), ("접수", "상태")])
+        self.assertEqual(q.compounds, [("선발송", "접수"), ("선발송", "접수", "상태"), ("접수", "상태")])
         self.assertEqual(self._q("접수 선발송").compounds, [("접수", "선발송")])  # 순서 민감
+        self.assertEqual(self._q("가 나 다 라").compounds, [])  # 1글자 토큰은 제외
 
     def test_compounds_broken_by_stopword_ascii_path_single_char(self):
         self.assertEqual(self._q("선발송 및 접수").compounds, [])
@@ -1188,10 +1210,23 @@ class CompoundTest(unittest.TestCase):
         score, _ = m.score_text(q, heading="", body="가선발송접수")
         self.assertEqual(score, 0)
 
-    def test_heading_compound_already_handled_by_partial_match(self):
-        q = self._q("선발송 접수")
-        score, _ = m.score_text(q, heading="선발송접수 상태값", body="")
-        self.assertEqual(score, 2 * m.SCORE["heading_partial"])
+    def test_joined_heading_scores_equal_to_spaced_heading(self):
+        # C11 — 헤딩 토큰이 결합어와 같으면 구성 토큰 전부 정확 일치: 붙여 쓴 헤딩 = 띄어 쓴 헤딩
+        q = self._q("선발송 접수 규칙")
+        joined, _ = m.score_text(q, heading="선발송접수 규칙", body="")
+        spaced, _ = m.score_text(q, heading="선발송 접수 규칙", body="")
+        self.assertEqual(joined, spaced)
+        self.assertEqual(joined, 3 * m.SCORE["heading_exact"])
+        partial_only, _ = m.score_text(self._q("선발송 접수"), heading="선발송접수상태 값", body="")
+        self.assertEqual(partial_only, 2 * m.SCORE["heading_partial"])  # 결합어 ≠ 헤딩 토큰이면 부분 일치 그대로
+
+    def test_three_word_joined_body_equals_spaced(self):
+        q = self._q("선발송 접수 상태")
+        joined, mj = m.score_text(q, heading="", body="선발송접수상태 확인")
+        spaced, _ = m.score_text(q, heading="", body="선발송 접수 상태 확인")
+        self.assertEqual(joined, spaced)
+        self.assertEqual(joined, 3 * m.SCORE["body"])
+        self.assertEqual(mj, ["선발송", "접수", "상태"])
 
     def test_reverse_joined_query_matches_spaced_body(self):
         score, matched = m.score_text(self._q("진입파일"), heading="", body="도메인 진입 파일 로드")

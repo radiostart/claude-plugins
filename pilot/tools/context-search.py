@@ -40,10 +40,13 @@ Usage:
     경로형 질의 ↔ 인용 경로 suffix    6 (질의 경로마다 1회)
     경로형 질의 ↔ sources glob        6 (질의 경로마다 1회)
 
-    한글 복합어: 질의의 인접 한글 단어쌍(`선발송 접수`)이 본문·description 에 붙어 있으면
-    (`선발송접수`) 구성 토큰이 body/description 신호를 받고, 4자 이상 한글 질의 토큰
-    (`진입파일`)은 띄어 쓴 텍스트(`진입 파일`)와도 대조된다(헤딩은 부분 일치 5). 같은
-    토큰·같은 신호는 한 번만 — 붙여 쓴 본문과 띄어 쓴 본문의 점수가 같다.
+    한글 복합어: 질의의 인접 2~3 한글 단어 연쇄(`선발송 접수 상태`)가 본문·description 에 붙어
+    있으면(`선발송접수`·`선발송접수상태`) 구성 토큰이 body/description 신호를 받고, 헤딩 토큰이
+    연쇄와 같으면 구성 토큰 전부 정확 일치(10). 4자 이상 순수 한글 질의 토큰(`진입파일`)은
+    띄어 쓴 텍스트(`진입 파일`)와도 대조된다 — 본문·description 은 해당 신호, 헤딩은 부분
+    일치(5; 헤딩의 한글 토큰이 2글자부터 질의 토큰에 포함될 때도). 같은 토큰·같은 신호는 한
+    번만 — 붙여 쓴 텍스트와 띄어 쓴 텍스트의 점수가 같다. 질의 쪽 조사는 흡수하지 않는다
+    (조사 붙은 4자+ 토큰이 헤딩에서 부분 일치할 수는 있다 — 본문은 조사 제거 재질의).
     frontmatter `type`·`domain` 은 점수에 쓰지 않고 출력 필드로만 노출한다.
 
     level 1 섹션(서문·H1-only·헤딩 없는 파일)은 헤딩 신호(10/5)를 받지 않는다 —
@@ -194,8 +197,8 @@ class Query:
     select_heading: str | None = None
     # select: 다중 대상 (E8) — `select:a.md#h1,b.md#h2`. 첫 대상은 select_path/select_heading 에도 복사.
     select_targets: list[tuple[str, str | None]] = field(default_factory=list)
-    # 한글 결합어 후보 (E3) — 원문 인접 단어쌍 (t1, t2). 본문에 `t1+t2` 로 붙어 있으면 매칭(E2).
-    compounds: list[tuple[str, str]] = field(default_factory=list)
+    # 한글 결합어 후보 (E3·C11) — 원문 인접 2~3단어 연쇄 (t1, t2[, t3]). 텍스트에 이어 붙어 있으면 매칭(E2).
+    compounds: list[tuple[str, ...]] = field(default_factory=list)
 
 
 _PATH_LIKE_RE = re.compile(r"\.[A-Za-z0-9]{1,5}$")
@@ -248,7 +251,7 @@ def parse_query(raw: str) -> Query:
         (required if is_required else optional).extend(toks)
     return Query(
         kind="keywords", optional=optional, required=required, raw_paths=raw_paths,
-        compounds=_adjacent_hangul_pairs(word_tokens),
+        compounds=_adjacent_hangul_chains(word_tokens),
     )
 
 
@@ -256,23 +259,29 @@ def _is_pure_hangul(token: str) -> bool:
     return bool(token) and all("가" <= ch <= "힣" for ch in token)
 
 
-def _adjacent_hangul_pairs(word_tokens: "list[list[str] | None]") -> list[tuple[str, str]]:
-    """E3 — 원문 공백 분리 단어의 인접쌍 중 **양쪽이 순수 한글 토큰 1개씩**일 때만 결합어
-    후보. 불용어·1글자(토큰 0개)·ASCII·경로형 단어가 끼면 쌍이 끊긴다(`선발송 및 접수` 는
-    결합어가 아니다). 순서 보존 dedupe."""
-    pairs: list[tuple[str, str]] = []
-    seen: set[tuple[str, str]] = set()
-    for a, b in zip(word_tokens, word_tokens[1:]):
-        if not a or not b or len(a) != 1 or len(b) != 1:
-            continue
-        t1, t2 = a[0], b[0]
-        if not (_is_pure_hangul(t1) and _is_pure_hangul(t2)):
-            continue
-        if (t1, t2) in seen:
-            continue
-        seen.add((t1, t2))
-        pairs.append((t1, t2))
-    return pairs
+COMPOUND_MAX_WORDS = 3  # E3·C11 — 결합어 후보는 인접 2~3단어 연쇄
+
+
+def _adjacent_hangul_chains(word_tokens: "list[list[str] | None]") -> list[tuple[str, ...]]:
+    """E3·C11 — 원문 공백 분리 단어의 인접 2~3단어 연쇄 중 **모두 순수 한글 토큰 1개씩**일 때만
+    결합어 후보(`선발송 접수 상태` → (선발송,접수)·(선발송,접수,상태)·(접수,상태)). 불용어·1글자
+    (토큰 0개)·ASCII·경로형 단어가 끼면 연쇄가 끊긴다(`선발송 및 접수` 는 결합어가 아니다).
+    순서 보존 dedupe."""
+    singles: list[str | None] = [
+        w[0] if (w and len(w) == 1 and _is_pure_hangul(w[0])) else None for w in word_tokens
+    ]
+    chains: list[tuple[str, ...]] = []
+    seen: set[tuple[str, ...]] = set()
+    for i in range(len(singles)):
+        for n in range(2, COMPOUND_MAX_WORDS + 1):
+            window = singles[i : i + n]
+            if len(window) < n or any(t is None for t in window):
+                break
+            chain = tuple(t for t in window if t is not None)
+            if chain not in seen:
+                seen.add(chain)
+                chains.append(chain)
+    return chains
 
 
 # ── 섹션 분할 ───────────────────────────────────────────────────
@@ -522,6 +531,8 @@ def _boundary_regex(token: str) -> "re.Pattern[str]":
 
 
 def boundary_search(token: str, text_lc: str) -> "re.Match[str] | None":
+    if token not in text_lc:
+        return None  # C6·C11 — 리터럴이 없으면 정규식 없이 거부 (경계 패턴은 리터럴 + 전후 lookaround 뿐)
     return _boundary_regex(token).search(text_lc)
 
 
@@ -666,19 +677,28 @@ def score_text(
             token_score[t] = s
         token_signals[t] = sig
 
-    # E2 결합어 — 띄어 쓴 질의 인접쌍 ↔ 붙여 쓴 본문·description. 구성 토큰이 그 신호를
-    # 이미 받았으면 가산하지 않는다(붙여 쓴 본문 4 = 띄어 쓴 본문 4 — 역전 없음).
-    for t1, t2 in query.compounds:
-        compound = t1 + t2
+    # E2·C11 결합어(인접 2~3단어) — 띄어 쓴 질의 ↔ 붙여 쓴 본문·description·헤딩. 구성 토큰이
+    # 그 신호를 이미 받았으면 가산하지 않는다(붙여 쓴 텍스트 = 띄어 쓴 텍스트 점수 — 역전 없음).
+    # 헤딩 토큰이 결합어와 같으면 구성 토큰 전부를 정확 일치(10)로 올린다(부분 일치 5 는 회수).
+    for chain in query.compounds:
+        compound = "".join(chain)
         for text_lc, signal in ((body_lc, "body"), (desc_lc, "description")):
             if not text_lc or boundary_search(compound, text_lc) is None:
                 continue
-            for t in (t1, t2):
+            for t in chain:
                 sig = token_signals.setdefault(t, set())
                 if signal in sig:
                     continue
                 sig.add(signal)
                 token_score[t] = token_score.get(t, 0) + SCORE[signal]
+        if compound in heading_tokens:
+            for t in chain:
+                sig = token_signals.setdefault(t, set())
+                if "heading_exact" in sig:
+                    continue
+                gain = SCORE["heading_exact"] - (SCORE["heading_partial"] if "heading_partial" in sig else 0)
+                sig.add("heading_exact")
+                token_score[t] = token_score.get(t, 0) + gain
 
     matched_raw_paths: list[str] = []
     path_bonus = 0
@@ -1375,7 +1395,8 @@ def _apply_inject(results: list[dict], secs: list[Section], max_bytes: int) -> l
         total = len(lines)
         kept = 0
         used = 0
-        for ln in lines[: min(total, LARGE_SECTION_LINES)]:
+        cap = LARGE_SECTION_LINES + (1 if sec.level in (2, 3) else 0)  # 복원한 헤딩 줄은 캡 밖(C12)
+        for ln in lines[: min(total, cap)]:
             nbytes = len(ln.encode("utf-8")) + 1  # 개행 포함
             if used + nbytes > budget:
                 break
