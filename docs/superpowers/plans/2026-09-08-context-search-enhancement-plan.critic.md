@@ -100,9 +100,9 @@
 | C2 | | |
 | C3 | | |
 | C4 | accepted | `_normalize_select_path` 가 루트 기준·접두·CWD 표시 경로·`../projects/…` 후보를 색인 파일 집합과 대조해 해석, 봉쇄 기준을 collect_files 와 같은 "workspace 안" 으로 변경(`../x` 허용, `../../x` 거부) · 라이브 include 파일 왕복 실측 1건 · 테스트 1건 + 기존 traversal 테스트 2건 기준 조정 |
-| C5 | | |
-| C6 | | |
-| C7 | | |
+| C5 | accepted | `_apply_inject` 가 텍스트 줄마다 파일 라인 범위를 들고, 뒤에 오는 H2 가 앞서 주입된 H3 범위를 `[L{s}-{e} 는 [#k] 에 주입됨 — 생략]` 1줄로 접는다(잘림 힌트 offset 은 파일 라인 기준 유지). 앞→뒤 생략 규칙은 그대로 · 테스트 3건(키워드 순서·select 역순·접힌 뒤 잘림) |
+| C6 | accepted | 경계·flex 정규식을 `functools.lru_cache` 로 토큰당 1회 컴파일(실행 내 memo), flex 는 첫 글자 부재 시 정규식 없이 거부. 실측(1,000섹션 한글, 전 섹션 일치 최악 케이스): joined 5토큰 314 → 274ms · joined 3토큰 238 → 213ms · ASCII 128 → 127ms. 한글 5토큰 성능 테스트 추가(상한 1.0s, spec 300ms 는 목표) · compact→flex 결정을 flex_pattern docstring 과 §4 에 기록 |
+| C7 | accepted | fnmatch 대신 gitignore 의미 정규식(`_glob_regex`, lru_cache): `*`·`?` 는 `/` 를 넘지 않고 `**` 만 가로지름, 슬래시 있는 패턴은 루트 앵커, 없는 패턴은 어느 깊이의 이름과도 일치, 디렉토리는 하위 전부. `wms/**` 는 이제 `app/services/wms/x.rb` 와 불일치(#30 과 동일 집합) · 테스트 hit 10·miss 6 |
 | C8 | accepted | 예산을 md/manifest 렌더 총량 근사로 — 예비 600B + 결과별(표/manifest 줄 큰 쪽 + 래퍼·잘림·생략 줄) 오버헤드를 먼저 뗀다. 헤딩 줄만 들어가는 섹션은 생략. json 은 CLI 가 예산 65% 축소 + INFO. 스왑 임계 실측 28,000B 인라인·31,200B 스왑 → 상한 24,000 유지. 실측: 상한에서 md 19.9K·manifest 22.6K·json 21.5K (전: 29.8K/32.5K/39.6K) · 테스트 2건 조정 + 1건 |
 | C9 | | |
 | C10 | | |

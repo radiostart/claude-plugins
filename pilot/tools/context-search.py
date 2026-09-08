@@ -86,7 +86,7 @@ Exit:
 from __future__ import annotations
 
 import argparse
-import fnmatch
+import functools
 import html
 import importlib.util
 import json
@@ -515,8 +515,14 @@ def boundary_pattern(token: str) -> str:
     return f"(?<!{WORD}){escaped}(?!{WORD})"  # ASCII 토큰 — 양측 경계
 
 
+@functools.lru_cache(maxsize=4096)
+def _boundary_regex(token: str) -> "re.Pattern[str]":
+    # 실행 내 memo(C6) — 토큰당 1회 컴파일. 프로세스 메모리에만 남고 실행 간 영속 캐시가 아니다.
+    return re.compile(boundary_pattern(token))
+
+
 def boundary_search(token: str, text_lc: str) -> "re.Match[str] | None":
-    return re.search(boundary_pattern(token), text_lc)
+    return _boundary_regex(token).search(text_lc)
 
 
 REVERSE_MIN_CHARS = 4  # E4 — 역방향(붙여 쓴 질의 ↔ 띄어 쓴 텍스트) 대조를 시도하는 한글 토큰 최소 길이
@@ -528,25 +534,68 @@ def _reverse_candidate(token: str) -> bool:
 
 def flex_pattern(token: str) -> str:
     """E4 — 한글 토큰의 글자 사이에 공백을 허용하는 좌측 경계 패턴
-    (`진입파일` ↔ `진입 파일`). ASCII 에는 쓰지 않는다(`payload` ≠ `pay load`)."""
+    (`진입파일` ↔ `진입 파일`). ASCII 에는 쓰지 않는다(`payload` ≠ `pay load`).
+    (계획서 E4 의 'compact' 방식은 공백을 지우면 좌측 경계도 사라져 부적합 — flex 정규식으로 대체.)"""
     return f"(?<!{WORD})" + r"\s*".join(re.escape(ch) for ch in token)
 
 
+@functools.lru_cache(maxsize=4096)
+def _flex_regex(token: str) -> "re.Pattern[str]":
+    return re.compile(flex_pattern(token))
+
+
 def flex_search(token: str, text_lc: str) -> "re.Match[str] | None":
-    return re.search(flex_pattern(token), text_lc)
+    if not text_lc or token[0] not in text_lc:
+        return None  # C6 — 첫 글자가 본문에 없으면 정규식 없이 거부
+    return _flex_regex(token).search(text_lc)
+
+
+@functools.lru_cache(maxsize=1024)
+def _glob_regex(glob: str) -> "re.Pattern[str]":
+    """E7·C7 — frontmatter `sources` glob 을 gitignore 의미로 정규식화 (#30 `.claude/rules paths:`
+    와 같은 집합을 가리키게): `*`·`?` 는 `/` 를 넘지 않고, `**` 만 경로를 가로지른다. 슬래시가
+    든 패턴은 루트 앵커(`app/services/*.rb` 는 `app/services/wms/x.rb` 와 불일치), 슬래시 없는
+    패턴(`*.rb`·`wms`)은 어느 깊이의 이름과도 맞는다. 디렉토리(`app/x`·`app/x/`)는 하위 전부."""
+    g = glob.strip()
+    if g.startswith("/"):
+        g = g[1:]
+    g = g.rstrip("/")
+    anchored = "/" in g
+    out: list[str] = []
+    i = 0
+    while i < len(g):
+        if g.startswith("**/", i):
+            out.append("(?:.*/)?")
+            i += 3
+            continue
+        if g.startswith("**", i):
+            out.append(".*")
+            i += 2
+            continue
+        ch = g[i]
+        if ch == "*":
+            out.append("[^/]*")
+        elif ch == "?":
+            out.append("[^/]")
+        elif ch == "[":
+            j = g.find("]", i + 1)
+            if j == -1:
+                out.append(re.escape(ch))
+            else:
+                out.append("[" + g[i + 1 : j].replace("\\", "\\\\") + "]")
+                i = j
+        else:
+            out.append(re.escape(ch))
+        i += 1
+    prefix = "^" if anchored else "(?:^|.*/)"
+    return re.compile(prefix + "".join(out) + "(?:/.*)?$")
 
 
 def _source_glob_match(path: str, glob: str) -> bool:
-    """E7 — frontmatter `sources` glob 대조. fnmatch 의 `*` 는 `/` 도 삼키므로 `app/x/**` 가
-    하위 경로까지 덮는다(3.13 전용 `PurePath.full_match` 미사용). 접두 없는 glob(`wms/**`)은
-    suffix 로, 와일드카드 없는 디렉토리(`app/x` · `app/x/`)는 접두로 허용한다."""
-    g = glob.strip()
-    if not g:
+    g = glob.strip().rstrip("/")
+    if not g or g == "/":
         return False
-    if fnmatch.fnmatchcase(path, g) or fnmatch.fnmatchcase(path, "*/" + g):
-        return True
-    d = g.rstrip("/")
-    return bool(d) and not any(ch in d for ch in "*?[") and path.startswith(d + "/")
+    return _glob_regex(glob).match(path) is not None
 
 
 def score_text(
@@ -1288,9 +1337,9 @@ def _apply_inject(results: list[dict], secs: list[Section], max_bytes: int) -> l
     info: list[str] = []
     overhead = RENDER_RESERVE_BYTES + sum(_render_overhead(r, i) for i, r in enumerate(results, 1))
     budget = max_bytes - overhead
-    covered: list[tuple[str, int, int]] = []  # (file, line_start, 주입된 마지막 파일 라인)
+    covered: list[tuple[str, int, int, int]] = []  # (file, line_start, 주입된 마지막 파일 라인, 결과 번호)
     skipped_budget = 0
-    for r, sec in zip(results, secs):
+    for idx, (r, sec) in enumerate(zip(results, secs), 1):
         r["text"] = ""
         r["truncated"] = False
         parent = next(
@@ -1302,33 +1351,51 @@ def _apply_inject(results: list[dict], secs: list[Section], max_bytes: int) -> l
             None,
         )
         if parent is not None:
-            r["inject_skip"] = f"앞선 결과(L{parent[1]}-{parent[2]}) 본문에 포함 — 중복 주입 생략"
+            r["inject_skip"] = (
+                f"앞선 결과 [#{parent[3]}](L{parent[1]}-{parent[2]}) 본문에 포함 — 중복 주입 생략"
+            )
             continue
+        # 텍스트 줄마다 파일 라인 범위를 나란히 둔다 — 접힌 자식 범위(C5)와 잘림 힌트의 라인 계산 근거
         lines = _section_text(sec)
+        spans: list[tuple[int, int]] = [
+            (sec.line_start + i, sec.line_start + i) for i in range(len(lines))
+        ]
+        if sec.level == 2:
+            # C5 — 앞서 주입된 하위 섹션(H3)이 이 H2 본문 안에 있으면 그 범위를 1줄 표지로 접는다
+            # (키워드 질의에서는 H3 정확 일치가 H2 보다 앞서는 순서가 기본이라 이 방향이 흔하다)
+            children = sorted(
+                (c for c in covered if c[0] == sec.file and sec.line_start < c[1] and c[2] <= sec.line_end),
+                key=lambda c: c[1], reverse=True,
+            )
+            for c in children:
+                lo, hi = c[1] - sec.line_start, c[2] - sec.line_start
+                if 0 < lo <= hi < len(lines):
+                    lines[lo : hi + 1] = [f"[L{c[1]}-{c[2]} 는 [#{c[3]}] 에 주입됨 — 생략]"]
+                    spans[lo : hi + 1] = [(c[1], c[2])]
         total = len(lines)
-        kept: list[str] = []
+        kept = 0
         used = 0
         for ln in lines[: min(total, LARGE_SECTION_LINES)]:
             nbytes = len(ln.encode("utf-8")) + 1  # 개행 포함
             if used + nbytes > budget:
                 break
-            kept.append(ln)
+            kept += 1
             used += nbytes
-        if not kept or (len(kept) == 1 and total > 1 and sec.level in (2, 3)):
+        if kept == 0 or (kept == 1 and total > 1 and sec.level in (2, 3)):
             # 예산이 없거나 헤딩 줄 하나만 들어가는 경우 — 헤딩만 주입하는 것은 정보가 없다(C8)
             r["inject_skip"] = "바이트 예산 소진 — read_hint 로 Read"
             skipped_budget += 1
             continue
         budget -= used
-        r["text"] = "\n".join(kept)
-        last_line = sec.line_start + len(kept) - 1
-        if len(kept) < total:
+        r["text"] = "\n".join(lines[:kept])
+        last_line = spans[kept - 1][1]
+        if kept < total:
             r["truncated"] = True
             rest_start = last_line + 1
             r["inject_rest"] = (
                 f"Read {r['file']} offset={rest_start} limit={max(sec.line_end - rest_start + 1, 1)}"
             )
-        covered.append((sec.file, sec.line_start, last_line if r["truncated"] else sec.line_end))
+        covered.append((sec.file, sec.line_start, last_line if r["truncated"] else sec.line_end, idx))
     if skipped_budget:
         info.append(
             f"--inject 예산({max_bytes}B, 렌더 총량 기준) 소진 — {skipped_budget}개 섹션 본문 생략, "

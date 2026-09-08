@@ -648,6 +648,31 @@ class SearchTest(unittest.TestCase):
 
 
 class PerformanceTest(unittest.TestCase):
+    def test_1000_sections_korean_joined_query_under_one_second(self):
+        # C6 — G3 게이트가 ASCII 질의만 재던 빈틈: 붙여 쓴 4자+ 한글 5토큰(E2·E4 경로)도 같은 상한.
+        words = "선발송 접수 상태 확인 규칙과 도메인 진입 파일 로드 순서를 정합성 검사 이후에 반영한다".split()
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            ctx = ws / "context"
+            ctx.mkdir(parents=True)
+            for i in range(200):
+                lines = [f"# 파일 {i}", ""]
+                for s in range(5):
+                    lines.append(f"## 섹션 {i}-{s} keyword{s}")
+                    lines.append(" ".join(words[(i + s + k) % len(words)] for k in range(160)))
+                    lines.append(" ".join(f"app/services/mod{i}_{s}_{c}.rb:{c + 1}" for c in range(6)))
+                    lines.append("")
+                (ctx / f"file{i}.md").write_text("\n".join(lines), encoding="utf-8")
+            start = time.time()
+            result = m.search(
+                workspace=ws, project=None, scope=None, includes=None,
+                query_raw="선발송접수 상태확인 도메인로드 진입파일 정합성검사", limit=5,
+            )
+            elapsed = time.time() - start
+            self.assertGreater(result["candidates"], 0)
+            self.assertLess(elapsed, 1.0)
+
+
     def test_1000_sections_high_citation_density_under_one_second(self):
         with tempfile.TemporaryDirectory() as td:
             ws = Path(td)
@@ -925,6 +950,48 @@ class InjectTest(unittest.TestCase):
             self.assertIn("### Child", parent["text"])
             self.assertIn("중복", child["inject_skip"])
             self.assertEqual(child["text"], "")
+
+    def test_child_first_then_parent_folds_child_range(self):
+        # C5 — 키워드 질의에서는 H3 정확 일치(+10)가 H2(본문 +2)보다 앞선다. 뒤에 오는 부모는
+        # 이미 주입된 자식 범위를 1줄 표지로 접어 본문 중복을 없앤다.
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Parent zeta\nintro alpha child\n### Child alpha\nchild body\n"})
+            r = m.search(workspace=ws, project=None, scope=None, includes=None,
+                         query_raw="alpha child", limit=5, inject=True)
+            child, parent = r["results"]
+            self.assertEqual(child["heading"], "Child alpha")
+            self.assertEqual(child["text"], "### Child alpha\nchild body")
+            self.assertNotIn("child body", parent["text"])
+            self.assertIn("[L3-4 는 [#1] 에 주입됨 — 생략]", parent["text"])
+            self.assertIn("intro alpha child", parent["text"])
+            self.assertFalse(parent["truncated"])
+            self.assertEqual(m.render_md(r).count("child body"), 1)
+
+    def test_select_reverse_order_folds_child(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Parent\nintro\n### Child\nchild body\n"})
+            r = self._search(ws, "select:a.md#Child,a.md#Parent", inject=True)
+            child, parent = r["results"]
+            self.assertEqual(child["text"], "### Child\nchild body")
+            self.assertNotIn("child body", parent["text"])
+            self.assertIn("에 주입됨", parent["text"])
+
+    def test_folded_parent_truncation_rest_hint_uses_file_lines(self):
+        # 접힌 표지 뒤에서 잘려도 inject_rest 의 offset 은 파일 라인 기준이어야 한다.
+        with tempfile.TemporaryDirectory() as td:
+            # 자식(L3-4) 뒤에 선택되지 않은 H3(L5~) 가 이어져 부모 본문 안에 남는다 — 표지(1줄)가 2줄을 대신하므로
+            # 텍스트 k 줄을 실으면 마지막 파일 라인은 k + 1, 나머지 Read 는 k + 2 부터.
+            tail = "\n".join("t" * 40 for _ in range(30))
+            ws = self._ws(td, {"a.md": "## Parent\nintro\n### Child\nchild body\n### Other\n" + tail + "\n"})
+            big = self._search(ws, "select:a.md#Child,a.md#Parent", inject=True)
+            self.assertFalse(big["results"][1]["truncated"])
+            self.assertIn("[L3-4 는 [#1] 에 주입됨 — 생략]", big["results"][1]["text"])
+            r = self._search(ws, "select:a.md#Child,a.md#Parent", inject=True, max_bytes=1800)
+            child, parent = r["results"]
+            self.assertTrue(parent["truncated"], parent)
+            kept_lines = parent["text"].count("\n") + 1
+            self.assertGreaterEqual(kept_lines, 4)
+            self.assertIn(f"offset={kept_lines + 2} ", parent["inject_rest"])
 
     def test_child_kept_when_parent_truncated_before_child(self):
         # 부모가 400줄 캡으로 잘려 자식 범위를 덮지 못하면 자식은 중복이 아니다 — 그대로 주입.
@@ -1230,10 +1297,17 @@ class SourcesBonusTest(unittest.TestCase):
         self.assertEqual(score, m.SCORE["citation"])
         self.assertEqual(matched, ["app/services/wms/cancel.rb"])
 
-    def test_nested_suffix_and_directory_forms(self):
-        for g in ("app/services/**", "wms/**", "app/services/wms", "app/services/wms/"):
-            score, _ = m.score_text(self._q(), heading="", body="", sources=[g])
-            self.assertEqual(score, m.SCORE["citation"], g)
+    def test_gitignore_semantics_of_sources_glob(self):
+        # C7 — #30 `.claude/rules paths:` 와 같은 집합: `*`·`?` 는 `/` 를 넘지 않고 `**` 만 가로지른다.
+        hit = ("app/services/**", "app/services/wms", "app/services/wms/", "**/wms/**", "wms", "services", "*.rb",
+               "app/services/wms/*.rb", "app/*/wms/**", "/app/services/**")  # 슬래시 없는 이름은 어느 깊이의 디렉토리와도
+        miss = ("wms/**", "app/services/*.rb", "app/*/cancel.rb", "*.py", "app/services/wm?/x.rb", "models")
+        for g in hit:
+            self.assertEqual(m.score_text(self._q(), heading="", body="", sources=[g])[0], m.SCORE["citation"], g)
+        for g in miss:
+            self.assertEqual(m.score_text(self._q(), heading="", body="", sources=[g])[0], 0, g)
+        self.assertTrue(m._source_glob_match("app/services/wms/x/y.rb", "app/services/wms/**"))
+        self.assertFalse(m._source_glob_match("app/services/wms/x/y.rb", "app/services/wms/*.rb"))
 
     def test_mismatch_and_empty_no_bonus(self):
         self.assertEqual(m.score_text(self._q(), heading="", body="", sources=["app/models/**"])[0], 0)
