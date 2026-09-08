@@ -722,6 +722,265 @@ class MainCliTest(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# select: 다중 대상 (E8)
+# ---------------------------------------------------------------------------
+class SelectMultiTest(unittest.TestCase):
+    def _corpus(self, td):
+        ws = Path(td)
+        ctx = ws / "context"
+        ctx.mkdir(parents=True)
+        (ctx / "a.md").write_text("## Alpha\nbody a\n", encoding="utf-8")
+        (ctx / "b.md").write_text("## Beta\nbody b\n", encoding="utf-8")
+        return ws
+
+    def _search(self, ws, q, **kw):
+        return m.search(workspace=ws, project=None, scope=None, includes=None, query_raw=q, limit=5, **kw)
+
+    def test_parse_multi_targets_and_first_target_compat(self):
+        q = m.parse_query("select:a.md#H1, b.md#H2,c.md")
+        self.assertEqual(q.kind, "select")
+        self.assertEqual(q.select_targets, [("a.md", "H1"), ("b.md", "H2"), ("c.md", None)])
+        self.assertEqual((q.select_path, q.select_heading), ("a.md", "H1"))
+
+    def test_multi_select_returns_targets_in_order(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:b.md,a.md")
+            self.assertEqual([x["heading"] for x in r["results"]], ["Beta", "Alpha"])
+            self.assertEqual(r["candidates"], 2)
+            self.assertIsNone(r["zero_hit"])
+            self.assertEqual(r["query"], "select:b.md,a.md")
+
+    def test_multi_select_partial_missing_gives_info_not_zero_hit(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:a.md,zzz.md")
+            self.assertEqual(r["returned"], 1)
+            self.assertIsNone(r["zero_hit"])
+            self.assertTrue(any("select 대상 없음: 'zzz.md'" in i for i in r["info"]), r["info"])
+
+    def test_multi_select_all_missing_keeps_suggestions_shape(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:aa.md,bb.md")
+            self.assertEqual(r["returned"], 0)
+            self.assertIn("suggestions", r["zero_hit"])
+            self.assertLessEqual(len(r["zero_hit"]["suggestions"]), 3)
+
+    def test_single_select_heading_miss_keeps_guidance_shape(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:a.md#Nope")
+            self.assertEqual(list(r["zero_hit"].keys()), ["guidance"])
+
+    def test_multi_select_dedupes_same_section(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:a.md#Alpha,a.md")
+            self.assertEqual(r["returned"], 1)
+
+    def test_multi_select_traversal_in_any_target_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            with self.assertRaises(m.SearchError):
+                self._search(ws, "select:a.md,../x")
+
+
+# ---------------------------------------------------------------------------
+# --inject (E9)
+# ---------------------------------------------------------------------------
+class InjectTest(unittest.TestCase):
+    def _ws(self, td, files):
+        ws = Path(td)
+        ctx = ws / "context"
+        ctx.mkdir(parents=True)
+        for name, text in files.items():
+            (ctx / name).write_text(text, encoding="utf-8")
+        return ws
+
+    def _search(self, ws, q, **kw):
+        return m.search(workspace=ws, project=None, scope=None, includes=None, query_raw=q, limit=5, **kw)
+
+    def test_inject_adds_text_and_wrapper_block(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nbody a\n"})
+            r = self._search(ws, "select:a.md#Alpha", inject=True)
+            self.assertEqual(r["results"][0]["text"], "## Alpha\nbody a")
+            self.assertFalse(r["results"][0]["truncated"])
+            md = m.render_md(r)
+            self.assertIn('<context-snippet file="', md)
+            self.assertIn('heading="Alpha" lines="1-2">', md)
+            self.assertIn("</context-snippet>", md)
+            self.assertNotIn("1. >", md)
+
+    def test_without_inject_output_has_no_text_key(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nbody a\n"})
+            r = self._search(ws, "select:a.md#Alpha")
+            self.assertNotIn("text", r["results"][0])
+            self.assertNotIn("<context-snippet", m.render_md(r))
+
+    def test_budget_truncates_with_rest_hint(self):
+        with tempfile.TemporaryDirectory() as td:
+            body = "\n".join("x" * 20 for _ in range(50))
+            ws = self._ws(td, {"a.md": "## Alpha\n" + body + "\n"})
+            r = self._search(ws, "select:a.md", inject=True, max_bytes=100)
+            res = r["results"][0]
+            self.assertTrue(res["truncated"])
+            self.assertLessEqual(len(res["text"].encode("utf-8")) + 1, 100)
+            self.assertTrue(res["inject_rest"].startswith("Read "))
+            self.assertIn("offset=", res["inject_rest"])
+            self.assertIn("[잘림 — 나머지: Read ", m.render_md(r))
+
+    def test_budget_exhausted_skips_later_sections_with_info(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\n" + "a" * 60 + "\n## Beta\n" + "b" * 60 + "\n"})
+            r = self._search(ws, "select:a.md", inject=True, max_bytes=75)
+            self.assertNotEqual(r["results"][0]["text"], "")
+            self.assertIn("inject_skip", r["results"][1])
+            self.assertTrue(any("예산" in i for i in r["info"]), r["info"])
+            self.assertIn("[2] ", m.render_md(r))
+
+    def test_section_capped_at_400_lines(self):
+        with tempfile.TemporaryDirectory() as td:
+            body = "\n".join(f"line {i}" for i in range(500))
+            ws = self._ws(td, {"a.md": "## Alpha\n" + body + "\n"})
+            r = self._search(ws, "select:a.md", inject=True, max_bytes=24000)
+            res = r["results"][0]
+            self.assertEqual(len(res["text"].splitlines()), m.LARGE_SECTION_LINES)
+            self.assertTrue(res["truncated"])
+
+    def test_child_h3_skipped_when_parent_h2_injected_first(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Parent\nintro\n### Child\nchild body\n"})
+            r = self._search(ws, "select:a.md", inject=True)
+            parent, child = r["results"]
+            self.assertIn("### Child", parent["text"])
+            self.assertIn("중복", child["inject_skip"])
+            self.assertEqual(child["text"], "")
+
+    def test_child_kept_when_parent_truncated_before_child(self):
+        # 부모가 400줄 캡으로 잘려 자식 범위를 덮지 못하면 자식은 중복이 아니다 — 그대로 주입.
+        with tempfile.TemporaryDirectory() as td:
+            filler = "\n".join("p" for _ in range(450))
+            ws = self._ws(td, {"a.md": "## Parent\n" + filler + "\n### Child\nchild body\n"})
+            r = self._search(ws, "select:a.md", inject=True)
+            parent, child = r["results"]
+            self.assertTrue(parent["truncated"])
+            self.assertNotIn("inject_skip", child)
+            self.assertEqual(child["text"], "### Child\nchild body")
+
+    def test_max_bytes_clamped_and_zero_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nbody\n"})
+            r = self._search(ws, "select:a.md", inject=True, max_bytes=99_999)
+            self.assertTrue(any(str(m.INJECT_MAX_BYTES_CAP) in i for i in r["info"]))
+            with self.assertRaises(m.SearchError):
+                self._search(ws, "select:a.md", inject=True, max_bytes=0)
+
+    def test_wrapper_attribute_escaping(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": '## Say "hi" <b>\nbody\n'})
+            r = self._search(ws, "select:a.md", inject=True)
+            self.assertIn('heading="Say &quot;hi&quot; &lt;b&gt;"', m.render_md(r))
+
+    def test_level1_preface_text_restores_h1(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "# Title\n\npreface.\n\n## A\nx\n"})
+            r = self._search(ws, "select:a.md#Title", inject=True)
+            self.assertTrue(r["results"][0]["text"].startswith("# Title"))
+
+    def test_keyword_query_inject_cli_default_limit_3(self):
+        with tempfile.TemporaryDirectory() as td:
+            files = {f"f{i}.md": f"## Keyword {i}\nkeyword body {i}\n" for i in range(5)}
+            ws = self._ws(td, files)
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = m.main(["keyword", "--workspace", str(ws), "--inject", "--format", "json"])
+            self.assertEqual(code, 0)
+            data = json.loads(out.getvalue())
+            self.assertEqual(data["returned"], m.INJECT_DEFAULT_LIMIT)
+            self.assertTrue(all("text" in r for r in data["results"]))
+            out2 = io.StringIO()
+            with redirect_stdout(out2), redirect_stderr(io.StringIO()):
+                m.main(["keyword", "--workspace", str(ws), "--format", "json"])
+            self.assertEqual(json.loads(out2.getvalue())["returned"], m.DEFAULT_LIMIT)
+
+
+# ---------------------------------------------------------------------------
+# --format manifest (E10)
+# ---------------------------------------------------------------------------
+class ManifestTest(unittest.TestCase):
+    def _ws(self, td, files):
+        ws = Path(td)
+        ctx = ws / "context"
+        ctx.mkdir(parents=True)
+        for name, text in files.items():
+            (ctx / name).write_text(text, encoding="utf-8")
+        return ws
+
+    def _search(self, ws, q, **kw):
+        return m.search(workspace=ws, project=None, scope=None, includes=None, query_raw=q, limit=5, **kw)
+
+    def test_manifest_line_format(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Keyword here\nkeyword body text\n"})
+            r = self._search(ws, "keyword")
+            out = m.render_manifest(r, now=time.time())
+            lines = out.splitlines()
+            self.assertTrue(lines[0].startswith("검색: `keyword`"))
+            line = lines[2]
+            self.assertTrue(line.startswith(f"[#1] {m.SCORE['heading_exact'] + m.SCORE['body']} | "), line)
+            self.assertIn(" :: Keyword here | L1-2 | 0d | matched: keyword | ", line)
+            self.assertNotIn("| #", out)  # md 표 골격 없음
+
+    def test_manifest_select_score_dash(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nbody\n"})
+            out = m.render_manifest(self._search(ws, "select:a.md"))
+            self.assertIn("[#1] - | ", out)
+
+    def test_manifest_snippet_capped_at_80(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\n" + "keyword " + "y" * 300 + "\n"})
+            out = m.render_manifest(self._search(ws, "keyword"))
+            tail = out.splitlines()[2].rsplit(" | ", 1)[1]
+            self.assertLessEqual(len(tail), m.MANIFEST_SNIPPET_CHARS + 1)
+            self.assertTrue(tail.endswith("…"))
+
+    def test_manifest_age_days_from_mtime(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nkeyword body\n"})
+            now = time.time()
+            os.utime(ws / "context" / "a.md", (now - 3 * 86400 - 10, now - 3 * 86400 - 10))
+            out = m.render_manifest(self._search(ws, "keyword"), now=now)
+            self.assertIn("| 3d |", out)
+
+    def test_manifest_zero_hit_and_info_rendered(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nbody\n"})
+            out = m.render_manifest(self._search(ws, "totallyabsent"))
+            self.assertIn("0건", out)
+            self.assertIn("토큰별 일치 섹션 수: totallyabsent=0", out)
+
+    def test_manifest_with_inject_appends_blocks(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nbody\n"})
+            out = m.render_manifest(self._search(ws, "select:a.md", inject=True))
+            self.assertIn("[#1] - | ", out)
+            self.assertIn("<context-snippet ", out)
+
+    def test_cli_format_manifest_accepted(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Keyword\nbody keyword text\n"})
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = m.main(["keyword", "--workspace", str(ws), "--format", "manifest"])
+            self.assertEqual(code, 0)
+            self.assertIn("[#1] ", out.getvalue())
+
+
+# ---------------------------------------------------------------------------
 # 골든 — pilot/tests/fixtures/context-search/ 스냅샷, --scope pilot, hit@3
 # ---------------------------------------------------------------------------
 @unittest.skipUnless(FIXTURE_ROOT.is_dir(), "context-search 골든 fixture 없음")

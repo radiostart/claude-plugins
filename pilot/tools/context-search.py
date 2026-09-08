@@ -57,12 +57,14 @@ Exit:
 from __future__ import annotations
 
 import argparse
+import html
 import importlib.util
 import json
 import os
 import re
 import sys
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, field
 from pathlib import Path
 
 # ── 상수 ────────────────────────────────────────────────────────
@@ -70,6 +72,10 @@ DEFAULT_LIMIT = 5
 MAX_LIMIT = 20
 SNIPPET_CHARS = 240
 LARGE_SECTION_LINES = 400
+INJECT_DEFAULT_LIMIT = 3  # 키워드 질의 + --inject 에서 --limit 미지정 시 (E9)
+INJECT_MAX_BYTES_DEFAULT = 12_000
+INJECT_MAX_BYTES_CAP = 24_000  # Bash 도구 출력이 파일로 스왑되는 크기 아래로 고정 (E9)
+MANIFEST_SNIPPET_CHARS = 80
 
 SCORE = {
     "heading_exact": 10,
@@ -152,6 +158,8 @@ class Query:
     raw_paths: list[str]
     select_path: str | None = None
     select_heading: str | None = None
+    # select: 다중 대상 (E8) — `select:a.md#h1,b.md#h2`. 첫 대상은 select_path/select_heading 에도 복사.
+    select_targets: list[tuple[str, str | None]] = field(default_factory=list)
 
 
 _PATH_LIKE_RE = re.compile(r"\.[A-Za-z0-9]{1,5}$")
@@ -161,17 +169,26 @@ def parse_query(raw: str) -> Query:
     raw = raw.strip()
     if raw.startswith("select:"):
         rest = raw[len("select:") :]
-        if "#" in rest:
-            path_part, heading_part = rest.split("#", 1)
-        else:
-            path_part, heading_part = rest, ""
+        targets: list[tuple[str, str | None]] = []
+        for part in rest.split(","):
+            part = part.strip()
+            if not part:
+                continue
+            if "#" in part:
+                path_part, heading_part = part.split("#", 1)
+            else:
+                path_part, heading_part = part, ""
+            targets.append((path_part.strip(), heading_part.strip() or None))
+        if not targets:
+            targets = [("", None)]
         return Query(
             kind="select",
             optional=[],
             required=[],
             raw_paths=[],
-            select_path=path_part.strip(),
-            select_heading=heading_part.strip() or None,
+            select_path=targets[0][0],
+            select_heading=targets[0][1],
+            select_targets=targets,
         )
 
     optional: list[str] = []
@@ -752,6 +769,8 @@ def search(
     includes: "list[str] | None",
     query_raw: str,
     limit: int,
+    inject: bool = False,
+    max_bytes: int = INJECT_MAX_BYTES_DEFAULT,
 ) -> dict:
     query = parse_query(query_raw)
     if query.kind == "keywords" and not query.required and not query.optional:
@@ -765,6 +784,15 @@ def search(
     if limit > MAX_LIMIT:
         limit_info.append(f"--limit {limit} 이 최대값 {MAX_LIMIT} 초과 — {MAX_LIMIT} 로 제한")
         limit = MAX_LIMIT
+    if inject:
+        if max_bytes < 1:
+            raise SearchError(f"--max-bytes 는 1 이상이어야 합니다: {max_bytes}", 2)
+        if max_bytes > INJECT_MAX_BYTES_CAP:
+            limit_info.append(
+                f"--max-bytes {max_bytes} 이 상한 {INJECT_MAX_BYTES_CAP} 초과 — "
+                f"{INJECT_MAX_BYTES_CAP} 로 제한"
+            )
+            max_bytes = INJECT_MAX_BYTES_CAP
 
     root = workspace / "context"
     files, info, entry_files = collect_files(workspace, scope, includes, project)
@@ -788,7 +816,9 @@ def search(
         sections.extend(split_sections(text, rel))
 
     if query.kind == "select":
-        return _select_result(query, sections, root, scope, includes, info)
+        return _select_result(
+            query, sections, root, scope, includes, info, inject=inject, max_bytes=max_bytes
+        )
 
     memo: dict[str, list[str]] = {}
     all_tokens = list(dict.fromkeys(query.required + query.optional))
@@ -804,23 +834,9 @@ def search(
 
     ranked = rank(scored, limit, entry_rel=entry_rel)
 
-    results = []
-    for sec, sc, matched in ranked:
-        abs_p = (root / sec.file)
-        display_file = _display_path(abs_p)
-        results.append(
-            {
-                "file": display_file,
-                "heading": sec.heading,
-                "level": sec.level,
-                "line_start": sec.line_start,
-                "line_end": sec.line_end,
-                "score": sc,
-                "matched": matched,
-                "snippet": build_snippet(sec, matched),
-                "read_hint": build_read_hint(sec, display_file),
-            }
-        )
+    results = [_result_entry(sec, root, sc, matched) for sec, sc, matched in ranked]
+    if inject:
+        info = info + _apply_inject(results, [sec for sec, _sc, _m in ranked], max_bytes)
 
     zero_hit = None
     if not results:
@@ -839,57 +855,107 @@ def search(
     }
 
 
-def _select_result(
-    query: Query, sections: list[Section], root: Path,
-    scope: str | None, includes: "list[str] | None", info: list[str],
-) -> dict:
-    select_path = (query.select_path or "").strip()
+def _result_entry(sec: Section, root: Path, score: int | None, matched: list[str]) -> dict:
+    """결과 항목 1개 — 키워드·select 경로가 같은 키 순서를 쓴다(JSON 바이트 동일성의 근거).
+    `type`·`domain` 은 frontmatter 에 값이 있을 때만 붙는다(E6 — 없는 코퍼스의 출력 불변)."""
+    display_file = _display_path(root / sec.file)
+    entry = {
+        "file": display_file,
+        "heading": sec.heading,
+        "level": sec.level,
+        "line_start": sec.line_start,
+        "line_end": sec.line_end,
+        "score": score,
+        "matched": matched,
+        "snippet": build_snippet(sec, matched),
+        "read_hint": build_read_hint(sec, display_file),
+    }
+    return entry
+
+
+def _normalize_select_path(raw: str) -> str:
+    select_path = raw.strip()
     if select_path.startswith("workspace/context/"):
         select_path = select_path[len("workspace/context/") :]
     elif select_path.startswith("context/"):
         select_path = select_path[len("context/") :]
     if select_path.startswith("/") or ".." in Path(select_path).parts:
-        raise SearchError(f"select: 대상에 절대경로·'..' 사용 불가: {query.select_path}", 2)
+        raise SearchError(f"select: 대상에 절대경로·'..' 사용 불가: {raw}", 2)
+    return select_path
 
-    display_query = "select:" + select_path + (f"#{query.select_heading}" if query.select_heading else "")
-    matches = [s for s in sections if s.file == select_path]
 
-    results = []
-    zero_hit = None
-    if matches:
-        for sec in matches:
-            if query.select_heading and query.select_heading.lower() not in sec.heading.lower():
-                continue
-            display_file = _display_path(root / sec.file)
-            results.append(
-                {
-                    "file": display_file, "heading": sec.heading, "level": sec.level,
-                    "line_start": sec.line_start, "line_end": sec.line_end,
-                    "score": None, "matched": [],
-                    "snippet": build_snippet(sec, []),
-                    "read_hint": build_read_hint(sec, display_file),
-                }
-            )
-        if not results:
-            zero_hit = {
-                "guidance": [
-                    f"'{select_path}' 에 헤딩 '{query.select_heading}' 을 포함하는 섹션 없음 — "
+def _select_result(
+    query: Query, sections: list[Section], root: Path,
+    scope: str | None, includes: "list[str] | None", info: list[str],
+    inject: bool = False, max_bytes: int = INJECT_MAX_BYTES_DEFAULT,
+) -> dict:
+    """`select:` 결과. 대상이 여러 개(E8)면 대상 순서대로 이어 붙이고 같은 섹션은 1회만.
+    일부 대상만 없으면 결과는 내고 INFO 로 알린다. 전부 없으면 zero_hit — 단일 대상의
+    기존 형태(파일 부재 `suggestions` / 헤딩 부재 `guidance`)를 그대로 유지한다."""
+    targets = query.select_targets or [(query.select_path or "", query.select_heading)]
+    all_files: list[str] | None = None
+
+    results: list[dict] = []
+    picked: list[Section] = []
+    seen: set[tuple[str, int]] = set()
+    display_parts: list[str] = []
+    guidance: list[str] = []
+    suggestions: list[str] = []
+    select_info: list[str] = []
+
+    for raw_path, heading in targets:
+        select_path = _normalize_select_path(raw_path)
+        display_parts.append(select_path + (f"#{heading}" if heading else ""))
+        matches = [s for s in sections if s.file == select_path]
+        if matches:
+            found = False
+            for sec in matches:
+                if heading and heading.lower() not in sec.heading.lower():
+                    continue
+                found = True
+                key = (sec.file, sec.line_start)
+                if key in seen:
+                    continue
+                seen.add(key)
+                results.append(_result_entry(sec, root, None, []))
+                picked.append(sec)
+            if not found:
+                guidance.append(
+                    f"'{select_path}' 에 헤딩 '{heading}' 을 포함하는 섹션 없음 — "
                     "select_heading 을 좁히거나 제거"
-                ]
-            }
+                )
+        else:
+            if all_files is None:
+                all_files = sorted({s.file for s in sections})
+            target = set(path_tokens(select_path))
+            scored_suggestions = [
+                (-(len(target & set(path_tokens(f)))), f)
+                for f in all_files
+                if target & set(path_tokens(f))
+            ]
+            scored_suggestions.sort()
+            top = [f for _n, f in scored_suggestions[:3]]
+            for f in top:
+                if f not in suggestions:
+                    suggestions.append(f)
+            select_info.append(
+                f"select 대상 없음: '{select_path}'" + (f" — 후보: {', '.join(top)}" if top else "")
+            )
+
+    zero_hit: dict | None = None
+    if results:
+        info = info + select_info + guidance  # 일부 대상 부재 — 결과는 내고 INFO 로만
     else:
-        all_files = sorted({s.file for s in sections})
-        target = set(path_tokens(select_path))
-        scored_suggestions = [
-            (-(len(target & set(path_tokens(f)))), f)
-            for f in all_files
-            if target & set(path_tokens(f))
-        ]
-        scored_suggestions.sort()
-        zero_hit = {"suggestions": [f for _, f in scored_suggestions[:3]]}
+        zero_hit = {}
+        if guidance:
+            zero_hit["guidance"] = guidance
+        if suggestions or not guidance:
+            zero_hit["suggestions"] = suggestions[:3]
+    if inject:
+        info = info + _apply_inject(results, picked, max_bytes)
 
     return {
-        "query": display_query,
+        "query": "select:" + ",".join(display_parts),
         "root": str(root),
         "scope": scope,
         "include": includes or [],
@@ -901,33 +967,87 @@ def _select_result(
     }
 
 
+# ── 본문 주입 (--inject, E9) ─────────────────────────────────────
+def _section_text(section: Section) -> list[str]:
+    """주입용 라인 — 색인 헤딩(H2/H3)은 원문 형태로 복원해 맨 앞에 둔다. level 1 은
+    H1 텍스트가 있을 때만 `# {H1}` 을 붙이고 합성 헤딩(`(파일 전체)`·`(서문)`)은 뺀다."""
+    if section.level in (2, 3):
+        head = [f"{'#' * section.level} {section.heading}"]
+    elif section.heading not in ("(파일 전체)", "(서문)"):
+        head = [f"# {section.heading}"]
+    else:
+        head = []
+    return head + list(section.body_lines)
+
+
+def _apply_inject(results: list[dict], secs: list[Section], max_bytes: int) -> list[str]:
+    """결과 순서대로 본문을 `text` 에 싣는다(E9). 규칙:
+    - 총 바이트 예산 `max_bytes` (개행 포함 UTF-8), 섹션당 최대 LARGE_SECTION_LINES 줄.
+    - 잘리면 `truncated: true` + `inject_rest` (나머지 라인 범위 Read 힌트).
+    - 같은 파일에서 **앞선** 결과의 주입 범위가 이 섹션 전체를 덮으면(H2 본문은 하위 H3
+      본문을 포함한다) 중복 주입을 생략하고 `inject_skip` 에 사유를 둔다.
+    - 예산이 남지 않아 한 줄도 못 실으면 `inject_skip` — read_hint 로 Read.
+    반환: INFO 줄 목록."""
+    info: list[str] = []
+    budget = max_bytes
+    covered: list[tuple[str, int, int]] = []  # (file, line_start, 주입된 마지막 파일 라인)
+    skipped_budget = 0
+    for r, sec in zip(results, secs):
+        r["text"] = ""
+        r["truncated"] = False
+        parent = next(
+            (
+                c for c in covered
+                if c[0] == sec.file and c[1] <= sec.line_start and sec.line_end <= c[2]
+                and (c[1], c[2]) != (sec.line_start, sec.line_end)
+            ),
+            None,
+        )
+        if parent is not None:
+            r["inject_skip"] = f"앞선 결과(L{parent[1]}-{parent[2]}) 본문에 포함 — 중복 주입 생략"
+            continue
+        lines = _section_text(sec)
+        total = len(lines)
+        kept: list[str] = []
+        used = 0
+        for ln in lines[: min(total, LARGE_SECTION_LINES)]:
+            nbytes = len(ln.encode("utf-8")) + 1  # 개행 포함
+            if used + nbytes > budget:
+                break
+            kept.append(ln)
+            used += nbytes
+        if not kept:
+            r["inject_skip"] = "바이트 예산 소진 — read_hint 로 Read"
+            skipped_budget += 1
+            continue
+        budget -= used
+        r["text"] = "\n".join(kept)
+        last_line = sec.line_start + len(kept) - 1
+        if len(kept) < total:
+            r["truncated"] = True
+            rest_start = last_line + 1
+            r["inject_rest"] = (
+                f"Read {r['file']} offset={rest_start} limit={max(sec.line_end - rest_start + 1, 1)}"
+            )
+        covered.append((sec.file, sec.line_start, last_line if r["truncated"] else sec.line_end))
+    if skipped_budget:
+        info.append(
+            f"--inject 바이트 예산({max_bytes}B) 소진 — {skipped_budget}개 섹션 본문 생략, read_hint 로 Read"
+        )
+    return info
+
+
 # ── 출력 렌더링 ─────────────────────────────────────────────────
-def render_md(result: dict) -> str:
-    lines: list[str] = []
+def _render_header(result: dict) -> str:
     scope_display = result["scope"] or "(전체)"
-    lines.append(
+    return (
         f"검색: `{result['query']}` · scope={scope_display} · "
         f"후보 {result['candidates']}건 중 {result['returned']}건 표시"
     )
-    lines.append("")
 
-    if result["results"]:
-        lines.append("| # | file | heading | lines | score | matched |")
-        lines.append("| --- | --- | --- | --- | --- | --- |")
-        for i, r in enumerate(result["results"], 1):
-            score_display = r["score"] if r["score"] is not None else "-"
-            matched_display = ", ".join(r["matched"]) if r["matched"] else "-"
-            lines.append(
-                f"| {i} | {r['file']} | {r['heading']} | "
-                f"{r['line_start']}-{r['line_end']} | {score_display} | {matched_display} |"
-            )
-        lines.append("")
-        for i, r in enumerate(result["results"], 1):
-            if r["snippet"]:
-                lines.append(f"{i}. > {r['snippet']}")
-            lines.append(f"   {r['read_hint']}")
-        lines.append("")
 
+def _render_tail(result: dict) -> list[str]:
+    lines: list[str] = []
     for msg in result["info"]:
         lines.append(f"[INFO] {msg}")
 
@@ -942,7 +1062,95 @@ def render_md(result: dict) -> str:
             lines.append(f"- {g}")
         for s in zh.get("suggestions", []):
             lines.append(f"- 후보: {s}")
+    return lines
 
+
+def _is_injected(result: dict) -> bool:
+    return any("text" in r for r in result["results"])
+
+
+def _render_inject_blocks(result: dict) -> list[str]:
+    """`<context-snippet file heading lines>` 블록 — 속성값은 html.escape 로 따옴표를 봉인."""
+    out: list[str] = []
+    for i, r in enumerate(result["results"], 1):
+        if r.get("inject_skip"):
+            out.append(f"[{i}] {r['file']} :: {r['heading']} — {r['inject_skip']} ({r['read_hint']})")
+            continue
+        attrs = (
+            f'file="{html.escape(r["file"], quote=True)}" '
+            f'heading="{html.escape(r["heading"], quote=True)}" '
+            f'lines="{r["line_start"]}-{r["line_end"]}"'
+        )
+        out.append(f"<context-snippet {attrs}>")
+        out.append(r["text"])
+        out.append("</context-snippet>")
+        if r.get("truncated"):
+            out.append(f"[잘림 — 나머지: {r['inject_rest']}]")
+    return out
+
+
+def render_md(result: dict) -> str:
+    lines: list[str] = [_render_header(result), ""]
+
+    if result["results"]:
+        lines.append("| # | file | heading | lines | score | matched |")
+        lines.append("| --- | --- | --- | --- | --- | --- |")
+        for i, r in enumerate(result["results"], 1):
+            score_display = r["score"] if r["score"] is not None else "-"
+            matched_display = ", ".join(r["matched"]) if r["matched"] else "-"
+            lines.append(
+                f"| {i} | {r['file']} | {r['heading']} | "
+                f"{r['line_start']}-{r['line_end']} | {score_display} | {matched_display} |"
+            )
+        lines.append("")
+        if _is_injected(result):
+            lines.extend(_render_inject_blocks(result))
+        else:
+            for i, r in enumerate(result["results"], 1):
+                if r["snippet"]:
+                    lines.append(f"{i}. > {r['snippet']}")
+                lines.append(f"   {r['read_hint']}")
+        lines.append("")
+
+    lines.extend(_render_tail(result))
+    return "\n".join(lines)
+
+
+def _age_days(path_str: str, now: float | None = None) -> int | None:
+    """파일 mtime 기준 경과 일수 — manifest 표기 전용. 점수·정렬에는 쓰지 않는다(E1:
+    clone 직후엔 전 파일이 같은 값이고 날짜에 따라 변하므로 결정성 보증 밖의 정보)."""
+    try:
+        st = os.stat(path_str)
+    except OSError:
+        return None
+    if now is None:
+        now = time.time()
+    return int(max(0.0, now - st.st_mtime) // 86400)
+
+
+def render_manifest(result: dict, now: float | None = None) -> str:
+    """후보당 1줄 초경량 목록(E10) — wrapper-protocol §6 2차 선별의 입력.
+    `[#n] {score} [type] | {file} :: {heading} | L{start}-{end} | {age}d | matched: a,b | {snippet≤80}`"""
+    lines: list[str] = [_render_header(result), ""]
+    for i, r in enumerate(result["results"], 1):
+        score = r["score"] if r["score"] is not None else "-"
+        tag = f" [{r['type']}]" if r.get("type") else ""
+        age = _age_days(r["file"], now)
+        age_s = f"{age}d" if age is not None else "?d"
+        matched = ",".join(r["matched"]) if r["matched"] else "-"
+        snip = r["snippet"]
+        if len(snip) > MANIFEST_SNIPPET_CHARS:
+            snip = snip[:MANIFEST_SNIPPET_CHARS] + "…"
+        lines.append(
+            f"[#{i}] {score}{tag} | {r['file']} :: {r['heading']} | "
+            f"L{r['line_start']}-{r['line_end']} | {age_s} | matched: {matched} | {snip}"
+        )
+    if result["results"]:
+        lines.append("")
+        if _is_injected(result):
+            lines.extend(_render_inject_blocks(result))
+            lines.append("")
+    lines.extend(_render_tail(result))
     return "\n".join(lines)
 
 
@@ -961,8 +1169,22 @@ def _build_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--project", default=None, help="미지정 시 STATE.md 진행중 프로젝트")
     parser.add_argument("--scope", default=None, help="도메인 이름 — {root}/{scope}/ 등으로 코퍼스 축소")
     parser.add_argument("--include", nargs="+", default=None, help="부속 문서 경로 (예: features/ docs/)")
-    parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT, help=f"기본 {DEFAULT_LIMIT}, 최대 {MAX_LIMIT}")
-    parser.add_argument("--format", choices=("md", "json"), default="md", help="출력 형식 (기본 md)")
+    parser.add_argument(
+        "--limit", type=int, default=None,
+        help=f"기본 {DEFAULT_LIMIT} (키워드 질의 + --inject 는 {INJECT_DEFAULT_LIMIT}), 최대 {MAX_LIMIT}",
+    )
+    parser.add_argument(
+        "--format", choices=("md", "json", "manifest"), default="md",
+        help="출력 형식 (기본 md). manifest = 후보당 1줄 초경량 목록 (2차 선별 입력)",
+    )
+    parser.add_argument(
+        "--inject", action="store_true",
+        help="선정 섹션 본문을 <context-snippet> 블록으로 함께 출력 (json 은 text 키)",
+    )
+    parser.add_argument(
+        "--max-bytes", type=int, default=INJECT_MAX_BYTES_DEFAULT,
+        help=f"--inject 본문 총 바이트 상한 (기본 {INJECT_MAX_BYTES_DEFAULT}, 최대 {INJECT_MAX_BYTES_CAP})",
+    )
     return parser
 
 
@@ -974,6 +1196,9 @@ def main(argv: "list[str] | None" = None) -> int:
         code = exc.code
         return code if isinstance(code, int) else 2
 
+    limit = args.limit
+    if limit is None:
+        limit = INJECT_DEFAULT_LIMIT if args.inject else DEFAULT_LIMIT
     try:
         result = search(
             workspace=Path(args.workspace),
@@ -981,7 +1206,9 @@ def main(argv: "list[str] | None" = None) -> int:
             scope=args.scope,
             includes=args.include,
             query_raw=args.query,
-            limit=args.limit,
+            limit=limit,
+            inject=args.inject,
+            max_bytes=args.max_bytes,
         )
     except SearchError as exc:
         print(exc.message, file=sys.stderr)
@@ -991,6 +1218,8 @@ def main(argv: "list[str] | None" = None) -> int:
 
     if args.format == "json":
         print(json.dumps(result, ensure_ascii=False, indent=2))
+    elif args.format == "manifest":
+        print(render_manifest(result))
     else:
         print(render_md(result))
     return 0
