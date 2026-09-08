@@ -160,6 +160,8 @@ class Query:
     select_heading: str | None = None
     # select: 다중 대상 (E8) — `select:a.md#h1,b.md#h2`. 첫 대상은 select_path/select_heading 에도 복사.
     select_targets: list[tuple[str, str | None]] = field(default_factory=list)
+    # 한글 결합어 후보 (E3) — 원문 인접 단어쌍 (t1, t2). 본문에 `t1+t2` 로 붙어 있으면 매칭(E2).
+    compounds: list[tuple[str, str]] = field(default_factory=list)
 
 
 _PATH_LIKE_RE = re.compile(r"\.[A-Za-z0-9]{1,5}$")
@@ -194,16 +196,45 @@ def parse_query(raw: str) -> Query:
     optional: list[str] = []
     required: list[str] = []
     raw_paths: list[str] = []
+    word_tokens: list[list[str] | None] = []  # 결합어 판정용 — 경로형 단어는 None
     for word in raw.split():
         is_required = word.startswith("+") and len(word) > 1
         w = word[1:] if is_required else word
         if "/" in w and _PATH_LIKE_RE.search(w):
             raw_paths.append(w)
             toks = path_tokens(w)
+            word_tokens.append(None)
         else:
             toks = tokenize(w)
+            word_tokens.append(toks)
         (required if is_required else optional).extend(toks)
-    return Query(kind="keywords", optional=optional, required=required, raw_paths=raw_paths)
+    return Query(
+        kind="keywords", optional=optional, required=required, raw_paths=raw_paths,
+        compounds=_adjacent_hangul_pairs(word_tokens),
+    )
+
+
+def _is_pure_hangul(token: str) -> bool:
+    return bool(token) and all("가" <= ch <= "힣" for ch in token)
+
+
+def _adjacent_hangul_pairs(word_tokens: "list[list[str] | None]") -> list[tuple[str, str]]:
+    """E3 — 원문 공백 분리 단어의 인접쌍 중 **양쪽이 순수 한글 토큰 1개씩**일 때만 결합어
+    후보. 불용어·1글자(토큰 0개)·ASCII·경로형 단어가 끼면 쌍이 끊긴다(`선발송 및 접수` 는
+    결합어가 아니다). 순서 보존 dedupe."""
+    pairs: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for a, b in zip(word_tokens, word_tokens[1:]):
+        if not a or not b or len(a) != 1 or len(b) != 1:
+            continue
+        t1, t2 = a[0], b[0]
+        if not (_is_pure_hangul(t1) and _is_pure_hangul(t2)):
+            continue
+        if (t1, t2) in seen:
+            continue
+        seen.add((t1, t2))
+        pairs.append((t1, t2))
+    return pairs
 
 
 # ── 섹션 분할 ───────────────────────────────────────────────────
@@ -380,6 +411,23 @@ def boundary_search(token: str, text_lc: str) -> "re.Match[str] | None":
     return re.search(boundary_pattern(token), text_lc)
 
 
+REVERSE_MIN_CHARS = 4  # E4 — 역방향(붙여 쓴 질의 ↔ 띄어 쓴 텍스트) 대조를 시도하는 한글 토큰 최소 길이
+
+
+def _reverse_candidate(token: str) -> bool:
+    return len(token) >= REVERSE_MIN_CHARS and _is_pure_hangul(token)
+
+
+def flex_pattern(token: str) -> str:
+    """E4 — 한글 토큰의 글자 사이에 공백을 허용하는 좌측 경계 패턴
+    (`진입파일` ↔ `진입 파일`). ASCII 에는 쓰지 않는다(`payload` ≠ `pay load`)."""
+    return f"(?<!{WORD})" + r"\s*".join(re.escape(ch) for ch in token)
+
+
+def flex_search(token: str, text_lc: str) -> "re.Match[str] | None":
+    return re.search(flex_pattern(token), text_lc)
+
+
 def score_text(
     query: Query,
     *,
@@ -398,6 +446,7 @@ def score_text(
     D6) — 단 진단용 `matched` 는 개별 신호가 있던 토큰을 그대로 반환한다.
     """
     heading_tokens = set(tokenize(heading)) if heading else set()
+    heading_lc = heading.lower() if heading else ""
     path_set = set(path_tokens)
     citation_set = set(citation_tokens)
     body_lc = body.lower() if body else ""
@@ -405,23 +454,60 @@ def score_text(
 
     all_tokens = list(dict.fromkeys(list(query.required) + list(query.optional)))
     token_score: dict[str, int] = {}
+    token_signals: dict[str, set[str]] = {}  # 토큰별 이미 받은 신호 — 결합어 중복 가산 방지(E2)
     for t in all_tokens:
         s = 0
+        sig: set[str] = set()
         exact = t in heading_tokens
         if exact:
             s += SCORE["heading_exact"]
+            sig.add("heading_exact")
         if t in path_set:
             s += SCORE["path"]
         if t in citation_set:
             s += SCORE["citation"]
-        if not exact and any(t in h for h in heading_tokens):
+        partial = not exact and any(t in h for h in heading_tokens)
+        if partial:
             s += SCORE["heading_partial"]
+            sig.add("heading_partial")
         if desc_lc is not None and boundary_search(t, desc_lc):
             s += SCORE["description"]
+            sig.add("description")
         if body_lc and boundary_search(t, body_lc):
             s += SCORE["body"]
+            sig.add("body")
+        if _reverse_candidate(t):
+            # E4 역방향 — 붙여 쓴 한글 질의 토큰(≥4자) ↔ 띄어 쓴 헤딩·description·본문.
+            # 헤딩은 글자 사이 공백 허용 대조, 또는 헤딩의 한글 토큰이 질의 토큰에 포함되면 부분 일치.
+            if heading_lc and not exact and not partial and (
+                flex_search(t, heading_lc)
+                or any(_is_pure_hangul(h) and h in t for h in heading_tokens)
+            ):
+                s += SCORE["heading_partial"]
+                sig.add("heading_partial")
+            if desc_lc is not None and "description" not in sig and flex_search(t, desc_lc):
+                s += SCORE["description"]
+                sig.add("description")
+            if body_lc and "body" not in sig and flex_search(t, body_lc):
+                s += SCORE["body"]
+                sig.add("body")
         if s > 0:
             token_score[t] = s
+        token_signals[t] = sig
+
+    # E2 결합어 — 띄어 쓴 질의 인접쌍 ↔ 붙여 쓴 본문·description. 구성 토큰이 그 신호를
+    # 이미 받았으면 가산하지 않는다(붙여 쓴 본문 4 = 띄어 쓴 본문 4 — 역전 없음).
+    for t1, t2 in query.compounds:
+        compound = t1 + t2
+        for text_lc, signal in ((body_lc, "body"), (desc_lc, "description")):
+            if not text_lc or boundary_search(compound, text_lc) is None:
+                continue
+            for t in (t1, t2):
+                sig = token_signals.setdefault(t, set())
+                if signal in sig:
+                    continue
+                sig.add(signal)
+                token_score[t] = token_score.get(t, 0) + SCORE[signal]
 
     matched_raw_paths: list[str] = []
     path_bonus = 0
@@ -498,6 +584,8 @@ def build_snippet(section: Section, matched: list[str]) -> str:
         if not t:
             continue
         m = boundary_search(t, lc)
+        if m is None and _reverse_candidate(t):
+            m = flex_search(t, lc)  # E5 — 역방향 일치 위치도 스니펫 창의 기준이 된다
         if m is not None and (pos is None or m.start() < pos):
             pos = m.start()
 
@@ -544,6 +632,11 @@ def build_zero_hit(
         # 토큰이 이미 조사로 끝나면 그 토큰으로, 아니면 고정 예시로 (C8 — `섹션을을` 이중 조사 렌더 방지)
         ex_from, ex_to = (t0, t0[:-1]) if len(t0) > 1 and t0[-1] in "을를이가은는" else ("섹션을", "섹션")
         guidance.append(f"한글 토큰에 조사가 붙었을 수 있음 — 조사 제거 재질의 (예: `{ex_from}` → `{ex_to}`)")
+        if any(_reverse_candidate(t) for t in zero_korean):
+            guidance.append(
+                "한글 복합어는 붙여쓰기·띄어쓰기 양쪽을 자동 대조한다 — 그래도 0 이면 "
+                "다른 표현(동의어·영문명)으로 재질의"
+            )
     if scope and scope_fallback:
         guidance.append("도메인이 미등록이면 `/pilot:learn {진입점}` 으로 부트스트랩")
     return {"token_hits": token_hits, "guidance": guidance}

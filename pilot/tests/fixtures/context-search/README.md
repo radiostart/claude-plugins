@@ -23,7 +23,7 @@ hermetic 하게 유지된다(D2).
 갱신은 선택 사항이다. 갱신할 경우:
 
 1. 위 생성 명령을 그대로 재실행해 스냅샷을 덮어쓴다.
-2. `python3 pilot/tools/context-search.py "<질의>" --scope pilot --format json --workspace pilot/tests/fixtures/context-search/workspace` 로 골든 4질의(`test_context_search.py` 의 `GoldenHitAtThree`) `hit@3` 를 재확인한다.
+2. `python3 pilot/tools/context-search.py "<질의>" --scope pilot --format json --workspace pilot/tests/fixtures/context-search/workspace` 로 골든 6질의(`test_context_search.py` 의 `GoldenHitAtThree` — Q5·Q6 은 붙여 쓴 한글 복합어 질의, 2026-09-08 추가) `hit@3` 를 재확인한다.
 3. 미달 시 랭커를 임의로 조정하지 않는다 — 실측 표를 해당 feature 의 plan.md 에 기록하고 보고한다.
 
 `#22` 재학습 드리프트(예: 스크립트 삭제 서술 등)가 라이브 코퍼스에 남아 있어도

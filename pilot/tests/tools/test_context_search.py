@@ -1,6 +1,6 @@
 """
 tools/context-search.py 의 토큰화 / 섹션 분할 / 채점 / 순위 / CLI 단위 테스트
-+ `pilot/tests/fixtures/context-search/` 스냅샷 기반 골든 hit@3 테스트.
++ `pilot/tests/fixtures/context-search/` 스냅샷 기반 골든 hit@3 테스트 (6질의).
 
 실행:
     python3 tests/tools/test_context_search.py
@@ -981,6 +981,120 @@ class ManifestTest(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# 한글 결합어 양방향 (E2~E5)
+# ---------------------------------------------------------------------------
+class CompoundTest(unittest.TestCase):
+    def _q(self, raw):
+        return m.parse_query(raw)
+
+    def test_compounds_from_adjacent_hangul_words_in_query_order(self):
+        q = self._q("선발송 접수 상태")
+        self.assertEqual(q.compounds, [("선발송", "접수"), ("접수", "상태")])
+        self.assertEqual(self._q("접수 선발송").compounds, [("접수", "선발송")])  # 순서 민감
+
+    def test_compounds_broken_by_stopword_ascii_path_single_char(self):
+        self.assertEqual(self._q("선발송 및 접수").compounds, [])
+        self.assertEqual(self._q("선발송 API 접수").compounds, [])
+        self.assertEqual(self._q("선발송 app/x.rb 접수").compounds, [])
+        self.assertEqual(self._q("선발송 값 접수").compounds, [])
+        self.assertEqual(self._q("select:a.md").compounds, [])
+
+    def test_required_prefix_still_pairs(self):
+        self.assertEqual(self._q("+선발송 접수").compounds, [("선발송", "접수")])
+
+    def test_joined_body_scores_equal_to_spaced_body(self):
+        q = self._q("선발송 접수")
+        joined, mj = m.score_text(q, heading="", body="선발송접수 확인")
+        spaced, ms = m.score_text(q, heading="", body="선발송 접수 확인")
+        self.assertEqual(joined, spaced)
+        self.assertEqual(joined, 2 * m.SCORE["body"])
+        self.assertEqual(mj, ["선발송", "접수"])
+        self.assertEqual(ms, ["선발송", "접수"])
+
+    def test_compound_in_description(self):
+        q = self._q("선발송 접수")
+        score, matched = m.score_text(q, heading="", body="", description="선발송접수 규칙")
+        self.assertEqual(score, 2 * m.SCORE["description"])
+        self.assertEqual(matched, ["선발송", "접수"])
+
+    def test_compound_not_double_counted_when_both_forms_present(self):
+        q = self._q("선발송 접수")
+        score, _ = m.score_text(q, heading="", body="선발송 접수 그리고 선발송접수")
+        self.assertEqual(score, 2 * m.SCORE["body"])
+
+    def test_compound_requires_left_boundary(self):
+        q = self._q("선발송 접수")
+        score, _ = m.score_text(q, heading="", body="가선발송접수")
+        self.assertEqual(score, 0)
+
+    def test_heading_compound_already_handled_by_partial_match(self):
+        q = self._q("선발송 접수")
+        score, _ = m.score_text(q, heading="선발송접수 상태값", body="")
+        self.assertEqual(score, 2 * m.SCORE["heading_partial"])
+
+    def test_reverse_joined_query_matches_spaced_body(self):
+        score, matched = m.score_text(self._q("진입파일"), heading="", body="도메인 진입 파일 로드")
+        self.assertEqual(score, m.SCORE["body"])
+        self.assertEqual(matched, ["진입파일"])
+
+    def test_reverse_joined_query_matches_spaced_description(self):
+        score, _ = m.score_text(self._q("진입파일"), heading="", body="", description="진입 파일 규칙")
+        self.assertEqual(score, m.SCORE["description"])
+
+    def test_reverse_joined_query_matches_spaced_heading_as_partial(self):
+        score, _ = m.score_text(self._q("진입파일"), heading="도메인 진입 파일", body="")
+        self.assertEqual(score, m.SCORE["heading_partial"])
+
+    def test_reverse_heading_hangul_token_contained_in_query_token(self):
+        score, _ = m.score_text(self._q("진입파일"), heading="Cluster 진입", body="")
+        self.assertEqual(score, m.SCORE["heading_partial"])
+
+    def test_reverse_not_applied_below_min_chars(self):
+        score, _ = m.score_text(self._q("파일들"), heading="파일", body="파 일 들")
+        self.assertEqual(score, 0)
+
+    def test_reverse_not_applied_to_ascii(self):
+        score, _ = m.score_text(self._q("payload"), heading="pay load", body="pay load")
+        self.assertEqual(score, 0)
+
+    def test_reverse_does_not_stack_on_direct_hit(self):
+        score, _ = m.score_text(self._q("진입파일"), heading="", body="진입파일 그리고 진입 파일")
+        self.assertEqual(score, m.SCORE["body"])
+
+    def test_required_gate_satisfied_via_compound(self):
+        q = self._q("선발송 +접수")
+        score, matched = m.score_text(q, heading="", body="선발송접수 확인")
+        self.assertEqual(score, 2 * m.SCORE["body"])
+        self.assertIn("접수", matched)
+
+    def test_required_gate_satisfied_via_reverse(self):
+        score, _ = m.score_text(self._q("+진입파일"), heading="", body="진입 파일")
+        self.assertEqual(score, m.SCORE["body"])
+
+    def test_snippet_positions_on_reverse_match(self):
+        sec = m.Section(
+            file="f.md", heading="H", level=2, line_start=1, line_end=2,
+            body_lines=["x" * 300 + " 진입 파일 " + "y" * 300], description=None,
+        )
+        self.assertIn("진입 파일", m.build_snippet(sec, ["진입파일"]))
+
+    def test_existing_signals_unchanged(self):
+        # 결합어 도입 후에도 기존 6신호 값은 그대로다 (G2 — Q1~Q4 출력 바이트 동일의 단위 근거)
+        q = self._q("doctor")
+        self.assertEqual(m.score_text(q, heading="doctor", body="")[0], m.SCORE["heading_exact"])
+        self.assertEqual(m.score_text(q, heading="", body="doctor here")[0], m.SCORE["body"])
+        self.assertEqual(m.score_text(q, heading="", body="", path_tokens={"doctor"})[0], m.SCORE["path"])
+
+    def test_zero_hit_guidance_mentions_compound_auto_match(self):
+        q = self._q("zzqq 진입파일")
+        guidance = m.build_zero_hit("zzqq 진입파일", q, {"zzqq": 0, "진입파일": 0}, None, False)["guidance"]
+        self.assertTrue(any("붙여쓰기·띄어쓰기" in g for g in guidance), guidance)
+        q2 = self._q("zzqq 섹션")
+        guidance2 = m.build_zero_hit("zzqq 섹션", q2, {"zzqq": 0, "섹션": 0}, None, False)["guidance"]
+        self.assertFalse(any("붙여쓰기" in g for g in guidance2))
+
+
+# ---------------------------------------------------------------------------
 # 골든 — pilot/tests/fixtures/context-search/ 스냅샷, --scope pilot, hit@3
 # ---------------------------------------------------------------------------
 @unittest.skipUnless(FIXTURE_ROOT.is_dir(), "context-search 골든 fixture 없음")
@@ -1016,6 +1130,21 @@ class GoldenHitAtThree(unittest.TestCase):
         top3 = self._top3("도메인 진입 파일 자동 로드")
         self.assertTrue(
             any("index.md" in f and "Cluster" in h for f, h in top3), top3
+        )
+
+    def test_q5_korean_joined_compound_query(self):
+        # E4 — `진입파일` 처럼 붙여 쓴 질의가 `진입 파일` 로 띄어 쓴 본문·헤딩 토큰과 대조된다.
+        # 도입 전 실측(2026-09-08): 정답 top-3 이탈(`진입파일` 히트 0) → 도입 후 1위 7점.
+        top3 = self._top3("도메인 진입파일 자동 로드")
+        self.assertTrue(
+            any("index.md" in f and "Cluster" in h for f, h in top3), top3
+        )
+
+    def test_q6_korean_joined_compound_with_ascii_anchor(self):
+        # 회귀 감시 — ASCII 헤딩 정확 일치(doctor)가 있는 질의에 붙여 쓴 한글이 섞여도 1위 불변.
+        top3 = self._top3("doctor 정합성검사")
+        self.assertTrue(
+            any("lifecycle.md" in f and "doctor" in h for f, h in top3), top3
         )
 
 
