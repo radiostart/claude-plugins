@@ -22,6 +22,7 @@
 | #29 frontmatter manifest | 📋 등록 (2026-09-04) | learn 산출 frontmatter 5키 + orchestrate-load `context_manifest`. #27 머지 후 |
 | #30 path trigger | ✅ **C1 확정·적용 (2026-09-09, 미배포)** | 실측: 메인·general-purpose 서브에이전트·git 무시 여부 무관 발화, Write·Edit 미발화 → `tools/rules-pointer.py` + `doctor/rules_pointer.py` 생성·점검, `hooks/domain-pointer.sh` 보완, learn Phase 5 배선. 라이브 `.claude/rules/pilot-pilot.md` 커밋. 계획서 v2·critic 10건 합의 `docs/superpowers/plans/2026-09-08-path-triggered-rules-plan*.md`. G6(래퍼 발화 기록)은 다음 사이클 |
 
+**릴리스 상태 (2026-09-09)**: 브랜치 `claude/dp-skills-context-search-enhance-qp02xo` 에서 v0.19.0 버전 표기 동기(plugin.json·mkdocs.yml·release-notes·docs/index.md·HANDOFF) — PR 진행, 태그 `pilot-v0.19.0` 는 머지 후 `release.sh`.
 **릴리스 상태 (2026-09-04)**: `main` = `20c6187` (PR #29 머지 — #27 context-search + origin v0.17.0 병합 + #27~#30 재번호). v0.18.0 문서·버전 갱신 PR 진행 중, 태그 `pilot-v0.18.0` 은 `release.sh` 미실행.
 **v0.10.1 릴리스 진행 중** — 브랜치 `chore/release-v0.10.1` 에서 버전 표기 3곳(`plugin.json`·`mkdocs.yml`·`docs/index.md`) 동기화.
 이전 릴리스: 태그 `pilot-v0.17.0` (PR #28 · `6104c99`), 문서 사이트 배포 완료.

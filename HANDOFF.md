@@ -26,9 +26,9 @@ pytest pilot/tests/ -q
 
 ## 현재 상태
 
-**v0.18.0** (tag `pilot-v0.18.0` 은 `release.sh` 로 생성 예정 — 이전 태그 `pilot-v0.17.0`) — 스킬 20 · 에이전트 5 · 훅 6 · 도구 14 · 테스트 603.
+**v0.19.0** (tag `pilot-v0.19.0` 은 `release.sh` 로 생성 예정 — 이전 태그 `pilot-v0.18.0`) — 스킬 20 · 에이전트 5 · 훅 7(+opt-in 계측 1) · 도구 15 · 테스트 725.
 
-**미배포 (브랜치 `claude/dp-skills-context-search-enhance-qp02xo`, 2026-09-08~09)** — 훅 7 · 도구 15 · 테스트 720. (1) context-search 고도화: `select:` 다중 + `--inject` + `--format manifest`, 한글 결합어 양방향, frontmatter 파서·`sources` glob 보너스, 탐색 → 선별 → 주입 3단계 프로토콜(wrapper-protocol §6). (2) #30 경로 트리거 C1 확정·적용: `tools/rules-pointer.py` + `doctor/rules_pointer.py` 가 `.claude/rules/pilot-{domain}.md` 를 생성, `hooks/domain-pointer.sh` 보완, doctor 검사 6종. 두 작업 모두 별도 에이전트 red-team critic(각 12건·10건)을 거쳐 합의 반영 — 계획서·critic·실측: `docs/superpowers/plans/2026-09-08-*.md`. release-notes 미배포 절이 사용자 관점 요약.
+**v0.19.0 내용 (브랜치 `claude/dp-skills-context-search-enhance-qp02xo`, 2026-09-08~09)** — (1) context-search 고도화: `select:` 다중 + `--inject` + `--format manifest`, 한글 결합어 양방향, frontmatter 파서·`sources` glob 보너스, 탐색 → 선별 → 주입 3단계 프로토콜(wrapper-protocol §6). (2) #30 경로 트리거 C1 확정·적용: `tools/rules-pointer.py` + `doctor/rules_pointer.py` 가 `.claude/rules/pilot-{domain}.md` 를 생성, `hooks/domain-pointer.sh` 보완, doctor 검사 6종. 두 작업 모두 별도 에이전트 red-team critic(각 12건·10건)을 거쳐 합의 반영 — 계획서·critic·실측: `docs/superpowers/plans/2026-09-08-*.md`. release-notes 미배포 절이 사용자 관점 요약.
 
 사내 원본 플러그인에서 파생된 범용판이며, **범용화 리팩터는 완료**됐다 (사내 식별자 sweep 0건). 현재는 원본의 미포팅 기능을 선별 흡수하며 자체 dogfooding(`workspace/projects/build-plugin/`)으로 개발한다 — 미완 항목은 `#22 context 드리프트 재학습` 과 도메인 지식 검색·계층 탐색 로드맵 `#28 신선도 힌트 · #29 frontmatter 매니페스트` (계획서 `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md`). `#30 경로 트리거` 는 미배포 브랜치에서 C1 로 적용 완료(실측 기록은 feature 본문).
 

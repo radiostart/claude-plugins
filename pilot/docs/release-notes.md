@@ -17,7 +17,8 @@ pilot 의 버전별 변경 이력입니다. 버전 SSOT 는 `pilot/.claude-plugi
 
 | 버전 | 날짜 | 요약 |
 |---|---|---|
-| [**v0.18.0**](#v0180) | 2026-09-04 | context-search 섹션 단위 결정적 검색 도구 · soft 배선 · confluence 검색 랭커 공유 |
+| [**v0.19.0**](#v0190) | 2026-09-09 | context-search 고도화 (탐색→선별→주입 3단계 · 한글 결합어 · frontmatter) · #30 경로 트리거 규칙 포인터 |
+| [v0.18.0](#v0180) | 2026-09-04 | context-search 섹션 단위 결정적 검색 도구 · soft 배선 · confluence 검색 랭커 공유 |
 | [v0.17.0](#v0170) | 2026-08-25 | autopilot 신호 파서 fail-open 봉쇄 · plan 판정 기계 소유 · reflect 재검증 |
 | [v0.16.0](#v0160) | 2026-08-25 | 스킬 3종 신설 (qa · switch · ask) · learn 기재 규격 · scope-guard 경로 판정 |
 | [v0.15.0](#v0150) | 2026-08-03 | evaluator REPORT 영속화 · 훅 양립 갱신 절차 · 스킬 description 감량 |
@@ -34,9 +35,9 @@ pilot 의 버전별 변경 이력입니다. 버전 SSOT 는 `pilot/.claude-plugi
 
 ---
 
-## 미배포 — context-search 고도화
+## v0.19.0
 
-*브랜치 `claude/dp-skills-context-search-enhance-qp02xo` · 버전 미확정 (릴리스 시 `plugin.json` 과 위 버전 목록 표에 반영)*
+*2026-09-09 · **현재 버전** · [릴리스](https://github.com/radiostart/claude-plugins/releases/tag/pilot-v0.19.0)*
 
 적대적 검토·적용 플랜과 실측 기록: `docs/superpowers/plans/2026-09-08-context-search-enhancement-plan.md`.
 
@@ -52,7 +53,7 @@ pilot 의 버전별 변경 이력입니다. 버전 SSOT 는 `pilot/.claude-plugi
 
 ## v0.18.0
 
-*2026-09-04 · **현재 버전** · [릴리스](https://github.com/radiostart/claude-plugins/releases/tag/pilot-v0.18.0)*
+*2026-09-04 · [릴리스](https://github.com/radiostart/claude-plugins/releases/tag/pilot-v0.18.0)*
 
 도메인 지식을 "통째로 읽는" 대신 "필요한 섹션만 찾아 읽게" 하는 첫 단계입니다. Claude Code 소스(memdir 2단 색인 · ToolSearch 결정적 랭커 · conditional rules · Explore 계약)에서 검증된 패턴을 pilot 의 `workspace/context` 계층에 적용했습니다. 설계·근거는 계획서 `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` 가 SSOT 입니다.
 
