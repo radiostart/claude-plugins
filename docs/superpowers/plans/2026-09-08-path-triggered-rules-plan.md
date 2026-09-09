@@ -4,7 +4,7 @@
 - 입력: 작업 지시 "경로 기반 동적 도메인 규칙 주입(Conditional Rule Injection)" — dp-skills 기준 `tools/match-context-rules.py` 신규 · `hooks/coding-rule-guard.sh` 본문 주입 고도화 · 테스트 2종. **파트 1 의 호출 인터페이스 1줄까지만 도착**(출력 형식·매칭 규칙·훅 통합·테스트 항목 미도착 — 그 부분은 검토 불가, 도착 시 § 2 표와 대조)
 - 대상: pilot (`pilot/hooks/coding-rules.sh` · `pilot/skills/learn/SKILL.md` · `pilot/tools/doctor/integrity.py`). 지시서의 `workspace/{TEAM}/context` · `--team` 은 pilot 확정 결정(HANDOFF 2 — TEAM 레이어 없음)과 달라 `workspace/context` 로 읽는다
 - 설계 SSOT: `workspace/projects/build-plugin/features/30-path-triggered-context.md` (§ 요구사항 C1/C2 · 비즈니스 규칙 "포인터만" · 선행 검증 절차) · `29-frontmatter-manifest.md` (`sources` 스키마) · `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` § F-C · §0.4 불변 원칙
-- 상태: **플랜 작성 완료 · 적용 전 (critic 검토 대기)**
+- 상태: **v2 로 대체됨** — `2026-09-08-path-triggered-rules-plan.r2.md` (critic 10건 반영, 2026-09-09). 본 문서는 판정 근거·실측 기록의 원본으로 유지
 
 ## 0. 한 줄 결론
 

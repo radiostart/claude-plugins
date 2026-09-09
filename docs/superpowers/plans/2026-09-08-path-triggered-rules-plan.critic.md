@@ -82,13 +82,15 @@
 
 | C# | 처리 | 메모 |
 |----|------|------|
-| C1 | | |
-| C2 | | |
-| C3 | | |
-| C4 | | |
-| C5 | | |
-| C6 | | |
-| C7 | | |
-| C8 | | |
-| C9 | | |
-| C10 | | |
+| C1 | accepted | v2 §0·§2.3 — Read 만 발화 인정. 최소 보완 훅 `domain-pointer.sh`(PostToolUse Edit\|Write, 규칙 파일 `paths:` 대조, 세션·도메인당 1회, ≤2 도메인, 본문 없음). `coding-rules.sh` 무변경 + 회귀 테스트 10건. "보완" 서술 삭제 |
+| C2 | accepted | v2 §2.2 — doctor #28 인용 해석 체인으로 실파일만 집계, 하위 트리 합산 + 탐욕 분할(8개·커버리지 90%), `**`·`workspace/**`·`.claude/**`·Ignore·test_path_convention 제외, 해석 <2 skip |
+| C3 | accepted | 마커 주석·learn INFO·doctor 힌트에 "세션당 1회 로드 — 재생성분은 새 세션부터" 명시 |
+| C4 | accepted | 상세 조회 줄을 `/pilot:ask (메인) · wrapper-protocol §6 3단계 (래퍼)` 로 — 치환 변수 없음 |
+| C5 | accepted | MANIFEST 등록 후·doctor 직전 `--all --write`, 미등록 도메인 exit 2(폴백 없음), Boundary 모드 동일, batch 표현 삭제 |
+| C6 | accepted | 실측 기록 종류별 명시(메인·general-purpose ✓, Explore/Plan 문서상 skip, `claudeMdExcludes`·`--setting-sources` 미검증) · doctor `claudeMdExcludes` INFO · ask·scope-exploration 1줄 |
+| C7 | accepted | `--all` 전 도메인 집계, 동일 glob 은 하위 트리 최대 도메인에만·동률 제거 + INFO, doctor 규칙 파일 간 동일 glob INFO. 제외 접두 workspace/·.claude/·Ignore·test_path_convention |
+| C8 | accepted (부분) | Phase 0 10건(4 분기 추가). G4 는 프로브 절차·주입 원문을 #30 실측 기록으로 — `InstructionsLoaded` 로그는 후속(환경 계측 필요) |
+| C9 | accepted | 판정·생성 로직 `doctor/rules_pointer.py`, `tools/rules-pointer.py` 는 CLI 래퍼. #30 조항 변경 v2 §6 열거 |
+| C10 | accepted | 캡 = 주입 본문(frontmatter·주석 제외) ≤500자·≤8줄, 마커 별도. doctor 는 마커 없는 파일 INFO 만 먼저 |
+
+> 합의 기입: 2026-09-09 계획 작성 에이전트 — 처리 내역은 `…-plan.r2.md` §0.
