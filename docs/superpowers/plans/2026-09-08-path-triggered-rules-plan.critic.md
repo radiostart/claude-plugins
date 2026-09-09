@@ -87,9 +87,9 @@
 | C3 | accepted | 마커 주석·learn INFO·doctor 힌트에 "세션당 1회 로드 — 재생성분은 새 세션부터" 명시 |
 | C4 | accepted | 상세 조회 줄을 `/pilot:ask (메인) · wrapper-protocol §6 3단계 (래퍼)` 로 — 치환 변수 없음 |
 | C5 | accepted | MANIFEST 등록 후·doctor 직전 `--all --write`, 미등록 도메인 exit 2(폴백 없음), Boundary 모드 동일, batch 표현 삭제 |
-| C6 | accepted | 실측 기록 종류별 명시(메인·general-purpose ✓, Explore/Plan 문서상 skip, `claudeMdExcludes`·`--setting-sources` 미검증) · doctor `claudeMdExcludes` INFO · ask·scope-exploration 1줄 |
+| C6 | accepted | 실측 기록 종류별 명시(메인·general-purpose ✓, Explore/Plan 문서상 skip, `claudeMdExcludes`·`--setting-sources` 미검증) · 2026-09-09 추가 실측: Explore·Plan 도 경로 규칙 발화 → 문서 3곳 정정 · doctor `claudeMdExcludes` INFO · ask·scope-exploration 1줄 |
 | C7 | accepted | `--all` 전 도메인 집계, 동일 glob 은 하위 트리 최대 도메인에만·동률 제거 + INFO, doctor 규칙 파일 간 동일 glob INFO. 제외 접두 workspace/·.claude/·Ignore·test_path_convention |
-| C8 | accepted (부분) | Phase 0 10건(4 분기 추가). G4 는 프로브 절차·주입 원문을 #30 실측 기록으로 — `InstructionsLoaded` 로그는 후속(환경 계측 필요) |
+| C8 | accepted (부분) | Phase 0 10건(4 분기 추가). G4 는 프로브 절차·주입 원문을 #30 실측 기록으로 — `InstructionsLoaded` 로그는 `hooks/rules-trace.sh`(opt-in 등록, 2026-09-09) |
 | C9 | accepted | 판정·생성 로직 `doctor/rules_pointer.py`, `tools/rules-pointer.py` 는 CLI 래퍼. #30 조항 변경 v2 §6 열거 |
 | C10 | accepted | 캡 = 주입 본문(frontmatter·주석 제외) ≤500자·≤8줄, 마커 별도. doctor 는 마커 없는 파일 INFO 만 먼저 |
 

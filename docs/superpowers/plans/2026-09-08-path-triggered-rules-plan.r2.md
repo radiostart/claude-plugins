@@ -13,7 +13,7 @@
 | C3 | — | "규칙은 세션당 1회 로드 — 재생성분은 새 세션부터" 를 learn INFO·문서·doctor 힌트에 명시 |
 | C4 | 검색 줄에 `${CLAUDE_PLUGIN_ROOT}` | `- 상세 조회: /pilot:ask (메인) · wrapper-protocol §6 3단계 (래퍼)` — 치환 불필요 |
 | C5 | Phase 5 "MANIFEST 갱신 직전", "Phase 5 batch" | **MANIFEST 등록 후·doctor 직전** `rules-pointer.py --all --write`. 미등록 도메인은 exit 2(전 코퍼스 폴백 없음). Boundary 모드도 `--all --write`. batch 표현 삭제 |
-| C6 | "서브에이전트 모두" | 실측 기록을 종류별로: 메인 ✓ · general-purpose 서브 ✓ · Explore/Plan 은 문서상 프로젝트 규칙 skip(미실측) · `claudeMdExcludes`·`--setting-sources` 미검증. doctor: `.claude/settings*.json` 의 `claudeMdExcludes` 가 `.claude/rules` 를 가리키면 INFO. ask·scope-exploration 에 "Explore 결과엔 포인터 없음" 1줄 |
+| C6 | "서브에이전트 모두" | 실측 기록을 종류별로: 메인 ✓ · general-purpose 서브 ✓ · Explore/Plan 은 문서상 프로젝트 규칙 skip → **2026-09-09 실측: 둘 다 경로 규칙 발화**(문서의 skip 은 세션 시작 CLAUDE.md 계층) · `claudeMdExcludes`·`--setting-sources` 미검증. doctor: `.claude/settings*.json` 의 `claudeMdExcludes` 가 `.claude/rules` 를 가리키면 INFO. ask·scope-exploration 에 "Explore 결과엔 포인터 없음" 1줄 |
 | C7 | 도메인별 독립 도출 | `--all` 이 전 도메인을 한 번에 집계: 동일 glob 이 2도메인 이상이면 하위 트리 파일 수 최대 도메인에만 배정, 동률이면 제외 + INFO. doctor: 규칙 파일 간 동일 glob INFO |
 | C8 | Phase 0 6건 · G4/G6 대화 기록 | Phase 0 10건(스켈레톤 `source_root` fail-open · `예:` 벗기기 · `session_id` 부재 · `CLAUDE_PLUGIN_ROOT` 미설정 추가). G4 는 프로브 절차·주입 블록 원문을 #30 실측 기록에 남기고, `InstructionsLoaded` 훅 로그는 후속 |
 | C9 | `tools/rules-pointer.py` 가 판정 소유 | **판정·생성 로직 = `pilot/tools/doctor/rules_pointer.py`**, `pilot/tools/rules-pointer.py` 는 CLI 래퍼(`doctor.py` 와 같은 sys.path 방식). #30 조항 변경을 § 6 에 열거 |
@@ -115,7 +115,7 @@ v1 § 3.8 유지. 추가: `InstructionsLoaded` 훅 로그 계측(후속), Explor
 | G3 | 생성 63ms · `--hook` 54ms (라이브, python 1회 호출) |
 | G4 | 생성 파일로 메인 세션(`session-context.sh` Read)·general-purpose 서브에이전트(`slack-notify.sh` Read) 모두 Read 직후 본문 3줄 주입 확인. 주입 본문 124자 ≤ 500자. 원문은 #30 § 실측 기록 |
 | G5 | `docs_build.py --check` 통과 · doctor 5 PASS·4 WARN·1 ERROR — 규칙 포인터 PASS, WARN 은 이번에 고친 파일을 인용하는 문서의 stale 신호(mtime), ERROR 는 기존 `STATE.md` 부재(gitignore 로컬 파일) |
-| G6 | 후속 사이클에서 래퍼(pilot-planner·generator·evaluator)가 `pilot/skills/**` 를 Read 할 때 포인터가 나타난 기록 — 미실측 |
+| G6 | 후속 사이클에서 래퍼(pilot-planner·generator·evaluator)가 `pilot/skills/**` 를 Read 할 때 포인터가 나타난 기록 — 미실측. 계측 수단 준비: `hooks/rules-trace.sh`(InstructionsLoaded opt-in, #30 § 실측 기록 스니펫). Explore·Plan 은 2026-09-09 실측 발화 |
 
 ### 라이브 산출물
 
@@ -125,5 +125,5 @@ v1 § 3.8 유지. 추가: `InstructionsLoaded` 훅 로그 계측(후속), Explor
 
 1. G6 — 다음 feature 사이클에서 래퍼 4종의 발화 기록(Explore/Plan 은 문서상 skip).
 2. #29 머지 시 `sources` 기반 재생성 + `type` 기반 본문 포인터 실측.
-3. `InstructionsLoaded` 훅 로그 계측(critic C8 후속).
+3. ~~`InstructionsLoaded` 훅 로그 계측~~ → `hooks/rules-trace.sh` 제공(opt-in, 테스트 4건). 플러그인 hooks.json 등록은 허용 이벤트 목록·지원 버전 확인 후.
 4. 릴리스 시 버전 확정 — release-notes 미배포 절.

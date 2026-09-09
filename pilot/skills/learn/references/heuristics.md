@@ -132,6 +132,7 @@ Phase 5 가 `rules-pointer.py --all --write` 로 만드는 **파생물** — 하
 - **`paths`** — 도메인 문서의 frontmatter `sources` 합집합이 우선. 없으면 인용 경로를 실파일로 해석해 디렉토리 하위 트리로 합산하고 상위에서부터 쪼갠다(≤ 8 globs · 깊이 ≤ 3). `workspace/`·`.claude/`·config `## Ignore`·`test_path_convention` 은 제외. 두 도메인이 같은 glob 을 요구하면 인용이 많은 쪽에만(동률이면 둘 다 제외 + INFO).
 - **관리 마커** — `<!-- managed by /pilot:learn … -->` 가 있는 파일만 덮어쓴다. 사용자가 마커를 지우면 그 파일은 사용자 소유가 되고 doctor 는 INFO 만 낸다.
 - **세션당 1회** — 하네스는 같은 규칙을 세션에 한 번만 주입한다. 재생성분은 새 세션부터 보인다. Write·Edit 만으로는 발화하지 않으므로 `hooks/domain-pointer.sh` 가 같은 본문을 세션·도메인당 1회 보완한다.
+- **계측** — 어느 에이전트가 언제 어떤 규칙을 로드했는지 보려면 `hooks/rules-trace.sh` 를 `.claude/settings.local.json` 의 `InstructionsLoaded`(`path_glob_match`) 훅으로 opt-in 등록한다(#30 § 실측 기록). 로그는 `${TMPDIR:-/tmp}/pilot-rules-trace.log`.
 
 ---
 

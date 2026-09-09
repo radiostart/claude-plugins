@@ -45,7 +45,7 @@ _(없음)_
 - (없음)
 
 ### (c) 외부 시스템 spec 부재
-- [x] Claude Code 조건부 규칙(`.claude/rules/*.md` `paths:`) 이 래퍼 **서브에이전트** 실행 중에도 로드되는지 → general-purpose 서브에이전트 발화 실측 (2026-09-08). Explore·Plan 은 문서상 skip — 래퍼 4종은 후속 사이클에서 확인 (G6)
+- [x] Claude Code 조건부 규칙(`.claude/rules/*.md` `paths:`) 이 래퍼 **서브에이전트** 실행 중에도 로드되는지 → general-purpose 서브에이전트 발화 실측 (2026-09-08). Explore·Plan 도 실측 발화(2026-09-09) — pilot 래퍼 4종(custom agent)만 후속 사이클에서 확인 (G6)
 
 ### (d) 비즈니스 결정 영역
 - [x] C1(.claude/rules paths) vs C2(PostToolUse 훅) → 실측 후 결정. (c) 실측이 발화면 C1, 미발화면 C2 (2026-09-04 사용자 확정)
@@ -57,12 +57,22 @@ _(없음)_
 | 실험 | 절차 | 결과 |
 |---|---|---|
 | C1 메인 | `.claude/rules/zz-c1-probe.md` (`paths: pilot/tools/orchestrate-load.py`, 마커 QX7) → 메인 세션 Read | Read 결과 직후 `Contents of …/.claude/rules/zz-c1-probe.md:` 블록으로 본문 주입(frontmatter·HTML 주석은 벗겨짐) |
-| C1 서브(general-purpose) | Agent 도구 서브에이전트가 같은 파일 1~10행만 Read, 다른 파일 접근 금지 | 마커 원문 보고, 읽은 파일 1개 → 발화. Explore·Plan 은 공식 sub-agents 문서상 프로젝트 규칙 skip(미실측) |
+| C1 서브(general-purpose) | Agent 도구 서브에이전트가 같은 파일 1~10행만 Read, 다른 파일 접근 금지 | 마커 원문 보고, 읽은 파일 1개 → 발화 |
+| **C1 서브(Explore·Plan, 2026-09-09)** | 생성 파일 `pilot-pilot.md` 로 Explore(`commit-format.sh` Read)·Plan(`protect-managed.sh` Read) | 둘 다 Read 직후 본문 주입 — 공식 문서의 "Explore·Plan 은 프로젝트 규칙 skip" 은 세션 시작 CLAUDE.md 계층에 한하고 경로 규칙의 지연 로드는 발화한다 |
 | git 무시 | `.git/info/exclude` 에 `.claude/` + 마커 QX8 규칙 → Read | 동일 주입 — git 무시 여부는 로드와 무관 |
 | Write·Edit | 같은 규칙·같은 파일에 Write 만 / Edit 만 / Bash `sed` 읽기 | 모두 미발화. 같은 파일 Read 는 발화. 같은 세션 재-Read 시 재주입 없음(경로 dedup) |
 | glob 의미 | 슬래시 없는 `*.py` | 중첩 경로에 발화 — gitignore 의미(`context-search._glob_regex` 와 동일) |
 | 훅 사양(공식 문서) | hooks-guide · memory · sub-agents | PreToolUse·PostToolUse 모두 `additionalContext` 지원 · command 훅 기본 timeout 10분, 권고 <1s · 규칙은 "매칭 파일을 읽을 때" 로드 |
 | **생성 파일 실측 (2026-09-09, Phase 3)** | `rules-pointer.py --all --write` → `.claude/rules/pilot-pilot.md` (paths 4개 · 주입 본문 3줄 124자) → 메인 세션 `pilot/hooks/session-context.sh` Read · general-purpose 서브에이전트 `pilot/hooks/slack-notify.sh` Read | 둘 다 Read 직후 `Contents of …/.claude/rules/pilot-pilot.md:` 블록으로 본문 3줄 주입(frontmatter·주석 제거). 보완 훅 `domain-pointer.sh` 54ms, 같은 세션 2회째 무음. doctor `규칙 포인터` PASS. 생성 2회 diff 0, 63ms |
+
+**계측 (G6 증거)**: 공식 `InstructionsLoaded` 훅(`load_reason: path_glob_match`, 서브에이전트에선 `agent_type` 포함)을 `pilot/hooks/rules-trace.sh` 로 받는다 — 플러그인 hooks.json 에는 등록하지 않고(허용 이벤트 목록·지원 버전 미명시) 계측이 필요할 때 `.claude/settings.local.json` 에 opt-in:
+
+```json
+{ "hooks": { "InstructionsLoaded": [ { "matcher": "path_glob_match",
+    "hooks": [ { "type": "command", "command": "bash pilot/hooks/rules-trace.sh" } ] } ] } }
+```
+
+로그 `${TMPDIR:-/tmp}/pilot-rules-trace.log` 에 `{ts, session, agent, reason, file, cwd}` 1줄씩(본문 미기록). 마켓플레이스 설치본은 `command` 를 플러그인 설치 경로로.
 
 **C1/C2 확정**: C1 채택(하네스 네이티브). Write·Edit 미발화의 틈만 **보완 훅**(PostToolUse `Edit|Write`, 생성된 규칙 파일의 `paths:` 대조, 세션·도메인당 1회, 본문 없음, ≤2 도메인)으로 메운다 — C2 전면 채택이 아니다. 상세·조항 변경: 플랜 v2 `…-plan.r2.md` § 0·§ 6.
 
