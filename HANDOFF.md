@@ -115,7 +115,8 @@ pilot/tools/release.sh
 2. **#29 frontmatter 매니페스트** — 머지 시 `rules-pointer.py --all --write` 로 `sources` 기반 재생성(추정 주석 소멸), `type` 기반 본문 포인터·manifest `[type]` 태그 실측. `context-search` 는 이미 `sources`·`type`·`domain` 을 읽는다.
 3. **stale 컨텍스트 재학습** — `context/pilot/{index,review,spec}.md` 가 이번에 바뀐 `wrapper-protocol.md`·`orchestrate-load.py` 를 인용(doctor WARN). drift-protocol 상 `/pilot:learn` 재실행은 사용자 승인 사항.
 4. **릴리스** — `plugin.json` 버전 확정 → release-notes 미배포 절을 버전 절로, 버전 목록 표 행 추가, HANDOFF 현재 상태 갱신.
-5. **dp-skills 이식 시 주의** — 지시서의 함수명(`parse_frontmatter_description`·`_word_boundary_hit`)·`docs/reference/tools/context-search.md`·`workspace/{TEAM}`·`--team` 은 이 저장소에 없다. 경로 치환 전에 그쪽 코드가 분기했는지 diff 확인.
+5. **역방향 경로 질의 노이즈** — `context-search.py "app/x.rb"` 는 경로 세그먼트 토큰(`app`·`pilot` 등)이 무관 섹션에도 path 점수를 준다(라이브: 상위 2건 정확, 4건 노이즈). `matched` 에 원 경로가 있는 결과만 취하는 필터는 #27 비즈니스 규칙(세그먼트 자동 가중)을 바꾸는 일이라 사용자 결정 후 골든 재캡처와 함께.
+6. **dp-skills 이식 시 주의** — 지시서의 함수명(`parse_frontmatter_description`·`_word_boundary_hit`)·`docs/reference/tools/context-search.md`·`workspace/{TEAM}`·`--team` 은 이 저장소에 없다. 경로 치환 전에 그쪽 코드가 분기했는지 diff 확인.
 
 
 - **`#22` context 드리프트 재학습** — `workspace/context/pilot/` 이 삭제된 스크립트 3종(`memory-hint`·`init_detect`·`diagnose.py`)과 개명 전 스킬명, issue 경량 모드를 서술 중. `/pilot:learn ./pilot/skills` 재실행으로 일괄 해소한다 (**직접 Edit 금지** — drift-protocol § A). doctor 가 `spec.md` mtime drift 로 감지 중이며, v0.16.0 의 **인용 drift 검사**가 stale 인용까지 추가로 지목한다 (도그푸딩 워크스페이스에서 WARN 다건 예상 — 재학습이 정식 처방).

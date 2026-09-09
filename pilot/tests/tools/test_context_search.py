@@ -1111,6 +1111,21 @@ class ManifestTest(unittest.TestCase):
             out = m.render_manifest(self._search(ws, "keyword"), now=now)
             self.assertIn("| 3d |", out)
 
+    def test_manifest_age_dash_when_uniform(self):
+        # clone 직후엔 전 파일 mtime 이 같다 — 전 후보가 같은 age 면 `-` 로 표기(정보 없음), 다르면 숫자
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Keyword a\nbody\n", "b.md": "## Keyword b\nbody\n"})
+            now = time.time()
+            for name in ("a.md", "b.md"):
+                os.utime(ws / "context" / name, (now - 5 * 86400, now - 5 * 86400))
+            out = m.render_manifest(self._search(ws, "keyword"), now=now)
+            self.assertEqual(out.count("| - |"), 2)
+            self.assertNotIn("| 5d |", out)
+            os.utime(ws / "context" / "b.md", (now - 1 * 86400, now - 1 * 86400))
+            out = m.render_manifest(self._search(ws, "keyword"), now=now)
+            self.assertIn("| 5d |", out)
+            self.assertIn("| 1d |", out)
+
     def test_manifest_zero_hit_and_info_rendered(self):
         with tempfile.TemporaryDirectory() as td:
             ws = self._ws(td, {"a.md": "## Alpha\nbody\n"})

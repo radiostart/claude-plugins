@@ -62,7 +62,8 @@ Usage:
 
     --format md (기본): 1줄 헤더 + 결과 표 + 섹션별 snippet/read_hint + INFO·0건 안내.
     --format manifest: 후보당 1줄 `[#n] score [type] | file :: heading | L{s}-{e} | {age}d |
-        matched: a,b | snippet≤80` — 2차 선별 입력. age 는 파일 mtime 표기 전용(점수·정렬 불변).
+        matched: a,b | snippet≤80` — 2차 선별 입력. age 는 파일 mtime 표기 전용(점수·정렬 불변)이며
+        후보가 전부 같은 값이면(clone 직후) `-` 로 표기해 최신성으로 오독되지 않게 한다.
     --inject: 결과 순서대로 본문을 싣는다 — md/manifest 는 `<context-snippet file heading lines>`
         블록, json 은 `text`. `--max-bytes`(기본 12,000 · 상한 24,000) 는 md/manifest **렌더
         총량 근사**(헤더·후보 줄·래퍼 포함 — Bash 도구 출력 스왑 임계 ≈30,000B 실측 아래) ·
@@ -1533,12 +1534,14 @@ def render_manifest(result: dict, now: float | None = None) -> str:
     `[#n] {score} [type] | {file} :: {heading} | L{start}-{end} | {age}d | matched: a,b | {snippet≤80}`
     snippet 은 마지막 필드 — 표 본문의 `|` 가 섞일 수 있으므로 앞 5개 ` | ` 로만 분리한다(C12)."""
     lines: list[str] = [_render_header(result), ""]
-    for i, r in enumerate(result["results"], 1):
+    ages = [_age_days(r["file"], now) for r in result["results"]]
+    # clone 직후엔 전 파일 mtime 이 같아 age 가 최신성으로 오독된다 — 후보 2개 이상이 전부 같은 값이면 `-` (정보 없음)
+    uniform = len(ages) >= 2 and len(set(ages)) == 1
+    for i, (r, age) in enumerate(zip(result["results"], ages), 1):
         score = r["score"] if r["score"] is not None else "-"
         type_tag = r.get("type") or _inferred_type_tag(r["file"])
         tag = f" [{type_tag}]" if type_tag else ""
-        age = _age_days(r["file"], now)
-        age_s = f"{age}d" if age is not None else "?d"
+        age_s = "-" if uniform or age is None else f"{age}d"
         matched = ",".join(r["matched"]) if r["matched"] else "-"
         snip = r["snippet"]
         if len(snip) > MANIFEST_SNIPPET_CHARS:
