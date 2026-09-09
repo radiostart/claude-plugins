@@ -6,9 +6,10 @@
 #   ${PILOT_RULES_TRACE_LOG:-${TMPDIR:-/tmp}/pilot-rules-trace.log}
 # 입력(stdin JSON): session_id · load_reason(session_start|nested_traversal|path_glob_match|include|compact) ·
 #   file_path · file_content · cwd · (서브에이전트) agent_id · agent_type. file_content 는 기록하지 않는다.
+# 주의: 스크립트를 stdin(heredoc)으로 넘기면 훅 JSON 을 잃는다 — -c 로 넘기고 stdin 은 JSON 에 남긴다.
 set -uo pipefail
 LOG="${PILOT_RULES_TRACE_LOG:-${TMPDIR:-/tmp}/pilot-rules-trace.log}"
-python3 - "$LOG" <<'PY' 2>/dev/null || true
+python3 -c '
 import json, sys, time
 try:
     d = json.load(sys.stdin)
@@ -24,5 +25,5 @@ row = {
 }
 with open(sys.argv[1], "a", encoding="utf-8") as fh:
     fh.write(json.dumps(row, ensure_ascii=False) + "\n")
-PY
+' "$LOG" 2>/dev/null || true
 exit 0
