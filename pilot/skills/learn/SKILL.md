@@ -78,8 +78,9 @@ MANIFEST 자유 형식 — **기존 정의가 있으면 그에 따르고, 없을
 1. Read 후 **기존 도메인 분류 구조 detect**: 표(3컬럼+) → 행 추가 / 산문·리스트 → 동일 형식 append / 다른 헤딩 존재 → 그 안에 append / 부재 → 표준 3컬럼 표 신설.
 2. **H2 헤더 정확 매칭** — `^##\s+도메인\s*분류\s*$` (코드블록·prose 인용 무시. `orchestrate-load.py:parse_manifest_domain_files` 자동 파싱 호환 필수 — 이 정규식은 실측 wording 이라 "정정"하지 않는다).
 3. **외부 도메인 reference 섹션 갱신 (#09·#10)** — Phase 2 누적 처리(현재 도메인 stale row 제거 + 0건이면 skip, 1+ 이면 표에 행 추가). [`references/cross-domain.md`](references/cross-domain.md) Phase 5.
-4. doctor 실행: `python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace`.
-5. **결과 출력** — `learn 완료: {domain}` + 생성 파일 목록 + 읽은/발견/제외 파일 수 + MANIFEST 갱신 1줄 + doctor 결과 + 다음 단계 안내.
+4. **규칙 포인터 재생성 (#30 C1)** — `python3 ${CLAUDE_PLUGIN_ROOT}/tools/rules-pointer.py --all --write` (MANIFEST 등록 **후**·doctor **전** — 미등록 도메인은 exit 2, 도메인 간 배타 규칙 때문에 항상 `--all`). `.claude/rules/pilot-{domain}.md` 를 생성·갱신한다 — 관리 마커가 있는 파일만 덮어쓰고 내용이 같으면 쓰지 않는다. 출력의 상태(created·updated·unchanged·skipped)와 INFO(인용 경로 추정·공유 경로 제외·"새 세션부터 반영")를 결과에 옮긴다. 포인터 선정·캡: [`references/heuristics.md`](references/heuristics.md) § 규칙 포인터.
+5. doctor 실행: `python3 ${CLAUDE_PLUGIN_ROOT}/tools/doctor.py workspace`.
+6. **결과 출력** — `learn 완료: {domain}` + 생성 파일 목록 + 읽은/발견/제외 파일 수 + MANIFEST 갱신 1줄 + 규칙 포인터 결과 1줄 + doctor 결과 + 다음 단계 안내.
 
 ## Boundary 모드 — `--boundary {B} --from {A}`
 
@@ -91,7 +92,7 @@ MANIFEST 자유 형식 — **기존 정의가 있으면 그에 따르고, 없을
 
 1. 호출처 수집 — `{A}` 소스에서 `{B}` namespace reference Grep. 0건이면 "경계 없음" 보고 후 종료 (**파일 미생성**).
 2. 표면 추출 — 호출처 ±10줄 Read + `{B}` 정의 파일은 호출된 심볼만 targeted Read (전체 학습 금지).
-3. 생성+색인 — `boundaries/{A}--{B}.md` Write (**본문 ≤150줄**) → MANIFEST 외부 reference 표의 `{B}` 행에 ` · 경계: {A}--{B}.md` 표기 (**행 제거 금지**) → doctor 실행.
+3. 생성+색인 — `boundaries/{A}--{B}.md` Write (**본문 ≤150줄**) → MANIFEST 외부 reference 표의 `{B}` 행에 ` · 경계: {A}--{B}.md` 표기 (**행 제거 금지**) → `python3 ${CLAUDE_PLUGIN_ROOT}/tools/rules-pointer.py --all --write` (경계 포인터 갱신) → doctor 실행.
 
 **로드 배선** — orchestrate-load 가 활성 도메인 기준 `boundaries/{domain}--*.md`(정방향)와 `*--{domain}.md`(역방향)를 자동 로드. 별도 MANIFEST 등록 불필요.
 
@@ -101,6 +102,7 @@ MANIFEST 자유 형식 — **기존 정의가 있으면 그에 따르고, 없을
 - **diff 모드 없음** — 갱신은 `--force` 또는 sub-domain 추가.
 - **출력 구조는 codebase 따라 자유** — `scope/{domain}.md` 강제 안 함. **MANIFEST.md 가 discovery contract**.
 - `scope/{domain}.md`·`rules/{domain}.md` 는 **사용자 커스텀 layer** — 이 스킬은 직접 생성하지 않는다.
+- `.claude/rules/pilot-{domain}.md` 는 이 스킬이 Phase 5 에서 관리하는 **파생물** (저장소 루트, #30 C1) — 관리 마커가 있는 파일만 덮어쓰고, 지식 본문은 복사하지 않는다(포인터 ≤8줄·≤500자). `workspace/context/` 산출물 외에 이 스킬이 쓰는 유일한 경로.
 
 ## 규격이 바뀌었을 때 기존 산출물
 

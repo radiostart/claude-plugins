@@ -33,6 +33,8 @@ workspace/
 
 활성 작업은 `STATE.md` 의 진행중 1 행이 가리키는 `projects/{P}/` **또는** `issues/{slug}/` 한 곳입니다. `context/` 는 그 선택과 무관하게 항상 공유됩니다.
 
+워크스페이스 밖의 파생물이 하나 있습니다 — 저장소 루트의 `.claude/rules/pilot-{domain}.md`. `/pilot:learn` 이 `context/` 의 도메인 지식에서 만드는 경로 트리거 규칙 포인터로, Claude Code 가 `paths:` 에 맞는 소스 파일을 읽을 때 진입·규칙·경계 문서의 위치를 주입합니다(본문은 복사하지 않습니다). 관리 마커가 있는 파일만 재생성되며 `/pilot:doctor` 가 정합을 검사합니다.
+
 사이클 산출물의 파일명 규약 — 프로젝트는 명세 `features/NN-{slug}.md` 옆에 `NN-{slug}.plan.md`·`NN-{slug}.plan.critic.md`·`NN-{slug}.eval.md` 가 붙고, 이슈는 `issue.md` 옆에 같은 접미가 붙습니다. 재작업본에는 `.r{N}` 을 덧붙입니다 (`NN-{slug}.plan.r2.md`).
 
 ## 영역별 책임
