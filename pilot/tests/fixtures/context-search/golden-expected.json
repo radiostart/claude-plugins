@@ -1,0 +1,384 @@
+{
+  "scope": "pilot",
+  "limit": 5,
+  "captured": "2026-09-08",
+  "note": "GoldenSnapshotTest — 점수·순서·matched·라인 범위 동등성. 랭커를 의도적으로 바꿀 때만 재캡처(README 갱신 규칙 3).",
+  "queries": [
+    {
+      "query": "doctor 정합성 검사",
+      "candidates": 12,
+      "top5": [
+        {
+          "file": "lifecycle.md",
+          "heading": "`/pilot:doctor`",
+          "score": 22,
+          "matched": [
+            "doctor",
+            "정합성",
+            "검사"
+          ],
+          "line_start": 67,
+          "line_end": 85
+        },
+        {
+          "file": "lifecycle.md",
+          "heading": "`/pilot:project`",
+          "score": 10,
+          "matched": [
+            "doctor",
+            "검사"
+          ],
+          "line_start": 30,
+          "line_end": 49
+        },
+        {
+          "file": "index.md",
+          "heading": "스킬 17 개 — 역할별 cluster",
+          "score": 8,
+          "matched": [
+            "doctor"
+          ],
+          "line_start": 7,
+          "line_end": 28
+        },
+        {
+          "file": "delivery.md",
+          "heading": "`/pilot:slack`",
+          "score": 8,
+          "matched": [
+            "doctor"
+          ],
+          "line_start": 63,
+          "line_end": 105
+        },
+        {
+          "file": "lifecycle.md",
+          "heading": "pilot — Lifecycle skills",
+          "score": 6,
+          "matched": [
+            "doctor",
+            "정합성",
+            "검사"
+          ],
+          "line_start": 1,
+          "line_end": 6
+        }
+      ]
+    },
+    {
+      "query": "slack webhook 알림",
+      "candidates": 6,
+      "top5": [
+        {
+          "file": "delivery.md",
+          "heading": "`/pilot:slack`",
+          "score": 22,
+          "matched": [
+            "slack",
+            "webhook",
+            "알림"
+          ],
+          "line_start": 63,
+          "line_end": 105
+        },
+        {
+          "file": "delivery.md",
+          "heading": "`/pilot:pr`",
+          "score": 10,
+          "matched": [
+            "slack",
+            "알림"
+          ],
+          "line_start": 20,
+          "line_end": 62
+        },
+        {
+          "file": "index.md",
+          "heading": "스킬 17 개 — 역할별 cluster",
+          "score": 8,
+          "matched": [
+            "slack"
+          ],
+          "line_start": 7,
+          "line_end": 28
+        },
+        {
+          "file": "index.md",
+          "heading": "Cluster 진입",
+          "score": 2,
+          "matched": [
+            "slack"
+          ],
+          "line_start": 29,
+          "line_end": 38
+        },
+        {
+          "file": "index.md",
+          "heading": "공통 사전 확인 (P-N) 매트릭스",
+          "score": 2,
+          "matched": [
+            "slack"
+          ],
+          "line_start": 39,
+          "line_end": 62
+        }
+      ]
+    },
+    {
+      "query": "pilot/skills/learn/SKILL.md",
+      "candidates": 26,
+      "top5": [
+        {
+          "file": "spec.md",
+          "heading": "`/pilot:learn`",
+          "score": 66,
+          "matched": [
+            "pilot",
+            "skills",
+            "learn",
+            "skill",
+            "pilot/skills/learn/SKILL.md"
+          ],
+          "line_start": 104,
+          "line_end": 135
+        },
+        {
+          "file": "index.md",
+          "heading": "스킬 17 개 — 역할별 cluster",
+          "score": 46,
+          "matched": [
+            "pilot",
+            "skills",
+            "learn",
+            "skill",
+            "pilot/skills/learn/SKILL.md"
+          ],
+          "line_start": 7,
+          "line_end": 28
+        },
+        {
+          "file": "lifecycle.md",
+          "heading": "`/pilot:init`",
+          "score": 44,
+          "matched": [
+            "pilot",
+            "skills",
+            "learn",
+            "skill"
+          ],
+          "line_start": 7,
+          "line_end": 29
+        },
+        {
+          "file": "delivery.md",
+          "heading": "`/pilot:commit`",
+          "score": 42,
+          "matched": [
+            "pilot",
+            "skills",
+            "skill"
+          ],
+          "line_start": 7,
+          "line_end": 19
+        },
+        {
+          "file": "delivery.md",
+          "heading": "`/pilot:pr`",
+          "score": 42,
+          "matched": [
+            "pilot",
+            "skills",
+            "skill"
+          ],
+          "line_start": 20,
+          "line_end": 62
+        }
+      ]
+    },
+    {
+      "query": "도메인 진입 파일 자동 로드",
+      "candidates": 21,
+      "top5": [
+        {
+          "file": "index.md",
+          "heading": "Cluster 진입",
+          "score": 14,
+          "matched": [
+            "진입",
+            "파일"
+          ],
+          "line_start": 29,
+          "line_end": 38
+        },
+        {
+          "file": "spec.md",
+          "heading": "`/pilot:learn`",
+          "score": 8,
+          "matched": [
+            "도메인",
+            "진입",
+            "파일",
+            "자동"
+          ],
+          "line_start": 104,
+          "line_end": 135
+        },
+        {
+          "file": "index.md",
+          "heading": "공통 사전 확인 (P-N) 매트릭스",
+          "score": 6,
+          "matched": [
+            "도메인",
+            "진입",
+            "로드"
+          ],
+          "line_start": 39,
+          "line_end": 62
+        },
+        {
+          "file": "lifecycle.md",
+          "heading": "`/pilot:project`",
+          "score": 6,
+          "matched": [
+            "도메인",
+            "자동",
+            "로드"
+          ],
+          "line_start": 30,
+          "line_end": 49
+        },
+        {
+          "file": "lifecycle.md",
+          "heading": "`/pilot:issue`",
+          "score": 6,
+          "matched": [
+            "도메인",
+            "진입",
+            "로드"
+          ],
+          "line_start": 50,
+          "line_end": 66
+        }
+      ]
+    },
+    {
+      "query": "도메인 진입파일 자동 로드",
+      "candidates": 18,
+      "top5": [
+        {
+          "file": "index.md",
+          "heading": "Cluster 진입",
+          "score": 7,
+          "matched": [
+            "진입파일"
+          ],
+          "line_start": 29,
+          "line_end": 38
+        },
+        {
+          "file": "lifecycle.md",
+          "heading": "`/pilot:project`",
+          "score": 6,
+          "matched": [
+            "도메인",
+            "자동",
+            "로드"
+          ],
+          "line_start": 30,
+          "line_end": 49
+        },
+        {
+          "file": "index.md",
+          "heading": "공통 사전 확인 (P-N) 매트릭스",
+          "score": 4,
+          "matched": [
+            "도메인",
+            "로드"
+          ],
+          "line_start": 39,
+          "line_end": 62
+        },
+        {
+          "file": "delivery.md",
+          "heading": "`/pilot:pr`",
+          "score": 4,
+          "matched": [
+            "자동",
+            "로드"
+          ],
+          "line_start": 20,
+          "line_end": 62
+        },
+        {
+          "file": "lifecycle.md",
+          "heading": "`/pilot:init`",
+          "score": 4,
+          "matched": [
+            "도메인",
+            "로드"
+          ],
+          "line_start": 7,
+          "line_end": 29
+        }
+      ]
+    },
+    {
+      "query": "doctor 정합성검사",
+      "candidates": 9,
+      "top5": [
+        {
+          "file": "lifecycle.md",
+          "heading": "`/pilot:doctor`",
+          "score": 20,
+          "matched": [
+            "doctor",
+            "정합성검사"
+          ],
+          "line_start": 67,
+          "line_end": 85
+        },
+        {
+          "file": "index.md",
+          "heading": "스킬 17 개 — 역할별 cluster",
+          "score": 8,
+          "matched": [
+            "doctor"
+          ],
+          "line_start": 7,
+          "line_end": 28
+        },
+        {
+          "file": "delivery.md",
+          "heading": "`/pilot:slack`",
+          "score": 8,
+          "matched": [
+            "doctor"
+          ],
+          "line_start": 63,
+          "line_end": 105
+        },
+        {
+          "file": "lifecycle.md",
+          "heading": "`/pilot:project`",
+          "score": 8,
+          "matched": [
+            "doctor"
+          ],
+          "line_start": 30,
+          "line_end": 49
+        },
+        {
+          "file": "lifecycle.md",
+          "heading": "pilot — Lifecycle skills",
+          "score": 4,
+          "matched": [
+            "doctor",
+            "정합성검사"
+          ],
+          "line_start": 1,
+          "line_end": 6
+        }
+      ]
+    }
+  ]
+}

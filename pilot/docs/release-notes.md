@@ -17,7 +17,8 @@ pilot 의 버전별 변경 이력입니다. 버전 SSOT 는 `pilot/.claude-plugi
 
 | 버전 | 날짜 | 요약 |
 |---|---|---|
-| [**v0.18.0**](#v0180) | 2026-09-04 | context-search 섹션 단위 결정적 검색 도구 · soft 배선 · confluence 검색 랭커 공유 |
+| [**v0.19.0**](#v0190) | 2026-09-09 | context-search 고도화 (탐색→선별→주입 3단계 · 한글 결합어 · frontmatter) · #30 경로 트리거 규칙 포인터 |
+| [v0.18.0](#v0180) | 2026-09-04 | context-search 섹션 단위 결정적 검색 도구 · soft 배선 · confluence 검색 랭커 공유 |
 | [v0.17.0](#v0170) | 2026-08-25 | autopilot 신호 파서 fail-open 봉쇄 · plan 판정 기계 소유 · reflect 재검증 |
 | [v0.16.0](#v0160) | 2026-08-25 | 스킬 3종 신설 (qa · switch · ask) · learn 기재 규격 · scope-guard 경로 판정 |
 | [v0.15.0](#v0150) | 2026-08-03 | evaluator REPORT 영속화 · 훅 양립 갱신 절차 · 스킬 description 감량 |
@@ -34,9 +35,25 @@ pilot 의 버전별 변경 이력입니다. 버전 SSOT 는 `pilot/.claude-plugi
 
 ---
 
+## v0.19.0
+
+*2026-09-09 · **현재 버전** · [릴리스](https://github.com/radiostart/claude-plugins/releases/tag/pilot-v0.19.0)*
+
+적대적 검토·적용 플랜과 실측 기록: `docs/superpowers/plans/2026-09-08-context-search-enhancement-plan.md`.
+
+- **탐색 → 선별 → 주입 3단계** — `wrapper-protocol.md` §6 이 `--format manifest --limit 8` 탐색, 에이전트의 1~3개 선별(`[rules]`·`[boundary]` 는 필수어가 맞으면 유지, 0건이면 1회 확장 재검색 후 진입 파일 회귀), `select:… --inject` 1회 주입으로 바뀝니다. `/pilot:ask` 절차 2 도 같은 흐름, orchestrate-load 힌트 문구 갱신
+- **`select:` 다중 대상** — `select:a.md#h1,b.md#h2`. md·manifest 에 표시된 경로(CWD 기준)를 그대로 붙여 넣어도 됩니다
+- **`--inject` · `--max-bytes`** — 선정 섹션 본문을 `<context-snippet file heading lines>` 블록(json 은 `text`)으로 함께 출력. 총 12,000B(상한 24,000B)·섹션당 400줄, 잘리면 나머지 Read 힌트, 앞선 결과가 덮는 하위 섹션은 중복 주입 생략. 키워드 질의 + `--inject` 는 `--limit` 기본 3
+- **`--format manifest`** — 후보당 1줄 `[#n] score [type] | file :: heading | Lx-y | Nd | matched | snippet≤80`. age 는 mtime 표기 전용이며 점수·정렬에는 쓰지 않습니다
+- **한글 복합어 양방향** — `선발송 접수 [상태]` ↔ `선발송접수[상태]`(인접 2~3단어 연쇄), `진입파일` ↔ `진입 파일` 을 본문·description·헤딩에서 대조. 같은 토큰·같은 신호는 한 번만 가산하고 헤딩 토큰이 연쇄와 같으면 구성 토큰 전부 정확 일치로 쳐서 붙여 쓴 텍스트와 띄어 쓴 텍스트의 점수가 같습니다. 골든 질의 4 → 6 (붙여 쓴 질의 `도메인 진입파일 자동 로드` 가 top-3 이탈 → 1위)
+- **frontmatter** — `description`·`domain`·`type`·`sources` 파싱(트레일링 ` #` 주석·블록/인라인 리스트·접힘 스칼라). `type`·`domain` 은 결과 필드(`[type]` 태그)로만, `sources` glob 은 소스 경로 질의의 파일 보너스(6)로만 씁니다. #29 머지 전에는 코퍼스에 frontmatter 가 없어 출력 불변
+- **경로 트리거 규칙 포인터 (#30 C1)** — `/pilot:learn` Phase 5 가 `.claude/rules/pilot-{domain}.md` 를 생성합니다(`tools/rules-pointer.py --all --write`). Claude Code 조건부 규칙이 `paths:` 에 맞는 소스를 읽을 때 진입·규칙·본문·경계 문서 포인터(≤8줄·≤500자)를 주입하며, 지식 본문은 복사하지 않습니다. `paths` 는 frontmatter `sources` 우선, 없으면 인용 경로를 실파일로 해석해 추정합니다. Write·Edit 는 발화하지 않는 실측에 따라 `hooks/domain-pointer.sh` 가 같은 포인터를 세션·도메인당 1회 보완하고, `/pilot:doctor` 가 stale·포인터 부재·재생성 불일치·겹침·`claudeMdExcludes` 를 검사합니다. 로드 계측용 `hooks/rules-trace.sh`(`InstructionsLoaded`, opt-in 등록)도 함께 제공합니다. 실측·설계: `docs/superpowers/plans/2026-09-08-path-triggered-rules-plan.r2.md`
+- **채택하지 않은 것** — mtime 신선도 점수(결정성 위반·clone 직후 전 파일 동일), `type`/`sources` 세그먼트 점수(path·citation 과 중복, 파일 단위 누적으로 섹션 랭킹 역전), 키워드 상위 N 자동 주입(에이전트 선별 단계 소실). 근거는 플랜 문서 §2
+- 한글 결합·역방향 규칙에 해당하지 않는 질의(ASCII·2~3자 한글·`select:`)는 기존 플래그만 쓰면 md/json 출력 바이트 동일(골든 Q1~Q4·select·라이브 3질의 대조). 4자 이상 한글 토큰이나 인접 한글 단어쌍이 있는 질의는 점수·순위·0건 안내가 바뀝니다(설계 의도 — Q5·Q6) · confluence 검색은 코드 무변경이지만 같은 랭커를 쓰므로 한글 결합·역방향 규칙이 `/pilot:confl search` 에도 적용됩니다
+
 ## v0.18.0
 
-*2026-09-04 · **현재 버전** · [릴리스](https://github.com/radiostart/claude-plugins/releases/tag/pilot-v0.18.0)*
+*2026-09-04 · [릴리스](https://github.com/radiostart/claude-plugins/releases/tag/pilot-v0.18.0)*
 
 도메인 지식을 "통째로 읽는" 대신 "필요한 섹션만 찾아 읽게" 하는 첫 단계입니다. Claude Code 소스(memdir 2단 색인 · ToolSearch 결정적 랭커 · conditional rules · Explore 계약)에서 검증된 패턴을 pilot 의 `workspace/context` 계층에 적용했습니다. 설계·근거는 계획서 `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md` 가 SSOT 입니다.
 

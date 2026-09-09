@@ -124,6 +124,18 @@ workspace/context/
 
 ---
 
+## 규칙 포인터 (`.claude/rules/pilot-{domain}.md`)
+
+Phase 5 가 `rules-pointer.py --all --write` 로 만드는 **파생물** — 하네스의 조건부 규칙(`paths:`)이 매칭 소스 파일을 Read 할 때 아래 본문을 주입한다 (#30 C1). 판정·생성 로직은 `tools/doctor/rules_pointer.py` 가 소유하며 이 절은 그 규칙의 사람용 요약이다.
+
+- **포인터만, 본문 없음** — 진입 파일(MANIFEST, 모두) → `rules/{domain}.md`(있을 때) → 본문 ≤2(frontmatter `type` 이 rules·services·enums, 없으면 파일명 stem) → 경계 ≤2 → "그 외 N개 — index 참조" → 상세 조회 1줄(`/pilot:ask` · wrapper-protocol §6). 주입 본문 ≤ 8줄 · ≤ 500자 — 초과 시 경계 → 본문 순으로 접는다.
+- **`paths`** — 도메인 문서의 frontmatter `sources` 합집합이 우선. 없으면 인용 경로를 실파일로 해석해 디렉토리 하위 트리로 합산하고 상위에서부터 쪼갠다(≤ 8 globs · 깊이 ≤ 3). `workspace/`·`.claude/`·config `## Ignore`·`test_path_convention` 은 제외. 두 도메인이 같은 glob 을 요구하면 인용이 많은 쪽에만(동률이면 둘 다 제외 + INFO).
+- **관리 마커** — `<!-- managed by /pilot:learn … -->` 가 있는 파일만 덮어쓴다. 사용자가 마커를 지우면 그 파일은 사용자 소유가 되고 doctor 는 INFO 만 낸다.
+- **세션당 1회** — 하네스는 같은 규칙을 세션에 한 번만 주입한다. 재생성분은 새 세션부터 보인다. Write·Edit 만으로는 발화하지 않으므로 `hooks/domain-pointer.sh` 가 같은 본문을 세션·도메인당 1회 보완한다.
+- **계측** — 어느 에이전트가 언제 어떤 규칙을 로드했는지 보려면 `hooks/rules-trace.sh` 를 `.claude/settings.local.json` 의 `InstructionsLoaded`(`path_glob_match`) 훅으로 opt-in 등록한다(#30 § 실측 기록). 로그는 `${TMPDIR:-/tmp}/pilot-rules-trace.log`.
+
+---
+
 ## 안티 패턴
 
 다음은 하지 않는다:

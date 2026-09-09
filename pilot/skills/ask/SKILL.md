@@ -42,13 +42,15 @@ description: >-
 
 1. `workspace/context/MANIFEST.md` Read — 질문이 속한 도메인 판정.
 2. 판정된 도메인의 진입 파일 (`## 도메인 분류` 표가 가리키는 경로) 을 Read (존재하는 것만). 질문이 도메인 경계를 걸치면 `boundaries/{A}--{B}.md` 도 함께.
+
+   진입 파일이 가리키는 본문의 특정 주제가 필요하면 파일 전체 Read 대신 [wrapper-protocol.md](../context/shared/wrapper-protocol.md) §6 의 3단계로 좁힌다 — `python3 ${CLAUDE_PLUGIN_ROOT}/tools/context-search.py "<질문 키워드>" --scope {domain} --format manifest --limit 8` 탐색 → 사용자 질문과 절차 1 의 활성 작업 맥락에 대조해 1~3개 선별 (`rules/`·`boundaries/` 경로 후보 — manifest 태그 `[rules?]`·`[boundary?]`·`[rules]`·`[boundary]` — 는 질문의 핵심 토큰이 `matched` 에 있으면 유지) → `'select:{file}#{heading},…' --inject` 1회 주입(인자는 작은따옴표 — 헤딩의 백틱·`$` 가 쉘에 치환되지 않게. 헤딩은 manifest 줄의 백틱 제거본 일부). 0건이면 질의를 넓혀 1회 재검색 후 진입 파일로 회귀.
 3. **MANIFEST 부재 시 종료하지 않는다** — 답변 앞에 아래 1줄을 고지하고 3단계로 직행한다 (조용한 degrade 금지 — 사용자가 컨텍스트 부재를 인지해야 한다. [INDEX.md](../context/INDEX.md) § Fallback 규칙의 ask 예외):
 
    > 도메인 컨텍스트 없음 — 소스만으로 답합니다. 도메인 지식 누적은 `/pilot:learn`.
 
 ### 3. 소스 확증
 
-컨텍스트 문서가 가리키는 진입점에서 Read/Grep 으로 추적한다. 범위가 넓으면 Explore 서브에이전트에 위임한다 (읽기 전용 탐색).
+컨텍스트 문서가 가리키는 진입점에서 Read/Grep 으로 추적한다. 범위가 넓으면 Explore 서브에이전트에 위임한다 (읽기 전용 탐색). Explore·Plan 에이전트는 세션 시작 시 CLAUDE.md 계층을 건너뛰지만, 매칭 소스 파일을 Read 하면 `.claude/rules` 의 경로 규칙(도메인 규칙 포인터)은 그 안에서도 주입된다(2026-09-09 실측). 다만 서브에이전트 컨텍스트에만 보이므로 결론만 받고 도메인 문서는 메인에서 Read 한다.
 
 **세부 (계산식·분기·조건·필드 의미) 는 반드시 소스에서 확인하고 `file:line` 으로 인용한다** — 컨텍스트 문서는 소스로 가는 지도이지 답의 근거가 아니다 (컨텍스트에는 구현 세부가 기재되지 않으므로, 지도가 가리키는 소스가 유일한 근거다).
 

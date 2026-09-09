@@ -525,7 +525,9 @@ def build_load_plan(
                     hints.append(f"MANIFEST 도메인 진입 파일 로드: context/{rel}")
             hints.append(
                 f"[검색] 본문 상세는 python3 {plugin_root()}/tools/context-search.py "
-                f'"<키워드>" --scope {domain} 로 섹션 조회 후 라인 범위 Read'
+                f'"<키워드>" --scope {domain} --format manifest --limit 8 로 후보를 좁히고 '
+                "1~3개 선별 후 'select:{file}#{heading}' --inject 로 주입 — 작은따옴표·헤딩은 백틱 제외 "
+                "(wrapper-protocol §6)"
             )
         else:
             hints.append(

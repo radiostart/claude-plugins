@@ -32,10 +32,14 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/orchestrate-load.py --phase {phase} --worksp
 
 ## 6. 본문 부분 로드 (권장 — 필수 step 아님)
 
-진입 파일 로드 후 특정 주제(feature 키워드·클래스명·소스 경로)의 상세가 필요하면 본문 파일 전체 Read·무차별 Grep 대신 섹션을 좁힌다:
+진입 파일 로드 후 특정 주제(feature 키워드·클래스명·소스 경로)의 상세가 필요하면 본문 파일 전체 Read·무차별 Grep 대신 **탐색 → 선별 → 주입** 3단계로 섹션을 좁힌다. 도구는 후보를 좁히고 최종 선택은 에이전트가 한다:
 
-1. `python3 ${CLAUDE_PLUGIN_ROOT}/tools/context-search.py "<키워드>" --scope {domain}` → 상위 섹션의 `file · heading · 라인 범위 · read_hint` (`select:{path}#{헤딩}` 직접 지정 · `+필수어` 사전필터 · `--include features/ docs/` 부속 문서).
-2. 그중 1~2개를 `read_hint` 대로 `Read offset/limit` 부분 Read. 상태값(`enums` 등) 확인도 같은 절차.
+1. **탐색** — `python3 ${CLAUDE_PLUGIN_ROOT}/tools/context-search.py "<feature 키워드>" --scope {domain} --format manifest --limit 8` → 후보당 1줄 (`[#n] score [type] | file :: heading | L{start}-{end} | {age}d | matched | snippet`). `+필수어` 사전필터 · `--include features/ docs/` 부속 문서 · 소스 경로 질의(`app/services/x.rb`)는 그 파일을 다루는 섹션의 역방향 조회.
+2. **선별** — 후보를 feature 명세·plan 의 현재 단계와 대조해 **지금 결정에 필요한 1~3개**만 고른다.
+   - `rules/`·`boundaries/` 경로 후보(manifest 태그 `[rules?]`·`[boundary?]`) 또는 frontmatter 태그 `[rules]`·`[boundary]` 후보는 질의의 핵심 토큰이 `matched` 에 있으면 버리지 않는다 (규칙 누락 → 평가 단계 반려).
+   - 관련 후보가 0 이면 질의를 넓혀(동의어·영문명·`+필수어` 제거) 1회 재검색, 그래도 0 이면 진입 파일 목차로 회귀.
+   - 고른 섹션과 사유를 1줄 보고한다 (dogfooding 측정 근거).
+3. **주입** — `python3 ${CLAUDE_PLUGIN_ROOT}/tools/context-search.py 'select:{file}#{heading},{file}#{heading}' --inject` 1회로 본문을 받는다. 인자는 **작은따옴표**로 감싼다 — 큰따옴표 안의 백틱·`$` 는 쉘이 치환해 헤딩이 비고 파일 전체가 주입된다(도구가 INFO 로 알리지만 그 전에 막는다). `file` 은 manifest 에 표시된 경로 그대로(`--include` 부속 문서 포함), `heading` 은 manifest 줄의 헤딩(백틱 제거본) 일부 — 부분 문자열 매칭. `<context-snippet file heading lines>` 블록, 렌더 총량 12,000B·섹션당 400줄 상한. 잘린 섹션은 블록 뒤 `[잘림 — 나머지: Read …]` 힌트로 이어 읽는다. 상태값(`enums` 등) 확인도 같은 절차.
 
 0건이면 도구가 `--scope`·`+필수어` 제거 등 상태 안내를 낸다 — 실패가 아니다. 도구 부재 시 진입 파일 목차 → 라인 범위 수동 2단계로 대체.
 

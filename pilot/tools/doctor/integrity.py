@@ -435,6 +435,8 @@ def check_workspace(workspace: Path) -> list[Result]:
     results.extend(check_gitignore_required_patterns(workspace))
     # context 인용 drift — learn 산출물의 인용 소스가 문서보다 최신이면 stale 가능성
     results.extend(check_context_citations_stale(workspace))
+    from doctor.rules_pointer import check_rules_pointer  # 지연 import — rules_pointer 가 integrity 를 import 한다
+    results.extend(check_rules_pointer(workspace))
     # Auto-memory 존재 안내 (플러그인은 Read 만 — 경고 아닌 INFO 수준 PASS 로 표시)
     results.extend(check_auto_memory_presence())
     return results

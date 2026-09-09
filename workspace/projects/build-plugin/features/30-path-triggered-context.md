@@ -30,10 +30,10 @@ _(없음)_
 
 ## 예외 케이스
 
-- 한 소스 파일이 여러 도메인 `sources` 에 매칭 → 최대 2 도메인 포인터 + "그 외 N".
+- 한 소스 파일이 여러 도메인 `sources` 에 매칭 → C1 은 하네스가 매칭 규칙 파일을 모두 로드(파일당 캡이 총량 상한). "최대 2 도메인 포인터 + 그 외 N" 은 보완 훅에만 적용 (2026-09-09 정정).
 - `sources` 없는 도메인 → 인용 경로 공통 접두 glob 추정 + INFO 로 추정 사실 표기. 추정 불가(인용 0건) → 규칙 파일 생성 skip + INFO.
 - 매칭 실패(C2) → 침묵(exit 0, 출력 없음).
-- 규칙 파일이 gitignore 대상 디렉토리에 놓임 → 하네스가 로드하지 않음 — doctor 가 `.gitignore` 매칭 시 WARN.
+- ~~규칙 파일이 gitignore 대상 디렉토리에 놓임 → 하네스가 로드하지 않음 — doctor WARN~~ → 실측상 git 무시 여부는 로드와 무관 (2026-09-09 삭제). 커밋 여부는 팀 정책.
 - 실측 결과 C1 미발화 + C2 도 훅 미지원 환경(예: 하네스 버전 차) → 본 feature 는 "규칙 파일 생성만" 으로 축소하고 사람이 직접 Read 하는 용도로 남긴다 (사용자 확인 후).
 
 ## Open Questions
@@ -45,18 +45,40 @@ _(없음)_
 - (없음)
 
 ### (c) 외부 시스템 spec 부재
-- [ ] Claude Code 조건부 규칙(`.claude/rules/*.md` `paths:`) 이 래퍼 **서브에이전트** 실행 중에도 로드되는지 공식 spec 부재 — 위 선행 검증 절차로 실측 (2026-09-04 사용자 결정: 실측 후 결정 → 이월)
+- [x] Claude Code 조건부 규칙(`.claude/rules/*.md` `paths:`) 이 래퍼 **서브에이전트** 실행 중에도 로드되는지 → general-purpose 서브에이전트 발화 실측 (2026-09-08). Explore·Plan 도 실측 발화(2026-09-09) — pilot 래퍼 4종(custom agent)만 후속 사이클에서 확인 (G6)
 
 ### (d) 비즈니스 결정 영역
 - [x] C1(.claude/rules paths) vs C2(PostToolUse 훅) → 실측 후 결정. (c) 실측이 발화면 C1, 미발화면 C2 (2026-09-04 사용자 확정)
 
 ## 실측 기록
 
-_(선행 검증 수행 후 기입 — 일자 · Claude Code 버전 · 절차 · 결과 · C1/C2 확정)_
+**2026-09-08~09 · Claude Code 원격 세션(바이너리 2.1.263) · 플랜 `docs/superpowers/plans/2026-09-08-path-triggered-rules-plan.md` § 1 + critic 재현 · 결론: C1 확정 + 보완 훅**
+
+| 실험 | 절차 | 결과 |
+|---|---|---|
+| C1 메인 | `.claude/rules/zz-c1-probe.md` (`paths: pilot/tools/orchestrate-load.py`, 마커 QX7) → 메인 세션 Read | Read 결과 직후 `Contents of …/.claude/rules/zz-c1-probe.md:` 블록으로 본문 주입(frontmatter·HTML 주석은 벗겨짐) |
+| C1 서브(general-purpose) | Agent 도구 서브에이전트가 같은 파일 1~10행만 Read, 다른 파일 접근 금지 | 마커 원문 보고, 읽은 파일 1개 → 발화 |
+| **C1 서브(Explore·Plan, 2026-09-09)** | 생성 파일 `pilot-pilot.md` 로 Explore(`commit-format.sh` Read)·Plan(`protect-managed.sh` Read) | 둘 다 Read 직후 본문 주입 — 공식 문서의 "Explore·Plan 은 프로젝트 규칙 skip" 은 세션 시작 CLAUDE.md 계층에 한하고 경로 규칙의 지연 로드는 발화한다 |
+| git 무시 | `.git/info/exclude` 에 `.claude/` + 마커 QX8 규칙 → Read | 동일 주입 — git 무시 여부는 로드와 무관 |
+| Write·Edit | 같은 규칙·같은 파일에 Write 만 / Edit 만 / Bash `sed` 읽기 | 모두 미발화. 같은 파일 Read 는 발화. 같은 세션 재-Read 시 재주입 없음(경로 dedup) |
+| glob 의미 | 슬래시 없는 `*.py` | 중첩 경로에 발화 — gitignore 의미(`context-search._glob_regex` 와 동일) |
+| 훅 사양(공식 문서) | hooks-guide · memory · sub-agents | PreToolUse·PostToolUse 모두 `additionalContext` 지원 · command 훅 기본 timeout 10분, 권고 <1s · 규칙은 "매칭 파일을 읽을 때" 로드 |
+| **생성 파일 실측 (2026-09-09, Phase 3)** | `rules-pointer.py --all --write` → `.claude/rules/pilot-pilot.md` (paths 4개 · 주입 본문 3줄 124자) → 메인 세션 `pilot/hooks/session-context.sh` Read · general-purpose 서브에이전트 `pilot/hooks/slack-notify.sh` Read | 둘 다 Read 직후 `Contents of …/.claude/rules/pilot-pilot.md:` 블록으로 본문 3줄 주입(frontmatter·주석 제거). 보완 훅 `domain-pointer.sh` 54ms, 같은 세션 2회째 무음. doctor `규칙 포인터` PASS. 생성 2회 diff 0, 63ms |
+
+**계측 (G6 증거)**: 공식 `InstructionsLoaded` 훅(`load_reason: path_glob_match`, 서브에이전트에선 `agent_type` 포함)을 `pilot/hooks/rules-trace.sh` 로 받는다 — 플러그인 hooks.json 에는 등록하지 않고(허용 이벤트 목록·지원 버전 미명시) 계측이 필요할 때 `.claude/settings.local.json` 에 opt-in:
+
+```json
+{ "hooks": { "InstructionsLoaded": [ { "matcher": "path_glob_match",
+    "hooks": [ { "type": "command", "command": "bash pilot/hooks/rules-trace.sh" } ] } ] } }
+```
+
+로그 `${TMPDIR:-/tmp}/pilot-rules-trace.log` 에 `{ts, session, agent, reason, file, cwd}` 1줄씩(본문 미기록). 마켓플레이스 설치본은 `command` 를 플러그인 설치 경로로.
+
+**C1/C2 확정**: C1 채택(하네스 네이티브). Write·Edit 미발화의 틈만 **보완 훅**(PostToolUse `Edit|Write`, 생성된 규칙 파일의 `paths:` 대조, 세션·도메인당 1회, 본문 없음, ≤2 도메인)으로 메운다 — C2 전면 채택이 아니다. 상세·조항 변경: 플랜 v2 `…-plan.r2.md` § 0·§ 6.
 
 ## 검증 기준
 
-- `/pilot:learn` 골든 출력에 규칙 파일 1개 (frontmatter `paths` 3줄 이내 + 마커 + 포인터 ≤8줄).
+- `/pilot:learn` 골든 출력에 규칙 파일 1개 (frontmatter `paths` ≤ 8 globs + 마커 + 주입 본문 ≤8줄·≤500자 — 2026-09-09 정정).
 - 관리 마커 보존 테스트: 마커 제거한 규칙 파일은 재생성 시 무변경 + INFO.
 - doctor 테스트: stale 규칙 파일 WARN · 포인터 경로 부재 WARN · `paths`↔`sources` 불일치 INFO.
 - C2 시: 훅 스크립트 단위 테스트(매칭·비매칭·다중 도메인·상한 500자) + hooks.json 스키마 확인.

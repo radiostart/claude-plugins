@@ -8,11 +8,12 @@ hide:
 
 도메인 지식 기반의 agent workflow 플러그인입니다. Claude Code 내에서 *plan → critic → generate → evaluate*의 명시적 cycle로 project를 진행합니다.
 
-!!! tip "v0.18.0 highlights"
-    - **`context-search` 도구 신설** — `workspace/context` 지식 파일을 H2/H3 섹션 단위로 색인해 결정적 점수(헤딩 10 · 경로 8 · 인용 6 · 헤딩 부분 5 · description 4 · 본문 2)로 순위. 질의 3형식(`select:`·키워드·`+필수어`), json/md 출력, 라인 범위 `read_hint`, 표준 라이브러리만
-    - **soft 배선** — orchestrate-load 가 도메인 진입 파일 로드 직후 `[검색]` 힌트 1줄, wrapper-protocol §6 부분 로드가 도구 호출 권장으로, Explore 서브에이전트 계약(scope 경로·thoroughness·결론만) 명시. 래퍼 필수 step 추가 0 · 지시 문서 순증 2줄
-    - **confluence 로컬 검색 개선** — 같은 랭커로 점수순·상한 5건·첫 일치 스니펫, 랭커 로드 실패 시 기존 substring 폴백
-    - 도메인 지식 검색·계층 탐색 로드맵 — #28 신선도 힌트 · #29 frontmatter 매니페스트 · #30 경로 트리거 (계획서 `docs/superpowers/plans/2026-09-04-context-retrieval-feature-plan.md`)
+!!! tip "v0.19.0 highlights"
+    - **탐색 → 선별 → 주입 3단계** — `context-search.py "<키워드>" --scope D --format manifest --limit 8` 로 후보를 1줄씩 받고, 에이전트가 1~3개를 고른 뒤 `'select:{file}#{heading},…' --inject` 한 번으로 본문을 받습니다(렌더 총량 12,000B·섹션당 400줄 상한). wrapper-protocol §6 · `/pilot:ask` 배선
+    - **한글 결합어 양방향** — `선발송 접수 [상태]` ↔ `선발송접수[상태]`, `진입파일` ↔ `진입 파일` 을 본문·description·헤딩에서 대조. 붙여 쓴 텍스트와 띄어 쓴 텍스트의 점수가 같습니다. 골든 질의 4 → 6, 점수·순서 스냅샷 fixture
+    - **frontmatter** — `description`·`domain`·`type`·`sources` 파싱. `type`·`domain` 은 결과 필드로, `sources` glob(gitignore 의미)은 소스 경로 질의의 파일 보너스로만. mtime 신선도 점수는 결정성 때문에 채택하지 않았습니다
+    - **경로 트리거 규칙 포인터 (#30 C1)** — `/pilot:learn` 이 `.claude/rules/pilot-{domain}.md` 를 생성하고 Claude Code 조건부 규칙이 매칭 소스를 읽을 때 진입·규칙·경계 문서 포인터(≤8줄·≤500자)를 주입합니다. Write·Edit 미발화 실측에 따라 `hooks/domain-pointer.sh` 가 세션·도메인당 1회 보완, `/pilot:doctor` 가 정합 검사, `hooks/rules-trace.sh` 로 로드 계측(opt-in)
+    - 두 작업 모두 별도 에이전트 red-team 검토(12건·10건)를 거쳐 반영 — `docs/superpowers/plans/2026-09-08-*.md`
 
     [:octicons-arrow-right-24: 전체 버전 이력](release-notes.md)
 

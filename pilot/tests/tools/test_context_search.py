@@ -1,6 +1,6 @@
 """
 tools/context-search.py 의 토큰화 / 섹션 분할 / 채점 / 순위 / CLI 단위 테스트
-+ `pilot/tests/fixtures/context-search/` 스냅샷 기반 골든 hit@3 테스트.
++ `pilot/tests/fixtures/context-search/` 스냅샷 기반 골든 hit@3 테스트 (6질의).
 
 실행:
     python3 tests/tools/test_context_search.py
@@ -615,7 +615,8 @@ class SearchTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             ws = self._corpus(td)
             with self.assertRaises(m.SearchError):
-                m.search(workspace=ws, project=None, scope=None, includes=None, query_raw="select:../x", limit=5)
+                # workspace 밖으로 나가는 대상만 거부 — `../x` 는 workspace/x 라 include 후보와 같은 층위 (C4)
+                m.search(workspace=ws, project=None, scope=None, includes=None, query_raw="select:../../x", limit=5)
 
     def test_determinism_same_directory_reversed_creation_order(self):
         import shutil
@@ -647,6 +648,31 @@ class SearchTest(unittest.TestCase):
 
 
 class PerformanceTest(unittest.TestCase):
+    def test_1000_sections_korean_joined_query_under_one_second(self):
+        # C6 — G3 게이트가 ASCII 질의만 재던 빈틈: 붙여 쓴 4자+ 한글 5토큰(E2·E4 경로)도 같은 상한.
+        words = "선발송 접수 상태 확인 규칙과 도메인 진입 파일 로드 순서를 정합성 검사 이후에 반영한다".split()
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            ctx = ws / "context"
+            ctx.mkdir(parents=True)
+            for i in range(200):
+                lines = [f"# 파일 {i}", ""]
+                for s in range(5):
+                    lines.append(f"## 섹션 {i}-{s} keyword{s}")
+                    lines.append(" ".join(words[(i + s + k) % len(words)] for k in range(160)))
+                    lines.append(" ".join(f"app/services/mod{i}_{s}_{c}.rb:{c + 1}" for c in range(6)))
+                    lines.append("")
+                (ctx / f"file{i}.md").write_text("\n".join(lines), encoding="utf-8")
+            start = time.time()
+            result = m.search(
+                workspace=ws, project=None, scope=None, includes=None,
+                query_raw="선발송접수 상태확인 도메인로드 진입파일 정합성검사", limit=5,
+            )
+            elapsed = time.time() - start
+            self.assertGreater(result["candidates"], 0)
+            self.assertLess(elapsed, 1.0)
+
+
     def test_1000_sections_high_citation_density_under_one_second(self):
         with tempfile.TemporaryDirectory() as td:
             ws = Path(td)
@@ -722,6 +748,684 @@ class MainCliTest(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# select: 다중 대상 (E8)
+# ---------------------------------------------------------------------------
+class SelectMultiTest(unittest.TestCase):
+    def _corpus(self, td):
+        ws = Path(td)
+        ctx = ws / "context"
+        ctx.mkdir(parents=True)
+        (ctx / "a.md").write_text("## Alpha\nbody a\n", encoding="utf-8")
+        (ctx / "b.md").write_text("## Beta\nbody b\n", encoding="utf-8")
+        return ws
+
+    def _search(self, ws, q, **kw):
+        return m.search(workspace=ws, project=None, scope=None, includes=None, query_raw=q, limit=5, **kw)
+
+    def test_parse_multi_targets_and_first_target_compat(self):
+        q = m.parse_query("select:a.md#H1, b.md#H2,c.md")
+        self.assertEqual(q.kind, "select")
+        self.assertEqual(q.select_targets, [("a.md", "H1"), ("b.md", "H2"), ("c.md", None)])
+        self.assertEqual((q.select_path, q.select_heading), ("a.md", "H1"))
+
+    def test_multi_select_returns_targets_in_order(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:b.md,a.md")
+            self.assertEqual([x["heading"] for x in r["results"]], ["Beta", "Alpha"])
+            self.assertEqual(r["candidates"], 2)
+            self.assertIsNone(r["zero_hit"])
+            self.assertEqual(r["query"], "select:b.md,a.md")
+
+    def test_multi_select_partial_missing_gives_info_not_zero_hit(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:a.md,zzz.md")
+            self.assertEqual(r["returned"], 1)
+            self.assertIsNone(r["zero_hit"])
+            self.assertTrue(any("select 대상 없음: 'zzz.md'" in i for i in r["info"]), r["info"])
+
+    def test_multi_select_all_missing_keeps_suggestions_shape(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:aa.md,bb.md")
+            self.assertEqual(r["returned"], 0)
+            self.assertIn("suggestions", r["zero_hit"])
+            self.assertLessEqual(len(r["zero_hit"]["suggestions"]), 3)
+
+    def test_single_select_heading_miss_keeps_guidance_shape(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:a.md#Nope")
+            self.assertEqual(list(r["zero_hit"].keys()), ["guidance"])
+
+    def test_multi_select_dedupes_same_section(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:a.md#Alpha,a.md")
+            self.assertEqual(r["returned"], 1)
+
+    def test_multi_select_traversal_in_any_target_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            with self.assertRaises(m.SearchError):
+                self._search(ws, "select:a.md,../../x")
+
+    def test_select_include_candidate_roundtrip(self):
+        # C4 — --include 후보는 루트 기준으로 `../projects/...` 라 표시 경로·루트 기준 표기 양쪽으로 도달해야 한다.
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            (ws / "projects" / "P" / "features").mkdir(parents=True)
+            feat = ws / "projects" / "P" / "features" / "01-x.md"
+            feat.write_text("## Feat\nfeature body\n", encoding="utf-8")
+            kw = dict(workspace=ws, project="P", scope=None, includes=["features"], limit=5)
+            shown = m._display_path(feat)
+            r1 = m.search(query_raw=f"select:{shown}#Feat", **kw)
+            self.assertEqual(r1["returned"], 1)
+            self.assertEqual(r1["results"][0]["heading"], "Feat")
+            r2 = m.search(query_raw="select:../projects/P/features/01-x.md", **kw)
+            self.assertEqual(r2["returned"], 1)
+            with self.assertRaises(m.SearchError):
+                m.search(query_raw="select:../../etc/x.md", **kw)
+
+    def test_select_heading_with_comma_splits_into_targets(self):
+        # C12-b — 쉼표는 대상 구분자라 헤딩 안의 쉼표는 두 번째 대상으로 읽힌다(현행 문서화). 코퍼스에
+        # 쉼표 헤딩이 생기면 `--select` 반복 플래그(E8 예비안)로 전환한다 — 이 테스트가 그 트리거.
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:a.md#Alpha, beta")
+            self.assertEqual(r["returned"], 1)
+            self.assertTrue(any("select 대상 없음: 'beta'" in i for i in r["info"]), r["info"])
+
+    def test_select_domain_named_context_reachable(self):
+        # C12-e — `context/` 접두 제거는 후보 중 하나일 뿐이라 도메인명이 `context` 여도 도달한다.
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            (ws / "context" / "context").mkdir()
+            (ws / "context" / "context" / "index.md").write_text("## Ctx\nbody\n", encoding="utf-8")
+            r = self._search(ws, "select:context/index.md")
+            self.assertEqual(r["returned"], 1)
+            self.assertEqual(r["results"][0]["heading"], "Ctx")
+
+    def test_select_empty_heading_after_hash_gives_info(self):
+        # C1 — 쉘이 백틱을 치환해 `select:a.md#` 로 들어오면 파일 전체를 돌려주되 무음이 아니어야 한다.
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            r = self._search(ws, "select:a.md#")
+            self.assertEqual(r["returned"], 1)
+            self.assertTrue(any("헤딩이 비어" in i and "작은따옴표" in i for i in r["info"]), r["info"])
+            self.assertFalse(any("헤딩이 비어" in i for i in self._search(ws, "select:a.md")["info"]))
+
+    def test_select_heading_match_ignores_backticks_and_emphasis(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            (ws / "context").mkdir(parents=True)
+            (ws / "context" / "l.md").write_text(
+                "## `/pilot:doctor`\nx\n## **Bold** _plan_\ny\n", encoding="utf-8"
+            )
+            for q in ("select:l.md#/pilot:doctor", "select:l.md#pilot:doctor", "select:l.md#`/pilot:doctor`"):
+                r = self._search(ws, q)
+                self.assertEqual([x["heading"] for x in r["results"]], ["`/pilot:doctor`"], q)
+            r = self._search(ws, "select:l.md#bold plan")
+            self.assertEqual(r["returned"], 1)
+
+    def test_select_accepts_displayed_cwd_relative_path(self):
+        # manifest/md 가 표시하는 CWD 기준 경로를 그대로 붙여 넣어도 코퍼스 루트 기준으로 정규화된다.
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._corpus(td)
+            shown = m._display_path(ws / "context" / "a.md")
+            r = self._search(ws, f"select:{shown}#Alpha")
+            self.assertEqual(r["returned"], 1)
+            self.assertEqual(r["query"], "select:a.md#Alpha")
+            with self.assertRaises(m.SearchError):
+                self._search(ws, f"select:{m._display_path(ws / 'context')}/../../etc/x.md")
+
+
+# ---------------------------------------------------------------------------
+# --inject (E9)
+# ---------------------------------------------------------------------------
+class InjectTest(unittest.TestCase):
+    def _ws(self, td, files):
+        ws = Path(td)
+        ctx = ws / "context"
+        ctx.mkdir(parents=True)
+        for name, text in files.items():
+            (ctx / name).write_text(text, encoding="utf-8")
+        return ws
+
+    def _search(self, ws, q, **kw):
+        return m.search(workspace=ws, project=None, scope=None, includes=None, query_raw=q, limit=5, **kw)
+
+    def test_inject_adds_text_and_wrapper_block(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nbody a\n"})
+            r = self._search(ws, "select:a.md#Alpha", inject=True)
+            self.assertEqual(r["results"][0]["text"], "## Alpha\nbody a")
+            self.assertFalse(r["results"][0]["truncated"])
+            md = m.render_md(r)
+            self.assertIn('<context-snippet file="', md)
+            self.assertIn('heading="Alpha" lines="1-2">', md)
+            self.assertIn("</context-snippet>", md)
+            self.assertNotIn("1. >", md)
+
+    def test_without_inject_output_has_no_text_key(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nbody a\n"})
+            r = self._search(ws, "select:a.md#Alpha")
+            self.assertNotIn("text", r["results"][0])
+            self.assertNotIn("<context-snippet", m.render_md(r))
+
+    def test_budget_truncates_with_rest_hint(self):
+        with tempfile.TemporaryDirectory() as td:
+            body = "\n".join("x" * 20 for _ in range(50))
+            ws = self._ws(td, {"a.md": "## Alpha\n" + body + "\n"})
+            r = self._search(ws, "select:a.md", inject=True, max_bytes=1200)
+            res = r["results"][0]
+            self.assertTrue(res["truncated"])
+            self.assertLessEqual(len(m.render_md(r).encode("utf-8")), 1200)  # C8 — 렌더 총량이 상한 안
+            self.assertTrue(res["inject_rest"].startswith("Read "))
+            self.assertIn("offset=", res["inject_rest"])
+            self.assertIn("[잘림 — 나머지: Read ", m.render_md(r))
+
+    def test_budget_exhausted_skips_later_sections_with_info(self):
+        with tempfile.TemporaryDirectory() as td:
+            # 결과별 렌더 오버헤드(표/manifest 줄·래퍼·잘림/생략 줄)와 예비 600B 를 뗀 뒤 본문에 쓴다 —
+            # 4,000B 면 오버헤드 ≈1,500B, 본문 예산 ≈2,500B: Alpha(1,500B) 는 들어가고 Beta 는 못 들어간다.
+            ws = self._ws(td, {"a.md": "## Alpha\n" + "a" * 1500 + "\n## Beta\n" + "b" * 1500 + "\n"})
+            r = self._search(ws, "select:a.md", inject=True, max_bytes=4000)
+            self.assertNotEqual(r["results"][0]["text"], "")
+            self.assertIn("inject_skip", r["results"][1])
+            self.assertTrue(any("예산" in i for i in r["info"]), r["info"])
+            self.assertIn("[2] ", m.render_md(r))
+            self.assertLessEqual(len(m.render_md(r).encode("utf-8")), 4000)
+
+    def test_rendered_md_and_manifest_within_max_bytes(self):
+        # C8 — 상한은 본문 합이 아니라 md/manifest 렌더 총량(헤더·후보 줄·래퍼 포함)을 묶는다.
+        with tempfile.TemporaryDirectory() as td:
+            body = "\n".join("keyword 본문 line" for _ in range(60))  # 섹션당 ≈1.3KB, 여러 줄이라 부분 주입 가능
+            files = {f"f{i}.md": f"## Keyword {i}\n" + body + "\n" for i in range(8)}
+            ws = self._ws(td, files)
+            r = m.search(workspace=ws, project=None, scope=None, includes=None, query_raw="keyword", limit=8,
+                         inject=True, max_bytes=8000)
+            self.assertLessEqual(len(m.render_md(r).encode("utf-8")), 8000)
+            self.assertLessEqual(len(m.render_manifest(r, now=0).encode("utf-8")), 8000)
+            self.assertTrue(any(x["text"] for x in r["results"]))
+            self.assertTrue(any(x.get("inject_skip") for x in r["results"]))
+
+    def test_section_capped_at_400_lines(self):
+        with tempfile.TemporaryDirectory() as td:
+            body = "\n".join(f"line {i}" for i in range(500))
+            ws = self._ws(td, {"a.md": "## Alpha\n" + body + "\n"})
+            r = self._search(ws, "select:a.md", inject=True, max_bytes=24000)
+            res = r["results"][0]
+            # C12 — 복원한 헤딩 줄은 캡 밖: 본문 400줄 + 헤딩 1줄, 나머지는 파일 라인 402 부터
+            self.assertEqual(len(res["text"].splitlines()), m.LARGE_SECTION_LINES + 1)
+            self.assertTrue(res["truncated"])
+            self.assertIn("offset=402 ", res["inject_rest"])
+
+    def test_child_h3_skipped_when_parent_h2_injected_first(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Parent\nintro\n### Child\nchild body\n"})
+            r = self._search(ws, "select:a.md", inject=True)
+            parent, child = r["results"]
+            self.assertIn("### Child", parent["text"])
+            self.assertIn("중복", child["inject_skip"])
+            self.assertEqual(child["text"], "")
+
+    def test_child_first_then_parent_folds_child_range(self):
+        # C5 — 키워드 질의에서는 H3 정확 일치(+10)가 H2(본문 +2)보다 앞선다. 뒤에 오는 부모는
+        # 이미 주입된 자식 범위를 1줄 표지로 접어 본문 중복을 없앤다.
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Parent zeta\nintro alpha child\n### Child alpha\nchild body\n"})
+            r = m.search(workspace=ws, project=None, scope=None, includes=None,
+                         query_raw="alpha child", limit=5, inject=True)
+            child, parent = r["results"]
+            self.assertEqual(child["heading"], "Child alpha")
+            self.assertEqual(child["text"], "### Child alpha\nchild body")
+            self.assertNotIn("child body", parent["text"])
+            self.assertIn("[L3-4 는 [#1] 에 주입됨 — 생략]", parent["text"])
+            self.assertIn("intro alpha child", parent["text"])
+            self.assertFalse(parent["truncated"])
+            self.assertEqual(m.render_md(r).count("child body"), 1)
+
+    def test_select_reverse_order_folds_child(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Parent\nintro\n### Child\nchild body\n"})
+            r = self._search(ws, "select:a.md#Child,a.md#Parent", inject=True)
+            child, parent = r["results"]
+            self.assertEqual(child["text"], "### Child\nchild body")
+            self.assertNotIn("child body", parent["text"])
+            self.assertIn("에 주입됨", parent["text"])
+
+    def test_folded_parent_truncation_rest_hint_uses_file_lines(self):
+        # 접힌 표지 뒤에서 잘려도 inject_rest 의 offset 은 파일 라인 기준이어야 한다.
+        with tempfile.TemporaryDirectory() as td:
+            # 자식(L3-4) 뒤에 선택되지 않은 H3(L5~) 가 이어져 부모 본문 안에 남는다 — 표지(1줄)가 2줄을 대신하므로
+            # 텍스트 k 줄을 실으면 마지막 파일 라인은 k + 1, 나머지 Read 는 k + 2 부터.
+            tail = "\n".join("t" * 40 for _ in range(30))
+            ws = self._ws(td, {"a.md": "## Parent\nintro\n### Child\nchild body\n### Other\n" + tail + "\n"})
+            big = self._search(ws, "select:a.md#Child,a.md#Parent", inject=True)
+            self.assertFalse(big["results"][1]["truncated"])
+            self.assertIn("[L3-4 는 [#1] 에 주입됨 — 생략]", big["results"][1]["text"])
+            r = self._search(ws, "select:a.md#Child,a.md#Parent", inject=True, max_bytes=1800)
+            child, parent = r["results"]
+            self.assertTrue(parent["truncated"], parent)
+            kept_lines = parent["text"].count("\n") + 1
+            self.assertGreaterEqual(kept_lines, 4)
+            self.assertIn(f"offset={kept_lines + 2} ", parent["inject_rest"])
+
+    def test_child_kept_when_parent_truncated_before_child(self):
+        # 부모가 400줄 캡으로 잘려 자식 범위를 덮지 못하면 자식은 중복이 아니다 — 그대로 주입.
+        with tempfile.TemporaryDirectory() as td:
+            filler = "\n".join("p" for _ in range(450))
+            ws = self._ws(td, {"a.md": "## Parent\n" + filler + "\n### Child\nchild body\n"})
+            r = self._search(ws, "select:a.md", inject=True)
+            parent, child = r["results"]
+            self.assertTrue(parent["truncated"])
+            self.assertNotIn("inject_skip", child)
+            self.assertEqual(child["text"], "### Child\nchild body")
+
+    def test_max_bytes_clamped_and_zero_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nbody\n"})
+            r = self._search(ws, "select:a.md", inject=True, max_bytes=99_999)
+            self.assertTrue(any(str(m.INJECT_MAX_BYTES_CAP) in i for i in r["info"]))
+            with self.assertRaises(m.SearchError):
+                self._search(ws, "select:a.md", inject=True, max_bytes=0)
+
+    def test_wrapper_attribute_escaping(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": '## Say "hi" <b>\nbody\n'})
+            r = self._search(ws, "select:a.md", inject=True)
+            self.assertIn('heading="Say &quot;hi&quot; &lt;b&gt;"', m.render_md(r))
+
+    def test_level1_preface_text_restores_h1(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "# Title\n\npreface.\n\n## A\nx\n"})
+            r = self._search(ws, "select:a.md#Title", inject=True)
+            self.assertTrue(r["results"][0]["text"].startswith("# Title"))
+
+    def test_keyword_query_inject_cli_default_limit_3(self):
+        with tempfile.TemporaryDirectory() as td:
+            files = {f"f{i}.md": f"## Keyword {i}\nkeyword body {i}\n" for i in range(5)}
+            ws = self._ws(td, files)
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = m.main(["keyword", "--workspace", str(ws), "--inject", "--format", "json"])
+            self.assertEqual(code, 0)
+            data = json.loads(out.getvalue())
+            self.assertEqual(data["returned"], m.INJECT_DEFAULT_LIMIT)
+            self.assertTrue(all("text" in r for r in data["results"]))
+            out2 = io.StringIO()
+            with redirect_stdout(out2), redirect_stderr(io.StringIO()):
+                m.main(["keyword", "--workspace", str(ws), "--format", "json"])
+            self.assertEqual(json.loads(out2.getvalue())["returned"], m.DEFAULT_LIMIT)
+
+
+# ---------------------------------------------------------------------------
+# --format manifest (E10)
+# ---------------------------------------------------------------------------
+class ManifestTest(unittest.TestCase):
+    def _ws(self, td, files):
+        ws = Path(td)
+        ctx = ws / "context"
+        ctx.mkdir(parents=True)
+        for name, text in files.items():
+            (ctx / name).write_text(text, encoding="utf-8")
+        return ws
+
+    def _search(self, ws, q, **kw):
+        return m.search(workspace=ws, project=None, scope=None, includes=None, query_raw=q, limit=5, **kw)
+
+    def test_manifest_line_format(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Keyword here\nkeyword body text\n"})
+            r = self._search(ws, "keyword")
+            out = m.render_manifest(r, now=time.time())
+            lines = out.splitlines()
+            self.assertTrue(lines[0].startswith("검색: `keyword`"))
+            line = lines[2]
+            self.assertTrue(line.startswith(f"[#1] {m.SCORE['heading_exact'] + m.SCORE['body']} | "), line)
+            self.assertIn(" :: Keyword here | L1-2 | 0d | matched: keyword | ", line)
+            self.assertNotIn("| #", out)  # md 표 골격 없음
+
+    def test_manifest_select_score_dash(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nbody\n"})
+            out = m.render_manifest(self._search(ws, "select:a.md"))
+            self.assertIn("[#1] - | ", out)
+
+    def test_manifest_snippet_capped_at_80(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\n" + "keyword " + "y" * 300 + "\n"})
+            out = m.render_manifest(self._search(ws, "keyword"))
+            tail = out.splitlines()[2].rsplit(" | ", 1)[1]
+            self.assertLessEqual(len(tail), m.MANIFEST_SNIPPET_CHARS + 1)
+            self.assertTrue(tail.endswith("…"))
+
+    def test_manifest_age_days_from_mtime(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nkeyword body\n"})
+            now = time.time()
+            os.utime(ws / "context" / "a.md", (now - 3 * 86400 - 10, now - 3 * 86400 - 10))
+            out = m.render_manifest(self._search(ws, "keyword"), now=now)
+            self.assertIn("| 3d |", out)
+
+    def test_manifest_age_dash_when_uniform(self):
+        # clone 직후엔 전 파일 mtime 이 같다 — 전 후보가 같은 age 면 `-` 로 표기(정보 없음), 다르면 숫자
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Keyword a\nbody\n", "b.md": "## Keyword b\nbody\n"})
+            now = time.time()
+            for name in ("a.md", "b.md"):
+                os.utime(ws / "context" / name, (now - 5 * 86400, now - 5 * 86400))
+            out = m.render_manifest(self._search(ws, "keyword"), now=now)
+            self.assertEqual(out.count("| - |"), 2)
+            self.assertNotIn("| 5d |", out)
+            os.utime(ws / "context" / "b.md", (now - 1 * 86400, now - 1 * 86400))
+            out = m.render_manifest(self._search(ws, "keyword"), now=now)
+            self.assertIn("| 5d |", out)
+            self.assertIn("| 1d |", out)
+
+    def test_manifest_zero_hit_and_info_rendered(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nbody\n"})
+            out = m.render_manifest(self._search(ws, "totallyabsent"))
+            self.assertIn("0건", out)
+            self.assertIn("토큰별 일치 섹션 수: totallyabsent=0", out)
+
+    def test_manifest_heading_without_backticks(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## `/pilot:doctor` keyword\nbody\n"})
+            out = m.render_manifest(self._search(ws, "keyword"))
+            self.assertIn(" :: /pilot:doctor keyword | ", out)
+            self.assertNotIn("`", out.splitlines()[2].split(" | ")[1])
+
+    def test_manifest_infers_boundary_rules_tag_from_path(self):
+        # C2 — frontmatter 가 없어도 boundaries/·rules/ 경로면 추정 태그, frontmatter type 이 있으면 그것이 우선
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            for rel, text in {
+                "boundaries/a--b.md": "## Keyword edge\nbody\n",
+                "rules/a.md": "---\ntype: rules\n---\n## Keyword rule\nbody\n",
+                "a/index.md": "## Keyword plain\nbody\n",
+            }.items():
+                p = ws / "context" / rel
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(text, encoding="utf-8")
+            r = self._search(ws, "keyword")
+            out = m.render_manifest(r)
+            self.assertIn(" [boundary?] | ", out)
+            self.assertIn(" [rules] | ", out)
+            self.assertNotIn("[rules?]", out)
+            plain = next(x for x in r["results"] if x["heading"] == "Keyword plain")
+            self.assertNotIn("type", plain)
+
+    def test_manifest_with_inject_appends_blocks(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Alpha\nbody\n"})
+            out = m.render_manifest(self._search(ws, "select:a.md", inject=True))
+            self.assertIn("[#1] - | ", out)
+            self.assertIn("<context-snippet ", out)
+
+    def test_cli_format_manifest_accepted(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = self._ws(td, {"a.md": "## Keyword\nbody keyword text\n"})
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = m.main(["keyword", "--workspace", str(ws), "--format", "manifest"])
+            self.assertEqual(code, 0)
+            self.assertIn("[#1] ", out.getvalue())
+
+
+# ---------------------------------------------------------------------------
+# 한글 결합어 양방향 (E2~E5)
+# ---------------------------------------------------------------------------
+class CompoundTest(unittest.TestCase):
+    def _q(self, raw):
+        return m.parse_query(raw)
+
+    def test_compounds_from_adjacent_hangul_words_in_query_order(self):
+        q = self._q("선발송 접수 상태")
+        self.assertEqual(q.compounds, [("선발송", "접수"), ("선발송", "접수", "상태"), ("접수", "상태")])
+        self.assertEqual(self._q("접수 선발송").compounds, [("접수", "선발송")])  # 순서 민감
+        self.assertEqual(self._q("가 나 다 라").compounds, [])  # 1글자 토큰은 제외
+
+    def test_compounds_broken_by_stopword_ascii_path_single_char(self):
+        self.assertEqual(self._q("선발송 및 접수").compounds, [])
+        self.assertEqual(self._q("선발송 API 접수").compounds, [])
+        self.assertEqual(self._q("선발송 app/x.rb 접수").compounds, [])
+        self.assertEqual(self._q("선발송 값 접수").compounds, [])
+        self.assertEqual(self._q("select:a.md").compounds, [])
+
+    def test_required_prefix_still_pairs(self):
+        self.assertEqual(self._q("+선발송 접수").compounds, [("선발송", "접수")])
+
+    def test_joined_body_scores_equal_to_spaced_body(self):
+        q = self._q("선발송 접수")
+        joined, mj = m.score_text(q, heading="", body="선발송접수 확인")
+        spaced, ms = m.score_text(q, heading="", body="선발송 접수 확인")
+        self.assertEqual(joined, spaced)
+        self.assertEqual(joined, 2 * m.SCORE["body"])
+        self.assertEqual(mj, ["선발송", "접수"])
+        self.assertEqual(ms, ["선발송", "접수"])
+
+    def test_compound_in_description(self):
+        q = self._q("선발송 접수")
+        score, matched = m.score_text(q, heading="", body="", description="선발송접수 규칙")
+        self.assertEqual(score, 2 * m.SCORE["description"])
+        self.assertEqual(matched, ["선발송", "접수"])
+
+    def test_compound_not_double_counted_when_both_forms_present(self):
+        q = self._q("선발송 접수")
+        score, _ = m.score_text(q, heading="", body="선발송 접수 그리고 선발송접수")
+        self.assertEqual(score, 2 * m.SCORE["body"])
+
+    def test_compound_requires_left_boundary(self):
+        q = self._q("선발송 접수")
+        score, _ = m.score_text(q, heading="", body="가선발송접수")
+        self.assertEqual(score, 0)
+
+    def test_joined_heading_scores_equal_to_spaced_heading(self):
+        # C11 — 헤딩 토큰이 결합어와 같으면 구성 토큰 전부 정확 일치: 붙여 쓴 헤딩 = 띄어 쓴 헤딩
+        q = self._q("선발송 접수 규칙")
+        joined, _ = m.score_text(q, heading="선발송접수 규칙", body="")
+        spaced, _ = m.score_text(q, heading="선발송 접수 규칙", body="")
+        self.assertEqual(joined, spaced)
+        self.assertEqual(joined, 3 * m.SCORE["heading_exact"])
+        partial_only, _ = m.score_text(self._q("선발송 접수"), heading="선발송접수상태 값", body="")
+        self.assertEqual(partial_only, 2 * m.SCORE["heading_partial"])  # 결합어 ≠ 헤딩 토큰이면 부분 일치 그대로
+
+    def test_three_word_joined_body_equals_spaced(self):
+        q = self._q("선발송 접수 상태")
+        joined, mj = m.score_text(q, heading="", body="선발송접수상태 확인")
+        spaced, _ = m.score_text(q, heading="", body="선발송 접수 상태 확인")
+        self.assertEqual(joined, spaced)
+        self.assertEqual(joined, 3 * m.SCORE["body"])
+        self.assertEqual(mj, ["선발송", "접수", "상태"])
+
+    def test_reverse_joined_query_matches_spaced_body(self):
+        score, matched = m.score_text(self._q("진입파일"), heading="", body="도메인 진입 파일 로드")
+        self.assertEqual(score, m.SCORE["body"])
+        self.assertEqual(matched, ["진입파일"])
+
+    def test_reverse_joined_query_matches_spaced_description(self):
+        score, _ = m.score_text(self._q("진입파일"), heading="", body="", description="진입 파일 규칙")
+        self.assertEqual(score, m.SCORE["description"])
+
+    def test_reverse_joined_query_matches_spaced_heading_as_partial(self):
+        score, _ = m.score_text(self._q("진입파일"), heading="도메인 진입 파일", body="")
+        self.assertEqual(score, m.SCORE["heading_partial"])
+
+    def test_reverse_heading_hangul_token_contained_in_query_token(self):
+        score, _ = m.score_text(self._q("진입파일"), heading="Cluster 진입", body="")
+        self.assertEqual(score, m.SCORE["heading_partial"])
+
+    def test_reverse_not_applied_below_min_chars(self):
+        score, _ = m.score_text(self._q("파일들"), heading="파일", body="파 일 들")
+        self.assertEqual(score, 0)
+
+    def test_reverse_not_applied_to_ascii(self):
+        score, _ = m.score_text(self._q("payload"), heading="pay load", body="pay load")
+        self.assertEqual(score, 0)
+
+    def test_reverse_does_not_stack_on_direct_hit(self):
+        score, _ = m.score_text(self._q("진입파일"), heading="", body="진입파일 그리고 진입 파일")
+        self.assertEqual(score, m.SCORE["body"])
+
+    def test_required_gate_satisfied_via_compound(self):
+        q = self._q("선발송 +접수")
+        score, matched = m.score_text(q, heading="", body="선발송접수 확인")
+        self.assertEqual(score, 2 * m.SCORE["body"])
+        self.assertIn("접수", matched)
+
+    def test_required_gate_satisfied_via_reverse(self):
+        score, _ = m.score_text(self._q("+진입파일"), heading="", body="진입 파일")
+        self.assertEqual(score, m.SCORE["body"])
+
+    def test_snippet_positions_on_reverse_match(self):
+        sec = m.Section(
+            file="f.md", heading="H", level=2, line_start=1, line_end=2,
+            body_lines=["x" * 300 + " 진입 파일 " + "y" * 300], description=None,
+        )
+        self.assertIn("진입 파일", m.build_snippet(sec, ["진입파일"]))
+
+    def test_existing_signals_unchanged(self):
+        # 결합어 도입 후에도 기존 6신호 값은 그대로다 (G2 — Q1~Q4 출력 바이트 동일의 단위 근거)
+        q = self._q("doctor")
+        self.assertEqual(m.score_text(q, heading="doctor", body="")[0], m.SCORE["heading_exact"])
+        self.assertEqual(m.score_text(q, heading="", body="doctor here")[0], m.SCORE["body"])
+        self.assertEqual(m.score_text(q, heading="", body="", path_tokens={"doctor"})[0], m.SCORE["path"])
+
+    def test_zero_hit_guidance_mentions_compound_auto_match(self):
+        q = self._q("zzqq 진입파일")
+        guidance = m.build_zero_hit("zzqq 진입파일", q, {"zzqq": 0, "진입파일": 0}, None, False)["guidance"]
+        self.assertTrue(any("붙여쓰기·띄어쓰기" in g for g in guidance), guidance)
+        q2 = self._q("zzqq 섹션")
+        guidance2 = m.build_zero_hit("zzqq 섹션", q2, {"zzqq": 0, "섹션": 0}, None, False)["guidance"]
+        self.assertFalse(any("붙여쓰기" in g for g in guidance2))
+
+
+# ---------------------------------------------------------------------------
+# frontmatter 파서 (E6) · sources glob 보너스 (E7)
+# ---------------------------------------------------------------------------
+class FrontmatterTest(unittest.TestCase):
+    def test_scalar_trailing_comment_stripped(self):
+        # #29 예시 그대로 — 주석의 enum 8단어가 type 값으로 번지면 모든 파일이 모든 type 에 매칭된다.
+        meta = m.parse_frontmatter(
+            ["type: services            # index | routes | models | services | rules | enums | boundary | free"]
+        )
+        self.assertEqual(meta, {"type": "services"})
+
+    def test_quoted_values_keep_hash_and_strip_quotes(self):
+        meta = m.parse_frontmatter(['description: "이슈 #12 처리 규칙"', "domain: 'wms'"])
+        self.assertEqual(meta, {"description": "이슈 #12 처리 규칙", "domain": "wms"})
+
+    def test_block_list_with_comments(self):
+        meta = m.parse_frontmatter(
+            [
+                "sources:                  # 이 문서가 다루는 소스 범위",
+                "  - app/services/wms/**",
+                "  - app/models/wms/shipment.rb  # 모델",
+                "type: rules",
+            ]
+        )
+        self.assertEqual(meta["sources"], ["app/services/wms/**", "app/models/wms/shipment.rb"])
+        self.assertEqual(meta["type"], "rules")
+
+    def test_inline_list_and_scalar_sources(self):
+        self.assertEqual(
+            m.parse_frontmatter(["sources: [app/a/**, 'app/b.rb']"])["sources"], ["app/a/**", "app/b.rb"]
+        )
+        self.assertEqual(m.parse_frontmatter(["sources: app/x/**"])["sources"], ["app/x/**"])
+
+    def test_folded_scalar_takes_first_continuation_line_only(self):
+        meta = m.parse_frontmatter(["description: >-", "  첫 줄 설명", "  둘째 줄", "domain: x"])
+        self.assertEqual(meta, {"description": "첫 줄 설명", "domain": "x"})
+
+    def test_unknown_keys_ignored_and_empty_values_absent(self):
+        self.assertEqual(m.parse_frontmatter(["name: skill", "learned_at: 2026-09-04"]), {})
+        self.assertEqual(m.parse_frontmatter(["sources:", "type:", "# 주석만"]), {})
+
+    def test_split_sections_populates_meta_and_description(self):
+        text = "---\ndescription: 설명\ndomain: wms\ntype: rules\nsources:\n  - app/x/**\n---\n## A\nbody\n"
+        secs = m.split_sections(text, "f.md")
+        self.assertEqual(secs[0].description, "설명")
+        self.assertEqual(
+            secs[0].meta, {"description": "설명", "domain": "wms", "type": "rules", "sources": ["app/x/**"]}
+        )
+
+    def test_no_frontmatter_meta_empty(self):
+        self.assertEqual(m.split_sections("## A\nbody\n", "f.md")[0].meta, {})
+
+
+class SourcesBonusTest(unittest.TestCase):
+    def _q(self):
+        return m.parse_query("app/services/wms/cancel.rb")
+
+    def test_glob_covers_raw_path_query(self):
+        score, matched = m.score_text(self._q(), heading="", body="", sources=["app/services/wms/**"])
+        self.assertEqual(score, m.SCORE["citation"])
+        self.assertEqual(matched, ["app/services/wms/cancel.rb"])
+
+    def test_gitignore_semantics_of_sources_glob(self):
+        # C7 — #30 `.claude/rules paths:` 와 같은 집합: `*`·`?` 는 `/` 를 넘지 않고 `**` 만 가로지른다.
+        hit = ("app/services/**", "app/services/wms", "app/services/wms/", "**/wms/**", "wms", "services", "*.rb",
+               "app/services/wms/*.rb", "app/*/wms/**", "/app/services/**")  # 슬래시 없는 이름은 어느 깊이의 디렉토리와도
+        miss = ("wms/**", "app/services/*.rb", "app/*/cancel.rb", "*.py", "app/services/wm?/x.rb", "models")
+        for g in hit:
+            self.assertEqual(m.score_text(self._q(), heading="", body="", sources=[g])[0], m.SCORE["citation"], g)
+        for g in miss:
+            self.assertEqual(m.score_text(self._q(), heading="", body="", sources=[g])[0], 0, g)
+        self.assertTrue(m._source_glob_match("app/services/wms/x/y.rb", "app/services/wms/**"))
+        self.assertFalse(m._source_glob_match("app/services/wms/x/y.rb", "app/services/wms/*.rb"))
+
+    def test_mismatch_and_empty_no_bonus(self):
+        self.assertEqual(m.score_text(self._q(), heading="", body="", sources=["app/models/**"])[0], 0)
+        self.assertEqual(m.score_text(self._q(), heading="", body="", sources=[""])[0], 0)
+
+    def test_bonus_once_per_query_path_and_stacks_with_citation(self):
+        score, matched = m.score_text(
+            self._q(), heading="", body="",
+            citation_paths=["app/services/wms/cancel.rb"],
+            sources=["app/services/wms/**", "app/services/**"],
+        )
+        self.assertEqual(score, 2 * m.SCORE["citation"])
+        self.assertEqual(matched.count("app/services/wms/cancel.rb"), 1)
+
+    def test_no_segment_token_scoring_from_sources(self):
+        # `wms` 키워드 질의는 sources 로 점수를 받지 않는다 — type·domain 도 마찬가지 (E7)
+        q = m.parse_query("wms services rules")
+        sec = m.Section(
+            file="f.md", heading="", level=2, line_start=1, line_end=1, body_lines=[],
+            description=None, meta={"type": "rules", "domain": "wms", "sources": ["app/services/wms/**"]},
+        )
+        self.assertEqual(m.score_section(sec, q)[0], 0)
+
+    def test_score_section_passes_meta_sources(self):
+        sec = m.Section(
+            file="f.md", heading="", level=2, line_start=1, line_end=1, body_lines=[],
+            description=None, meta={"sources": ["app/services/wms/**"]},
+        )
+        self.assertEqual(m.score_section(sec, self._q())[0], m.SCORE["citation"])
+
+    def test_json_type_domain_only_when_present(self):
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            (ws / "context").mkdir()
+            (ws / "context" / "a.md").write_text(
+                "---\ntype: rules\ndomain: wms\n---\n## Keyword A\nkeyword body\n", encoding="utf-8"
+            )
+            (ws / "context" / "b.md").write_text("## Keyword B\nkeyword body\n", encoding="utf-8")
+            r = m.search(workspace=ws, project=None, scope=None, includes=None, query_raw="keyword", limit=5)
+            a, b = r["results"]
+            self.assertEqual(list(a.keys())[-3:], ["read_hint", "type", "domain"])
+            self.assertEqual((a["type"], a["domain"]), ("rules", "wms"))
+            self.assertNotIn("type", b)
+            self.assertNotIn("domain", b)
+            self.assertIn("[#1] 12 [rules] | ", m.render_manifest(r))
+
+
+# ---------------------------------------------------------------------------
 # 골든 — pilot/tests/fixtures/context-search/ 스냅샷, --scope pilot, hit@3
 # ---------------------------------------------------------------------------
 @unittest.skipUnless(FIXTURE_ROOT.is_dir(), "context-search 골든 fixture 없음")
@@ -758,6 +1462,44 @@ class GoldenHitAtThree(unittest.TestCase):
         self.assertTrue(
             any("index.md" in f and "Cluster" in h for f, h in top3), top3
         )
+
+    def test_q5_korean_joined_compound_query(self):
+        # E4 — `진입파일` 처럼 붙여 쓴 질의가 `진입 파일` 로 띄어 쓴 본문·헤딩 토큰과 대조된다.
+        # 도입 전 실측(2026-09-08): 정답 top-3 이탈(`진입파일` 히트 0) → 도입 후 1위 7점.
+        top3 = self._top3("도메인 진입파일 자동 로드")
+        self.assertTrue(
+            any("index.md" in f and "Cluster" in h for f, h in top3), top3
+        )
+
+    def test_q6_korean_joined_compound_with_ascii_anchor(self):
+        # 회귀 감시 — ASCII 헤딩 정확 일치(doctor)가 있는 질의에 붙여 쓴 한글이 섞여도 1위 불변.
+        top3 = self._top3("doctor 정합성검사")
+        self.assertTrue(
+            any("lifecycle.md" in f and "doctor" in h for f, h in top3), top3
+        )
+
+
+@unittest.skipUnless(FIXTURE_ROOT.is_dir(), "context-search 골든 fixture 없음")
+class GoldenSnapshotTest(unittest.TestCase):
+    """C9 — hit@3 포함 여부만 보던 골든에 점수·순서·matched·라인 범위 동등성을 더한다.
+    기대값은 `fixtures/context-search/golden-expected.json` (경로는 CWD 의존이라 파일명만)."""
+
+    def test_top5_matches_committed_expectation(self):
+        expected = json.loads(
+            (FIXTURE_ROOT.parent / "golden-expected.json").read_text(encoding="utf-8")
+        )
+        for entry in expected["queries"]:
+            result = m.search(
+                workspace=FIXTURE_ROOT, project=None, scope=expected["scope"], includes=None,
+                query_raw=entry["query"], limit=expected["limit"],
+            )
+            got = [
+                {"file": Path(r["file"]).name, "heading": r["heading"], "score": r["score"],
+                 "matched": r["matched"], "line_start": r["line_start"], "line_end": r["line_end"]}
+                for r in result["results"]
+            ]
+            self.assertEqual(result["candidates"], entry["candidates"], entry["query"])
+            self.assertEqual(got, entry["top5"], entry["query"])
 
 
 if __name__ == "__main__":
