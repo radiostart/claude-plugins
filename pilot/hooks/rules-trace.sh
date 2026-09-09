@@ -8,12 +8,12 @@
 #   file_path · file_content · cwd · (서브에이전트) agent_id · agent_type. file_content 는 기록하지 않는다.
 set -uo pipefail
 LOG="${PILOT_RULES_TRACE_LOG:-${TMPDIR:-/tmp}/pilot-rules-trace.log}"
-python3 -c '
+python3 - "$LOG" <<'PY' 2>/dev/null || true
 import json, sys, time
 try:
     d = json.load(sys.stdin)
 except Exception:
-    sys.exit(0)
+    sys.exit(0)  # 잘못된 입력 — 파일도 만들지 않는다
 row = {
     "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
     "session": d.get("session_id", ""),
@@ -22,6 +22,7 @@ row = {
     "file": d.get("file_path", ""),
     "cwd": d.get("cwd", ""),
 }
-print(json.dumps(row, ensure_ascii=False))
-' >> "$LOG" 2>/dev/null || true
+with open(sys.argv[1], "a", encoding="utf-8") as fh:
+    fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+PY
 exit 0
