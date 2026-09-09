@@ -2,7 +2,7 @@
 
 - 작성: 2026-09-09 · 브랜치 `claude/dp-skills-context-search-enhance-qp02xo` · v1 `2026-09-08-path-triggered-rules-plan.md` 를 대체 (critic `…-plan.critic.md` 10건 반영 — 처리 내역은 critic 합의 표)
 - 대상·SSOT·지시서 대비 판정은 v1 § 0~2 를 그대로 계승한다. 본 문서는 **바뀐 설계와 적용 절차**만 다시 쓴다.
-- 상태: **v2 확정 · 적용 진행** (사용자 결정 2026-09-09: "v2 개정 후 적용 순서대로 진행")
+- 상태: **적용 완료** (2026-09-09 — Phase 0~3 커밋 5건, § 7 적용 기록)
 
 ## 0. v1 → v2 변경 요약
 
@@ -96,3 +96,34 @@ v1 § 3.8 유지. 추가: `InstructionsLoaded` 훅 로그 계측(후속), Explor
 - 검증 기준 "`paths` 3줄 이내" → ≤ 8 globs.
 - C2 훅 → 폐기가 아니라 **보완 훅**으로 축소(포인터 1회, 본문 없음).
 - Open Q (c) → 해소: general-purpose 서브에이전트 발화 실측. Explore/Plan 은 문서상 skip.
+
+## 7. 적용 기록 (2026-09-09)
+
+| Phase | 커밋 | 내용 |
+|---|---|---|
+| 0 | `81aadef` | `test_coding_rules.py` 10건 · #30 실측 기록·조항 정정 |
+| 1 | `849307f` | `doctor/rules_pointer.py` + `tools/rules-pointer.py` + 테스트 22건 |
+| 2 | `df81d71` | `hooks/domain-pointer.sh` + hooks.json · learn Phase 5·Boundary·제약 · heuristics § 규칙 포인터 · doctor 배선 · ask/scope-exploration · workspace-layout · release-notes · 테스트 8건 |
+| 3 | `4e99250` | 라이브 `.claude/rules/pilot-pilot.md` 생성·커밋 (dogfooding) |
+
+### 게이트 실측
+
+| G | 결과 |
+|---|---|
+| G1 | `discover -s pilot/tests/tools` 전부 통과 — 신규 40건(10 + 22 + 8) |
+| G2 | 라이브 `--all` 2회 생성 diff 0 · `workspace/context` 무수정 |
+| G3 | 생성 63ms · `--hook` 54ms (라이브, python 1회 호출) |
+| G4 | 생성 파일로 메인 세션(`session-context.sh` Read)·general-purpose 서브에이전트(`slack-notify.sh` Read) 모두 Read 직후 본문 3줄 주입 확인. 주입 본문 124자 ≤ 500자. 원문은 #30 § 실측 기록 |
+| G5 | `docs_build.py --check` 통과 · doctor 5 PASS·4 WARN·1 ERROR — 규칙 포인터 PASS, WARN 은 이번에 고친 파일을 인용하는 문서의 stale 신호(mtime), ERROR 는 기존 `STATE.md` 부재(gitignore 로컬 파일) |
+| G6 | 후속 사이클에서 래퍼(pilot-planner·generator·evaluator)가 `pilot/skills/**` 를 Read 할 때 포인터가 나타난 기록 — 미실측 |
+
+### 라이브 산출물
+
+`.claude/rules/pilot-pilot.md` — `paths`: `pilot/.claude-plugin/**` · `pilot/hooks/**` · `pilot/skills/**` · `pilot/tools/**` (인용 44건 해석, 커버 43/44). 포인터: 진입 `workspace/context/pilot/index.md` + 상세 조회 1줄 (rules/·경계·typed 본문이 없는 도메인이라 2줄). #29 머지 후 `sources` frontmatter 가 생기면 추정 주석 없이 재생성된다.
+
+### 남은 일
+
+1. G6 — 다음 feature 사이클에서 래퍼 4종의 발화 기록(Explore/Plan 은 문서상 skip).
+2. #29 머지 시 `sources` 기반 재생성 + `type` 기반 본문 포인터 실측.
+3. `InstructionsLoaded` 훅 로그 계측(critic C8 후속).
+4. 릴리스 시 버전 확정 — release-notes 미배포 절.

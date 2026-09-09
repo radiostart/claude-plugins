@@ -62,6 +62,7 @@ _(없음)_
 | Write·Edit | 같은 규칙·같은 파일에 Write 만 / Edit 만 / Bash `sed` 읽기 | 모두 미발화. 같은 파일 Read 는 발화. 같은 세션 재-Read 시 재주입 없음(경로 dedup) |
 | glob 의미 | 슬래시 없는 `*.py` | 중첩 경로에 발화 — gitignore 의미(`context-search._glob_regex` 와 동일) |
 | 훅 사양(공식 문서) | hooks-guide · memory · sub-agents | PreToolUse·PostToolUse 모두 `additionalContext` 지원 · command 훅 기본 timeout 10분, 권고 <1s · 규칙은 "매칭 파일을 읽을 때" 로드 |
+| **생성 파일 실측 (2026-09-09, Phase 3)** | `rules-pointer.py --all --write` → `.claude/rules/pilot-pilot.md` (paths 4개 · 주입 본문 3줄 124자) → 메인 세션 `pilot/hooks/session-context.sh` Read · general-purpose 서브에이전트 `pilot/hooks/slack-notify.sh` Read | 둘 다 Read 직후 `Contents of …/.claude/rules/pilot-pilot.md:` 블록으로 본문 3줄 주입(frontmatter·주석 제거). 보완 훅 `domain-pointer.sh` 54ms, 같은 세션 2회째 무음. doctor `규칙 포인터` PASS. 생성 2회 diff 0, 63ms |
 
 **C1/C2 확정**: C1 채택(하네스 네이티브). Write·Edit 미발화의 틈만 **보완 훅**(PostToolUse `Edit|Write`, 생성된 규칙 파일의 `paths:` 대조, 세션·도메인당 1회, 본문 없음, ≤2 도메인)으로 메운다 — C2 전면 채택이 아니다. 상세·조항 변경: 플랜 v2 `…-plan.r2.md` § 0·§ 6.
 
